@@ -197,12 +197,18 @@ const caption = (v) => `<div class="eyebrow caption">${v.ok} on track · ${v.soo
 const hourFmt = (ts) => new Date(ts).toLocaleTimeString('en-IN', { hour: 'numeric' }).replace(/\s?(am|pm)/i, (m) => m.trim().toLowerCase());
 export function weatherHead(c) {
   const w = c.live.weather || { state: 'idle' }, d = w.data;
-  const inner = d
-    ? `<span class="wh-ic">${icon(S.wmo(d.code, d.day).ic)}</span><span class="wh-t">${Math.round(d.temp)}°</span><em>${S.wmo(d.code, d.day).t}</em>`
-    : w.state === 'need' ? `<span class="wh-ic">${icon('wxPart')}</span><em>Add weather</em>`
-    : w.state === 'err' ? `<span class="wh-ic">${icon('wxCloud')}</span><em>Weather offline</em>`
-    : `<span class="wh-ic">${icon('wxPart')}</span><span class="wh-t sk">—°</span>`;
-  return `<button class="title wx-head" data-act="sheet" data-arg="weather" aria-label="Weather details">${inner}${icon('chev')}</button>`;
+  let ic = 'wxPart', temp = '', top = '', sub = '';
+  if (d) {
+    const cond = S.wmo(d.code, d.day), rain = Math.max(0, ...d.hours.map((h) => h.rain || 0));
+    const temps = d.hours.map((h) => h.temp).filter((t) => t != null);
+    ic = cond.ic; temp = `${Math.round(d.temp)}°`; top = cond.t;
+    sub = `${esc(d.place || 'Near you')} · ${rain >= 20 ? `rain ${rain}%` : temps.length ? `${Math.round(Math.min(...temps))}–${Math.round(Math.max(...temps))}°` : `feels ${Math.round(d.feels)}°`}`;
+  } else if (w.state === 'need') { top = 'Add weather'; sub = 'Tap to set your city'; }
+  else if (w.state === 'err') { ic = 'wxCloud'; top = 'Weather offline'; sub = 'Tap for details'; }
+  else { temp = '—°'; top = 'Checking the sky'; sub = '&nbsp;'; }
+  return `<button class="wx-head ${d ? '' : 'nodata'}" data-act="sheet" data-arg="weather" aria-label="Weather details">
+    <span class="wh-ic">${icon(ic)}</span>${temp ? `<span class="wh-t">${temp}</span>` : ''}
+    <span class="wh-tx"><span class="wh-c">${top}</span><span class="wh-s">${sub}</span></span>${icon('chev')}</button>`;
 }
 export function weatherSheet(c) {
   const w = c.live.weather || { state: 'idle' }, d = w.data;
@@ -238,8 +244,9 @@ export function today(c) {
   const urgent = list.filter((x) => x.st.status !== 'ok').slice(0, 3);
   const shown = urgent.length ? urgent : list.slice(0, 2);
   return `<div class="stagger">
-  <div class="head center pagehead"><div><div class="eyebrow">${dMed(Date.now())}${live.weather?.data?.place ? ` · ${esc(live.weather.data.place)}` : ''}</div><h1 class="wx-h1">${weatherHead(c)}</h1></div>
+  <div class="pagehead today-head"><div class="th-row"><div class="eyebrow">${dMed(Date.now())}</div>
     <div class="head-actions"><button class="circle" data-act="sheet" data-arg="sos" aria-label="Emergency SOS" style="color:var(--red)">${icon('sos')}</button><button class="circle" data-act="sheet" data-arg="inbox" aria-label="Notifications">${icon('bell')}${inbox(c).length ? `<span class="bdg">${inbox(c).length > 99 ? '99+' : inbox(c).length}</span>` : ''}</button></div></div>
+    <h1 class="wx-h1">${weatherHead(c)}</h1></div>
   ${live.scenario ? previewBar(live) : ''}
   <button class="vchip" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">${vehicleArt(s, v0)}<div class="grow"><div class="t">${esc(S.vehicleTitle(s))}${v0.nickname ? ` <span class="faint" style="font-weight:400">· ${esc(S.bikeName(s))}</span>` : ''}</div><div class="d">${esc(v0.plate || 'No number plate')} · ${short(s.odo)} km</div></div>${icon('swap')}</button>
   ${live.rec ? recCard(live) : ''}
@@ -675,6 +682,8 @@ export const FONTS = [
   ['geist', 'Geist', "'Geist'", 600],
   ['garamond', 'Garamond', "'EB Garamond'", 500],
   ['crimson', 'Crimson', "'Crimson Pro'", 500],
+  ['goudy', 'Goudy', "'Sorts Mill Goudy'", 400],
+  ['alegreya', 'Alegreya', "'Alegreya'", 500],
 ];
 export const APP_NAME = 'Waylink';
 export const LOGOS = [['wl-turn', 'Turn'], ['wl-loop', 'Loop'], ['wl-split', 'Globe'], ['wl-swift', 'Swift'], ['wl-visor', 'Helmet']];
@@ -749,7 +758,7 @@ function rideBits(c) {
 }
 function layoutA(b) {
   return `<section class="rm-page lay-a" aria-label="Speed first">
-    <div class="speed"><span class="big" data-live="speed">${b.speed}</span><span class="u">km/h</span></div>
+    <div class="speed"><span class="big" data-live="speed">${b.speed}</span><span class="u">km/h</span>${b.tags ? `<div class="rm-tags">${b.tags}</div>` : ''}</div>
     ${b.nav ? b.nav + '<div style="height:10px"></div>' : ''}
     <div class="rm-grid">
       <div class="rm-box"><div class="rm-lab">${b.date}</div><div class="rm-val" data-live="clock">${b.time}</div></div>
@@ -758,28 +767,12 @@ function layoutA(b) {
       <div class="rm-box"><div class="rm-lab">${b.trip.lab}</div><div class="rm-val">${b.trip.v}</div></div>
     </div></section>`;
 }
-function dialSVG(speed) {
-  const cx = 150, cy = 150, r = 126, L = Math.PI * r;
-  const f = Math.max(0, Math.min(1, speed / MAX_KMH));
-  let ticks = '';
-  for (let v = 0; v <= MAX_KMH; v += 10) {
-    const a = Math.PI * (1 - v / MAX_KMH), major = v % 20 === 0, red = v >= 140;
-    const r1 = r - 14, r2 = r - (major ? 26 : 21);
-    ticks += `<path d="M${(cx + r1 * Math.cos(a)).toFixed(1)} ${(cy - r1 * Math.sin(a)).toFixed(1)}L${(cx + r2 * Math.cos(a)).toFixed(1)} ${(cy - r2 * Math.sin(a)).toFixed(1)}" stroke="${red ? 'var(--red)' : 'var(--ink)'}" stroke-width="${major ? 2.4 : 1.4}" stroke-linecap="round" opacity="${major ? 1 : .55}"/>`;
-    if (major && v % 40 === 0) ticks += `<text x="${(cx + (r - 40) * Math.cos(a)).toFixed(1)}" y="${(cy - (r - 40) * Math.sin(a) + 4).toFixed(1)}" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${v}</text>`;
-  }
-  return `<svg viewBox="0 0 300 162"><path d="M${cx - r} ${cy}A${r} ${r} 0 0 1 ${cx + r} ${cy}" fill="none" stroke="var(--seg-off)" stroke-width="9" stroke-linecap="round"/>
-    <path id="rm-arc" d="M${cx - r} ${cy}A${r} ${r} 0 0 1 ${cx + r} ${cy}" fill="none" stroke="var(--accent)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${(L * f).toFixed(1)} ${L.toFixed(1)}" data-len="${L.toFixed(1)}"/>${ticks}
-    <g id="rm-needle" style="transform-origin:${cx}px ${cy}px;transform:rotate(${(f * 180).toFixed(1)}deg);transition:transform .8s cubic-bezier(.3,.7,.3,1)"><path d="M${cx} ${cy - 2.5}L${cx - r + 30} ${cy}L${cx} ${cy + 2.5}Z" fill="var(--ink)"/></g>
-    <circle cx="${cx}" cy="${cy}" r="7" fill="var(--ink)"/><circle cx="${cx}" cy="${cy}" r="2.6" fill="var(--accent)"/></svg>`;
-}
 export function rideMode(c) {
   const { s, live, link } = c;
   const b = rideBits(c);
   return `<div class="ride-mode" id="ride-mode" data-page="0">
-    <div class="rm-pages">${layoutA(b)}</div>
+    <div class="rm-pages">${layoutA({ ...b, tags: `${live.rec ? '<span class="tag x"><span class="dot x pulse"></span>Recording</span>' : ''}${link.connected ? '' : '<span class="tag k">Bike not linked</span>'}${live.gpsErr ? '<span class="tag a">No GPS</span>' : ''}` })}</div>
     <div class="rm-foot2">
-      <div class="rm-tags">${live.ride.auto ? '<span class="tag">Opened by itself</span>' : ''}${live.rec ? '<span class="tag x"><span class="dot x pulse"></span>Recording</span>' : ''}${link.connected ? '' : '<span class="tag k">Bike not linked</span>'}${live.gpsErr ? '<span class="tag a">No GPS</span>' : ''}</div>
       <div class="hold"><svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="11" fill="none" stroke="var(--seg-off)" stroke-width="2"/><circle class="p" cx="13" cy="13" r="11" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="69.1" stroke-dashoffset="69.1" transform="rotate(-90 13 13)"/><circle cx="13" cy="13" r="4" fill="var(--ink-3)"/></svg><span class="eyebrow" data-live="rm-hint">Hold to leave</span></div>
     </div></div>`;
 }

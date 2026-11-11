@@ -58,7 +58,7 @@ async def main():
         await shot(pg, '01-today')
 
         # Status-bar and gesture spacing
-        top = await pg.evaluate("document.querySelector('.view .head .eyebrow').getBoundingClientRect().top")
+        top = await pg.evaluate("document.querySelector('.view .pagehead .eyebrow').getBoundingClientRect().top")
         check('content sits clear of the status bar', top >= 24, f'top={top}')
         fab = await pg.evaluate("(()=>{const r=document.querySelector('.fab').getBoundingClientRect();return [r.width,innerHeight-r.bottom]})()")
         check('FAB is 50px and sits above the tab bar', fab[0] == 50 and 70 < fab[1] < 110, str(fab))
@@ -149,7 +149,7 @@ async def main():
         # Fonts
         await pg.click('[data-act="font"][data-arg="onest"]'); await pg.wait_for_timeout(300)
         check('title font switches', await pg.evaluate("document.documentElement.dataset.font") == "onest")
-        check('four display fonts offered', len(await pg.query_selector_all('.fontopt')) == 4)
+        check('six display fonts offered', len(await pg.query_selector_all('.fontopt')) == 6)
         await pg.click('[data-act="font"][data-arg="garamond"]'); await pg.wait_for_timeout(300)
         await pg.click('[data-act="logo"][data-arg="wl-loop"]'); await pg.wait_for_timeout(300)
         check('icon choice swaps the favicon, name stays', 'wl-loop' in await pg.evaluate("document.querySelector('link[rel=icon]').getAttribute('href')") and await pg.title() == 'Waylink')

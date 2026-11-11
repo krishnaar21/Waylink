@@ -32,6 +32,8 @@ const FONT_CSS = {
   geist: 'Geist:wght@400;500;600',
   garamond: 'EB+Garamond:wght@400;500;600',
   crimson: 'Crimson+Pro:wght@400;500;600',
+  goudy: 'Sorts+Mill+Goudy',
+  alegreya: 'Alegreya:wght@400;500;600',
 };
 const fontHref = (keys) => 'https://fonts.googleapis.com/css2?' + keys.map((k) => 'family=' + FONT_CSS[k]).join('&') + '&display=swap';
 function applyFont() {
@@ -108,8 +110,6 @@ function refreshWeather() {
   if (sheetKey === 'weather') refreshSheet();
   if (screen !== 'today') return;
   const h = $('.view .wx-h1'); if (h) h.innerHTML = V.weatherHead(ctx());
-  const eb = $('.view .pagehead .eyebrow'); const pl = live.weather?.data?.place;
-  if (eb) eb.textContent = V.dMed(Date.now()) + (pl ? ' · ' + pl : '');
 }
 
 // ---------- Render ----------

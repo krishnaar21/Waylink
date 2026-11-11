@@ -29,6 +29,8 @@
 html[data-font="onest"] { --serif: 'Onest', -apple-system, system-ui, sans-serif; --dw: 600; --dls: -.035em; --dscale: 1; }
 html[data-font="geist"] { --serif: 'Geist', -apple-system, system-ui, sans-serif; --dw: 600; --dls: -.04em; --dscale: 1; }
 html[data-font="garamond"] { --serif: 'EB Garamond', Garamond, Georgia, serif; --dw: 500; --dls: -.01em; --dscale: 1.12; }
+html[data-font="goudy"] { --serif: 'Sorts Mill Goudy', Georgia, serif; --dw: 400; --dls: -.01em; --dscale: 1.08; }
+html[data-font="alegreya"] { --serif: 'Alegreya', Georgia, serif; --dw: 500; --dls: -.01em; --dscale: 1.06; }
 html[data-font="crimson"] { --serif: 'Crimson Pro', Georgia, serif; --dw: 500; --dls: -.01em; --dscale: 1.1; }
 .selmark { position: absolute; top: 7px; right: 7px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; box-shadow: 0 0 0 2px var(--raised); animation: pop .35s var(--spring) both; z-index: 2; }
 .selmark svg { width: 12px; height: 12px; stroke-width: 3 !important; }
@@ -500,8 +502,9 @@ html[data-theme="obsidian"] .range, html[data-theme="amoled"] .range { --thumb: 
 .rm-speed .big { font-size: min(210px, 50vw); letter-spacing: -.04em; }
 .rm-speed .serif { font-size: 20px; color: var(--ink-2); margin-top: 4px; }
 .rm-foot { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-.hold { display: flex; align-items: center; gap: 10px; color: var(--ink-3); }
-.hold svg { width: 26px; height: 26px; }
+.hold { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--ink-3); }
+.hold svg { width: 52px; height: 52px; }
+.hold .eyebrow { font-size: 10.5px; letter-spacing: .16em; }
 .hold circle.p { transition: stroke-dashoffset .9s linear; }
 .tag { font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; padding: 6px 10px; border-radius: var(--r-2xs); background: var(--tint-sage); color: var(--sage-ink); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .tag.x { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
@@ -576,6 +579,7 @@ html[data-theme="obsidian"] .range, html[data-theme="amoled"] .range { --thumb: 
 .lay-a .speed { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; }
 .lay-a .speed .big { font-size: min(196px, 48vw); letter-spacing: -.05em; line-height: .9; }
 .lay-a .speed .u { font-size: 15px; color: var(--ink-3); margin-top: 6px; font-family: var(--mono); letter-spacing: .14em; text-transform: uppercase; }
+.lay-a .speed .rm-tags { margin-top: 18px; min-height: 0; }
 /* B — Dial */
 .lay-b .dialwrap { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; padding-top: 24px; }
 .lay-b .dial { position: relative; width: 100%; max-width: 300px; margin: 0 auto; }
@@ -679,17 +683,20 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .info:active { background: var(--raised); color: var(--ink-2); }
 .help-p { color: var(--ink-2); font-size: 15.5px; line-height: 1.55; margin: 12px 0 0; }
 /* Weather: in the Today header, full forecast in a sheet */
-.wx-h1 { margin: 0; min-width: 0; }
-.wx-head { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; white-space: nowrap; text-align: left; }
-.wx-head .wh-ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--amber) 16%, transparent); color: var(--amber); }
-.wx-head .wh-ic svg { width: 23px; height: 23px; }
-.wx-head .wh-t { font-variant-numeric: tabular-nums; }
-.wx-head .wh-t.sk { color: var(--ink-4); }
-.wx-head em { font-style: normal; font-size: .6em; letter-spacing: -.01em; font-weight: 500; align-self: center; margin-top: .25em; color: var(--ink-3); overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.wx-head > svg:last-child { width: 18px; height: 18px; color: var(--ink-4); flex: none; margin-left: -4px; }
+.wx-h1 { margin: 8px 0 0; min-width: 0; font: inherit; }
+.wx-head { display: flex; align-items: center; gap: 12px; max-width: 100%; text-align: left; color: var(--ink); }
+.wx-head .wh-ic { width: 46px; height: 46px; display: grid; place-items: center; flex: none; color: var(--amber); margin-left: -4px; }
+.wx-head .wh-ic svg { width: 44px; height: 44px; stroke-width: 1.6; }
+.wx-head .wh-t { font-family: var(--serif); font-weight: var(--dw); letter-spacing: var(--dls); font-size: calc(44px * var(--dscale, 1)); line-height: 1; font-variant-numeric: tabular-nums; }
+.wx-head .wh-tx { display: flex; flex-direction: column; min-width: 0; padding-left: 12px; border-left: var(--hair) solid var(--line); gap: 3px; }
+.wx-head .wh-c { font-size: 17px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wx-head .wh-s { font-size: 13.5px; color: var(--ink-3); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wx-head > svg:last-child { width: 18px; height: 18px; color: var(--ink-4); flex: none; margin-left: 2px; }
+.wx-head.nodata .wh-tx { border-left: 0; padding-left: 0; }
 .wx-head:active { opacity: .7; }
-.pagehead.stuck .wx-head .wh-ic { width: 30px; height: 30px; border-radius: 9px; }
-.pagehead.stuck .wx-head .wh-ic svg { width: 18px; height: 18px; }
+.pagehead.stuck .wx-head .wh-ic svg { width: 30px; height: 30px; }
+.pagehead.stuck .wx-head .wh-t { font-size: 28px; }
+.pagehead.stuck .wx-head .wh-s { display: none; }
 .wx-ic { width: 44px; height: 44px; border-radius: var(--r-xs); display: grid; place-items: center; background: var(--tint-sage); color: var(--sage-ink); flex: none; }
 .wx-ic svg { width: 22px; height: 22px; }
 .wx-big { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
@@ -711,3 +718,9 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .wx-hours .rp.hi { color: #3B6FD8; font-weight: 600; }
 .btn.busy svg { animation: wxSpin .9s linear infinite; }
 @keyframes wxSpin { to { transform: rotate(360deg); } }
+
+/* Today header: date and actions on one row, weather full width below */
+.today-head .th-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.today-head .th-row .eyebrow { margin: 0; }
+.today-head .wx-h1 { margin-top: 10px; }
+.pagehead.stuck.today-head .wx-h1 { margin-top: 4px; }
