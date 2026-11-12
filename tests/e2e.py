@@ -132,6 +132,7 @@ async def main():
         check('garage card has its own edit button', await pg.query_selector('.vcard .edit'))
         check('route icon is the default', True)
         check('no Carbon theme any more', not await pg.query_selector('[data-act="theme"][data-arg="carbon"]'))
+        await pg.evaluate("document.querySelector('details.tc-more:not([open]) summary')?.click()"); await pg.wait_for_timeout(250)
         await pg.click('[data-arg="pick-font"]'); await pg.wait_for_timeout(500)
         check('selected font is marked, no tick', await pg.query_selector('.ftile.on') and not await pg.query_selector('.ftile .selmark'))
         check('serif fonts offered', await pg.query_selector('[data-act="font"][data-arg="garamond"]') and await pg.query_selector('[data-act="font"][data-arg="fraunces"]'))
@@ -155,6 +156,7 @@ async def main():
         await shot(pg, '06-settings')
 
         # Fonts and icon live in sheets opened from the Theme section
+        await pg.evaluate("document.querySelector('details.tc-more:not([open]) summary')?.click()"); await pg.wait_for_timeout(250)
         await pg.click('[data-arg="pick-font"]'); await pg.wait_for_timeout(500)
         await pg.click('[data-act="font"][data-arg="onest"]'); await pg.wait_for_timeout(300)
         check('title font switches', await pg.evaluate("document.documentElement.dataset.font") == "onest")
@@ -303,6 +305,7 @@ async def main():
 
         # Sound switch exists and toggles cleanly
         await pg.evaluate("location.hash='settings'"); await pg.wait_for_timeout(400)
+        await pg.evaluate("document.querySelector('details.tc-more:not([open]) summary')?.click()"); await pg.wait_for_timeout(250)
         snd = await pg.query_selector('[data-act="toggle"][data-arg="sounds"]')
         check('sound effects switch is in Settings', snd)
         if snd:

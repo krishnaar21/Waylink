@@ -1,6 +1,5 @@
 // Waylink — views. Pure functions: state in, HTML out.
 import { MANEUVERS, maneuverByKey, toHex, UUID } from './protocol.js';
-import { SCENE } from './onb-scene.js';
 import { ICONS as HUGE_ICONS, SET as HUGE_SET } from './icons-huge.js';
 import * as S from './store.js';
 
@@ -753,12 +752,12 @@ export function settings(c) {
     <div class="eyebrow mt24">Accent</div>
     <div class="accents mt12">${ACCENTS.map(([k, col, l]) => `<button class="accentopt ${st.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${st.accent === k}" aria-label="${l}" title="${l}"><span class="dot" style="background-color:${col};--c:${col}"></span></button>`).join('')}</div>
   </div>
-  <div class="vc-rows">
+  <details class="tc-more"${live.lookOpen ? ' open' : ''}><summary data-act="look-toggle"><span>Sound, icons, fonts & progress</span><span class="tcm-s">${st.sounds !== false ? 'Sound on' : 'Sound off'} · ${(ICON_STYLES.find(([k]) => k === st.iconStyle) || ICON_STYLES[0])[1]}</span>${icon('chev')}</summary><div class="vc-rows">
     ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
     ${li({ ic: 'sparkles', t: 'Icons', end: `<span class="pick-val">${(ICON_STYLES.find(([k]) => k === st.iconStyle) || ICON_STYLES[0])[1]} · ${{ duo: 'Glow', fill: 'Duotone' }[st.icons] || 'Line'}</span>`, act: 'sheet', arg: 'pick-brand' })}
     ${li({ ic: 'font', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
     ${li({ ic: 'progress', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
-  </div></div></div>
+  </div></details></div></div>
   <div class="section">${sh('Data & region', '', 'backup')}<div class="list">
     ${li({ ic: 'globe', t: 'Country', d: 'Currency and SOS', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
     ${li({ ic: 'down', t: 'Backup & restore', d: 'Save, move or bring back your data', act: 'sheet', arg: 'backup' })}
@@ -825,7 +824,7 @@ const amtIcon = (a) => { const g = AMT_ICON[a][1]; return g.startsWith('<svg') ?
 // The app icon: one route mark, tinted to match the accent colour.
 export const ICON_STYLES = [['classic', 'Classic'], ['chrome', 'Chrome'], ['retro', 'Retro'], ['leather', 'Leather'], ['ascii', 'ASCII'], ['wool', 'Wool'], ['oil', 'Oil slick'], ['stitch', 'Stitch']];
 export const appIcon = (s, png = false) => {
-  const st = ICON_STYLES.some(([k]) => k === s.settings.iconStyle) ? s.settings.iconStyle : 'classic', a = s.settings.accent || 'blue';
+  const st = ICON_STYLES.some(([k]) => k === s.settings.iconStyle) ? s.settings.iconStyle : 'classic', a = s.settings.accent || 'wine';
   if (st !== 'classic') return png ? `img/logos/png/wl-icon-${st}-180.png` : `img/logos/wl-icon-${st}.svg`;
   return png ? `img/logos/png/wl-loop-${a}-180.png` : `img/logos/wl-loop-${a}.svg`;
 };
@@ -1341,6 +1340,8 @@ function fieldForm(key, eb, label, val, type, suffix, hint = '') {
 // ---------- Onboarding ----------
 // Onboarding: a short intro, then the rider and bike, then linking the bike. Every step can be skipped.
 // The intro is one story told along a single road: dawn, the ride, speed, a pit stop, night.
+// The story is one painted picture, made by tools/onb_scene.py; phones only slide it.
+const SCENE = '<div class="onb-scene onb-img" aria-hidden="true"></div>';
 const ONB_SLIDES = [
   ['Navigate', 'Turns on your display', 'Plan in Google Maps. Arrows show on the cluster.'],
   ['Stay reachable', 'Calls, without your phone', 'Caller names and missed calls, on the bike.'],
@@ -1381,6 +1382,5 @@ export function onboarding(s, step = 0, link = {}) {
     <button class="btn ink block mt24" type="submit">Continue</button>
     ${sample}
   </form>
-  <div class="dashed mt24">${icon('lock')}<span>No account, no cloud, no tracking. Your data stays here until you export it.</span></div>
-  </div>`;
+    </div>`;
 }

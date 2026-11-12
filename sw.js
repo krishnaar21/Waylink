@@ -1,6 +1,6 @@
 // Waylink — offline shell. Caches the app's own files; fonts are cached as they load.
-const CACHE = 'waylink-v103';
-const SHELL = ['./', 'index.html', 'styles.css', 'js/app.js', 'js/views.js', 'js/store.js', 'js/link.js', 'js/protocol.js', 'js/sound.js', 'js/icons-huge.js', 'js/onb-scene.js', 'img/rider.png', 'manifest.webmanifest', 'icon.svg', 'img/logos/wl-loop-rust.svg', 'img/logos/wl-turns-rust.svg', 'img/logos/png/wl-loop-rust-180.png', 'img/bikes/manifest.json', 'img/bikes/ns200-art.webp', ];
+const CACHE = 'waylink-v106';
+const SHELL = ['./', 'index.html', 'styles.css', 'js/app.js', 'js/views.js', 'js/store.js', 'js/link.js', 'js/protocol.js', 'js/sound.js', 'js/icons-huge.js', 'img/onb/scene-light.webp', 'img/onb/scene-dark.webp', 'img/onb/link-light.webp', 'img/onb/link-dark.webp', 'img/grain.png', 'img/rider.png', 'manifest.webmanifest', 'icon.svg', 'img/logos/wl-loop-rust.svg', 'img/logos/wl-turns-rust.svg', 'img/logos/png/wl-loop-rust-180.png', 'img/bikes/manifest.json', 'img/bikes/ns200-art.webp', ];
 // Cache each file on its own, so one missing file can't block an update.
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => Promise.all(SHELL.map((u) => c.add(new Request(u, { cache: 'reload' })).catch(() => {})))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });

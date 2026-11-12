@@ -86,7 +86,7 @@ export function freshState() {
   return bindVehicle({
     v: 2, onboarded: false, sample: false,
     profile: { name: '', phone: '', email: '', city: '', country: 'IN', licenceNo: '', licenceExpiry: null, blood: '', medical: '', iceName: '', icePhone: '', photo: null, since: Date.now() },
-    settings: { theme: 'amoled', accent: 'blue', font: 'system', devFrames: false, rideLayout: 0, art: 'photo', autoRide: false, autoRecord: false, wakeLock: true, streetNames: false, sounds: true, progress: 'gauge', brand: 'loop', bodyFont: 'system', simulated: false, alerts: { calls: true, waCalls: true, waMsgs: true } },
+    settings: { theme: 'amoled', accent: 'wine', font: 'system', devFrames: false, rideLayout: 0, art: 'photo', autoRide: false, autoRecord: false, wakeLock: true, streetNames: false, sounds: true, progress: 'gauge', brand: 'loop', bodyFont: 'system', simulated: false, alerts: { calls: true, waCalls: true, waMsgs: true } },
     alerts: { missed: [], wa: [], sent: 0, log: [] },
     vehicles: [v], active: v.id,
   });
@@ -118,6 +118,7 @@ export function migrate(raw) {
   // New type defaults (Crimson titles, Atkinson body), applied once to existing installs too.
   // Rides no longer start by themselves unless the rider turns it on (asked once after pairing).
   // Navy is the default look; riders still on Auto (or moved to Paper by v102) move to it once.
+  if (!s.settings.wineV1) { if (s.settings.accent === 'blue' || !s.settings.accent) s.settings.accent = 'wine'; s.settings.wineV1 = true; }
   if (!s.settings.navyV1) { if (s.settings.theme === 'auto' || (s.settings.paperV1 && s.settings.theme === 'sketch')) s.settings.theme = 'amoled'; s.settings.navyV1 = true; }
   if (!s.settings.autoV2) { s.settings.autoRide = false; s.settings.autoRecord = false; s.settings.autoV2 = true; }
   if (!s.settings.typeV5) { s.settings.font = 'system'; s.settings.bodyFont = 'system'; s.settings.typeV5 = true; }

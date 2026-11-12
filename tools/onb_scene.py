@@ -72,7 +72,7 @@ bg.append(f'<g class="sc-town">{town}</g>')
 trees = ''
 for k in range(46):
     tx = R.randint(0, W); base = 268 + math.sin(tx / 77 + 6) * 8 + R.uniform(-4, 4); h = R.randint(18, 34)
-    if P(3, 60) < tx < P(3, 330): continue
+    if P(2, 0) < tx < P(4, 0): continue
     trees += f'<path d="M{tx} {base - h:.0f}L{tx + h*.32:.0f} {base:.0f}H{tx - h*.32:.0f}Z"/>'
 bg.append(f'<g class="sc-trees">{trees}</g>')
 poles = ''; wire = []
@@ -81,7 +81,7 @@ for k in range(0, W, 130):
     poles += f'<rect x="{k - 1.5}" y="{y0 - 74:.0f}" width="3" height="74"/><rect x="{k - 9}" y="{y0 - 70:.0f}" width="18" height="2.5"/>'
     wire.append((k, y0 - 69))
 wd = 'M' + ' '.join(f'{x} {y:.0f}' if i == 0 else f'Q{(wire[i-1][0] + x) / 2:.0f} {max(wire[i-1][1], y) + 12:.0f} {x} {y:.0f}' for i, (x, y) in enumerate(wire))
-bg.append(f'<g class="sc-poles">{poles}<path d="{wd}" class="sc-wire"/></g>')
+bg.append('<g class="sc-poles"></g>')
 birds = ''.join(f'<path d="M{bx} {by}q5 -5 10 0q5 -5 10 0" class="sc-bird"/>' for bx, by in [(P(0, 150), 70), (P(0, 175), 84), (P(1, 60), 60), (P(2, 320), 74), (P(3, 40), 66), (P(3, 64), 76)])
 bg.append(birds)
 BG = ''.join(bg)

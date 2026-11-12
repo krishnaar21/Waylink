@@ -2127,3 +2127,28 @@ html[data-theme="sketch"] body::after { mix-blend-mode: normal !important; opaci
 .sc-poles rect { fill: color-mix(in srgb, var(--ink) 34%, var(--bg)); }
 .sc-wire { fill: none; stroke: color-mix(in srgb, var(--ink) 30%, var(--bg)); stroke-width: 1.2; }
 .sc-bird { fill: none; stroke: color-mix(in srgb, var(--ink) 40%, var(--bg)); stroke-width: 1.6; stroke-linecap: round; }
+.avatar.pix img, .av-opt img { image-rendering: auto !important; }
+/* Look & sound: the extra rows fold into the card */
+.tc-more { border-top: 1px solid var(--line); }
+.tc-more summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 14px 18px; cursor: pointer; font-size: 15px; font-weight: 600; }
+.tc-more summary::-webkit-details-marker { display: none; }
+.tc-more .tcm-s { margin-left: auto; font-size: 13px; font-weight: 500; color: var(--ink-3); }
+.tc-more summary > svg { width: 16px; height: 16px; color: var(--ink-3); transform: rotate(90deg); transition: transform .2s; }
+.tc-more[open] summary > svg { transform: rotate(-90deg); }
+/* ---------- Performance: a painted still instead of live SVG filters ---------- */
+.onb-stage .onb-img { position: absolute; left: 0; bottom: 0; width: 500%; height: 372px; background: url(img/onb/scene-light.webp) left bottom / 100% 100% no-repeat; will-change: transform; transform: translate3d(calc(var(--p) * -20%), 0, 0) !important; }
+html[data-theme="obsidian"] .onb-img, html[data-theme="amoled"] .onb-img { background-image: url(img/onb/scene-dark.webp); }
+.onb-link .onb-stage .onb-img { height: 250px; }
+.onb-stage.still .onb-img { transform: translate3d(-80%, 0, 0) !important; }
+.link-badge::after, .link-badge::before { filter: none !important; }
+.link-badge::after { background-image: url(img/grain.png) !important; background-color: #3B6FE0; background-size: 80px; }
+html:not([data-accent="rust"]):not([data-accent="wine"]):not([data-accent="amber"]) .link-badge::after { background-color: var(--accent); }
+/* Paper theme, fast: a static grain tile, no blend modes, no live blur */
+html[data-theme="sketch"] body::after { background: url(img/grain.png) 0 0 / 160px 160px !important; opacity: 1 !important; mix-blend-mode: normal !important; }
+html[data-theme="sketch"] .tabbar, html[data-theme="sketch"] .pagehead, html[data-theme="sketch"] .sheet, html[data-theme="sketch"] .onb-top { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html[data-theme="sketch"] .tabbar { background: color-mix(in srgb, var(--bg) 96%, transparent) !important; }
+html[data-theme="sketch"] .tabbar::after { display: none !important; }
+/* Registration: headline a little lower */
+.onb-reg .onb-top + .eyebrow { margin-top: 28px; }
+.onb-link .onb-stage .onb-img { width: 100%; background-image: url(img/onb/link-light.webp); transform: none !important; }
+html[data-theme="obsidian"] .onb-link .onb-img, html[data-theme="amoled"] .onb-link .onb-img { background-image: url(img/onb/link-dark.webp); }

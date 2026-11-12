@@ -46,7 +46,7 @@
   <script>/* Paint the saved theme before anything loads, so there's no white flash. */
   try { var t = (JSON.parse(localStorage.getItem('pulsarnav-web-v2') || '{}').settings || {}).theme || 'amoled';
     if (t === 'auto') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'obsidian' : 'paper';
-    document.documentElement.dataset.theme = t; var b = (JSON.parse(localStorage.getItem('pulsarnav-web-v2') || '{}').settings || {}).brand; document.documentElement.dataset.brand = 'loop'; document.documentElement.dataset.accent = ((JSON.parse(localStorage.getItem('pulsarnav-web-v2') || '{}').settings || {}).accent) || 'blue';
+    document.documentElement.dataset.theme = t; var b = (JSON.parse(localStorage.getItem('pulsarnav-web-v2') || '{}').settings || {}).brand; document.documentElement.dataset.brand = 'loop'; document.documentElement.dataset.accent = ((JSON.parse(localStorage.getItem('pulsarnav-web-v2') || '{}').settings || {}).accent) || 'wine';
     /* The logo plays once per launch: reloads and updates in the same session skip it. */
     if (sessionStorage.getItem('wl-splashed')) document.documentElement.classList.add('no-splash'); else sessionStorage.setItem('wl-splashed', '1'); } catch (e) {}</script>
   <link rel="stylesheet" href="styles.css">

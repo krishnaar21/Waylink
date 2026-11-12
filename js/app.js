@@ -895,6 +895,7 @@ const A = {
   'clear-missed': () => { s.alerts.missed = []; link.setMissedCount(0); closeSheet(); commit(); toast('Missed calls cleared.'); },
   'clear-wa': () => { s.alerts.wa = []; closeSheet(); commit(); toast('WhatsApp alerts cleared.'); },
   'alerts-tab': (k) => { if (live.alertsTab === k) return; live.alertsTab = k === 'recent' ? 'recent' : 'needs'; if (!A._swiped) SND.click(true); render(); },
+  'look-toggle': () => { live.lookOpen = !live.lookOpen; SND.click(live.lookOpen); render(); },
   'pc-toggle': () => { live.pcOpen = !live.pcOpen; SND.click(live.pcOpen); render(); },
   'show-loading': () => showLoading('Loading your garage', 3200),
   'report-send': async (k) => {
