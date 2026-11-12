@@ -551,7 +551,7 @@ const dayLab = (t) => new Date(t).toLocaleDateString('en-IN', { weekday: 'short'
 // Fixed km bands, so one ride is shaded by its own distance rather than looking like a "best day".
 const band = (km) => (!km ? 0 : km < 15 ? 1 : km < 40 ? 2 : km < 80 ? 3 : 4);
 const navBtn = (dir) => `<button class="rc-arr" type="button" aria-label="${dir < 0 ? 'Previous' : 'Next'} chart" onclick="const r=this.parentNode.previousElementSibling;r.scrollBy({left:${dir}*r.clientWidth,behavior:'smooth'})"><svg viewBox="0 0 24 24"><path d="${dir < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'}"/></svg></button>`;
-export const RC_NAMES = ['Calendar', 'Km per week', 'By weekday', 'Each ride'];
+export const RC_NAMES = ['Calendar', 'Km per week', 'Km by weekday', 'Each ride'];
 export function rideCharts(trips) {
   const today = dayKey(Date.now()), start = addDays(today, -(new Date(today).getDay() + 7 * 11));
   const kmBy = {}, nBy = {};
@@ -579,10 +579,7 @@ export function rideCharts(trips) {
   for (const t of trips || []) { const g = new Date(t.start || t.ts || 0).getDay(); wd[g] += t.km || 0; wn[g]++; }
   const wdMax = Math.max(1, ...wd), fav = wd.indexOf(Math.max(...wd)), WDN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const spoke = (i, r0, r1) => { const a = (i / 7) * Math.PI * 2 - Math.PI / 2; return [Math.cos(a) * r0, Math.sin(a) * r0, Math.cos(a) * r1, Math.sin(a) * r1].map((v) => (110 + v).toFixed(1)); };
-  const radial = `<div class="rc-rad"><svg viewBox="0 0 220 220">${wd.map((km, i) => { const [x0, y0, x1, y1] = spoke(i, 46, 90), [a0, b0, a1, b1] = spoke(i, 46, 46 + Math.max(km ? 6 : 0, (km / wdMax) * 44)), [lx, ly] = spoke(i, 106, 106);
-    return `<line class="tr" x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}"/>${km ? `<line class="v${i === fav ? ' top' : ''}" x1="${a0}" y1="${b0}" x2="${a1}" y2="${b1}"><title>${WDN[i]} · ${num(km, 1)} km, ${plural(wn[i], 'ride', 'rides')}</title></line>` : ''}<text x="${lx}" y="${ly}">${WDN[i][0]}</text>`; }).join('')}
-    <text class="c1" x="110" y="104">${trips?.length ? WDN[fav] : '–'}</text><text class="c2" x="110" y="122">${trips?.length ? 'your day' : 'no rides'}</text></svg>
-    <div class="rc-radk">${trips?.length ? `<b>${num(wd[fav], wd[fav] < 100 ? 1 : 0)} km</b> on ${['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'][fav]}<br>${plural(wn[fav], 'ride', 'rides')}` : ''}</div></div>`;
+  const radial = `<div class="rc-wk">${[1, 2, 3, 4, 5, 6, 0].map((i) => `<div class="rc-wr${i === fav && wd[i] ? ' top' : ''}" title="${WDN[i]} · ${num(wd[i], 1)} km, ${plural(wn[i], 'ride', 'rides')}"><span>${WDN[i]}</span><div><i style="width:${wd[i] ? Math.max(4, (wd[i] / wdMax) * 100) : 0}%"></i></div><b>${wd[i] ? num(wd[i], wd[i] < 100 ? 1 : 0) : '–'}</b></div>`).join('')}</div>`;
   // 4. Each ride: one bubble per ride along the 12 weeks, sized by distance.
   const span = today + 86400000 - start, rr = (trips || []).filter((t) => (t.start || t.ts || 0) >= start);
   const kMax = Math.max(1, ...rr.map((t) => t.km || 0));
@@ -697,7 +694,7 @@ export function alerts(c) {
   const { s, link, live } = c;
   const a = s.settings.alerts;
   const m = s.alerts.missed, w = s.alerts.wa;
-  const card = (ic, lab, n, sub, act, open) => /* calls & chats */ `<div class="card pad"><div class="eyebrow flex gap8">${icon(ic).replace('<svg', '<svg style="width:14px;height:14px"')}${lab}</div><div class="big mt12" style="font-size:56px">${short(n)}</div><div class="small muted mt8 clamp1">${sub}</div><div class="push"></div><div class="ac-btns mt16">${open}<button class="btn line sm" data-act="sheet" data-arg="clear:${act}" ${n ? '' : 'disabled'}>Clear</button></div></div>`;
+  const card = (ic, lab, n, sub, act, open) => /* calls & chats */ `<div class="card pad"><div class="eyebrow flex gap8">${icon(ic).replace('<svg', '<svg style="width:14px;height:14px"')}${lab}</div><div class="big mt12" style="font-size:56px">${short(n)}</div><div class="small muted mt8 clamp1">${sub}</div><div class="push"></div><div class="ac-btns mt16">${open}<button class="ac-clear" data-act="sheet" data-arg="clear:${act}" ${n ? '' : 'disabled'}>Clear</button></div></div>`;
   const needs = inbox(c).filter((x) => x.ic !== 'missed' && x.ic !== 'chat');
   return `<div class="stagger">
   <div class="head pagehead"><div><h1 class="title">Alerts</h1><div class="subtitle">${needs.length ? `${plural(needs.length, 'thing needs', 'things need')} you` : 'Nothing needs you right now'}</div></div>${alertsTabs(c, needs)}</div>
@@ -709,7 +706,7 @@ export function alerts(c) {
     let lastDay = '';
     const recentHTML = s.alerts.log.length ? s.alerts.log.slice(0, 30).map((x) => { const [ic, what, sub] = NT[x.kind] || NT.call, dd = day(x.ts), head = dd !== lastDay ? `<div class="nf-day">${dd}</div>` : ''; lastDay = dd;
       return `${head}<div class="nf"><span class="nf-ic">${icon(ic)}</span><div class="nf-tx"><div class="nf-t"><b>${esc(x.kind === 'button' ? 'Handlebar' : shortName(x.name))}</b><span class="nf-time">${new Date(x.ts).toLocaleTimeString(DL(), { hour: "numeric", minute: "2-digit" })}</span></div><div class="nf-d">${what} · ${sub}</div></div></div>`; }).join('') : '<div class="card empty">No notifications yet.</div>';
-    const callsHTML = `<div class="two">${card('missed', 'Missed calls', m.length, m.length ? 'On your bike' : 'None waiting', 'clear-missed', IS_IOS ? '' : `<a class="btn line sm" href="tel:" aria-label="Open the Phone app">${icon('phone')}Phone</a>`)}${card('chat', 'WhatsApp', w.length, w.length ? 'On your bike' : 'None waiting', 'clear-wa', `<a class="btn line sm" href="whatsapp://" aria-label="Open WhatsApp">${icon('chat')}Chats</a>`)}</div>`;
+    const callsHTML = `<div class="two">${card('missed', 'Missed calls', m.length, m.length ? 'On your bike' : 'None waiting', 'clear-missed', IS_IOS ? '' : `<a class="btn line sm" href="tel:" aria-label="Open the Phone app">${icon('phone')}</a>`)}${card('chat', 'WhatsApp', w.length, w.length ? 'On your bike' : 'None waiting', 'clear-wa', `<a class="btn line sm" href="whatsapp://" aria-label="Open WhatsApp">${icon('chat')}</a>`)}</div>`;
     const body = tab === 'needs' ? needsHTML : `${callsHTML}<div class="nf-list mt20">${recentHTML}</div>`;
     return `<div class="section" style="margin-top:14px"><div class="lt-body" data-swipe-tabs="alerts-tab" data-tabs="needs,recent" data-cur="${tab}">${body}</div></div>`; })()}
   ${live.alertsTab !== 'recent' ? '' : `

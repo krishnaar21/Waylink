@@ -2337,3 +2337,17 @@ html[data-theme="sketch"][data-night][data-accent="rust"] { --accent: #E46A48; }
 .rc-bub .ax { stroke: var(--line); stroke-width: 1.5; } .rc-bub .tk { stroke: var(--line); stroke-dasharray: 2 4; }
 .rc-bub circle { fill: color-mix(in srgb, var(--accent) 55%, transparent); stroke: var(--card); stroke-width: 1.5; }
 html[data-night] .onb-img { background-image: url(img/onb/scene-dark.webp); }
+/* Calls & chats: an app icon on the left, a quiet Clear on the right */
+.ac-btns { display: flex !important; justify-content: space-between; align-items: center; }
+.ac-btns > a.btn { flex: none !important; width: 40px; height: 40px !important; padding: 0 !important; border-radius: 50%; }
+.ac-btns > a.btn svg { width: 18px; height: 18px; }
+.ac-clear { flex: none !important; background: none; border: 0; padding: 8px 4px !important; height: auto !important; font: inherit; font-size: 15px !important; font-weight: 600; color: var(--accent); cursor: pointer; }
+.ac-clear:disabled { color: var(--ink-4); cursor: default; }
+.ac-btns:has(> .ac-clear:only-child) { justify-content: flex-end; }
+/* Km by weekday: one row per day, Monday first */
+.rc-wk { display: grid; gap: 7px; }
+.rc-wr { display: grid; grid-template-columns: 34px 1fr 44px; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-3); }
+.rc-wr div { height: 12px; border-radius: 6px; background: var(--seg-off); overflow: hidden; }
+.rc-wr i { display: block; height: 100%; border-radius: 6px; background: color-mix(in srgb, var(--accent) 50%, var(--seg-off)); }
+.rc-wr.top i { background: var(--accent); } .rc-wr.top span, .rc-wr.top b { color: var(--ink); }
+.rc-wr b { font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
