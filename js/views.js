@@ -759,19 +759,19 @@ export function settings(c) {
     ${li({ ic: 'progress', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
   </div></div></div>
   <div class="section">${sh('Data & region', '', 'backup')}<div class="list">
-    ${li({ ic: 'globe', t: 'Country', d: 'Currency, fuel and SOS numbers', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
+    ${li({ ic: 'globe', t: 'Country', d: 'Currency and SOS', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
     ${li({ ic: 'down', t: 'Backup & restore', d: 'Save, move or bring back your data', act: 'sheet', arg: 'backup' })}
     ${li({ ic: 'trash', t: s.sample ? 'Erase sample data' : 'Erase everything', cls: 'danger', act: 'sheet', arg: 'erase' })}
-    ${li({ ic: 'refresh', t: 'Reset the app', d: 'Data, settings and saved files. Like a fresh install', cls: 'danger', act: 'sheet', arg: 'reset' })}
+    ${li({ ic: 'refresh', t: 'Reset the app', d: 'Like a fresh install', cls: 'danger', act: 'sheet', arg: 'reset' })}
   </div><input type="file" id="import-file" accept=".json,.pnav,application/json" hidden></div>
   <div class="section">${sh('Help & about')}<div class="list">
     ${li({ ic: 'info', t: 'Questions and answers', d: 'Pairing, fuel, weather, privacy', act: 'sheet', arg: 'faq' })}
     ${li({ ic: 'flag', t: 'Report a problem', d: 'Copy your app details and tell us', act: 'sheet', arg: 'report' })}
     ${li({ ic: 'heart', t: 'About Waylink', d: `Version ${APP_VERSION}, credits and licences`, act: 'sheet', arg: 'about' })}
-    ${li({ ic: 'refresh', t: 'Refresh the app', d: 'Gets the latest version. Your data stays.', act: 'hard-refresh' })}
+    ${li({ ic: 'refresh', t: 'Refresh the app', d: 'Latest version, data kept', act: 'hard-refresh' })}
   </div></div>
   <div class="section">${sh('Developer', '', 'developer')}<div class="list">
-    ${li({ ic: 'flag', t: 'Show onboarding', d: 'Walk through first launch again. Your data stays', act: 'onb-test' })}
+    ${li({ ic: 'flag', t: 'Show onboarding', d: 'Preview first launch', act: 'onb-test' })}
     ${li({ ic: 'sparkles', t: 'Show the splash screen', d: 'The logo animation. Tap to close.', act: 'show-loader' })}
     ${li({ ic: 'refresh', t: 'Show the loading screen', d: 'Turn signs while something loads', act: 'show-loading' })}
     ${li({ ic: 'bolt', t: 'Simulated bike', d: 'Try it all without a bike', end: sw(link.simulated && link.state !== 'idle', 'sim-toggle'), chev: false, tag: 'div' })}
@@ -822,9 +822,9 @@ const UPI_AMOUNTS = [49, 99, 199, 499];
 const AMT_ICON = { 49: ['Chai', 'tea', 'A cutting chai for the developer'], 99: ['Coffee', 'coffee', 'A coffee for a late-night fix'], 199: ['Fuel', 'fuel', 'Two litres of petrol for test rides'], 499: ['Service', 'wrench', 'Towards a month of upkeep'], 0: ['Any', 'love', 'You choose the amount in your UPI app'] };
 const amtIcon = (a) => { const g = AMT_ICON[a][1]; return g.startsWith('<svg') ? g : icon(g); };
 // The app icon: one route mark, tinted to match the accent colour.
-export const ICON_STYLES = [['classic', 'Classic'], ['chrome', 'Chrome'], ['retro', 'Retro'], ['future', 'Future'], ['leather', 'Leather'], ['material', 'Material'], ['asphalt', 'Asphalt'], ['oil', 'Oil slick'], ['gauge', 'Gauge']];
+export const ICON_STYLES = [['classic', 'Classic'], ['chrome', 'Chrome'], ['retro', 'Retro'], ['future', 'Future'], ['leather', 'Leather'], ['material', 'Material'], ['asphalt', 'Asphalt'], ['oil', 'Oil slick'], ['gauge', 'Gauge'], ['stitch', 'Stitch']];
 export const appIcon = (s, png = false) => {
-  const st = ICON_STYLES.some(([k]) => k === s.settings.iconStyle) ? s.settings.iconStyle : 'classic', a = s.settings.accent || 'rust';
+  const st = ICON_STYLES.some(([k]) => k === s.settings.iconStyle) ? s.settings.iconStyle : 'classic', a = s.settings.accent || 'blue';
   if (st !== 'classic') return png ? `img/logos/png/wl-icon-${st}-180.png` : `img/logos/wl-icon-${st}.svg`;
   return png ? `img/logos/png/wl-loop-${a}-180.png` : `img/logos/wl-loop-${a}.svg`;
 };
