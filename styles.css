@@ -2211,3 +2211,10 @@ html[data-theme="obsidian"] .onb-link .onb-img, html[data-theme="amoled"] .onb-l
 .lk-bt { left: 104% !important; top: 4% !important; bottom: auto !important; width: 46px !important; height: 46px !important; margin: 0 0 0 -23px !important; animation: badgeIn .5s cubic-bezier(.3,1.4,.5,1) 1.5s both, lbPulse 2.4s ease-in-out 2s infinite !important; }
 .lk-bt svg { width: 22px !important; height: 22px !important; }
 @media (prefers-reduced-motion: reduce) { .lk-img, .lk-lamp, .lk-glint::after, .lk-wave path, .lk-bt { animation: none !important; opacity: 1; } .lk-lamp { opacity: .6; } }
+/* Sunglasses flare: fires when the headlight comes on, in the same rhythm */
+.lk-glint { display: none; }
+.lk-flare { position: absolute; left: 43.5%; top: 7.4%; width: 34px; height: 34px; margin: -17px 0 0 -17px; pointer-events: none; opacity: 0; mix-blend-mode: screen; animation: lkFlare 2.6s ease-in-out 2.2s infinite; }
+.lk-flare::before { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: radial-gradient(closest-side, #fff, rgba(190,225,255,.6) 45%, transparent); }
+.lk-flare::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0 40%, rgba(255,255,255,.9) 50%, transparent 60% 100%) center / 100% 2px no-repeat, linear-gradient(0deg, transparent 0 40%, rgba(255,255,255,.75) 50%, transparent 60% 100%) center / 2px 70% no-repeat; }
+@keyframes lkFlare { 0%, 10% { opacity: 0; transform: scale(.4) rotate(0); } 22% { opacity: 1; transform: scale(1) rotate(20deg); } 40% { opacity: .2; transform: scale(.7) rotate(35deg); } 100% { opacity: 0; transform: scale(.5) rotate(45deg); } }
+@media (prefers-reduced-motion: reduce) { .lk-flare { animation: none; opacity: 0; } }
