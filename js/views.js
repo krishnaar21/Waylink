@@ -65,7 +65,7 @@ export const icon = (n, cls = '') => { const b = HUGE_ICONS[n] || ''; return `<s
 // ---------- Vehicle pictures ----------
 const lum = (h) => { const n = [1, 3, 5].map((i) => parseInt(String(h || '#888888').slice(i, i + 2), 16)); return (n[0] * 299 + n[1] * 587 + n[2] * 114) / 255000; };
 // Bump when bike pictures change, so phones fetch the new ones instead of a saved copy.
-export const ART_V = '73';
+export const ART_V = '74';
 export function vehicleArt(s, v, size = 'thumb') {
   const cls = size === 'hero' ? 'art hero-art' : size === 'model' ? 'art model-art' : size === 'card' ? 'art card-art' : size === 'lg' ? 'art thumb lg' : 'art thumb';
   // Bikes without a photo: a soft tile tinted with the bike's colour, so it sits with the theme instead of shouting.
@@ -801,7 +801,7 @@ const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnLeft', '#3E8EF7'], ['straigh
 export const TURNS = `<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true">${TURN_SIGNS.map(([k, col, f], i) => `<svg class="tg tg${i} ${f || ''}" viewBox="0 0 24 24" fill="none" style="color:${col}">${HUGE_ICONS[k]}</svg>`).join('')}</span><span aria-hidden="true">link</span></span>`;
 // In-app loading screen: the turn signs take turns in a circle, with a line of text below.
 export const loader = (text = 'Loading') => `<div class="wl-loader" role="status" aria-live="polite"><span class="ld-ring">${TURN_SIGNS.map(([k], i) => `<svg class="ld-i ld${i}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${HUGE_ICONS[k]}</svg>`).join('')}</span><div class="ld-t">${esc(text)}<span class="ld-dots"><i>.</i><i>.</i><i>.</i></span></div></div>`;
-export const LOOP = '<span class="wl-loop wl-arch" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8 22L8 32C8 62 14 80 28 80C41 80 48 64 50 40C52 64 59 80 72 80C86 80 92 62 92 32L92 26C92 -44 158 -44 158 24"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
+export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8.5 26L8.5 30C10 56 16 80 28 80C40 80 45 58 50 42C55 58 60 80 72 80C84 80 90 56 91.5 30L91.5 26"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
 export const BRANDS = [['loop', 'Loop']];
 export const brandOf = () => 'loop';
 export const APP_VERSION = '1.0';

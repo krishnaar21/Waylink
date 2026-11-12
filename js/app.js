@@ -266,6 +266,8 @@ function renderPill() {
   $('#app').classList.toggle('has-pill', !!show);
   // The pill lives in the page header, on the right of the title block.
   const head = $('.view .pagehead');
+  const sub = !!(head && $('.topbar', head));
+  if (sub) { $('.ph-pill', head)?.remove(); $('#pill').innerHTML = ''; $('#app').classList.remove('has-pill'); return; }
   let slot = head && $('.ph-pill', head);
   if (head && !slot) {
     slot = Object.assign(document.createElement('div'), { className: 'ph-pill' });
@@ -1141,6 +1143,8 @@ function hideSplash() {
   setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 380); }, Math.max(300, (document.documentElement.dataset.brand === 'turns' ? 2250 : 2050) - performance.now()));
 }
 (async function boot() {
+  // New bike pictures: clear saved copies once, so every phone shows them.
+  try { if (localStorage.getItem('waylink-art') !== V.ART_V) { localStorage.setItem('waylink-art', V.ART_V); if (localStorage.getItem('pulsarnav-web-v2')) { A['hard-refresh'](); return; } } } catch {}
   fitArch(); document.fonts?.ready.then(() => fitArch());
   splashTpl = $('#splash')?.outerHTML || '';
   try {
