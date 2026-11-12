@@ -7,10 +7,12 @@ a = np.asarray(src).astype(np.float32) / 255; rgb, al = a[..., :3], a[..., 3:]
 hsv = np.asarray(Image.fromarray((rgb * 255).astype(np.uint8)).convert('HSV')).astype(np.float32) / 255
 h, s, v = hsv[..., 0] * 360, hsv[..., 1], hsv[..., 2]
 WINE = np.array([0xA8, 0x16, 0x2A], np.float32) / 255
-# 1. yellow → wine, keeping light and dark through value
-yel = np.clip((1 - np.abs(h - 52) / 32) * 2, 0, 1) * np.clip((s - .15) / .12, 0, 1)
-wine_y = np.clip(WINE * (.5 + .75 * v)[..., None], 0, 1)
-out = rgb * (1 - yel[..., None]) + wine_y * yel[..., None]
+# 1. yellow → wine. Each pixel is grey (its blue channel) plus some yellow (min(R,G) − B);
+#    swapping only the yellow part for wine keeps the helmet's gradient into white and black intact.
+grey = rgb[..., 2:3]
+yel = np.clip(np.minimum(rgb[..., 0], rgb[..., 1]) - rgb[..., 2], 0, 1)
+yel = np.clip(np.where(yel < .06, 0, yel) * 1.6, 0, 1)[..., None]  # leave near-neutral blacks and whites alone
+out = np.clip(grey * (1 - yel) + yel * (grey * .15 + WINE * .95), 0, 1)
 # 2. whole white panels on the tank, side cover and tail cowl → wine (picked by shape, so each fills edge to edge)
 from scipy import ndimage
 white = (v > .62) & (s < .25) & (al[..., 0] > .5)
