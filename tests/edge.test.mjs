@@ -67,7 +67,7 @@ test('Migration and restore reject junk safely', () => {
     const s = S.migrate(raw);
     assert.ok(s.vehicles.length >= 1); assert.ok(Number.isFinite(s.odo));
     assert.notEqual(s.settings.theme, 'carbon');
-    assert.ok(['wl-turn', 'wl-loop', 'wl-split', 'wl-swift', 'wl-visor'].includes(s.settings.logo));
+    assert.ok(['wl-turn', 'wl-link', 'wl-sign', 'wl-swift', 'wl-beacon'].includes(s.settings.logo));
   }
   for (const bad of ['', 'not json', '{"format":"kickstart-vault","data":null}', '[]']) assert.throws(() => S.importVault(bad));
 });
@@ -103,7 +103,7 @@ test('Edge preview: odometer never rounds up, badges cap at 99+, header has no n
   assert.ok(h.includes('1,99,999'), 'odometer floors');
   assert.ok(!h.includes('2,00,000'));
   assert.ok(V.tabbar({ s, live: liveOf() }, 'today').includes('99+'));
-  const head = h.slice(h.indexOf('pagehead'), h.indexOf('</h1>')); assert.ok(!head.includes('Venkatarag') && head.includes('wx-head'), 'header shows weather, not a name');
+  const head = h.slice(h.indexOf('pagehead'), h.indexOf('</h1>')); assert.ok(!head.includes('Venkatarag'), 'header has no name'); assert.ok(h.includes('bc-wx'), 'bike card carries weather');
 });
 
 test('Short numbers never round up and stay readable', () => {
@@ -153,5 +153,30 @@ test('Weather: codes map, hints are actionable, bad payloads throw', () => {
   assert.equal(S.rideHint(null), '');
   assert.throws(() => S.parseWeather({}, 'X'));
   for (const st of [{ state: 'need' }, { state: 'loading' }, { state: 'err', msg: 'x' }, { state: 'ok', data: S.parseWeather(mk(() => 5), 'Kochi') }, undefined])
-    { const cx = { s: S.migrate(null), live: liveOf({ weather: st }) }; assert.ok(V.weatherHead(cx).includes('wx-head')); assert.ok(V.weatherSheet(cx).includes('<h2>') || V.weatherSheet(cx).includes('Weather')); }
+    { const cx = { s: S.migrate(null), live: liveOf({ weather: st }) }; assert.ok(V.weatherHead(cx).includes('wh-ic')); assert.ok(V.weatherSheet(cx).includes('<h2>') || V.weatherSheet(cx).includes('Weather')); }
+});
+
+test('Icon libraries cover every icon the app uses', async () => {
+  const lucide = Object.keys((await import('../js/icons.js')).ICONS);
+  for (const lib of ['tabler', 'phosphor', 'iconoir']) {
+    const m = await import(`../js/icons-${lib}.js`);
+    const missing = lucide.filter((k) => !m.ICONS[k]);
+    assert.deepEqual(missing, [], lib);
+    V.addIconSet(lib, m); V.useIconSet(lib);
+    assert.ok(V.icon('bike').includes(m.SET.vb));
+  }
+  V.useIconSet('lucide');
+});
+
+test('Help sheets render and the FAQ has answers', () => {
+  const s = S.seedSample(S.migrate(null));
+  for (const k of ['faq', 'report', 'about']) assert.ok(V.sheetHTML({ s, link: fakeLink, live: liveOf() }, k).includes('<h2>'), k);
+  assert.ok(V.FAQ.length >= 6 && V.FAQ.every(([q, a]) => q.endsWith('?') || a.length > 20));
+});
+
+test('iPhone pairing guide renders with all four steps', () => {
+  const s = S.seedSample(S.migrate(null));
+  const h = V.sheetHTML({ s, link: fakeLink, live: liveOf() }, 'ios-pair');
+  assert.equal((h.match(/class="pstep"/g) || []).length, 4);
+  assert.ok(h.includes('apps.apple.com') && h.includes('bluefy://'));
 });

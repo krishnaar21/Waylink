@@ -1,6 +1,6 @@
 // Waylink — offline shell. Caches the app's own files; fonts are cached as they load.
-const CACHE = 'waylink-v11';
-const SHELL = ['./', 'index.html', 'styles.css', 'js/app.js', 'js/views.js', 'js/store.js', 'js/link.js', 'js/protocol.js', 'js/icons.js', 'js/sound.js', 'manifest.webmanifest', 'icon.svg', 'img/logos/wl-turn.svg', 'img/logos/wl-loop.svg', 'img/logos/wl-split.svg', 'img/logos/wl-swift.svg', 'img/logos/wl-visor.svg', 'img/logos/png/wl-turn-180.png', 'img/bikes/manifest.json', 'img/bikes/ns200-art.webp', ];
+const CACHE = 'waylink-v12';
+const SHELL = ['./', 'index.html', 'styles.css', 'js/app.js', 'js/views.js', 'js/store.js', 'js/link.js', 'js/protocol.js', 'js/icons.js', 'js/sound.js', 'js/icons-tabler.js', 'js/icons-phosphor.js', 'js/icons-iconoir.js', 'manifest.webmanifest', 'icon.svg', 'img/logos/wl-turn.svg', 'img/logos/wl-link.svg', 'img/logos/wl-sign.svg', 'img/logos/wl-swift.svg', 'img/logos/wl-beacon.svg', 'img/logos/png/wl-turn-180.png', 'img/bikes/manifest.json', 'img/bikes/ns200-art.webp', ];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', (e) => {

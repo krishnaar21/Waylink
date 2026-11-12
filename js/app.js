@@ -32,11 +32,20 @@ const FONT_CSS = {
   geist: 'Geist:wght@400;500;600',
   garamond: 'EB+Garamond:wght@400;500;600',
   crimson: 'Crimson+Pro:wght@400;500;600',
-  goudy: 'Sorts+Mill+Goudy',
-  alegreya: 'Alegreya:wght@400;500;600',
+  newsreader: 'Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600',
+  instrument: 'Instrument+Serif',
 };
 const fontHref = (keys) => 'https://fonts.googleapis.com/css2?' + keys.map((k) => 'family=' + FONT_CSS[k]).join('&') + '&display=swap';
+const BODY_CSS = { inter: 'Inter:wght@400;500;600', plex: 'IBM+Plex+Sans:wght@400;500;600', work: 'Work+Sans:wght@400;500;600' };
+function applyBody() {
+  const k = BODY_CSS[s.settings.bodyFont] ? s.settings.bodyFont : 'system';
+  document.documentElement.dataset.body = k;
+  if (k === 'system') return;
+  let el = $('#font-body'); if (!el) { el = Object.assign(document.createElement('link'), { rel: 'stylesheet', id: 'font-body' }); document.head.appendChild(el); }
+  const href = `https://fonts.googleapis.com/css2?family=${BODY_CSS[k]}&display=swap`; if (el.getAttribute('href') !== href) el.setAttribute('href', href);
+}
 function applyFont() {
+  applyBody();
   if (!FONT_CSS[s.settings.font]) s.settings.font = 'geist';
   const k = s.settings.font;
   document.documentElement.dataset.font = k;
@@ -47,6 +56,7 @@ let allFontsLoaded = false;
 function loadAllFonts() {
   if (allFontsLoaded) return; allFontsLoaded = true;
   document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: fontHref(Object.keys(FONT_CSS)) }));
+  document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?' + Object.values(BODY_CSS).map((f) => 'family=' + f).join('&') + '&display=swap' }));
 }
 function applyLogo() {
   if (!V.LOGOS.some(([k]) => k === s.settings.logo)) s.settings.logo = 'wl-turn';
@@ -57,8 +67,16 @@ function applyLogo() {
   const icons = { 'link[rel=icon]': href, 'link[rel=apple-touch-icon]': `img/logos/png/${s.settings.logo}-180.png` };
   for (const [sel, h] of Object.entries(icons)) { const l = $(sel); if (l && l.getAttribute('href') !== h) l.setAttribute('href', h); }
 }
+let iconLib = 'lucide', libsReady = false;
+function applyIcons() {
+  const want = V.ICON_LIBS.some(([k]) => k === s.settings.icons) ? s.settings.icons : 'lucide';
+  if (want === iconLib) return;
+  if (V.iconSetLoaded(want)) { iconLib = want; V.useIconSet(want); return; }
+  loadIconSet(want).then(() => { if ((s.settings.icons || 'lucide') === want) { iconLib = want; V.useIconSet(want); render(); } });
+}
+const loadIconSet = (k) => (V.iconSetLoaded(k) ? Promise.resolve() : import(`./icons-${k}.js`).then((m) => V.addIconSet(k, m)).catch(() => {}));
 function applyTheme() {
-  applyFont(); applyLogo();
+  applyFont(); applyLogo(); applyIcons();
   SND.setEnabled(s.settings.sounds !== false);
   const t = s.settings.theme === 'auto' ? (mqDark.matches ? 'obsidian' : 'paper') : s.settings.theme;
   document.documentElement.dataset.theme = t;
@@ -109,7 +127,7 @@ async function loadWeather(force = false) {
 function refreshWeather() {
   if (sheetKey === 'weather') refreshSheet();
   if (screen !== 'today') return;
-  const h = $('.view .wx-h1'); if (h) h.innerHTML = V.weatherHead(ctx());
+  const h = $('.view .bc-wx'); if (h) h.innerHTML = V.weatherHead(ctx());
 }
 
 // ---------- Render ----------
@@ -136,12 +154,13 @@ function render(anim = '') {
   if (ph) { const upd = () => ph.classList.toggle('stuck', vEl.scrollTop > 6); upd(); vEl.addEventListener('scroll', upd, { passive: true }); }
   $('#tabbar').innerHTML = V.tabbar(ctx(), screen);
   $('#fab').innerHTML = screen === 'today' ? `<button class="fab" data-act="sheet" data-arg="quick" aria-label="Quick actions">${V.icon('plus')}</button>`
+    : screen === 'settings' ? `<button class="fab fab-bike" data-act="sheet" data-arg="vehicle:new" aria-label="Add a vehicle">${V.icon('bike')}<span class="fab-plus">${V.icon('plus')}</span></button>`
     : '';
   renderPill();
   renderOverlay();
   if (screen === 'fuel') wireChart();
   if (screen === 'today' && s.onboarded) loadWeather();
-  if (screen === 'settings') loadAllFonts();
+  if (screen === 'settings') { loadAllFonts(); if (!libsReady) Promise.all(V.ICON_LIBS.map(([k]) => loadIconSet(k))).then(() => { libsReady = true; if (screen === 'settings') render(); }); }
   sizeTracks();
   syncOrient();
 }
@@ -607,6 +626,8 @@ const A = {
   close: () => closeSheet(),
   'sheet-back': () => sheetBack(),
   font: (k) => { s.settings.font = k; buzz(6); commit(); },
+  'body-font': (k) => { s.settings.bodyFont = k; buzz(6); commit(); },
+  'icon-lib': (k) => { s.settings.icons = k; buzz(6); commit(); },
   logo: (k) => { s.settings.logo = k; buzz(6); commit(); toast('Icon updated. Re-add to Home Screen to change an installed icon.'); },
   'show-loader': () => showLoader(),
   scenario: (k) => {

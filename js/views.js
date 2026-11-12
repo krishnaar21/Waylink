@@ -49,7 +49,20 @@ export function segs(n, filled, cls = 's', extra = '') {
 
 // ---------- Icons (Lucide) ----------
 export const selmark = (inline = false) => `<span class="selmark ${inline ? 'inline' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
-export const icon = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+// Icon libraries: Lucide is built in; the others load on demand and fall back to Lucide per icon.
+export const BODY_FONTS = [['system', 'System', '-apple-system, system-ui'], ['inter', 'Inter', "'Inter'"], ['plex', 'IBM Plex', "'IBM Plex Sans'"], ['work', 'Work Sans', "'Work Sans'"]];
+export const THEMES = [['auto', 'Auto', '#ECE8E1', '#F7F5F1', '#161514'], ['paper', 'Light', '#ECE8E1', '#F7F5F1', '#161514'], ['obsidian', 'Dark', '#161514', '#22201E', '#F2EFE9'], ['amoled', 'Black', '#000000', '#141312', '#F2EFE9']];
+export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
+export const ICON_LIBS = [['lucide', 'Lucide', 'ISC'], ['tabler', 'Tabler', 'MIT'], ['phosphor', 'Phosphor', 'MIT'], ['iconoir', 'Iconoir', 'MIT']];
+const LUCIDE = { SET: { vb: '0 0 24 24', attrs: 'fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"' }, ICONS };
+const SETS = { lucide: LUCIDE };
+let CUR = LUCIDE;
+export const iconSetLoaded = (name) => !!SETS[name];
+export const addIconSet = (name, mod) => { SETS[name] = mod; };
+export const useIconSet = (name) => { CUR = SETS[name] || LUCIDE; };
+const draw = (set, n, cls) => { const g = set.ICONS[n] ? set : LUCIDE; return `<svg class="i ${cls}" viewBox="${g.SET.vb}" ${g.SET.attrs} aria-hidden="true">${g.ICONS[n] || ''}</svg>`; };
+export const icon = (n, cls = '') => draw(CUR, n, cls);
+export const iconFrom = (lib, n, cls = '') => draw(SETS[lib] || LUCIDE, n, cls);
 
 // ---------- Vehicle pictures ----------
 const lum = (h) => { const n = [1, 3, 5].map((i) => parseInt(String(h || '#888888').slice(i, i + 2), 16)); return (n[0] * 299 + n[1] * 587 + n[2] * 114) / 255000; };
@@ -129,8 +142,8 @@ export const HELP = {
   send: ['Alerts', 'Send to the bike', ['Browsers can’t see your phone’s calls or chats, so this lets you send one by hand to try the cluster.', 'Ring shows an incoming call, Missed adds a missed call, and Chat shows a WhatsApp alert with the name you typed.']],
   handlebar: ['Alerts', 'Handlebar button', ['The bike’s handlebar button reports presses to this app.', 'A tap answers a call shown here; a long press declines or ends it. With no call, a tap means play or pause and a long press means next track. A browser can’t control your music app, so those are logged in Recent.']],
   riding: ['Settings', 'Riding', ['How ride mode behaves: whether it opens by itself when you start moving, whether rides record themselves, and whether the screen stays on.']],
-  papers: ['Settings', 'Papers & history', ['Your bike’s documents, service logbook, fuel log and region, all kept on this phone.']],
-  backup: ['Settings', 'Backup', ['Everything lives on this phone only. Export a backup before you change phones or clear your browser, then restore it on the new one.']],
+  papers: ['Settings', 'Records', ['Your bike’s service logbook, fuel log and documents, all kept on this phone.']],
+  backup: ['Settings', 'Data & region', ['Your country sets the currency, fuel price and emergency numbers. Everything else lives on this phone only. Export a backup before you change phones or clear your browser, then restore it on the new one.']],
   preview: ['Developer', 'Preview states', ['Shows the app as a brand-new rider would see it, or with extreme data: very long names, huge numbers and everything overdue. Your real data is put aside and comes back when you tap Exit.']],
   developer: ['Settings', 'Developer', ['Tools for trying the app without a bike, and for seeing the raw Bluetooth messages it sends.']],
   medical: ['Profile', 'Medical ID', ['Shown on the SOS screen so whoever helps you knows your blood group, allergies and who to call. It stays on this phone.']],
@@ -197,18 +210,13 @@ const caption = (v) => `<div class="eyebrow caption">${v.ok} on track · ${v.soo
 const hourFmt = (ts) => new Date(ts).toLocaleTimeString('en-IN', { hour: 'numeric' }).replace(/\s?(am|pm)/i, (m) => m.trim().toLowerCase());
 export function weatherHead(c) {
   const w = c.live.weather || { state: 'idle' }, d = w.data;
-  let ic = 'wxPart', temp = '', top = '', sub = '';
+  let ic = 'wxPart', temp = '', sub = '';
   if (d) {
-    const cond = S.wmo(d.code, d.day), rain = Math.max(0, ...d.hours.map((h) => h.rain || 0));
-    const temps = d.hours.map((h) => h.temp).filter((t) => t != null);
-    ic = cond.ic; temp = `${Math.round(d.temp)}°`; top = cond.t;
-    sub = `${esc(d.place || 'Near you')} · ${rain >= 20 ? `rain ${rain}%` : temps.length ? `${Math.round(Math.min(...temps))}–${Math.round(Math.max(...temps))}°` : `feels ${Math.round(d.feels)}°`}`;
-  } else if (w.state === 'need') { top = 'Add weather'; sub = 'Tap to set your city'; }
-  else if (w.state === 'err') { ic = 'wxCloud'; top = 'Weather offline'; sub = 'Tap for details'; }
-  else { temp = '—°'; top = 'Checking the sky'; sub = '&nbsp;'; }
-  return `<button class="wx-head ${d ? '' : 'nodata'}" data-act="sheet" data-arg="weather" aria-label="Weather details">
-    <span class="wh-ic">${icon(ic)}</span>${temp ? `<span class="wh-t">${temp}</span>` : ''}
-    <span class="wh-tx"><span class="wh-c">${top}</span><span class="wh-s">${sub}</span></span>${icon('chev')}</button>`;
+    const rain = Math.max(0, ...d.hours.map((h) => h.rain || 0)), temps = d.hours.map((h) => h.temp).filter((t) => t != null);
+    ic = S.wmo(d.code, d.day).ic; temp = `${Math.round(d.temp)}°`;
+    sub = `${esc(d.place || 'Near you')} · ${rain >= 20 ? `${rain}% rain` : temps.length ? `${Math.round(Math.min(...temps))}–${Math.round(Math.max(...temps))}° today` : `feels ${Math.round(d.feels)}°`}`;
+  } else sub = w.state === 'need' ? 'Add weather for your rides' : w.state === 'err' ? 'Weather offline' : 'Checking the weather…';
+  return `<span class="wh-ic">${icon(ic)}</span>${temp ? `<span class="wh-t">${temp}</span>` : ''}<span class="wh-s">${sub}</span>${icon('chev')}`;
 }
 export function weatherSheet(c) {
   const w = c.live.weather || { state: 'idle' }, d = w.data;
@@ -242,13 +250,14 @@ export function today(c) {
   if (fs.onReserve) line = `On reserve, about ${num(fs.range)} km left.` + (v.over || v.soon ? ' ' + line : '');
   const missed = s.alerts.missed;
   const urgent = list.filter((x) => x.st.status !== 'ok').slice(0, 3);
-  const shown = urgent.length ? urgent : list.slice(0, 2);
   return `<div class="stagger">
-  <div class="pagehead today-head"><div class="th-row"><div class="eyebrow">${dMed(Date.now())}</div>
-    <div class="head-actions"><button class="circle" data-act="sheet" data-arg="sos" aria-label="Emergency SOS" style="color:var(--red)">${icon('sos')}</button><button class="circle" data-act="sheet" data-arg="inbox" aria-label="Notifications">${icon('bell')}${inbox(c).length ? `<span class="bdg">${inbox(c).length > 99 ? '99+' : inbox(c).length}</span>` : ''}</button></div></div>
-    <h1 class="wx-h1">${weatherHead(c)}</h1></div>
+  <div class="pagehead today-head"><div class="th-row"><div style="min-width:0"><h1 class="title">${new Date().toLocaleDateString(DL(), { weekday: 'long' })}</h1><div class="subtitle">${new Date().toLocaleDateString(DL(), { day: 'numeric', month: 'long' })}</div></div>
+    <div class="head-actions"><button class="circle" data-act="sheet" data-arg="sos" aria-label="Emergency SOS" style="color:var(--red)">${icon('sos')}</button></div></div></div>
   ${live.scenario ? previewBar(live) : ''}
-  <button class="vchip" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">${vehicleArt(s, v0)}<div class="grow"><div class="t">${esc(S.vehicleTitle(s))}${v0.nickname ? ` <span class="faint" style="font-weight:400">· ${esc(S.bikeName(s))}</span>` : ''}</div><div class="d">${esc(v0.plate || 'No number plate')} · ${short(s.odo)} km</div></div>${icon('swap')}</button>
+  <div class="bikecard">
+    <button class="bc-main" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">${vehicleArt(s, v0, 'lg')}<div class="grow"><div class="t">${esc(S.vehicleTitle(s))}</div><div class="m">${esc(v0.nickname ? S.bikeName(s) : S.model(s).series)} · ${short(s.odo)} km</div><div class="d">${esc(v0.plate || 'No number plate')}</div></div><span class="bc-swap">${icon('swap')}</span></button>
+    <button class="bc-wx" data-act="sheet" data-arg="weather" aria-label="Weather details">${weatherHead(c)}</button>
+  </div>
   ${live.rec ? recCard(live) : ''}
   <button class="hero ${fs.onReserve && !v.over ? 'soon' : v.cls}" data-act="go" data-arg="logbook">
     <div class="eyebrow">Verdict</div>
@@ -256,9 +265,11 @@ export function today(c) {
     <p>${line}</p>
     ${heroBar(v.bar)}${caption(v)}
   </button>
-  ${connCard(c)}
+  <div class="section" style="margin-top:22px">${sh(urgent.length ? 'Needs care' : 'Coming up', '<button class="link" data-act="go" data-arg="logbook">See all</button>')}
+    <div class="upnext">${(urgent.length ? urgent : list.slice(0, 4)).map(({ it, st }) => upCard(it, st)).join('')}</div></div>
   ${missed.length ? `<button class="banner" data-act="go" data-arg="alerts">${icon('missed')}<span class="t"><span class="big" style="font-size:20px">${missed.length}</span> missed ${missed.length === 1 ? 'call' : 'calls'} · ${esc(missed[missed.length - 1].name)}</span>${icon('chev', 'faint')}</button>` : ''}
   ${s.parking && !link.connected ? `<button class="banner plain" data-act="sheet" data-arg="parking">${icon('pin')}<span class="t">Parked ${ago(s.parking.ts)} <span class="faint small">· walk back</span></span>${icon('chev', 'faint')}</button>` : ''}
+  ${connCard(c)}
   <div class="section">${sh('Readings', `<span class="eyebrow">${esc(S.model(s).series)}</span>`, 'readings')}
     <div class="card readings">
       <div class="odo"><span class="eyebrow">Odometer</span><span><span class="big" data-live="odo">${num(Math.floor(s.odo))}</span><span class="unit">km</span></span></div>
@@ -271,15 +282,13 @@ export function today(c) {
         ${live.engine != null ? `<div><span class="eyebrow">Engine</span><span class="big"><span data-live="engine">${live.engine}</span><span class="unit">°C</span></span></div>` : `<div><span class="eyebrow">Phone</span><span class="big">${live.battery ?? '—'}<span class="unit">%</span></span></div>`}
       </div>
     </div></div>
-  <div class="section">${sh('Garage')}
+  <div class="section">${sh('Shortcuts')}
     <div class="hscroll">
       ${tile('fuel', 'Fuel', fs.range != null ? (fs.onReserve ? 'r' : 's') : 'k', fs.range != null ? `≈${num(fs.range)} km left` : 'No tanks yet', segs(6, fs.bars ?? 0, fs.onReserve ? 'r' : 'k'))}
       ${tile('logbook', 'Logbook', v.over ? 'r' : v.soon ? 'a' : 's', v.over + v.soon ? `${v.over + v.soon} need care` : 'All in order', `<div class="segs">${v.bar.map((x) => `<i class="${x}"></i>`).join('')}</div>`)}
       ${tile('trips', 'Rides', 's', `${s.trips.length} logged`, segs(6, Math.min(6, S.periodStats(s.trips, S.weekStart()).rides), 'k'))}
       ${tile('glovebox', 'Glovebox', live.gloveHere.length ? 's' : 'k', live.gloveHere.length ? `${live.gloveHere.length} ${live.gloveHere.length === 1 ? 'paper' : 'papers'}` : 'Empty', segs(4, Math.min(4, live.gloveHere.length), 'k'))}
     </div></div>
-  <div class="section" style="margin-top:20px">${sh(urgent.length ? 'Needs care' : 'Coming up', '<button class="link" data-act="go" data-arg="logbook">See all</button>')}
-    <div class="rows">${shown.map(({ it, st }) => serviceRow(it, st)).join('')}</div></div>
   <p class="note mt24">Everything stays on this phone. No account, no cloud.</p>
   </div>`;
 }
@@ -334,6 +343,7 @@ function connCard(c) {
     title = 'No bike linked'; dot = 'k'; mode = 'idle'; sub = 'Pair once. It reconnects by itself.';
     body = link.supported
       ? `<button class="btn ink block" data-act="pair">${icon('bt')} Pair your bike</button><button class="btn line block mt8" data-act="sim-on">Try the simulated bike</button>`
+      : isIOS() ? `<button class="btn ink block" data-act="sheet" data-arg="ios-pair">${icon('bt')} Pair on iPhone</button><button class="btn line block mt8" data-act="sim-on">${icon('bolt')} Try the simulated bike</button><p class="note">iPhone browsers need one extra app for Bluetooth. It takes a minute.</p>`
       : `<button class="btn ink block" data-act="sim-on">${icon('bolt')} Try the simulated bike</button><p class="note">To pair a real bike, open this in Chrome on Android.</p>`;
   }
   return `<div class="card conn mt12">
@@ -341,6 +351,17 @@ function connCard(c) {
     <button class="icon-btn" data-act="sheet" data-arg="bike" aria-label="Bluetooth details">${icon(st === 'connected' ? 'btOn' : mode === 'search' ? 'btSearch' : 'bt')}</button></div>
     <div class="link-line ${mode}"><span class="end-ic dev">${icon('phoneDev')}</span><div class="track ${mode}"></div><span class="end-ic bk">${icon('bike')}</span></div>
     ${body}</div>`;
+}
+// A compact card for the Today strip: icon, what's left, name, and a thick bar of what remains.
+export function upCard(it, st) {
+  const v = rowValue(st);
+  const tone = st.status === 'overdue' ? 'r' : st.status === 'soon' ? 'a' : 's';
+  const left = st.status === 'overdue' ? 1 : Math.max(0.04, 1 - st.frac);
+  return `<button class="upcard ${tone}" data-act="sheet" data-arg="svc:${it.id}">
+    <div class="uc-top"><span class="row-ic ${tone}">${icon(it.icon || 'wrench')}</span><span class="uc-tag">${st.status === 'overdue' ? 'Overdue' : st.status === 'soon' ? 'Due soon' : 'On track'}</span></div>
+    <div class="uc-v"><span class="big">${v.v}</span><span class="unit">${v.u.replace(' overdue', '')}${st.status === 'overdue' ? ' late' : ' left'}</span></div>
+    <div class="uc-n">${esc(it.name)}</div>
+    <div class="uc-bar"><i style="width:${(left * 100).toFixed(1)}%"></i></div></button>`;
 }
 export function serviceRow(it, st) {
   const v = rowValue(st);
@@ -360,8 +381,7 @@ export function logbook(c) {
   const cur = S.country(s).cur;
   return `<div class="stagger">
   <header class="pagehead">${topbar(backBtn(), `<button class="circle" data-act="sheet" data-arg="svc-edit:new" aria-label="Add reminder">${icon('plus')}</button>`)}
-  <div class="eyebrow">Service · ${esc(clip(S.vehicleTitle(s)))}</div>
-  <h1 class="title">Logbook</h1></header>
+  <h1 class="title">Logbook</h1><div class="subtitle">Service for ${esc(clip(S.vehicleTitle(s), 24))}</div></header>
   <div class="hero ${v.cls}"><div class="eyebrow">Verdict</div><div class="verdict">${v.word}</div><p>${v.line}</p>${heroBar(v.bar)}${caption(v)}</div>
   <button class="card pad mt12 flex between" style="width:100%" data-act="sheet" data-arg="odo"><span class="eyebrow">Odometer now</span><span class="flex gap8"><span><span class="big" style="font-size:30px">${num(Math.floor(s.odo))}</span><span class="unit">km</span></span>${icon('edit', 'faint')}</span></button>
   <div class="section">${sh('Reminders · most urgent first', '', 'reminders')}
@@ -389,8 +409,7 @@ export function fuel(c) {
   const tankL = num(fs.tank, fs.tank % 1 ? 1 : 0);
   return `<div class="stagger">
   <header class="pagehead">${topbar(backBtn(), `<button class="circle" data-act="sheet" data-arg="fuel:new" aria-label="Log fuel">${icon('plus')}</button>`)}
-  <div class="eyebrow">Fuel · ${esc(clip(S.vehicleTitle(s)))}</div>
-  <h1 class="title">Fuel</h1></header>
+  <h1 class="title">Fuel</h1><div class="subtitle">Fill-ups for ${esc(clip(S.vehicleTitle(s), 24))}</div></header>
   <div class="hero ${!hasRange ? 'off' : fs.onReserve ? 'bad' : ''}">
     <div class="eyebrow">Range left</div>
     <div class="verdict">${hasRange ? `≈${num(fs.range)}<span class="unit" style="font-size:16px">km</span>` : '—'}</div>
@@ -470,7 +489,7 @@ export function trips(c) {
   const r = live.rec;
   const stat = (lab, p) => `<div><span class="eyebrow">${lab}</span><span class="big">${num(p.km, p.km < 100 ? 1 : 0)}<span class="unit">km</span></span><div class="small muted">${plural(p.rides, 'ride', 'rides')} · ${dur(p.sec)}</div>${p.top ? `<div class="small faint">top ${num(p.top)} km/h</div>` : ''}</div>`;
   return `<div class="stagger">
-  <div class="head pagehead"><div><div class="eyebrow">Trips · ${esc(clip(S.vehicleTitle(s)))}</div><h1 class="title">Rides</h1></div><span class="eyebrow" style="margin-top:4px">${plural(s.trips.length, 'ride', 'rides')}</span></div>
+  <div class="head pagehead"><div style="min-width:0"><h1 class="title">Rides</h1><div class="subtitle">${plural(s.trips.length, 'ride', 'rides')} on ${esc(clip(S.vehicleTitle(s), 20))}</div></div></div>
   <div class="card stat2 mt20">${stat('This week', wk)}${stat('Last 30 days', mo)}</div>
   ${r ? `<div class="card rec-card mt12"><div class="flex between"><span class="tag x"><span class="dot x pulse"></span>Recording</span><span class="mono small faint" data-live="rec-time">${clock((Date.now() - r.start) / 1000)}</span></div>
       <div class="serif mt12" style="font-size:24px">Today’s ride, in progress.</div>
@@ -504,7 +523,7 @@ export function route(c) {
     const man = maneuverByKey(n.maneuver);
     const d = dist(n.stepMeters), tot = dist(n.totalMeters);
     return `<div class="stagger">
-    <div class="head pagehead"><div><div class="eyebrow">Route · ${n.mode === 'rehearse' ? 'rehearsal' : 'turn test'}</div><h1 class="title">En route</h1></div><span class="tag ${link.connected ? '' : 'k'}" style="margin-top:6px">${link.connected ? 'On the bike' : 'Phone only'}</span></div>
+    <div class="head pagehead"><div><h1 class="title">En route</h1><div class="subtitle">${n.mode === 'rehearse' ? 'Rehearsing a route' : 'Testing one turn'}</div></div><span class="tag ${link.connected ? '' : 'k'}" style="margin-top:6px">${link.connected ? 'On the bike' : 'Phone only'}</span></div>
     <div class="card nav-card mt20">
       <div class="nav-top"><div class="maneuver">${arrow(man.glyph, n.exit)}</div><div class="grow"><div><span class="big" data-live="nav-dist">${d.v}</span><span class="serif" style="font-size:22px;margin-left:4px;color:var(--ink-2)" data-live="nav-unit">${d.u}</span></div><div class="instr">${esc(n.say || man.label)}</div></div></div>
       <div style="height:var(--hair);background:var(--line);margin:20px 0 2px"></div>
@@ -523,7 +542,7 @@ export function route(c) {
   const isRb = sel.glyph.startsWith('roundabout');
   const totalKm = REHEARSAL.steps.reduce((a, x) => a + x.m, 0) / 1000;
   return `<div class="stagger">
-  <div class="head pagehead"><div><div class="eyebrow">Route · with Google Maps</div><h1 class="title">Where to?</h1></div></div>
+  <div class="head pagehead"><div><h1 class="title">Where to?</h1><div class="subtitle">Plan in Google Maps, see turns on your bike</div></div></div>
   <form class="card pad mt20" data-form="maps">
     <label class="field" style="margin-top:0"><span class="eyebrow">Destination</span><input class="input" name="dest" placeholder="Nandi Hills" value="${esc(live.dest || '')}" autocomplete="off"></label>
     <button class="btn ink block mt12" type="submit">${icon('map')} Open in Google Maps</button>
@@ -564,15 +583,26 @@ export function alerts(c) {
   const a = s.settings.alerts;
   const m = s.alerts.missed, w = s.alerts.wa;
   const card = (ic, lab, n, sub, act) => `<div class="card pad"><div class="eyebrow flex gap8">${icon(ic).replace('<svg', '<svg style="width:14px;height:14px"')}${lab}</div><div class="big mt12" style="font-size:56px">${n}</div><div class="small muted mt8">${sub}</div><div class="push"></div><button class="btn line block sm mt16" data-act="${act}" ${n ? '' : 'disabled'}>Clear</button></div>`;
+  const needs = inbox(c).filter((x) => x.ic !== 'missed' && x.ic !== 'chat');
   return `<div class="stagger">
-  <div class="head pagehead"><div><div class="eyebrow">Alerts · on your bike</div><h1 class="title">Names, <em>not words.</em></h1></div><span class="eyebrow" style="margin-top:4px">${s.alerts.sent} sent</span></div>
-  <div class="two mt20">${card('missed', 'Missed', m.length, m.length ? `Last: ${esc(m[m.length - 1].name)}` : 'None waiting', 'clear-missed')}${card('chat', 'WhatsApp', w.length, w.length ? `Last: ${esc(w[w.length - 1].name)}` : 'None waiting', 'clear-wa')}</div>
+  <div class="head pagehead"><div><h1 class="title">Alerts</h1><div class="subtitle">${needs.length ? `${plural(needs.length, 'thing needs', 'things need')} you` : 'Nothing needs you right now'}</div></div></div>
+  ${needs.length ? `<div class="section" style="margin-top:20px">${sh('Needs you')}<div class="list">${needs.map((x) => li({ lead: `<span class="ic" style="background:var(--tint-${x.tone});color:var(--${x.tone === 'sage' ? 'sage-ink' : x.tone})">${icon(x.ic)}</span>`, t: x.t, d: x.d, act: x.act, arg: x.arg })).join('')}</div></div>` : ''}
+  <div class="section">${sh('Calls & messages', `<span class="eyebrow">${num(s.alerts.sent)} sent</span>`)}
+  <div class="two">${card('missed', 'Missed', m.length, m.length ? `Last: ${esc(m[m.length - 1].name)}` : 'None waiting', 'clear-missed')}${card('chat', 'WhatsApp', w.length, w.length ? `Last: ${esc(w[w.length - 1].name)}` : 'None waiting', 'clear-wa')}</div>
   <div class="dashed">${icon('lock')}<span>Only <b>names and counts</b> reach the bike. Never the message.</span></div>
+  </div>
+  <div class="section">${sh('Recent')}
+    ${s.alerts.log.length ? `<div class="list">${s.alerts.log.slice(0, 12).map((x) => li({ ic: x.kind === 'wa' ? 'chat' : x.kind === 'missed' ? 'missed' : x.kind === 'button' ? 'hand' : 'phone', t: esc(x.name), d: { wa: 'WhatsApp', missed: 'Missed call', call: 'Call', button: 'Handlebar' }[x.kind] + ' · ' + ago(x.ts), chev: false, tag: 'div' })).join('')}</div>` : '<div class="card empty">Nothing yet.</div>'}
+  </div>
   <div class="section">${sh('Show on the bike', '', 'showbike')}<div class="list">
     ${li({ ic: 'phone', t: 'Phone calls', d: 'Caller name and missed calls', end: sw(a.calls, 'toggle', 'alerts.calls'), chev: false, tag: 'div' })}
     ${li({ ic: 'phone', t: 'WhatsApp calls', d: 'Caller name while ringing', end: sw(a.waCalls, 'toggle', 'alerts.waCalls'), chev: false, tag: 'div' })}
     ${li({ ic: 'chat', t: 'WhatsApp messages', d: 'Sender name and count', end: sw(a.waMsgs, 'toggle', 'alerts.waMsgs'), chev: false, tag: 'div' })}
     ${li({ ic: 'mail', t: 'SMS', d: 'Coming soon', end: sw(false, 'noop', '', true), chev: false, cls: 'disabled', tag: 'div' })}
+  </div></div>
+  <div class="section">${sh('Handlebar button', '', 'handlebar')}<div class="list">
+    ${li({ ic: 'hand', t: 'Tap', d: 'Answer, or play and pause', end: link.simulated && link.connected ? '<button class="chip" data-act="press" data-arg="tap">Press</button>' : '', chev: false, tag: 'div' })}
+    ${li({ ic: 'hand', t: 'Long press', d: 'Decline, or next track', end: link.simulated && link.connected ? '<button class="chip" data-act="press" data-arg="long">Press</button>' : '', chev: false, tag: 'div' })}
   </div></div>
   <div class="section">${sh('Send to the bike', `<span class="eyebrow">${link.connected ? 'Linked' : 'Not linked'}</span>`, 'send')}
     <div class="card pad">
@@ -584,13 +614,7 @@ export function alerts(c) {
       </div>
       <p class="hint" style="margin-top:12px">Browsers can’t see your calls or chats. Send them here by hand to test.</p>
     </div></div>
-  <div class="section">${sh('Handlebar button', '', 'handlebar')}<div class="list">
-    ${li({ ic: 'hand', t: 'Tap', d: 'Answer, or play and pause', end: link.simulated && link.connected ? '<button class="chip" data-act="press" data-arg="tap">Press</button>' : '', chev: false, tag: 'div' })}
-    ${li({ ic: 'hand', t: 'Long press', d: 'Decline, or next track', end: link.simulated && link.connected ? '<button class="chip" data-act="press" data-arg="long">Press</button>' : '', chev: false, tag: 'div' })}
-  </div></div>
-  <div class="section">${sh('Recent')}
-    ${s.alerts.log.length ? `<div class="list">${s.alerts.log.slice(0, 12).map((x) => li({ ic: x.kind === 'wa' ? 'chat' : x.kind === 'missed' ? 'missed' : x.kind === 'button' ? 'hand' : 'phone', t: esc(x.name), d: { wa: 'WhatsApp', missed: 'Missed call', call: 'Call', button: 'Handlebar' }[x.kind] + ' · ' + ago(x.ts), chev: false, tag: 'div' })).join('')}</div>` : '<div class="card empty">Nothing yet.</div>'}
-  </div></div>`;
+  </div>`;
 }
 
 // ---------- SETTINGS ----------
@@ -600,61 +624,72 @@ export function settings(c) {
   const co = S.country(s), md = S.model(s), v = S.veh(s);
   const connText = { connected: 'Connected', connecting: 'Connecting', reconnecting: 'Searching', picking: 'Choosing', idle: link.device || v.bike?.id ? 'Paired' : 'Not paired', error: 'Error' }[link.state];
   return `<div class="stagger">
-  <div class="head pagehead"><div><div class="eyebrow">Settings</div><h1 class="title">You & your bikes</h1></div></div>
+  <div class="head pagehead"><div><h1 class="title">You & your bikes</h1><div class="subtitle">Profile, garage and how the app looks</div></div></div>
   ${live.scenario ? previewBar(live) : ''}
   <button class="card pad mt20 flex gap12" style="width:100%;text-align:left" data-act="go" data-arg="profile">${avatar(s.profile)}<div class="grow"><div class="serif" style="font-size:24px">${esc(s.profile.name || 'Add your name')}</div><div class="small faint">Profile, licence and medical ID</div></div>${icon('chev', 'faint')}</button>
-  <div class="section">${sh('Garage', `<button class="link" data-act="sheet" data-arg="garage">${s.vehicles.length > 1 ? 'Switch' : 'Add'}</button>`)}
+  <div class="section">${sh('Garage', s.vehicles.length > 1 ? '<button class="link" data-act="sheet" data-arg="garage">Switch</button>' : '')}
     <div class="card vcard"><button class="flex gap12" style="width:100%;text-align:left;padding:12px 16px 12px 12px" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">
       ${vehicleArt(s, v, 'card')}
       <div class="grow vc-tx"><div class="serif vc-name">${esc(S.vehicleTitle(s))}</div><div class="small muted vc-line">${v.nickname ? esc(S.bikeName(s)) + ' · ' : ''}${esc(v.plate || 'No plate')}</div><div class="eyebrow vc-line" style="margin-top:8px">${short(s.odo)} km · ${connText}</div></div>
     </button><button class="circle edit" data-act="sheet" data-arg="vehicle:${v.id}" aria-label="Edit vehicle">${icon('edit')}</button></div>
     <div class="list mt12">
       ${s.vehicles.length > 1 ? li({ ic: 'swap', t: 'Switch vehicle', end: `${s.vehicles.length} bikes`, act: 'sheet', arg: 'garage' }) : ''}
-      ${li({ ic: 'plus', t: 'Add a vehicle', act: 'sheet', arg: 'vehicle:new' })}
       ${li({ ic: 'grid', t: 'All bike models', d: `${S.MODELS.length} models · ${Object.keys(S.MODEL_IMAGES).length} with photos`, act: 'sheet', arg: 'models' })}
       ${li({ ic: 'list', t: 'Spec sheet', d: 'Oil, tyres, chain, plugs', act: 'sheet', arg: 'specs' })}
       ${li({ ic: 'gauge', t: 'Odometer', d: 'Correct it if it drifts', end: num(Math.floor(s.odo)) + ' km', act: 'sheet', arg: 'odo' })}
       ${li({ ic: 'bt', t: 'Bluetooth', d: 'Pair and check the link', end: connText, act: 'sheet', arg: 'bike' })}
     </div></div>
+  <div class="section">${sh('Records', '', 'papers')}<div class="list">
+    ${li({ ic: 'wrench', t: 'Logbook', d: 'Service reminders and workshop visits', end: S.needsYou(s) ? `${S.needsYou(s)} due` : 'All good', act: 'go', arg: 'logbook' })}
+    ${li({ ic: 'fuel', t: 'Fuel', d: 'Fill-ups, mileage and petrol price', end: `${s.fuel.length} fills`, act: 'go', arg: 'fuel' })}
+    ${li({ ic: 'folder', t: 'Digital glovebox', d: 'RC, insurance, PUC, licence', end: `${live.gloveHere.length}`, act: 'sheet', arg: 'glovebox' })}
+  </div></div>
+  <div class="section">${sh('Safety')}<div class="list">
+    ${li({ ic: 'sos', t: 'Emergency SOS', d: `${co.amb} ambulance · ${co.sos} emergency`, act: 'sheet', arg: 'sos' })}
+    ${li({ ic: 'heart', t: 'Medical ID', d: s.profile.blood ? `Blood group ${esc(s.profile.blood)} · shown on SOS` : 'Blood group, allergies, who to call', act: 'go', arg: 'profile' })}
+    ${li({ ic: 'pin', t: 'Parked bike', d: 'Find your way back to it', end: s.parking ? ago(s.parking.ts) : 'Not saved', act: 'sheet', arg: 'parking' })}
+  </div></div>
   <div class="section">${sh('Riding', '', 'riding')}<div class="list">
     ${li({ ic: 'speed', t: 'Open ride mode by itself', d: 'Above 15 km/h', end: sw(st.autoRide, 'toggle', 'autoRide'), chev: false, tag: 'div' })}
     ${li({ ic: 'route', t: 'Record rides by themselves', d: 'When the bike links', end: sw(st.autoRecord, 'toggle', 'autoRecord'), chev: false, tag: 'div' })}
     ${li({ ic: 'sparkles', t: 'Keep the screen on', d: 'While in ride mode', end: sw(st.wakeLock, 'toggle', 'wakeLock'), chev: false, tag: 'div' })}
     ${li({ ic: 'volume', t: 'Sound effects', d: 'Engine start, switch clicks, slider ticks', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
-    ${li({ ic: 'eye', t: 'Street names on the bike', end: sw(st.streetNames, 'toggle', 'streetNames'), chev: false, tag: 'div' })}
+    ${li({ ic: 'eye', t: 'Street names on the bike', d: 'Road name beside the arrow', end: sw(st.streetNames, 'toggle', 'streetNames'), chev: false, tag: 'div' })}
   </div></div>
-  <div class="section">${sh('Appearance')}<div class="card pad">
-    <div class="eyebrow">Theme</div>
-    <div class="seg mt12">${[['auto', 'Auto'], ['paper', 'Light'], ['obsidian', 'Dark'], ['amoled', 'Black']].map(([k, l]) => `<button class="${st.theme === k ? 'on' : ''}" data-act="theme" data-arg="${k}">${l}</button>`).join('')}</div>
-    <div class="eyebrow mt20">Accent</div>
-    <div class="swatches mt12">${[['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine red'], ['blue', '#1D56CF', 'Pulsar blue'], ['slate', '#5D697D', 'Stealth grey'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']].map(([k, col, l]) => `<button class="swatch ${st.accent === k ? 'on' : ''}" style="background:${col}" data-act="accent" data-arg="${k}" aria-label="${l}" title="${l}">${st.accent === k ? selmark() : ''}</button>`).join('')}</div>
-    <div class="eyebrow mt20">Title font</div>
+  <div class="section">${sh('Theme & colour')}<div class="card pad">
+    <div class="themes">${THEMES.map(([k, l, bg, card, ink]) => `<button class="themeopt ${st.theme === k ? 'on' : ''}" data-act="theme" data-arg="${k}" aria-pressed="${st.theme === k}">
+      <span class="tp ${k}" style="--tbg:${bg};--tcard:${card};--tink:${ink}"><i></i><i></i><b></b></span><span class="nm">${l}</span></button>`).join('')}</div>
+    <div class="eyebrow mt24">Accent</div>
+    <div class="accents mt12">${ACCENTS.map(([k, col, l]) => `<button class="accentopt ${st.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${st.accent === k}"><span class="dot" style="background:${col}">${st.accent === k ? icon('check') : ''}</span>${l}</button>`).join('')}</div>
+  </div></div>
+  <div class="section">${sh('Type & icons')}<div class="card pad">
+    <div class="eyebrow">Title font</div>
     <div class="fonts two mt12">${FONTS.map(([k, nm, fam, w]) => `<button class="fontopt ${st.font === k ? 'on' : ''}" data-act="font" data-arg="${k}"><div class="sample" style="font-family:${fam}, Georgia, system-ui, sans-serif;font-weight:${w}">Today</div><div class="nm">${nm}</div>${st.font === k ? selmark() : ''}</button>`).join('')}</div>
-    <div class="eyebrow mt20">App icon</div>
+    <div class="eyebrow mt24">Body font</div>
+    <div class="bodyfonts mt12">${BODY_FONTS.map(([k, nm, fam]) => `<button class="bodyopt ${(st.bodyFont || 'system') === k ? 'on' : ''}" data-act="body-font" data-arg="${k}" style="font-family:${fam}, system-ui, sans-serif"><span class="aa">Aa</span><span class="nm">${nm}</span></button>`).join('')}</div>
+    <div class="eyebrow mt24">Icon style</div>
+    <div class="iconlibs mt12">${ICON_LIBS.map(([k, nm]) => `<button class="iconlib ${(st.icons || 'lucide') === k ? 'on' : ''}" data-act="icon-lib" data-arg="${k}" aria-pressed="${(st.icons || 'lucide') === k}"><span class="ics">${['bike', 'fuel', 'bell'].map((n) => iconFrom(k, n)).join('')}</span><span class="nm">${nm}</span>${(st.icons || 'lucide') === k ? selmark() : ''}</button>`).join('')}</div>
+    <div class="eyebrow mt24">App icon</div>
     <div class="logos mt12">${LOGOS.map(([k, nm]) => `<button class="logoopt ${st.logo === k ? 'on' : ''}" data-act="logo" data-arg="${k}" aria-label="${nm} icon" aria-pressed="${st.logo === k}"><img src="img/logos/${k}.svg" alt=""><span class="nm">${nm}</span>${st.logo === k ? selmark() : ''}</button>`).join('')}</div>
-    <div class="eyebrow mt20">Vehicle pictures</div>
+    <div class="eyebrow mt24">Vehicle pictures</div>
     <div class="seg mt12">${[['photo', 'Photos', 'camera'], ['icon', 'Icons', 'bike']].map(([k, l, ic]) => `<button class="${st.art === k ? 'on' : ''}" data-act="art-mode" data-arg="${k}">${icon(ic)}${l}</button>`).join('')}</div>
     <p class="hint">Bikes without a photo show their colour tile. Add one in Edit vehicle.</p>
   </div>
-  <div class="list mt12">${li({ ic: 'sparkles', t: 'Show the loading screen', d: 'Plays it once. Tap to close.', act: 'show-loader' })}</div>
   </div>
-  <div class="section">${sh('Safety')}<div class="list">
-    ${li({ ic: 'sos', t: 'Emergency SOS', d: `${co.amb} ambulance · ${co.sos} emergency`, act: 'sheet', arg: 'sos' })}
-    ${li({ ic: 'pin', t: 'Parked bike', d: 'Find your way back to it', end: s.parking ? ago(s.parking.ts) : 'Not saved', act: 'sheet', arg: 'parking' })}
-  </div></div>
-  <div class="section">${sh('Papers & history', '', 'papers')}<div class="list">
-    ${li({ ic: 'folder', t: 'Digital glovebox', d: 'RC, insurance, PUC, licence', end: `${live.gloveHere.length}`, act: 'sheet', arg: 'glovebox' })}
-    ${li({ ic: 'wrench', t: 'Logbook', end: S.needsYou(s) ? `${S.needsYou(s)} due` : 'All good', act: 'go', arg: 'logbook' })}
-    ${li({ ic: 'fuel', t: 'Fuel', end: `${s.fuel.length} fills`, act: 'go', arg: 'fuel' })}
+  <div class="section">${sh('Data & region', '', 'backup')}<div class="list">
     ${li({ ic: 'map', t: 'Country', d: 'Currency, fuel and SOS numbers', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
-  </div></div>
-  <div class="section">${sh('Backup', '', 'backup')}<div class="list">
     ${li({ ic: 'down', t: 'Export backup', d: 'One .json file', act: 'export' })}
     ${li({ ic: 'up', t: 'Restore a backup', d: 'From an exported file', act: 'import' })}
     ${li({ ic: 'copy', t: 'Copy as text', d: 'Paste it on your new phone', act: 'copy-backup' })}
     ${li({ ic: 'trash', t: s.sample ? 'Erase sample data' : 'Erase everything', cls: 'danger', act: 'sheet', arg: 'erase' })}
   </div><input type="file" id="import-file" accept=".json,.pnav,application/json" hidden></div>
+  <div class="section">${sh('Help & about')}<div class="list">
+    ${li({ ic: 'info', t: 'Questions and answers', d: 'Pairing, fuel, weather, privacy', act: 'sheet', arg: 'faq' })}
+    ${li({ ic: 'flag', t: 'Report a problem', d: 'Copy your app details and tell us', act: 'sheet', arg: 'report' })}
+    ${li({ ic: 'heart', t: 'About Waylink', d: `Version ${APP_VERSION}, credits and licences`, act: 'sheet', arg: 'about' })}
+  </div></div>
   <div class="section">${sh('Developer', '', 'developer')}<div class="list">
+    ${li({ ic: 'sparkles', t: 'Show the loading screen', d: 'Plays it once. Tap to close.', act: 'show-loader' })}
     ${li({ ic: 'bolt', t: 'Simulated bike', d: 'Try it all without a bike', end: sw(link.simulated && link.state !== 'idle', 'sim-toggle'), chev: false, tag: 'div' })}
     ${li({ ic: 'code', t: 'Show Bluetooth messages', d: 'Raw bytes on the Route tab', end: sw(!!st.devFrames, 'toggle', 'devFrames'), chev: false, tag: 'div' })}
   </div></div>
@@ -670,8 +705,8 @@ export function settings(c) {
   <footer class="about">
     <img src="img/logos/${st.logo || 'wl-turn'}.svg" alt="" width="40" height="40">
     <div class="about-name">${appName(s)}</div>
-    <div class="about-meta">MIT licence</div>
-    <p>Bike protocol from PulsarNav<br>Icons by Lucide</p>
+    <div class="about-meta">Version ${APP_VERSION} · MIT licence</div>
+    <p class="about-credits">Bike protocol from PulsarNav · Icons by ${(ICON_LIBS.find(([k]) => k === (st.icons || 'lucide')) || ICON_LIBS[0])[1]}</p>
     <p class="about-legal">Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.</p>
   </footer>
   </div>`;
@@ -682,11 +717,15 @@ export const FONTS = [
   ['geist', 'Geist', "'Geist'", 600],
   ['garamond', 'Garamond', "'EB Garamond'", 500],
   ['crimson', 'Crimson', "'Crimson Pro'", 500],
-  ['goudy', 'Goudy', "'Sorts Mill Goudy'", 400],
-  ['alegreya', 'Alegreya', "'Alegreya'", 500],
+  ['newsreader', 'Newsreader', "'Newsreader'", 500],
+  ['instrument', 'Instrument', "'Instrument Serif'", 400],
 ];
 export const APP_NAME = 'Waylink';
-export const LOGOS = [['wl-turn', 'Turn'], ['wl-loop', 'Loop'], ['wl-split', 'Globe'], ['wl-swift', 'Swift'], ['wl-visor', 'Helmet']];
+export const APP_VERSION = '1.0';
+export const isIOS = () => typeof navigator !== 'undefined' && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+const BLUEFY_STORE = 'https://apps.apple.com/app/id1492822055';
+export const REPO_URL = 'https://github.com/krishnaar21/Waylink';
+export const LOGOS = [['wl-turn', 'Turn'], ['wl-link', 'Link'], ['wl-sign', 'Sign'], ['wl-swift', 'Swift'], ['wl-beacon', 'Beacon']];
 export const appName = () => APP_NAME;
 
 // ---------- PROFILE ----------
@@ -700,7 +739,7 @@ export function profile(c) {
   <header class="pagehead">${topbar(backBtn('settings'), `<span class="saved" id="saved">${icon('check')} Saved</span>`)}</header>
   <div class="flex gap12" style="align-items:center">
     <label style="position:relative;cursor:pointer">${avatar(p, true)}<span class="circle" style="position:absolute;right:-4px;bottom:-4px;width:32px;height:32px">${icon('camera').replace('<svg', '<svg style="width:15px;height:15px"')}</span><input type="file" accept="image/*" hidden data-input="avatar"></label>
-    <div class="grow"><div class="eyebrow">Rider since ${new Date(p.since || Date.now()).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div><h1 class="title">${esc(p.name || 'Your profile')}</h1></div>
+    <div class="grow" style="min-width:0"><h1 class="title">${esc(p.name || 'Your profile')}</h1><div class="subtitle">Rider since ${new Date(p.since || Date.now()).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div></div>
   </div>
   <div class="card stat3 mt20"><div><span class="eyebrow">Bikes</span><span class="big">${s.vehicles.length}</span></div><div><span class="eyebrow">Ridden</span><span class="big">${num(totalKm)}</span><span class="unit" style="margin:0">km</span></div><div><span class="eyebrow">Rides</span><span class="big">${rides}</span></div></div>
   <form data-form="profile" data-autosave>
@@ -727,7 +766,7 @@ export function profile(c) {
 // ---------- Tab bar ----------
 export function tabbar(c, current) {
   const { s, live } = c;
-  const badge = s.alerts.missed.length + s.alerts.wa.length;
+  const badge = s.alerts.missed.length + s.alerts.wa.length + inbox(c).filter((x) => x.ic !== 'missed' && x.ic !== 'chat').length;
   const needs = S.needsYou(s) > 0 || S.fuelStats(s).onReserve;
   const tabs = [
     ['today', 'Today', 'today', needs ? '<span class="pip"></span>' : ''],
@@ -785,6 +824,41 @@ export function callOverlay(c) {
     <div class="actions">${ringing
       ? `<button class="cbtn" data-act="call-decline"><span style="background:#C2412D">${icon('x')}</span>Decline</button><button class="cbtn" data-act="call-answer"><span style="background:#4E7A4A">${icon('phone')}</span>Answer</button>`
       : `<button class="cbtn" data-act="call-end"><span style="background:#C2412D">${icon('x')}</span>End</button>`}</div></div>`;
+}
+
+// ---------- Help ----------
+export const FAQ = [
+  ['Which bikes work?', 'Pulsar and Dominar models with the Bluetooth digital cluster. Settings, Garage, All bike models lists every model Waylink knows. If your cluster can show calls from your phone, it should work.'],
+  ['How do I pair on an iPhone?', 'Safari can’t talk to Bluetooth devices from a web page. On Today, tap Pair on iPhone: it walks you through opening Waylink in the free Bluefy browser, which can. On Android, Chrome pairs directly. Fuel, the logbook, rides and weather work in any browser.'],
+  ['How do turn arrows reach the bike?', 'Plan your ride in Google Maps on the same phone, then keep Waylink open in Route. Each turn is sent to the cluster with the distance, and the arrow blinks in the last 100 m.'],
+  ['How is mileage worked out?', 'From full tank to full tank: fill to the brim, ride, fill to the brim again. The litres of the second fill, plus any top-ups between, divided by the distance ridden.'],
+  ['Where does the petrol price come from?', 'State rates that come with the app, from published city prices. Tap the price in Fuel to use your state’s rate or type your pump’s price.'],
+  ['Why does weather say offline?', 'Weather needs the internet and either your city or your location. Previews inside other apps can block it; open Waylink from its own link or your Home Screen.'],
+  ['Is my data shared?', 'No. Everything stays on this phone. Weather and the location lookup send only your rough position to Open-Meteo and OpenStreetMap. Use Backup in Settings to move to a new phone.'],
+  ['The app looks stuck on an old version', 'Close it fully and open it again. If that doesn’t help, remove it from the Home Screen and add it again; your data stays.'],
+];
+export function helpSheet(c, k) {
+  const { s, link } = c;
+  if (k === 'faq') return `<div class="eyebrow">Help</div><h2>Questions and answers</h2><div class="faq mt16">${FAQ.map(([q, a]) => `<details class="faq-i"><summary>${q}${icon('chev')}</summary><p>${a}</p></details>`).join('')}</div>`;
+  if (k === 'report') {
+    const info = [`Waylink ${APP_VERSION}`, `Bike: ${S.model(s).name || S.model(s).id}`, `Link: ${link.state}${link.simulated ? ' (simulated)' : ''}`, `Bluetooth in browser: ${link.supported ? 'yes' : 'no'}`, `Screen: ${typeof window !== 'undefined' ? `${window.innerWidth}×${window.innerHeight}` : 'n/a'}`, `Theme: ${s.settings.theme}, icons: ${s.settings.icons || 'lucide'}`, `Browser: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a'}`].join('\n');
+    return `<div class="eyebrow">Help</div><h2>Report a problem</h2><p class="lead">Say what you tapped, what you expected and what happened. Add these details so it can be fixed fast. Nothing personal is included.</p>
+      <textarea class="input mt16" id="backup-text" readonly style="height:150px;font-family:var(--mono);font-size:11.5px">${esc(info)}</textarea>
+      <button class="btn line block mt12" data-act="copy-text">${icon('copy')} Copy details</button>
+      <a class="btn ink block mt12" href="${REPO_URL}/issues/new" target="_blank" rel="noopener">${icon('flag')} Open a report on GitHub</a>
+      <p class="hint">${REPO_URL.replace('https://', '')}/issues</p>`;
+  }
+  if (k === 'about') return `<div class="about-sheet"><img src="img/logos/${s.settings.logo || 'wl-turn'}.svg" alt="" width="64" height="64"><h2>Waylink</h2><p class="lead">Turns, calls and your bike’s care, on one screen. Version ${APP_VERSION}.</p></div>
+    <div class="list flat mt16">
+      ${li({ ic: 'code', t: 'Source code', d: 'MIT licence', end: '', tag: 'a', href: REPO_URL })}
+      ${li({ ic: 'bt', t: 'Bike protocol', d: 'From the PulsarNav project', chev: false, tag: 'div' })}
+      ${li({ ic: 'grid', t: 'Icons', d: ICON_LIBS.map(([, n, l]) => `${n} (${l})`).join(' · '), chev: false, tag: 'div' })}
+      ${li({ ic: 'wxPart', t: 'Weather', d: 'Open-Meteo, free and open data', chev: false, tag: 'div' })}
+      ${li({ ic: 'pin', t: 'Places', d: 'OpenStreetMap Nominatim', chev: false, tag: 'div' })}
+      ${li({ ic: 'lock', t: 'Privacy', d: 'Your data stays on this phone', chev: false, tag: 'div' })}
+    </div>
+    <p class="hint">Not affiliated with Bajaj Auto, OTC, Google or WhatsApp. Names and marks belong to their owners.</p>`;
+  return null;
 }
 
 // ---------- Sheets ----------
@@ -855,7 +929,20 @@ export function sheetHTML(c, key) {
         <button class="btn ink block mt24" type="submit">${icon('check')} Save</button>
         ${isNew ? '' : `<button class="btn danger block mt8" type="button" data-act="fuel-del" data-arg="${e.id}">Delete fill-up</button>`}</form>`;
     }
+    case 'ios-pair': {
+      const here = typeof location !== 'undefined' ? location.origin + location.pathname : REPO_URL;
+      const step = (n, t, body) => `<div class="pstep"><span class="pn">${n}</span><div class="grow"><div class="pt">${t}</div>${body}</div></div>`;
+      return `<div class="eyebrow">Bluetooth on iPhone</div><h2>Pair your bike</h2><p class="lead">Safari can’t reach Bluetooth from a web page. The free Bluefy browser can, so pairing happens there.</p>
+        <div class="psteps mt16">
+          ${step(1, 'Get Bluefy', `<p>A free browser that adds Bluetooth for web apps.</p><a class="btn line sm mt8" href="${BLUEFY_STORE}" target="_blank" rel="noopener">${icon('down')} App Store</a>`)}
+          ${step(2, 'Copy your Waylink link', `<textarea class="input mt8" id="backup-text" readonly rows="1" style="font-family:var(--mono);font-size:12px;height:52px;resize:none">${esc(here)}</textarea><button class="btn line sm mt8" data-act="copy-text">${icon('copy')} Copy link</button>`)}
+          ${step(3, 'Open it in Bluefy', `<p>Paste the link into Bluefy’s address bar, then tap <b>Pair your bike</b> on Today and pick your bike from the list.</p><a class="btn ink sm mt8" href="bluefy://">${icon('nav')} Open Bluefy</a>`)}
+          ${step(4, 'Bring your data along', `<p>Bluefy keeps its own copy of the app. In Safari, use Settings, Data & region, <b>Copy as text</b>; then in Bluefy, <b>Restore a backup</b> and paste it.</p>`)}
+        </div>
+        <p class="hint">Switch on the bike’s ignition and keep it within a few metres while pairing. After the first time, Bluefy reconnects by itself.</p>`;
+    }
     case 'weather': return weatherSheet(c);
+    case 'faq': case 'report': case 'about': return helpSheet(c, k);
     case 'help': {
       const h = HELP[arg]; if (!h) return null;
       return `<div class="eyebrow">${h[0]}</div><h2>${h[1]}</h2>${h[2].map((t, i) => `<p class="${i ? 'help-p' : 'lead'}">${t}</p>`).join('')}<button class="btn ink block mt24" type="button" data-act="close">Got it</button>`;
@@ -919,8 +1006,8 @@ export function sheetHTML(c, key) {
     case 'bike': {
       const stt = link.state;
       return `<div class="eyebrow">Bluetooth · ${esc(clip(S.vehicleTitle(s)))}</div><h2>${stt === 'connected' ? 'Connected' : stt === 'idle' ? (link.device || v0.bike?.id ? 'Paired' : 'Not paired') : stt === 'connecting' ? 'Connecting' : 'Searching'}</h2>
-      <p class="lead">${stt === 'connected' ? `${esc(link.deviceName)}. ${num(link.frames)} frames sent. Status every 5 s, turns every 0.8 s.` : link.supported ? 'Switch on the ignition first, so the display is awake. Then pick your bike from the list.' : 'This browser has no Bluetooth. Use Chrome on Android or a computer, or try the simulated bike.'}</p>
-      <div class="mt24">${stt === 'connected' ? `<button class="btn line block" data-act="disconnect">Disconnect</button>` : link.supported ? `<button class="btn ink block" data-act="pair">${icon('bt')} Pair a bike</button>${link.device || v0.bike?.id ? '<button class="btn line block mt8" data-act="reconnect">Reconnect</button>' : ''}` : ''}
+      <p class="lead">${stt === 'connected' ? `${esc(link.deviceName)}. ${num(link.frames)} frames sent. Status every 5 s, turns every 0.8 s.` : link.supported ? 'Switch on the ignition first, so the display is awake. Then pick your bike from the list.' : (isIOS() ? 'iPhone browsers have no Bluetooth for web pages. Bluefy, a free browser, adds it.' : 'This browser has no Bluetooth. Use Chrome on Android or a computer, or try the simulated bike.')}</p>
+      <div class="mt24">${stt === 'connected' ? `<button class="btn line block" data-act="disconnect">Disconnect</button>` : link.supported ? `<button class="btn ink block" data-act="pair">${icon('bt')} Pair a bike</button>${link.device || v0.bike?.id ? '<button class="btn line block mt8" data-act="reconnect">Reconnect</button>' : ''}` : isIOS() ? `<button class="btn ink block" data-act="sheet" data-arg="ios-pair">${icon('bt')} Pair on iPhone</button>` : ''}
       ${!link.simulated || stt !== 'connected' ? `<button class="btn line block mt8" data-act="sim-on">Use the simulated bike</button>` : ''}
       ${link.device || v0.bike?.id ? `<button class="btn danger block mt8" data-act="forget">Forget this bike</button>` : ''}</div>
       <div class="divider"></div><button class="sheet-row" data-act="sheet" data-arg="log"><span>Connection log</span>${icon('chev')}</button>`;
