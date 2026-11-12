@@ -2218,3 +2218,6 @@ html[data-theme="obsidian"] .onb-link .onb-img, html[data-theme="amoled"] .onb-l
 .lk-flare::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 0 40%, rgba(255,255,255,.9) 50%, transparent 60% 100%) center / 100% 2px no-repeat, linear-gradient(0deg, transparent 0 40%, rgba(255,255,255,.75) 50%, transparent 60% 100%) center / 2px 70% no-repeat; }
 @keyframes lkFlare { 0%, 10% { opacity: 0; transform: scale(.4) rotate(0); } 22% { opacity: 1; transform: scale(1) rotate(20deg); } 40% { opacity: .2; transform: scale(.7) rotate(35deg); } 100% { opacity: 0; transform: scale(.5) rotate(45deg); } }
 @media (prefers-reduced-motion: reduce) { .lk-flare { animation: none; opacity: 0; } }
+.lk-flare { left: 41.5%; top: 7%; }
+.lk-lamp { background: radial-gradient(closest-side, rgba(225,232,255,.95), rgba(160,175,255,.35) 55%, transparent); }
+.lk-flare { left: 41.5%; top: 9.2%; }
