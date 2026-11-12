@@ -1690,3 +1690,22 @@ svg.i.ifill circle, svg.i.ifill rect, svg.i.ifill ellipse, svg.i.ifill path[d$="
 .cc-ic.rec { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
 .cc-ic.rec .dot { position: absolute; right: -2px; top: -2px; bottom: auto; width: 9px; height: 9px; border: 2px solid var(--card); background: var(--accent); }
 .rec-row .cc-s { font-variant-numeric: tabular-nums; }
+/* Wordmark w: a touch lighter stroke so the loop stays open */
+.wl-loop .lw { stroke-width: 10 !important; stroke-linejoin: round !important; }
+/* Bike art in dark themes: a soft light pool behind the bike so dark bikes don't vanish */
+html[data-theme="obsidian"] .art, html[data-theme="amoled"] .art { background: radial-gradient(ellipse 70% 60% at 50% 55%, color-mix(in srgb, #fff 16%, var(--card)), color-mix(in srgb, #fff 5%, var(--card)) 75%) !important; }
+html[data-theme="obsidian"] .art img.model, html[data-theme="amoled"] .art img.model { filter: brightness(1.18) contrast(1.04) drop-shadow(0 0 1px rgba(255,255,255,.35)); }
+/* Route: compact turn tester */
+.tt-card { padding: 12px !important; display: flex; flex-direction: column; gap: 12px; }
+.tt-main { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; }
+.tt-arrow { width: 48px; height: 48px; flex: none; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.tt-arrow svg { width: 30px; height: 30px; }
+.tt-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tt-t { font-size: 16px; font-weight: 600; } .tt-s { font-size: 13px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-change { display: inline-flex; align-items: center; gap: 2px; font-size: 14px; font-weight: 600; color: var(--ink-2); flex: none; }
+.tt-change svg { width: 15px; height: 15px; }
+.bc-wx .wh-t { font-size: 14px !important; font-weight: 600; }
+/* Do these first: two full-width cards you swipe between */
+.upnext.two-up { gap: 10px; }
+.upnext.two-up .upcard { width: calc(100% - 2 * var(--pad)); flex: 0 0 calc(100% - 2 * var(--pad)); scroll-snap-align: center; }
+.upnext.two-up:has(> .upcard:only-child) .upcard { width: 100%; }

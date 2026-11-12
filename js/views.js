@@ -301,7 +301,7 @@ export function today(c) {
     ${v.over || v.soon ? heroBar(v.bar) + caption(v) : `<div class="eyebrow caption">All ${v.ok} jobs on track</div>`}
   </button>`}
   <div class="section" style="margin-top:22px">${sh(urgent.length ? 'Do these first' : 'Coming up', '<button class="link" data-act="go" data-arg="logbook">See all</button>')}
-    <div class="upnext">${(urgent.length ? urgent : list.slice(0, 4)).map(({ it, st }) => upCard(it, st)).join('')}</div></div>
+    <div class="upnext two-up">${(urgent.length ? urgent : list).slice(0, 2).map(({ it, st }) => upCard(it, st)).join('')}</div></div>
   ${missed.length ? `<button class="banner" data-act="go" data-arg="alerts">${icon('missed')}<span class="t"><span class="big" style="font-size:20px">${missed.length}</span> missed ${missed.length === 1 ? 'call' : 'calls'} · ${esc(missed[missed.length - 1].name)}</span>${icon('chev', 'faint')}</button>` : ''}
   ${s.parking && !link.connected ? `<button class="banner plain" data-act="sheet" data-arg="parking">${icon('pin')}<span class="t">Parked ${ago(s.parking.ts)} <span class="faint small">· walk back</span></span>${icon('chev', 'faint')}</button>` : ''}
   ${ccIn ? '' : cc}
@@ -387,8 +387,9 @@ function connCard(c, good = false) {
       : `<button class="btn ink block" data-act="sim-on">${icon('bolt')} Try the simulated bike</button><p class="note">To pair a real bike, open this in Chrome on Android.</p>`;
   }
   // Linked, linking or paired: one compact row. Only a bike that was never paired gets the full card.
-  if (st === 'connected' || st === 'connecting' || st === 'reconnecting' || st === 'picking' || known) {
+  if (true) {
     const act = st === 'connected' ? `<button class="btn accent sm cc-act" data-act="ride">${icon('speed')}Ride</button>`
+      : !known ? `<button class="btn ink sm cc-act" data-act="sheet" data-arg="pair-intro">${icon('bt')}Pair</button>`
       : st === 'idle' || st === 'error' ? `<button class="btn ink sm cc-act" data-act="reconnect">${icon('bt')}Connect</button>`
       : `<button class="btn line sm cc-act" data-act="cancel-link">${st === 'connecting' ? 'Cancel' : 'Stop'}</button>`;
     const t = good ? 'Road ready' : title, sb = good ? `${title} · ${sub}` : sub;
@@ -627,8 +628,8 @@ export function route(c) {
   const isRb = sel.glyph.startsWith('roundabout');
   const totalKm = REHEARSAL.steps.reduce((a, x) => a + x.m, 0) / 1000;
   return `<div class="stagger">
-  <div class="head pagehead"><div><h1 class="title">Route</h1><div class="subtitle">Plan in Google Maps, see turns on your bike</div></div></div>
-  <div class="section">${sh('Where to?')}<form class="card pad" data-form="maps">
+  <div class="head pagehead"><div><h1 class="title">Route</h1><div class="subtitle">Turns on your bike</div></div></div>
+  <div class="section">${sh('Where to?')}<p class="hint" style="margin:-4px 4px 10px">Plan the ride in Google Maps. Its turns show on your bike.</p><form class="card pad" data-form="maps">
     <label class="field" style="margin-top:0"><span class="eyebrow">Destination</span><input class="input" name="dest" placeholder="Nandi Hills" value="${esc(live.dest || '')}" autocomplete="off"></label>
     <button class="btn ink block mt12" type="submit">${icon('map')} Open in Google Maps</button>
   </form></div>
@@ -641,15 +642,9 @@ export function route(c) {
     <div class="card pad"><div class="serif" style="font-size:24px">${REHEARSAL.name}</div><div class="small muted mt8">${num(totalKm, 1)} km · ${REHEARSAL.steps.length} turns · NH 44</div>
     <div class="flex gap8 mt16" style="overflow:hidden">${REHEARSAL.steps.map((st) => `<span style="width:24px;flex:none">${arrow(maneuverByKey(st.maneuver).glyph, 0, .25, 8)}</span>`).join('')}</div>
     <button class="btn accent block mt16" data-act="nav-rehearse">${icon('play')} Start rehearsal</button></div></div>
-  <div class="section">${sh('Test one turn', `<span class="eyebrow">${MANEUVERS.length} arrows</span>`, 'testturn')}
-    <div class="grid-man">${MANEUVERS.map((m) => `<button class="${m.key === sel.key ? 'on' : ''}" data-act="turn-pick" data-arg="${m.key}" aria-label="${m.label}" aria-pressed="${m.key === sel.key}">${arrow(m.glyph, 0, .3, 7.5)}<span>${m.label}</span></button>`).join('')}</div>
-    <div class="card pad mt12">
-      <div class="flex between"><span class="eyebrow">Distance</span><span class="mono small" data-live="turn-dist">${num(live.turn.m)} m</span></div>
-      <input class="range mt12" type="range" min="0" max="3000" step="10" value="${live.turn.m}" style="--p:${live.turn.m / 30}%" data-input="turn-dist" aria-label="Distance"><div class="range-scale"><span>0</span><span>1.5 km</span><span>3 km</span></div>
-      ${isRb ? `<div class="eyebrow mt16">Roundabout exit</div><div class="chips mt8">${[1, 2, 3, 4, 5, 6, 7].map((e) => `<button class="chip ${live.turn.exit === e ? 'on' : ''}" data-act="turn-exit" data-arg="${e}">${e}</button>`).join('')}</div>` : ''}
-      <label class="field"><span class="eyebrow flex between">Street <span data-live="turn-count">${(live.turn.street || '').length}/31</span></span><input class="input" maxlength="31" placeholder="Outer Ring Road" value="${esc(live.turn.street)}" data-input="turn-street" autocomplete="off"></label>
-      <button class="btn accent block mt16" data-act="nav-single">Send to bike</button>
-    </div></div>
+  <div class="section">${sh('Test one turn', '', 'testturn')}
+    <div class="card tt-card"><button class="tt-main" data-act="sheet" data-arg="turn-test"><span class="tt-arrow">${arrow(sel.glyph, isRb ? live.turn.exit : 0, .3, 7.5)}</span><span class="tt-tx"><span class="tt-t">${sel.label}</span><span class="tt-s">${num(live.turn.m)} m${isRb ? ` · exit ${live.turn.exit}` : ''}${live.turn.street ? ` · ${esc(live.turn.street)}` : ''}</span></span><span class="tt-change">Change${icon('chev')}</span></button>
+    <button class="btn accent block" data-act="nav-single">Send to bike</button></div></div>
   <div class="section">${sh('Display')}<div class="list">${li({ ic: 'eye', t: 'Street names on the bike', d: 'Shows the road name next to the arrow. Off keeps names on your phone.', end: sw(s.settings.streetNames, 'toggle', 'streetNames'), chev: false, tag: 'div' })}</div></div>
   ${s.settings.devFrames ? frameCard(link) : ''}
   </div>`;
@@ -721,7 +716,7 @@ export function settings(c) {
   const co = S.country(s), md = S.model(s), v = S.veh(s);
   const connText = { connected: 'Connected', connecting: 'Connecting', reconnecting: 'Searching', picking: 'Choosing', idle: link.device || v.bike?.id ? 'Paired' : 'Not paired', error: 'Error' }[link.state];
   return `<div class="stagger">
-  <div class="head pagehead"><div><h1 class="title">Settings</h1><div class="subtitle">You, your bikes and how the app looks</div></div></div>
+  <div class="head pagehead"><div><h1 class="title">Settings</h1><div class="subtitle">Profile, bikes and look</div></div></div>
   ${live.scenario ? previewBar(live) : ''}
   ${(() => { const P = s.profile, rows = [P.blood ? ['drop', 'Blood', esc(P.blood)] : null, P.iceName ? ['phone', 'Emergency contact', esc(P.iceName)] : null, P.medical ? ['hospital', 'Medical notes', esc(P.medical)] : null].filter(Boolean);
     const sum = [P.blood ? `Blood ${esc(P.blood)}` : '', P.iceName ? 'ICE' : '', P.medical ? 'Medical' : ''].filter(Boolean).join(' · ');
@@ -809,7 +804,7 @@ const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnLeft', '#3E8EF7'], ['straigh
 export const TURNS = `<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true">${TURN_SIGNS.map(([k, col, f], i) => `<svg class="tg tg${i} ${f || ''}" viewBox="0 0 24 24" fill="none" style="color:${col}">${HUGE_ICONS[k]}</svg>`).join('')}</span><span aria-hidden="true">link</span></span>`;
 // In-app loading screen: the turn signs take turns in a circle, with a line of text below.
 export const loader = (text = 'Loading') => `<div class="wl-loader" role="status" aria-live="polite"><span class="ld-ring">${TURN_SIGNS.map(([k], i) => `<svg class="ld-i ld${i}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${HUGE_ICONS[k]}</svg>`).join('')}</span><div class="ld-t">${esc(text)}<span class="ld-dots"><i>.</i><i>.</i><i>.</i></span></div></div>`;
-export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M9 34C10 58 16 80 28 80C40 80 45 62 48 46C50 35 60.5 26 60 15C59.6 6 44.6 5.4 44.2 15C43.8 25 49.6 35 52 46C55 62 60 80 72 80C84 80 90 56 91.5 26L91.5 14"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
+export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><defs><mask id="wl-taper" maskUnits="userSpaceOnUse" x="-20" y="-20" width="140" height="140"><rect x="-20" y="-20" width="140" height="140" fill="#fff"/><polygon points="-20,-20 12.6,-20 12.6,33 5.2,64 -20,64" fill="#000"/></mask></defs><path class="lw" mask="url(#wl-taper)" pathLength="100" d="M9 34C10 58 16 80 28 80C40 80 44 60 48.5 46C52 35 62 27 61.5 15.5C61 5 42.5 4.5 42 15.5C41.5 26 46.5 36 51.5 46C55 60 60 80 72 80C84 80 90 56 91.5 26L91.5 14"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
 export const BRANDS = [['loop', 'Loop']];
 export const brandOf = () => 'loop';
 export const APP_VERSION = '1.0';
@@ -1253,7 +1248,7 @@ function sheetInner(c, key) {
       return `<div class="eyebrow">${esc(clip(S.vehicleTitle(s)))} · recording</div><h2>End this ride?</h2>
       <div class="card stat3 mt16" style="box-shadow:none;background:var(--raised)"><div><span class="eyebrow">Distance</span><span class="big">${num(r.km, 1)}</span><span class="unit" style="margin:0">km</span></div><div><span class="eyebrow">Time</span><span class="big" style="font-size:26px">${clock(sec)}</span></div><div><span class="eyebrow">Top</span><span class="big">${num(r.top)}</span><span class="unit" style="margin:0">km/h</span></div></div>
       <p class="lead">${short ? 'This ride is under 100 m, so it won’t be kept.' : `Saving adds ${num(r.km, 1)} km to the odometer and both trips.`}</p>
-      <button class="btn ink block mt20" data-act="rec-stop">${icon('check')} ${short ? 'End ride' : 'Save ride'}</button>
+      <button class="btn accent block mt20" data-act="rec-stop">${icon('check')} ${short ? 'End ride' : 'Save ride'}</button>
       <button class="btn line block mt8" data-act="close">Keep riding</button>
       ${short ? '' : '<button class="btn danger block mt8" data-act="rec-discard">Discard ride</button>'}`;
     }
@@ -1278,6 +1273,25 @@ function sheetInner(c, key) {
     }
     case 'reset':
       return `<div class="eyebrow">Backup</div><h2>Reset Waylink?</h2><p class="lead">Everything on this phone goes: bikes, rides, fuel, service, papers, your profile, theme and every setting. The app starts again like a fresh install. Export a backup first if you might want any of it.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="reset-all">Reset everything</button><button class="btn line block mt8" data-act="close">Cancel</button>`;
+    case 'turn-test': {
+      const sel = maneuverByKey(live.turn.maneuver), isRb = sel.glyph.startsWith('roundabout');
+      const groups = [['Turns', ['TURN_LEFT', 'TURN_RIGHT', 'TURN_SLIGHT_LEFT', 'TURN_SLIGHT_RIGHT', 'TURN_SHARP_LEFT', 'TURN_SHARP_RIGHT']], ['Lanes', ['KEEP_LEFT', 'KEEP_RIGHT', 'FORK_LEFT', 'FORK_RIGHT', 'RAMP_LEFT', 'RAMP_RIGHT', 'MERGE']], ['Roundabouts & U-turns', ['ROUNDABOUT_LEFT', 'ROUNDABOUT_RIGHT', 'U_TURN_LEFT', 'U_TURN_RIGHT']], ['Other', ['STRAIGHT', 'DESTINATION_REACHED', 'FERRY', 'FERRY_TRAIN', 'WRONG_WAY']]];
+      return `<div class="eyebrow">Route</div><h2>Test one turn</h2>
+        ${groups.map(([g, ks]) => `<div class="ms-t mt20">${g}</div><div class="grid-man mt8">${ks.map(maneuverByKey).map((m) => `<button class="${m.key === sel.key ? 'on' : ''}" data-act="turn-pick" data-arg="${m.key}" aria-label="${m.label}" aria-pressed="${m.key === sel.key}">${arrow(m.glyph, 0, .3, 7.5)}<span>${m.label}</span></button>`).join('')}</div>`).join('')}
+        <div class="card pad mt20">
+          <div class="flex between"><span class="eyebrow">Distance</span><span class="mono small" data-live="turn-dist">${num(live.turn.m)} m</span></div>
+          <input class="range mt12" type="range" min="0" max="3000" step="10" value="${live.turn.m}" style="--p:${live.turn.m / 30}%" data-input="turn-dist" aria-label="Distance"><div class="range-scale"><span>0</span><span>1.5 km</span><span>3 km</span></div>
+          ${isRb ? `<div class="eyebrow mt16">Roundabout exit</div><div class="chips mt8">${[1, 2, 3, 4, 5, 6, 7].map((e) => `<button class="chip ${live.turn.exit === e ? 'on' : ''}" data-act="turn-exit" data-arg="${e}">${e}</button>`).join('')}</div>` : ''}
+          <label class="field"><span class="eyebrow flex between">Street <span data-live="turn-count">${(live.turn.street || '').length}/31</span></span><input class="input" maxlength="31" placeholder="Outer Ring Road" value="${esc(live.turn.street)}" data-input="turn-street" autocomplete="off"></label>
+        </div>
+        <button class="btn accent block mt16" data-act="nav-single">Send to bike</button>`;
+    }
+    case 'pair-intro':
+      return `<div class="eyebrow">Your bike</div><h2>No bike linked</h2><p class="lead">Pair once and Waylink reconnects by itself whenever the ignition is on. Turns, callers and the time then show on your display.</p>
+        ${link.supported ? `<button class="btn ink block mt20" data-act="pair">${icon('bt')} Pair your bike</button><button class="btn line block mt8" data-act="sim-on">${icon('bolt')} Try the simulated bike</button>`
+        : isIOS() ? `<button class="btn ink block mt20" data-act="sheet" data-arg="ios-pair">${icon('bt')} Pair on iPhone</button><button class="btn line block mt8" data-act="sim-on">${icon('bolt')} Try the simulated bike</button><p class="hint">iPhone browsers need one extra app for Bluetooth. It takes a minute.</p>`
+        : `<button class="btn ink block mt20" data-act="sim-on">${icon('bolt')} Try the simulated bike</button><p class="hint">To pair a real bike, open this in Chrome on Android.</p>`}
+        <button class="btn ghost block mt8" data-act="close">Not now</button>`;
     case 'erase':
       return `<div class="eyebrow">Backup</div><h2>${s.sample ? 'Erase sample data?' : 'Erase everything?'}</h2><p class="lead">Bikes, rides, fuel, service, alerts and papers on this phone will go. Export a backup first if you want to keep them.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="erase">Erase</button><button class="btn line block mt8" data-act="close">Keep my data</button>`;
     case 'paste':

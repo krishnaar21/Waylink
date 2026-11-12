@@ -868,12 +868,12 @@ const A = {
   'trip-rename': (id) => openSheet('trip-rename:' + id),
   'trip-del': (id) => { s.trips = s.trips.filter((x) => x.id !== id); closeSheet(); commit(); toast('Ride deleted. The odometer is unchanged.'); },
   'nav-rehearse': () => startRehearsal(),
-  'nav-single': () => startSingle(),
+  'nav-single': () => { if (sheetKey) closeSheet(); startSingle(); },
   'nav-end': () => { endNav(); toast('Navigation ended. The cluster is cleared.'); },
   'nav-speed': (x) => { live.navSpeed = +x; render(); },
   'nav-next': () => nextStep(),
-  'turn-pick': (k) => { live.turn.maneuver = k; buzz(5); render(); },
-  'turn-exit': (e) => { live.turn.exit = +e; render(); },
+  'turn-pick': (k) => { live.turn.maneuver = k; buzz(5); render(); if (sheetKey === 'turn-test') refreshSheet(); },
+  'turn-exit': (e) => { live.turn.exit = +e; render(); if (sheetKey === 'turn-test') refreshSheet(); },
   relay: (kind) => {
     const name = (live.relayName || '').trim();
     if (!name) return toast('Add a name first.');
@@ -1200,6 +1200,11 @@ function registerUpdates() {
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
     setInterval(check, 30 * 60e3);
   }).catch(() => {});
+  // No bike linked yet: offer pairing once a day, in a sheet.
+  setTimeout(() => { try {
+    const known = !!(link.device || s.bike?.id || link.simulated || S.veh(s).bike?.id), day = new Date().toDateString();
+    if (!navigator.webdriver && s.onboarded && !known && !sheetKey && screen === 'today' && localStorage.getItem('wl-pair-nudge') !== day) { localStorage.setItem('wl-pair-nudge', day); A.sheet('pair-intro'); }
+  } catch {} }, 2600);
   try { if (sessionStorage.getItem('waylink-updated')) { sessionStorage.removeItem('waylink-updated'); setTimeout(() => toast('Updated to the latest version.'), 1200); } } catch {}
 }
 

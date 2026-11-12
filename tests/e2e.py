@@ -167,7 +167,8 @@ async def main():
 
         # Simulated bike: states and animations
         await pg.evaluate("location.hash='today'"); await pg.wait_for_timeout(500)
-        await pg.click('.conn [data-act="sim-on"]'); await pg.wait_for_timeout(150)
+        await pg.click('.conn-compact [data-arg="pair-intro"]'); await pg.wait_for_timeout(500)
+        await pg.click('.sheet [data-act="sim-on"]'); await pg.wait_for_timeout(150)
         check('connecting state shows first', await pg.query_selector('.conn-compact .cc-ic.connecting'))
         await pg.wait_for_timeout(1000)
         check('connected state follows (or a ride row once riding)', await pg.query_selector('.conn-compact .cc-ic.on, .rec-row'))
@@ -203,9 +204,12 @@ async def main():
         await pg.click('[data-act="toggle"][data-arg="devFrames"]'); await pg.wait_for_timeout(300)
         await pg.evaluate("location.hash='route'"); await pg.wait_for_timeout(500)
         check('route explains how it works', await pg.query_selector('.howto'))
+        await pg.click('[data-arg="turn-test"]'); await pg.wait_for_timeout(600)
+        check('turn tester groups arrows by kind', len(await pg.query_selector_all('.sheet .grid-man')) == 4)
         check('selected arrow has no tick, others are grey', not await pg.query_selector('.grid-man .selmark') and await pg.eval_on_selector('.grid-man button:not(.on)', 'e => getComputedStyle(e).getPropertyValue("--accent").trim()') != await pg.eval_on_selector('.grid-man button.on', 'e => getComputedStyle(e).getPropertyValue("--accent").trim()'))
         check('slider shows its fill', '--p' in (await pg.get_attribute('[data-input="turn-dist"]', 'style') or ''))
         await shot(pg, '10-slider')
+        await pg.evaluate("document.querySelector('.sheet-head [data-act=close]').click()"); await pg.wait_for_timeout(600)
         await pg.click('[data-act="nav-rehearse"]'); await pg.wait_for_timeout(1500)
         check('rehearsal streams turns', 'Ballari Road' in await text(pg, '.instr'))
         frame = await text(pg, '[data-live="frame"]')
