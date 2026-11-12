@@ -944,3 +944,11 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .accents { grid-template-columns: repeat(6, 1fr); gap: 6px; justify-items: center; }
 .accentopt, .accentopt.on { width: 46px; height: 46px; padding: 0; justify-content: center; border-radius: 50%; background: none; box-shadow: none; }
 .accentopt .dot { width: 32px; height: 32px; }
+
+/* Quiet colour: icons and "fine" states stay neutral; colour is kept for things that need you. */
+.row-ic.s, .row-ic.a, .tile .tile-ic.s, .tile .tile-ic.a, .qi.sage, .qi.amber, .qi.acc, .wx-ic, .avatar,
+.tag:not(.a):not(.r):not(.x) { background: color-mix(in srgb, var(--ink) 7%, transparent); color: var(--ink-2); }
+.wx-hint.ok { background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink-2); }
+.upcard.a .uc-tag { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.upcard.s .uc-bar i, .segs i.s, .hero .segs i.s { background: color-mix(in srgb, var(--ink) 30%, transparent); }
+.bc-wx .wh-ic, .wh-ic { color: var(--ink-2); }

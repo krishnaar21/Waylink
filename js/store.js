@@ -114,7 +114,7 @@ export function migrate(raw) {
   if (s.settings.theme === 'carbon') s.settings.theme = 'obsidian';
   if (typeof s.settings.sounds !== 'boolean') s.settings.sounds = true;
   if (!['system', 'inter', 'rubik', 'lexend', 'plex', 'atkinson', 'chakra', 'space', 'kanit'].includes(s.settings.bodyFont)) s.settings.bodyFont = 'system';
-  if (!['wl-turn', 'wl-road', 'wl-chain', 'wl-nav', 'wl-route'].includes(s.settings.logo)) s.settings.logo = 'wl-turn';
+  if (!['wl-turn', 'wl-summit', 'wl-dusk', 'wl-ribbon', 'wl-road', 'wl-chain', 'wl-nav', 'wl-route'].includes(s.settings.logo)) s.settings.logo = 'wl-turn';
   if (!s.settings.font || !['onest','geist','garamond','crimson','vollkorn','fraunces'].includes(s.settings.font)) s.settings.font = 'geist';
   return bindVehicle(s);
 }

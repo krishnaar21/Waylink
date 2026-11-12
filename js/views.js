@@ -754,7 +754,7 @@ export const REPO_URL = 'https://github.com/krishnaar21/Waylink';
 // Donations. Fill in to switch them on: a UPI ID (e.g. name@okicici) and any of Buy Me a Coffee, Ko-fi or GitHub Sponsors.
 export const SUPPORT = { upi: '', payee: 'Waylink', links: [/* ['Buy Me a Coffee', 'https://buymeacoffee.com/…'], ['Ko-fi', 'https://ko-fi.com/…'], ['GitHub Sponsors', 'https://github.com/sponsors/…'] */] };
 const UPI_AMOUNTS = [49, 99, 199, 499];
-export const LOGOS = [['wl-turn', 'Turn'], ['wl-road', 'Road'], ['wl-chain', 'Chain'], ['wl-nav', 'Arrow'], ['wl-route', 'Route']];
+export const LOGOS = [['wl-turn', 'Turn'], ['wl-summit', 'Summit'], ['wl-dusk', 'Dusk'], ['wl-ribbon', 'Ribbon'], ['wl-road', 'Road'], ['wl-chain', 'Chain'], ['wl-nav', 'Arrow'], ['wl-route', 'Route']];
 export const appName = () => APP_NAME;
 
 // ---------- PROFILE ----------
