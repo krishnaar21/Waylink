@@ -168,9 +168,9 @@ async def main():
         # Simulated bike: states and animations
         await pg.evaluate("location.hash='today'"); await pg.wait_for_timeout(500)
         await pg.click('.conn [data-act="sim-on"]'); await pg.wait_for_timeout(150)
-        check('connecting animation shows first', await pg.query_selector('.track.connecting'))
+        check('connecting state shows first', await pg.query_selector('.conn-compact .cc-ic.connecting'))
         await pg.wait_for_timeout(1000)
-        check('connected animation follows', await pg.query_selector('.track.on'))
+        check('connected state follows', await pg.query_selector('.conn-compact .cc-ic.on'))
         await shot(pg, '07-connected')
         await pg.wait_for_timeout(8000)
         check('ride mode opens by itself at speed', await pg.query_selector('#ride-mode'))

@@ -349,7 +349,7 @@ function fitArch(root = document) {
     const em = parseFloat(getComputedStyle(w).fontSize); if (!p || !y || !rest || !em) continue;
     const yx = rest.offsetLeft + y.offsetLeft + y.offsetWidth * 0.2; if (!yx) continue;
     const u = 100 / (0.98 * em), X = Math.round(yx * u * 10) / 10;
-    p.setAttribute('d', p.getAttribute('d').replace(/C91\.5 -?[\d.]+ [\d.]+ -?[\d.]+ [\d.]+ [\d.]+$/, `C91.5 -44 ${X} -44 ${X} 24`));
+    p.setAttribute('d', p.getAttribute('d').replace(/C92 -?[\d.]+ [\d.]+ -?[\d.]+ [\d.]+ [\d.]+$/, `C92 -44 ${X} -44 ${X} 24`));
   }
 }
 function showLoader() {

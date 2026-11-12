@@ -297,7 +297,7 @@ export function today(c) {
     <div class="eyebrow">Verdict</div>
     <div class="verdict">${v.word}</div>
     <p>${line}</p>
-    ${heroBar(v.bar)}${caption(v)}
+    ${v.over || v.soon ? heroBar(v.bar) + caption(v) : `<div class="eyebrow caption">All ${v.ok} jobs on track</div>`}
   </button>
   <div class="section" style="margin-top:22px">${sh(urgent.length ? 'Do these first' : 'Coming up', '<button class="link" data-act="go" data-arg="logbook">See all</button>')}
     <div class="upnext">${(urgent.length ? urgent : list.slice(0, 4)).map(({ it, st }) => upCard(it, st)).join('')}</div></div>
@@ -380,6 +380,13 @@ function connCard(c) {
       : isIOS() ? `<button class="btn ink block" data-act="sheet" data-arg="ios-pair">${icon('bt')} Pair on iPhone</button><button class="btn line block mt8" data-act="sim-on">${icon('bolt')} Try the simulated bike</button><p class="note">iPhone browsers need one extra app for Bluetooth. It takes a minute.</p>`
       : `<button class="btn ink block" data-act="sim-on">${icon('bolt')} Try the simulated bike</button><p class="note">To pair a real bike, open this in Chrome on Android.</p>`;
   }
+  // Linked, linking or paired: one compact row. Only a bike that was never paired gets the full card.
+  if (st === 'connected' || st === 'connecting' || st === 'reconnecting' || st === 'picking' || known) {
+    const act = st === 'connected' ? `<button class="btn accent sm cc-act" data-act="ride">${icon('speed')}Ride</button>`
+      : st === 'idle' || st === 'error' ? `<button class="btn ink sm cc-act" data-act="reconnect">${icon('bt')}Connect</button>`
+      : `<button class="btn line sm cc-act" data-act="cancel-link">${st === 'connecting' ? 'Cancel' : 'Stop'}</button>`;
+    return `<div class="card conn conn-compact mt12"><button class="cc-main" data-act="sheet" data-arg="bike" aria-label="Bluetooth details"><span class="cc-ic ${mode}">${icon(st === 'connected' ? 'btOn' : mode === 'search' ? 'btSearch' : 'bt')}<span class="dot ${dot}"></span></span><span class="cc-tx"><span class="cc-t">${title}</span><span class="cc-s">${sub}</span></span></button>${act}</div>`;
+  }
   return `<div class="card conn mt12">
     <div class="conn-head"><div><div class="serif">${title}</div><div class="status mt8"><span class="dot ${dot}"></span>${sub}</div></div>
     <button class="icon-btn" data-act="sheet" data-arg="bike" aria-label="Bluetooth details">${icon(st === 'connected' ? 'btOn' : mode === 'search' ? 'btSearch' : 'bt')}</button></div>
@@ -417,7 +424,7 @@ export function logbook(c) {
   return `<div class="stagger">
   <header class="pagehead">${topbar(backBtn(), `<button class="circle" data-act="sheet" data-arg="svc-edit:new" aria-label="Add reminder">${icon('plus')}</button>`)}
   <h1 class="title">Logbook</h1><div class="subtitle">Service for ${esc(clip(S.vehicleTitle(s), 24))}</div></header>
-  <div class="hero ${v.cls}"><div class="eyebrow">Verdict</div><div class="verdict">${v.word}</div><p>${v.line}</p>${heroBar(v.bar)}${caption(v)}</div>
+  <div class="hero ${v.cls}"><div class="eyebrow">Verdict</div><div class="verdict">${v.word}</div><p>${v.line}</p>${v.over || v.soon ? heroBar(v.bar) + caption(v) : `<div class="eyebrow caption">All ${v.ok} jobs on track</div>`}</div>
   <button class="card pad mt12 flex between" style="width:100%" data-act="sheet" data-arg="odo"><span class="eyebrow">Odometer now</span><span class="flex gap8"><span><span class="big" style="font-size:30px">${num(Math.floor(s.odo))}</span><span class="unit">km</span></span>${icon('edit', 'faint')}</span></button>
   <div class="section">${sh('Reminders · most urgent first', '', 'reminders')}
     <div class="rows" id="svc-rows">${list.map(({ it, st }) => serviceRow(it, st)).join('') || '<div class="empty">No reminders yet. Tap + to add one.</div>'}</div></div>
@@ -652,7 +659,7 @@ export const hexHtml = (b) => toHex(b).split(' ').map((h, i) => (i === 1 && b.le
 // iOS Safari can't open the Phone app without a number, so the button only shows where it works.
 function alertsTabs(c, needs) {
   const { s, live } = c, tab = live.alertsTab === 'recent' ? 'recent' : 'needs', n = s.alerts.missed.length + s.alerts.wa.length;
-  return `<div class="ltabs" role="tablist"><button role="tab" class="${tab === 'needs' ? 'on' : ''}" aria-selected="${tab === 'needs'}" data-act="alerts-tab" data-arg="needs">Alerts${needs.length ? `<span class="lt-n">${needs.length}</span>` : ''}</button><button role="tab" class="${tab === 'recent' ? 'on' : ''}" aria-selected="${tab === 'recent'}" data-act="alerts-tab" data-arg="recent">Notifications${n ? `<span class="lt-n">${n}</span>` : ''}</button><span class="grow"></span><span class="eyebrow lt-aside">${short(s.alerts.sent)} sent</span></div>`;
+  return `<div class="ltabs" role="tablist"><button role="tab" class="${tab === 'needs' ? 'on' : ''}" aria-selected="${tab === 'needs'}" data-act="alerts-tab" data-arg="needs">Status${needs.length ? `<span class="lt-n">${needs.length}</span>` : ''}</button><button role="tab" class="${tab === 'recent' ? 'on' : ''}" aria-selected="${tab === 'recent'}" data-act="alerts-tab" data-arg="recent">Notifications${n ? `<span class="lt-n">${n}</span>` : ''}</button><span class="grow"></span><span class="eyebrow lt-aside">${short(s.alerts.sent)} sent</span></div>`;
 }
 const IS_IOS = typeof navigator !== 'undefined' && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 export function alerts(c) {
@@ -664,7 +671,7 @@ export function alerts(c) {
   return `<div class="stagger">
   <div class="head pagehead"><div><h1 class="title">Alerts</h1><div class="subtitle">${needs.length ? `${plural(needs.length, 'thing needs', 'things need')} you` : 'Nothing needs you right now'}</div></div>${alertsTabs(c, needs)}</div>
   ${(() => { const tab = live.alertsTab === 'recent' ? 'recent' : 'needs';
-    const needsHTML = needs.length ? `<div class="list">${needs.map((x) => li({ lead: `<span class="ic">${icon(x.ic)}</span>`, t: x.t, d: x.d, act: x.act, arg: x.arg })).join('')}</div>` : '<div class="card empty">Nothing needs you right now. Service, papers and fuel reminders show up here.</div>';
+    const needsHTML = needs.length ? `<div class="list">${needs.map((x) => li({ lead: `<span class="ic${x.tone === 'red' ? ' hot' : ''}">${icon(x.ic)}</span>`, t: x.t, d: x.tone === 'red' ? `<span class="opill">Overdue</span>${String(x.d).replace(/ overdue$/, ' late')}` : x.d, act: x.act, arg: x.arg, cls: x.tone === 'red' ? 'is-over' : '' })).join('')}</div>` : '<div class="card empty">All clear. Service, papers and fuel show up here when they need you.</div>';
     // Recent: a notification feed, grouped by day. What reached the bike, when.
     const day = (ts) => { const d = new Date(ts), t = new Date(); t.setHours(0, 0, 0, 0); const y = t - 864e5; return ts >= +t ? 'Today' : ts >= y ? 'Yesterday' : d.toLocaleDateString(DL(), { day: 'numeric', month: 'short' }); };
     const NT = { wa: ['chat', 'WhatsApp message', 'Shown on your bike'], missed: ['missed', 'Missed call', 'Count sent to your bike'], call: ['phone', 'Incoming call', 'Name shown on your bike'], button: ['hand', 'Handlebar button', 'Pressed on the bike'] };
@@ -794,7 +801,7 @@ const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnLeft', '#3E8EF7'], ['straigh
 export const TURNS = `<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true">${TURN_SIGNS.map(([k, col, f], i) => `<svg class="tg tg${i} ${f || ''}" viewBox="0 0 24 24" fill="none" style="color:${col}">${HUGE_ICONS[k]}</svg>`).join('')}</span><span aria-hidden="true">link</span></span>`;
 // In-app loading screen: the turn signs take turns in a circle, with a line of text below.
 export const loader = (text = 'Loading') => `<div class="wl-loader" role="status" aria-live="polite"><span class="ld-ring">${TURN_SIGNS.map(([k], i) => `<svg class="ld-i ld${i}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${HUGE_ICONS[k]}</svg>`).join('')}</span><div class="ld-t">${esc(text)}<span class="ld-dots"><i>.</i><i>.</i><i>.</i></span></div></div>`;
-export const LOOP = '<span class="wl-loop wl-arch" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8.5 26L8.5 30C10 56 16 80 28 80C40 80 45 58 50 42C54 28 62 14 55 9C48 4 41 16 47 36C52 56 60 80 72 80C84 80 90 56 91.5 30L91.5 26C91.5 -44 158 -44 158 24"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
+export const LOOP = '<span class="wl-loop wl-arch" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8 22L8 32C8 62 14 80 28 80C41 80 48 64 50 40C52 64 59 80 72 80C86 80 92 62 92 32L92 26C92 -44 158 -44 158 24"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
 export const BRANDS = [['loop', 'Loop']];
 export const brandOf = () => 'loop';
 export const APP_VERSION = '1.0';

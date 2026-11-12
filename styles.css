@@ -1643,3 +1643,31 @@ svg.i.ifill circle, svg.i.ifill rect, svg.i.ifill ellipse, svg.i.ifill path[d$="
 .pc-cell .pc-k { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-3); }
 .pc-cell .pc-k svg { width: 14px; height: 14px; }
 .pc-cell .pc-v { font-size: 14.5px; color: var(--ink); line-height: 1.35; overflow-wrap: anywhere; }
+/* One rhythm everywhere: 12px between stacked cards, 30px before a section, 18px under the page header */
+.view .stagger > * + * { margin-top: 12px !important; }
+.view .stagger > * + .section, .view .stagger > .section + * { margin-top: 30px !important; }
+.view .stagger > .pagehead + * { margin-top: 18px !important; }
+.view .stagger > .pagehead + .section { margin-top: 18px !important; }
+.section > .two, .section > .list, .section > .card { margin-top: 0; }
+.section .two + .nf-list, .section .card + .card { margin-top: 12px; }
+/* Wordmark w: flat ends and a sharp middle point, like the letters beside it */
+.wl-arch .lw { stroke-linecap: butt !important; stroke-linejoin: miter !important; stroke-miterlimit: 6; }
+/* Compact link card on Today */
+.conn-compact { display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 10px !important; }
+.cc-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; text-align: left; }
+.cc-ic { position: relative; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex: none; background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink-2); }
+.cc-ic svg { width: 21px; height: 21px; }
+.cc-ic .dot { position: absolute; right: -2px; bottom: -2px; width: 11px; height: 11px; border: 2px solid var(--card); box-sizing: content-box; }
+.cc-ic.on .dot { background: var(--sage); }
+.cc-tx { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cc-t { font-size: 16px; font-weight: 600; color: var(--ink); }
+.cc-s { font-size: 13px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cc-act { flex: none; height: 36px; padding: 0 14px !important; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+.cc-act svg { width: 16px; height: 16px; }
+/* Garage card: the edit button sits centred at the right of the bike row */
+.vcard > button:first-child { padding-right: 58px !important; }
+.vcard .edit { top: 42px; right: 14px; width: 36px; height: 36px; background: color-mix(in srgb, var(--ink) 6%, transparent); }
+/* Status tab: overdue rows stand out */
+.li.is-over .ic, .li .ic.hot { background: var(--tint-red) !important; color: var(--red) !important; }
+.li .opill { margin-right: 6px; }
+.wl-arch .lw { stroke-width: 13 !important; }
