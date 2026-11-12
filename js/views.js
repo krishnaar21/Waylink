@@ -50,10 +50,12 @@ export function segs(n, filled, cls = 's', extra = '') {
 // ---------- Icons (Lucide) ----------
 export const selmark = (inline = false) => `<span class="selmark ${inline ? 'inline' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
 // Icon libraries: Lucide is built in; the others load on demand and fall back to Lucide per icon.
-export const BODY_FONTS = [['system', 'System', '-apple-system, system-ui'], ['inter', 'Inter', "'Inter'"], ['plex', 'IBM Plex', "'IBM Plex Sans'"], ['work', 'Work Sans', "'Work Sans'"]];
+export const BODY_FONTS = [['system', 'System', '-apple-system, system-ui'], ['source', 'Source Sans', "'Source Sans 3'"], ['nunito', 'Nunito', "'Nunito Sans'"], ['karla', 'Karla', "'Karla'"]];
 export const THEMES = [['auto', 'Auto', '#ECE8E1', '#F7F5F1', '#161514'], ['paper', 'Light', '#ECE8E1', '#F7F5F1', '#161514'], ['obsidian', 'Dark', '#161514', '#22201E', '#F2EFE9'], ['amoled', 'Black', '#000000', '#141312', '#F2EFE9']];
 export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
-export const ICON_LIBS = [['lucide', 'Lucide', 'ISC'], ['tabler', 'Tabler', 'MIT'], ['phosphor', 'Phosphor', 'MIT'], ['iconoir', 'Iconoir', 'MIT']];
+export const ICON_LIBS = [['lucide', 'Lucide', 'ISC'], ['hugeicons', 'Hugeicons', 'MIT'], ['uicons', 'UIcons', 'Flaticon licence'], ['material', 'Material', 'Apache 2.0']];
+// UIcons' free licence asks for this visible credit.
+export const iconCredit = (k) => (k === 'uicons' ? '<a href="https://www.flaticon.com/uicons" target="_blank" rel="noopener">Uicons by Flaticon</a>' : `Icons by ${(ICON_LIBS.find(([x]) => x === k) || ICON_LIBS[0])[1]}`);
 const LUCIDE = { SET: { vb: '0 0 24 24', attrs: 'fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"' }, ICONS };
 const SETS = { lucide: LUCIDE };
 let CUR = LUCIDE;
@@ -660,7 +662,7 @@ export function settings(c) {
     <div class="themes">${THEMES.map(([k, l, bg, card, ink]) => `<button class="themeopt ${st.theme === k ? 'on' : ''}" data-act="theme" data-arg="${k}" aria-pressed="${st.theme === k}">
       <span class="tp ${k}" style="--tbg:${bg};--tcard:${card};--tink:${ink}"><i></i><i></i><b></b></span><span class="nm">${l}</span></button>`).join('')}</div>
     <div class="eyebrow mt24">Accent</div>
-    <div class="accents mt12">${ACCENTS.map(([k, col, l]) => `<button class="accentopt ${st.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${st.accent === k}"><span class="dot" style="background:${col}"></span>${l}</button>`).join('')}</div>
+    <div class="accents mt12">${ACCENTS.map(([k, col, l]) => `<button class="accentopt ${st.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${st.accent === k}"><span class="dot" style="background-color:${col};--c:${col}"></span>${l}</button>`).join('')}</div>
   </div></div>
   <div class="section">${sh('Type & icons')}<div class="card pad">
     <div class="eyebrow">Title font</div>
@@ -700,13 +702,12 @@ export function settings(c) {
     ${li({ ic: 'bt', t: 'Pair from all devices', d: 'If your bike isn’t listed', act: 'pair-all', cls: link.supported ? '' : 'disabled' })}
     ${li({ ic: 'list', t: 'Connection log', d: 'Each step of the Bluetooth link', end: `${link.log.length}`, act: 'sheet', arg: 'log' })}
     ${li({ ic: 'code', t: 'Protocol', d: 'Service, frames and timings', act: 'sheet', arg: 'protocol' })}
-    ${li({ ic: 'image', t: 'Photo credits', d: 'Authors and licences of bike photos', act: 'sheet', arg: 'credits' })}
   </div></div>
   <footer class="about">
     <img src="img/logos/${st.logo || 'wl-turn'}.svg" alt="" width="40" height="40">
     <div class="about-name">${appName(s)}</div>
     <div class="about-meta">Version ${APP_VERSION} · MIT licence</div>
-    <p class="about-credits">Bike protocol from PulsarNav · Icons by ${(ICON_LIBS.find(([k]) => k === (st.icons || 'lucide')) || ICON_LIBS[0])[1]}</p>
+    <p class="about-credits">Bike protocol from PulsarNav · ${iconCredit(st.icons || 'lucide')}</p>
     <p class="about-legal">Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.</p>
   </footer>
   </div>`;
@@ -717,11 +718,13 @@ export const FONTS = [
   ['geist', 'Geist', "'Geist'", 600],
   ['garamond', 'Garamond', "'EB Garamond'", 500],
   ['crimson', 'Crimson', "'Crimson Pro'", 500],
-  ['newsreader', 'Newsreader', "'Newsreader'", 500],
-  ['instrument', 'Instrument', "'Instrument Serif'", 400],
+  ['vollkorn', 'Vollkorn', "'Vollkorn'", 500],
+  ['lora', 'Lora', "'Lora'", 500],
 ];
 export const APP_NAME = 'Waylink';
 export const APP_VERSION = '1.0';
+// Add-a-bike glyph: a motorbike whose front wheel is a plus.
+export const ADD_BIKE = '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="16" r="3.5"/><circle cx="18.5" cy="16" r="3.5"/><path d="M18.5 14.4v3.2M16.9 16h3.2"/><path d="M5.5 16l3.2-5.5h5.2l2.4 3"/><path d="M8 8.5h3.2"/><path d="M13.9 10.5l1.4-3.2h2.4"/></svg>';
 export const isIOS = () => typeof navigator !== 'undefined' && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 const BLUEFY_STORE = 'https://apps.apple.com/app/id1492822055';
 export const REPO_URL = 'https://github.com/krishnaar21/Waylink';
@@ -839,7 +842,7 @@ export const FAQ = [
 ];
 export function helpSheet(c, k) {
   const { s, link } = c;
-  if (k === 'faq') return `<div class="eyebrow">Help</div><h2>Questions and answers</h2><div class="faq mt16">${FAQ.map(([q, a]) => `<details class="faq-i"><summary>${q}${icon('chev')}</summary><p>${a}</p></details>`).join('')}</div>`;
+  if (k === 'faq') return `<div class="eyebrow">Help</div><h2>Questions and answers</h2><div class="faq mt16">${FAQ.map(([q, a]) => `<details class="faq-i" name="faq"><summary>${q}${icon('chev')}</summary><p>${a}</p></details>`).join('')}</div>`;
   if (k === 'report') {
     const info = [`Waylink ${APP_VERSION}`, `Bike: ${S.model(s).name || S.model(s).id}`, `Link: ${link.state}${link.simulated ? ' (simulated)' : ''}`, `Bluetooth in browser: ${link.supported ? 'yes' : 'no'}`, `Screen: ${typeof window !== 'undefined' ? `${window.innerWidth}×${window.innerHeight}` : 'n/a'}`, `Theme: ${s.settings.theme}, icons: ${s.settings.icons || 'lucide'}`, `Browser: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a'}`].join('\n');
     return `<div class="eyebrow">Help</div><h2>Report a problem</h2><p class="lead">Say what you tapped, what you expected and what happened. Add these details so it can be fixed fast. Nothing personal is included.</p>
@@ -853,6 +856,8 @@ export function helpSheet(c, k) {
       ${li({ ic: 'code', t: 'Source code', d: 'MIT licence', end: '', tag: 'a', href: REPO_URL })}
       ${li({ ic: 'bt', t: 'Bike protocol', d: 'From the PulsarNav project', chev: false, tag: 'div' })}
       ${li({ ic: 'grid', t: 'Icons', d: ICON_LIBS.map(([, n, l]) => `${n} (${l})`).join(' · '), chev: false, tag: 'div' })}
+      ${li({ ic: 'grid', t: 'Uicons by Flaticon', d: 'flaticon.com/uicons', tag: 'a', href: 'https://www.flaticon.com/uicons' })}
+      ${li({ ic: 'image', t: 'Photo credits', d: 'Authors and licences of bike photos', act: 'sheet', arg: 'credits' })}
       ${li({ ic: 'wxPart', t: 'Weather', d: 'Open-Meteo, free and open data', chev: false, tag: 'div' })}
       ${li({ ic: 'pin', t: 'Places', d: 'OpenStreetMap Nominatim', chev: false, tag: 'div' })}
       ${li({ ic: 'lock', t: 'Privacy', d: 'Your data stays on this phone', chev: false, tag: 'div' })}
@@ -1092,7 +1097,7 @@ export function sheetHTML(c, key) {
     case 'models':
       return `<div class="eyebrow">Garage</div><h2>Bike models</h2><p class="lead">Every model ${appName(s)} knows. Photos come from Wikimedia Commons with credit; the rest show a colour tile.</p>
       <div class="models mt16">${S.MODELS.map((m, i) => `<div class="m">${vehicleArt({ settings: { art: 'photo' } }, { model: m.id, colour: S.COLOURS[i % S.COLOURS.length][0] }, 'model')}<div class="t">${esc(S.nameOfModel(s, m))}</div><div class="d">${num(m.tank, m.tank % 1 ? 1 : 0)} L · ${esc(m.series)}${S.MODEL_IMAGES[m.id] ? ' · photo' : ''}</div></div>`).join('')}</div>
-      <p class="hint">To add photos, run tools/fetch_bike_photos.py once. Credits appear in Photo credits.</p>`;
+      <p class="hint">To add photos, run tools/fetch_bike_photos.py once. Credits appear in About Waylink, Photo credits.</p>`;
     case 'credits': {
       const rows = Object.entries(S.MODEL_IMAGES);
       return `<div class="eyebrow">About</div><h2>Photo credits</h2><p class="lead">Bike photos are used under their open licences. Tap one to see its source.</p>

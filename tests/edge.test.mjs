@@ -158,10 +158,10 @@ test('Weather: codes map, hints are actionable, bad payloads throw', () => {
 
 test('Icon libraries cover every icon the app uses', async () => {
   const lucide = Object.keys((await import('../js/icons.js')).ICONS);
-  for (const lib of ['tabler', 'phosphor', 'iconoir']) {
+  for (const lib of ['hugeicons', 'uicons', 'material']) {
     const m = await import(`../js/icons-${lib}.js`);
     const missing = lucide.filter((k) => !m.ICONS[k]);
-    assert.deepEqual(missing, [], lib);
+    assert.deepEqual(missing, lib === 'uicons' ? ['bt', 'btSearch', 'btOn'] : [], lib); // UIcons has no Bluetooth glyph; Lucide covers it
     V.addIconSet(lib, m); V.useIconSet(lib);
     assert.ok(V.icon('bike').includes(m.SET.vb));
   }

@@ -15,22 +15,21 @@ w = ('M204 196L120 196L120 286'
 I['wl-turn'] = ('Turn', tile('#EEF1FF',
     f'<g transform="translate(256 262) scale(1.22) translate(-256 -262) matrix(-1 0 0 1 502 6)"><path d="{w}" fill="none" stroke="{c}" stroke-width="40" stroke-linejoin="miter" stroke-miterlimit="4" stroke-linecap="butt"/></g>'))
 
-# 2 LINK — two chain links locked together, one over, one under.
-g1, g2, bgl = '#0E7C6B', '#1FB592', '#E4F4EF'
-L1 = '<rect x="70" y="200" width="216" height="116" rx="58" fill="none" stroke="{c}" stroke-width="{w}"/>'
-L2 = '<rect x="226" y="200" width="216" height="116" rx="58" fill="none" stroke="{c}" stroke-width="{w}"/>'
-I['wl-link'] = ('Link', tile(bgl,
-    '<clipPath id="cx"><rect x="232" y="292" width="48" height="52"/></clipPath>'
-    '<g transform="translate(256 258) scale(.86) rotate(-28) translate(-256 -258)">'
-    + L1.format(c=g1, w=34) + L2.format(c=g2, w=34)
-    + '<g clip-path="url(#cx)">' + L1.format(c=bgl, w=52) + L1.format(c=g1, w=34) + '</g></g>'))
+# 2 LINK — a hollow W drawn as one continuous tube, a node at each end: two points, linked.
+teal, mint = '#0F2E2A', '#5EE6B8'
+wpath = 'M120 178L178 340L256 222L334 340L392 178'
+I['wl-link'] = ('Link', tile(teal,
+    f'<path d="{wpath}" fill="none" stroke="{mint}" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>'
+    f'<path d="{wpath}" fill="none" stroke="{teal}" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>'
+    f'<circle cx="120" cy="178" r="20" fill="{mint}"/><circle cx="392" cy="178" r="20" fill="{mint}"/>'))
 
-# 3 SIGN — a diamond road sign with a turn-ahead arrow.
-amb, ink = '#F2B33D', '#16150F'
-I['wl-sign'] = ('Sign', tile('#1C1B19',
-    f'<rect x="146" y="146" width="220" height="220" rx="40" transform="rotate(45 256 256)" fill="{amb}"/>'
-    f'<path d="M224 352V286C224 250 246 228 282 228H302" fill="none" stroke="{ink}" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>'
-    f'<path d="M294 188L346 228L294 268Z" fill="{ink}" stroke="{ink}" stroke-width="10" stroke-linejoin="round"/>'))
+# 3 SIGNPOST — a post with two direction plates: one way out, one way back.
+post, amber, teal2 = '#1C1B19', '#F2B33D', '#2A9D8F'
+I['wl-sign'] = ('Signpost', tile('#F3EFE6',
+    f'<rect x="240" y="108" width="32" height="312" rx="16" fill="{post}"/>'
+    f'<path d="M150 150H350L392 190L350 230H150A16 16 0 0 1 134 214V166A16 16 0 0 1 150 150Z" fill="{amber}"/>'
+    f'<path d="M362 256H162L120 296L162 336H362A16 16 0 0 0 378 320V272A16 16 0 0 0 362 256Z" fill="{teal2}"/>'
+    f'<rect x="180" y="408" width="152" height="24" rx="12" fill="{post}"/>'))
 
 # 4 SWIFT — a heavy italic W with flat, type-like ends, already moving.
 I['wl-swift'] = ('Swift', tile('#ECE8E1',

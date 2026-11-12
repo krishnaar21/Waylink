@@ -113,10 +113,10 @@ export function migrate(raw) {
   s.settings.art = s.settings.art === 'icon' ? 'icon' : 'photo';
   if (s.settings.theme === 'carbon') s.settings.theme = 'obsidian';
   if (typeof s.settings.sounds !== 'boolean') s.settings.sounds = true;
-  if (!['system', 'inter', 'plex', 'work'].includes(s.settings.bodyFont)) s.settings.bodyFont = 'system';
-  if (!['lucide', 'tabler', 'phosphor', 'iconoir'].includes(s.settings.icons)) s.settings.icons = 'lucide';
+  if (!['system', 'source', 'nunito', 'karla'].includes(s.settings.bodyFont)) s.settings.bodyFont = 'system';
+  if (!['lucide', 'hugeicons', 'uicons', 'material'].includes(s.settings.icons)) s.settings.icons = 'lucide';
   if (!['wl-turn', 'wl-link', 'wl-sign', 'wl-swift', 'wl-beacon'].includes(s.settings.logo)) s.settings.logo = 'wl-turn';
-  if (!s.settings.font || !['onest','geist','garamond','crimson','newsreader','instrument'].includes(s.settings.font)) s.settings.font = 'geist';
+  if (!s.settings.font || !['onest','geist','garamond','crimson','vollkorn','lora'].includes(s.settings.font)) s.settings.font = 'geist';
   return bindVehicle(s);
 }
 

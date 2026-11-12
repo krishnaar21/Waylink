@@ -32,11 +32,11 @@ const FONT_CSS = {
   geist: 'Geist:wght@400;500;600',
   garamond: 'EB+Garamond:wght@400;500;600',
   crimson: 'Crimson+Pro:wght@400;500;600',
-  newsreader: 'Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600',
-  instrument: 'Instrument+Serif',
+  vollkorn: 'Vollkorn:wght@400;500;600',
+  lora: 'Lora:wght@400;500;600',
 };
 const fontHref = (keys) => 'https://fonts.googleapis.com/css2?' + keys.map((k) => 'family=' + FONT_CSS[k]).join('&') + '&display=swap';
-const BODY_CSS = { inter: 'Inter:wght@400;500;600', plex: 'IBM+Plex+Sans:wght@400;500;600', work: 'Work+Sans:wght@400;500;600' };
+const BODY_CSS = { source: 'Source+Sans+3:wght@400;500;600', nunito: 'Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600', karla: 'Karla:wght@400;500;600' };
 function applyBody() {
   const k = BODY_CSS[s.settings.bodyFont] ? s.settings.bodyFont : 'system';
   document.documentElement.dataset.body = k;
@@ -130,6 +130,9 @@ function refreshWeather() {
   const h = $('.view .bc-wx'); if (h) h.innerHTML = V.weatherHead(ctx());
 }
 
+// FAQ: one answer open at a time (the name attribute does this in new browsers; this covers the rest).
+document.addEventListener('toggle', (e) => { const d = e.target; if (d?.matches?.('details.faq-i') && d.open) $$('details.faq-i[open]').forEach((o) => { if (o !== d) o.open = false; }); }, true);
+
 // ---------- Render ----------
 function render(anim = '') {
   applyTheme();
@@ -152,9 +155,11 @@ function render(anim = '') {
   vEl.scrollTop = scroll;
   const ph = $('.pagehead', vEl);
   if (ph) { const upd = () => ph.classList.toggle('stuck', vEl.scrollTop > 6); upd(); vEl.addEventListener('scroll', upd, { passive: true }); }
+  // The FAB steps aside while you scroll and comes back when you stop.
+  let fabT; vEl.addEventListener('scroll', () => { const f = $('#fab'); f.classList.add('away'); clearTimeout(fabT); fabT = setTimeout(() => f.classList.remove('away'), 420); }, { passive: true });
   $('#tabbar').innerHTML = V.tabbar(ctx(), screen);
   $('#fab').innerHTML = screen === 'today' ? `<button class="fab" data-act="sheet" data-arg="quick" aria-label="Quick actions">${V.icon('plus')}</button>`
-    : screen === 'settings' ? `<button class="fab fab-bike" data-act="sheet" data-arg="vehicle:new" aria-label="Add a vehicle">${V.icon('bike')}<span class="fab-plus">${V.icon('plus')}</span></button>`
+    : screen === 'settings' ? `<button class="fab fab-bike" data-act="sheet" data-arg="vehicle:new" aria-label="Add a vehicle">${V.ADD_BIKE}</button>`
     : '';
   renderPill();
   renderOverlay();
