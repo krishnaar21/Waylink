@@ -767,7 +767,7 @@ export const FONTS = [
   ['onest', 'Onest', "'Onest'", 600, 'sans'],
   ['geist', 'Geist', "'Geist'", 600, 'sans'],
   ['spectral', 'Spectral', "'Spectral'", 500, 'serif'],
-  ['garamond', 'Garamond', "'EB Garamond'", 500, 'serif'],
+  ['garamond', 'EB Garamond', "'EB Garamond'", 500, 'serif'],
   ['crimson', 'Crimson', "'Crimson Pro'", 500, 'serif'],
   ['vollkorn', 'Vollkorn', "'Vollkorn'", 500, 'serif'],
   ['fraunces', 'Fraunces', "'Fraunces'", 600, 'serif'],
@@ -776,7 +776,7 @@ export const APP_NAME = 'Waylink';
 // Wordmark-only logos: a slot that cycles through turn signs, and a w drawn as one looping road with the rest typed in.
 const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnLeft', '#3E8EF7'], ['turnU', '#2BB673'], ['curvy', '#7C5CFF'], ['signpost', '#E5484D'], ['compass', '#0EA5A5']];
 export const TURNS = `<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true">${TURN_SIGNS.map(([k, col, f], i) => `<svg class="tg tg${i} ${f || ''}" viewBox="0 0 24 24" fill="none" style="color:${col}">${HUGE_ICONS[k]}</svg>`).join('')}</span><span aria-hidden="true">link</span></span>`;
-export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8 28C10 56 16 80 28 80C40 80 45 58 50 42C54 28 62 14 55 9C48 4 41 16 47 36C52 56 60 80 72 80C84 80 90 56 92 28"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
+export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8.5 26L8.5 30C10 56 16 80 28 80C40 80 45 58 50 42C54 28 62 14 55 9C48 4 41 16 47 36C52 56 60 80 72 80C84 80 90 56 91.5 30L91.5 26"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
 export const BRANDS = [['loop', 'Loop'], ['turns', 'Turns']];
 export const brandOf = (s) => BRANDS.some(([k]) => k === s.settings.brand) ? s.settings.brand : 'loop';
 export const APP_VERSION = '1.0';

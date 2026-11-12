@@ -1422,3 +1422,12 @@ html[data-theme="obsidian"] .art.icon-mode, html[data-theme="amoled"] .art.icon-
 /* Loop letters: the build clip uses generous bounds, and no clip is left once a letter is complete (the y keeps its tail) */
 @keyframes tyBuild { 0% { clip-path: inset(-40% 100% -40% 0); } 25% { clip-path: inset(-40% 64% -40% 0); } 50% { clip-path: inset(-40% 30% 48% 0); } 75% { clip-path: inset(-40% 0 48% 0); } 100% { clip-path: none; } }
 .wl-loop .rest i { clip-path: none; }
+/* Loop letters: every keyframe uses the same inset shape (Safari can't step to 'none'), ending fully open */
+@keyframes tyBuild { 0% { clip-path: inset(-40% 100% -40% -40%); } 25% { clip-path: inset(-40% 64% -40% -40%); } 50% { clip-path: inset(-40% 30% 48% -40%); } 75% { clip-path: inset(-40% -40% 48% -40%); } 100% { clip-path: inset(-40% -40% -40% -40%); } }
+/* Tab bar: a progressive blur fades content out above it, so text behind never mixes with the icons */
+.tabbar::after { content: ''; position: absolute; left: 0; right: 0; bottom: 100%; height: 36px; pointer-events: none;
+  background: linear-gradient(to top, color-mix(in srgb, var(--bg) 80%, transparent), transparent);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  -webkit-mask-image: linear-gradient(to top, #000, transparent); mask-image: linear-gradient(to top, #000, transparent); }
+/* Loop w: flat, cut ends like the type's stems instead of round caps */
+.wl-loop .lw { stroke-linecap: butt; stroke-linejoin: miter; stroke-width: 12; }
