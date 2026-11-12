@@ -1449,3 +1449,6 @@ html[data-theme="obsidian"] :is(.card, .list, .bikecard, .vcard, .support-card, 
 @keyframes tyGrow { 0% { opacity: 0; transform: scale(.4, .2); } 40% { opacity: 1; } 100% { opacity: 1; transform: none; } }
 /* Bike tiles without a photo: neutral grey from the theme, no bike colour */
 .art.icon-mode, html[data-theme="obsidian"] .art.icon-mode, html[data-theme="amoled"] .art.icon-mode { background: color-mix(in srgb, var(--ink) 7%, var(--card)) !important; color: var(--ink-3) !important; }
+/* ...with a quiet diagonal pattern so the tile doesn't look empty */
+.art.icon-mode, html[data-theme="obsidian"] .art.icon-mode, html[data-theme="amoled"] .art.icon-mode {
+  background-image: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 6%, transparent) 0 1px, transparent 1px 7px) !important; }
