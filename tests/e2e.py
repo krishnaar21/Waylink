@@ -127,7 +127,7 @@ async def main():
         check('garage card has its own edit button', await pg.query_selector('.vcard .edit'))
         check('route icon is the default', True)
         check('no Carbon theme any more', not await pg.query_selector('[data-act="theme"][data-arg="carbon"]'))
-        check('selected font shows a tick', await pg.query_selector('.fontopt.on .selmark'))
+        check('selected font has a border, no tick', await pg.query_selector('.fontopt.on') and not await pg.query_selector('.fontopt .selmark'))
         check('old-style serif fonts offered', await pg.query_selector('[data-act="font"][data-arg="garamond"]'))
         await pg.click('[data-arg="models"]'); await pg.wait_for_timeout(500)
         check('model gallery lists all 10 models', len(await pg.query_selector_all('.models .m')) == 10)

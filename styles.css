@@ -43,11 +43,10 @@ html[data-font="crimson"] { --serif: 'Crimson Pro', Georgia, serif; --dw: 500; -
 @keyframes pop { from { transform: scale(.4); opacity: 0; } }
 .fontopt, .logoopt, .grid-man button, .swatch { position: relative; }
 .swatch .selmark { top: 50%; left: 50%; right: auto; margin: -10px 0 0 -10px; background: rgba(255,255,255,.95); color: #161514; box-shadow: none; }
-.swatch.on::after { display: none; }
 .logos { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .logoopt { border-radius: var(--r-sm); padding: 4px; box-shadow: inset 0 0 0 1px transparent; transition: transform .18s var(--spring); }
 .logoopt img { width: 100%; aspect-ratio: 1; border-radius: 22%; display: block; box-shadow: 0 2px 8px -3px rgba(0,0,0,.3); }
-.logoopt.on { box-shadow: none; }
+.logoopt.on img { box-shadow: 0 0 0 2px var(--card), 0 0 0 3px var(--ink); }
 .logoopt .nm { display: block; margin-top: 7px; font-size: 12px; text-align: center; color: var(--ink-3); }
 .logoopt.on .nm { color: var(--ink); font-weight: 600; }
 .logoopt .selmark { top: -2px; right: -2px; }
@@ -57,7 +56,7 @@ html[data-font="crimson"] { --serif: 'Crimson Pro', Georgia, serif; --dw: 500; -
 .fontopt { min-height: 66px; display: flex; flex-direction: column; justify-content: center; }
 .fontopt { border-radius: var(--r-sm); background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); padding: 12px 14px; text-align: left; transition: transform .18s var(--spring); }
 .fontopt:active { transform: scale(.97); }
-.fontopt.on { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.fontopt.on { box-shadow: inset 0 0 0 1px var(--ink); }
 .fontopt { padding: 10px 12px !important; }
 .fontopt .sample { font-size: 20px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fontopt .nm { font-size: 12px; color: var(--ink-3); margin-top: 4px; }
@@ -449,7 +448,7 @@ select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csv
 .swatches { display: flex; gap: 12px; flex-wrap: wrap; }
 .swatch { width: 32px; height: 32px; border-radius: 50%; position: relative; transition: transform .2s var(--spring); box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); }
 .swatch:active { transform: scale(.9); }
-.swatch.on::after { content: ''; position: absolute; inset: -5px; border-radius: 50%; border: 2px solid var(--ink); }
+.swatch.on::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid var(--ink); }
 
 /* Stats */
 .stat2 { display: grid; grid-template-columns: 1fr 1fr; }
@@ -484,7 +483,7 @@ select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csv
 .grid-man { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .grid-man button { aspect-ratio: 1; border-radius: var(--r-sm); background: var(--card); box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 10px; color: var(--ink-2); padding: 6px 3px; line-height: 1.15; text-align: center; transition: transform .18s var(--spring), box-shadow .2s; }
 .grid-man button svg { width: 26px; height: 32px; }
-.grid-man button.on { box-shadow: inset 0 0 0 1.5px var(--accent), 0 6px 16px -10px var(--accent); color: var(--ink); background: color-mix(in srgb, var(--accent) 8%, var(--raised)); font-weight: 500; }
+.grid-man button.on { box-shadow: inset 0 0 0 1px var(--accent), 0 6px 16px -10px var(--accent); color: var(--ink); background: color-mix(in srgb, var(--accent) 8%, var(--raised)); font-weight: 500; }
 .grid-man button:active { transform: scale(.94); }
 .grid-man button:not(.on) { --accent: var(--ink-3); }
 .grid-man button:not(.on) span { color: var(--ink-3); }
@@ -744,26 +743,26 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .themeopt .tp.auto { background: linear-gradient(135deg, #ECE8E1 50%, #161514 50%); }
 .themeopt .tp.auto i { background: linear-gradient(135deg, #F7F5F1 50%, #2A2826 50%); }
 .themeopt .nm { font-size: 13px; color: var(--ink-3); }
-.themeopt.on .tp { box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--ink); }
+.themeopt.on .tp { box-shadow: 0 0 0 2px var(--card), 0 0 0 3px var(--ink); }
 .themeopt.on .nm { color: var(--ink); font-weight: 600; }
 .themeopt:active .tp { transform: scale(.95); }
 .accents { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .accentopt { display: flex; align-items: center; gap: 9px; height: 44px; padding: 0 12px 0 8px; border-radius: 12px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); font-size: 14px; color: var(--ink-2); white-space: nowrap; overflow: hidden; }
 .accentopt .dot { width: 26px; height: 26px; border-radius: 50%; flex: none; display: grid; place-items: center; color: #fff; box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
 .accentopt .dot svg { width: 14px; height: 14px; stroke-width: 2.6; }
-.accentopt.on { box-shadow: inset 0 0 0 1.5px var(--ink); color: var(--ink); font-weight: 600; }
+.accentopt.on { box-shadow: inset 0 0 0 1px var(--ink); color: var(--ink); font-weight: 600; }
 /* Type & icons */
 .bodyfonts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .bodyopt { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 4px 10px; border-radius: 14px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); }
 .bodyopt .aa { font-size: 24px; font-weight: 500; line-height: 1.1; }
 .bodyopt .nm { font-size: 12px; color: var(--ink-3); white-space: nowrap; }
-.bodyopt.on { box-shadow: inset 0 0 0 1.5px var(--ink); } .bodyopt.on .nm { color: var(--ink); font-weight: 600; }
+.bodyopt.on { box-shadow: inset 0 0 0 1px var(--ink); } .bodyopt.on .nm { color: var(--ink); font-weight: 600; }
 .iconlibs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .iconlib { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px 14px 12px; border-radius: 16px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); text-align: left; }
 .iconlib .ics { display: flex; gap: 12px; color: var(--ink); }
 .iconlib .ics svg { width: 22px; height: 22px; }
 .iconlib .nm { font-size: 13.5px; color: var(--ink-3); }
-.iconlib.on { box-shadow: inset 0 0 0 1.5px var(--ink); } .iconlib.on .nm { color: var(--ink); font-weight: 600; }
+.iconlib.on { box-shadow: inset 0 0 0 1px var(--ink); } .iconlib.on .nm { color: var(--ink); font-weight: 600; }
 /* Add-vehicle button on Settings: a bike with a small plus */
 .fab.fab-bike { position: absolute; }
 .fab-bike > svg { width: 24px; height: 24px; }
