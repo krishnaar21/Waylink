@@ -57,8 +57,8 @@ export const ICON_CREDIT = '<a href="https://hugeicons.com" target="_blank" rel=
 // One icon family everywhere: Hugeicons (stroke). Unknown keys draw nothing rather than mixing styles.
 // Duotone: the same drawing again underneath, thick and soft, so every icon gets an even second tone.
 let ICON_STYLE = 'line';
-export const setIconStyle = (v) => { ICON_STYLE = v === 'duo' ? 'duo' : 'line'; };
-export const icon = (n, cls = '') => { const b = HUGE_ICONS[n] || ''; return `<svg class="i ${cls}" viewBox="-1 -1 26 26" ${HUGE_SET.attrs} aria-hidden="true">${ICON_STYLE === 'duo' && b ? `<g class="duo">${b}</g>` : ''}${b}</svg>`; };
+export const setIconStyle = (v) => { ICON_STYLE = v === 'duo' || v === 'fill' ? v : 'line'; };
+export const icon = (n, cls = '') => { const b = HUGE_ICONS[n] || ''; return `<svg class="i ${ICON_STYLE === 'fill' ? 'ifill ' : ''}${cls}" viewBox="-1 -1 26 26" ${HUGE_SET.attrs} aria-hidden="true">${ICON_STYLE === 'duo' && b ? `<g class="duo">${b}</g>` : ''}${b}</svg>`; };
 
 // ---------- Vehicle pictures ----------
 const lum = (h) => { const n = [1, 3, 5].map((i) => parseInt(String(h || '#888888').slice(i, i + 2), 16)); return (n[0] * 299 + n[1] * 587 + n[2] * 114) / 255000; };
@@ -164,11 +164,11 @@ const everyText = (it) => {
 };
 function rowValue(st) {
   if (st.status === 'overdue') {
-    if (st.overdueKm > 0) return { v: num(st.overdueKm), u: 'km overdue', cls: 'red' };
-    return { v: num(st.overdueDays), u: st.overdueDays === 1 ? 'day overdue' : 'days overdue', cls: 'red' };
+    if (st.overdueKm > 0) return { v: short(st.overdueKm), u: 'km overdue', cls: 'red' };
+    return { v: short(st.overdueDays), u: st.overdueDays === 1 ? 'day overdue' : 'days overdue', cls: 'red' };
   }
-  if (st.byTime || st.remKm == null) return { v: num(st.remDays), u: st.remDays === 1 ? 'day' : 'days', cls: '' };
-  return { v: num(st.remKm), u: 'km', cls: '' };
+  if (st.byTime || st.remKm == null) return { v: short(st.remDays), u: st.remDays === 1 ? 'day' : 'days', cls: '' };
+  return { v: short(st.remKm), u: 'km', cls: '' };
 }
 // Progress style for service jobs. Each reads "how much is left" a different way.
 export const PROGRESS_STYLES = [
@@ -391,7 +391,7 @@ export function upCard(it, st) {
     <div class="uc-top"><span class="row-ic ${tone}">${icon(it.icon || 'wrench')}</span><span class="uc-tag">${st.status === 'overdue' ? 'Overdue' : st.status === 'soon' ? 'Due soon' : 'On track'}</span></div>
     <div class="uc-v"><span class="big">${v.v}</span><span class="unit">${v.u.replace(' overdue', '')}${st.status === 'overdue' ? ' late' : ' left'}</span></div>
     <div class="uc-n">${esc(it.name)}</div>
-    ${serviceSegs(st, 8, 'sm')}</button>`;
+    ${st.status === 'soon' || st.status === 'overdue' ? serviceSegs(st, 8, 'sm') : ''}</button>`;
 }
 export function serviceRow(it, st) {
   const v = rowValue(st);
@@ -648,14 +648,14 @@ export function alerts(c) {
   const { s, link, live } = c;
   const a = s.settings.alerts;
   const m = s.alerts.missed, w = s.alerts.wa;
-  const card = (ic, lab, n, sub, act) => `<div class="card pad"><div class="eyebrow flex gap8">${icon(ic).replace('<svg', '<svg style="width:14px;height:14px"')}${lab}</div><div class="big mt12" style="font-size:56px">${n}</div><div class="small muted mt8">${sub}</div><div class="push"></div><button class="btn line block sm mt16" data-act="${act}" ${n ? '' : 'disabled'}>Clear</button></div>`;
+  const card = (ic, lab, n, sub, act, open) => `<div class="card pad"><div class="eyebrow flex gap8">${icon(ic).replace('<svg', '<svg style="width:14px;height:14px"')}${lab}</div><div class="big mt12" style="font-size:56px">${short(n)}</div><div class="small muted mt8 clamp1">${sub}</div><div class="push"></div><div class="ac-btns mt16">${open}<button class="btn line sm" data-act="${act}" ${n ? '' : 'disabled'}>Clear</button></div></div>`;
   const needs = inbox(c).filter((x) => x.ic !== 'missed' && x.ic !== 'chat');
   return `<div class="stagger">
   <div class="head pagehead"><div><h1 class="title">Alerts</h1><div class="subtitle">${needs.length ? `${plural(needs.length, 'thing needs', 'things need')} you` : 'Nothing needs you right now'}</div></div></div>
   ${needs.length ? `<div class="section" style="margin-top:20px">${sh('Needs you')}<div class="list">${needs.map((x) => li({ lead: `<span class="ic" style="background:var(--tint-${x.tone});color:var(--${x.tone === 'sage' ? 'sage-ink' : x.tone})">${icon(x.ic)}</span>`, t: x.t, d: x.d, act: x.act, arg: x.arg })).join('')}</div></div>` : ''}
-  <div class="section">${sh('Calls & messages', `<span class="eyebrow">${num(s.alerts.sent)} sent</span>`)}
-  <div class="two">${card('missed', 'Missed', m.length, m.length ? `Last: ${esc(m[m.length - 1].name)}` : 'None waiting', 'clear-missed')}${card('chat', 'WhatsApp', w.length, w.length ? `Last: ${esc(w[w.length - 1].name)}` : 'None waiting', 'clear-wa')}</div>
-  <div class="dashed">${icon('lock')}<span>Only <b>names and counts</b> reach the bike. Never the message.</span></div>
+  <div class="section">${sh('Calls & messages', `<span class="eyebrow">${short(s.alerts.sent)} sent</span>`)}
+  <div class="two">${card('missed', 'Missed', m.length, m.length ? `Last: ${esc(m[m.length - 1].name)}` : 'None waiting', 'clear-missed', `<a class="btn line sm" href="tel:" aria-label="Open Phone">${icon('phone')}Calls</a>`)}${card('chat', 'WhatsApp', w.length, w.length ? `Last: ${esc(w[w.length - 1].name)}` : 'None waiting', 'clear-wa', `<a class="btn line sm" href="whatsapp://" aria-label="Open WhatsApp">${icon('chat')}Chats</a>`)}</div>
+  <div class="dashed">${icon('lock')}<span>Only <b>names and counts</b> reach your bike. Message text never leaves this phone.</span></div>
   </div>
   <div class="section">${sh('Recent')}
     ${s.alerts.log.length ? `<div class="list">${s.alerts.log.slice(0, 12).map((x) => li({ ic: x.kind === 'wa' ? 'chat' : x.kind === 'missed' ? 'missed' : x.kind === 'button' ? 'hand' : 'phone', t: esc(x.name), d: { wa: 'WhatsApp', missed: 'Missed call', call: 'Call', button: 'Handlebar' }[x.kind] + ' · ' + ago(x.ts), chev: false, tag: 'div' })).join('')}</div>` : '<div class="card empty">Nothing yet.</div>'}
@@ -692,7 +692,7 @@ export function settings(c) {
   return `<div class="stagger">
   <div class="head pagehead"><div><h1 class="title">You & your bikes</h1><div class="subtitle">Profile, garage and how the app looks</div></div></div>
   ${live.scenario ? previewBar(live) : ''}
-  <button class="card pad profile-card mt20 flex gap12" style="width:100%;text-align:left" data-act="go" data-arg="profile">${avatar(s.profile)}<div class="grow"><div class="serif" style="font-size:24px">${esc(s.profile.name || 'Add your name')}</div><div class="small faint">${s.profile.blood || s.profile.iceName ? [s.profile.blood ? `Blood ${esc(s.profile.blood)}` : '', s.profile.iceName ? `ICE ${esc(clip(s.profile.iceName, 14))}` : ''].filter(Boolean).join(' · ') : 'Licence, blood group, emergency contact'}</div>${s.profile.medical ? `<div class="small faint pc-med">${esc(clip(s.profile.medical, 40))}</div>` : ''}</div>${icon('chev', 'faint')}</button>
+  <button class="card pad profile-card mt20 flex gap12" style="width:100%;text-align:left" data-act="go" data-arg="profile">${avatar(s.profile)}<div class="grow"><div class="serif pc-name">${esc(s.profile.name || 'Add your name')}</div><div class="small faint">${s.profile.blood || s.profile.iceName ? [s.profile.blood ? `Blood ${esc(s.profile.blood)}` : '', s.profile.iceName ? `ICE ${esc(clip(s.profile.iceName, 14))}` : ''].filter(Boolean).join(' · ') : 'Licence, blood group, emergency contact'}</div>${s.profile.medical ? `<div class="small faint pc-med">${esc(clip(s.profile.medical, 40))}</div>` : ''}</div>${icon('chev', 'faint')}</button>
   <div class="section">${sh('Garage', s.vehicles.length > 1 ? '<button class="link" data-act="sheet" data-arg="garage">Switch</button>' : '')}
     <div class="card vcard"><button class="flex gap12" style="width:100%;text-align:left;padding:12px 16px 12px 12px" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">
       ${vehicleArt(s, v, 'card')}
@@ -835,7 +835,7 @@ export function tabbar(c, current) {
     ['today', 'Today', 'today', needs ? '<span class="pip"></span>' : ''],
     ['route', 'Route', 'route', live.nav ? '<span class="pip g"></span>' : ''],
     ['trips', 'Trips', 'trips', live.rec ? '<span class="pip x"></span>' : ''],
-    ['alerts', 'Alerts', 'alerts', badge ? `<span class="badge">${badge > 99 ? '99+' : badge}</span>` : ''],
+    ['alerts', 'Alerts', 'alerts', badge ? '<span class="pip"></span>' : ''],
     ['settings', 'Settings', 'settings', ''],
   ];
   const cur = ['fuel', 'logbook'].includes(current) ? 'today' : current === 'profile' ? 'settings' : current;
@@ -1029,16 +1029,16 @@ function sheetInner(c, key) {
           ${li({ ic: 'copy', t: 'Copy as text', d: 'Paste it on your new phone', act: 'copy-backup' })}
         </div>`;
     case 'pick-icons': {
-      const was = ICON_STYLE, cur = s.settings.icons === 'duo' ? 'duo' : 'line';
+      const was = ICON_STYLE, cur = ['duo', 'fill'].includes(s.settings.icons) ? s.settings.icons : 'line';
       const card = (k, nm, d) => { ICON_STYLE = k; const h = ['today', 'fuel', 'wrench', 'pin', 'bell', 'bike'].map((n) => icon(n)).join(''); return `<button class="icoopt ${cur === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}"><span class="io-row">${h}</span><span class="nm">${nm}</span><span class="d">${d}</span></button>`; };
       const out = `<div class="eyebrow">Appearance</div><h2>Icon style</h2><p class="lead">How icons are drawn across the app.</p>
-        <div class="icoopts mt16">${card('line', 'Line', 'Clean single strokes')}${card('duo', 'Duotone', 'A soft second tone under each line')}</div>`;
+        <div class="icoopts mt16">${card('line', 'Line', 'Clean single strokes')}${card('duo', 'Duotone', 'A soft second tone under each line')}${card('fill', 'Filled', 'Shapes filled with a soft tone')}</div>`;
       ICON_STYLE = was; return out;
     }
     case 'pick-brand': {
-      const was = ICON_STYLE, cur = s.settings.icons === 'duo' ? 'duo' : 'line';
+      const was = ICON_STYLE, cur = ['duo', 'fill'].includes(s.settings.icons) ? s.settings.icons : 'line';
       const card = (k, nm, d) => { ICON_STYLE = k; const h = ['today', 'fuel', 'wrench', 'pin', 'bell', 'bike'].map((n) => icon(n)).join(''); return `<button class="icoopt ${cur === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}"><span class="io-row">${h}</span><span class="nm">${nm}</span><span class="d">${d}</span></button>`; };
-      const icoHTML = card('line', 'Line', 'Clean single strokes') + card('duo', 'Duotone', 'A soft second tone under each line'); ICON_STYLE = was;
+      const icoHTML = card('line', 'Line', 'Clean single strokes') + card('duo', 'Duotone', 'A soft second tone under each line') + card('fill', 'Filled', 'Shapes filled with a soft tone'); ICON_STYLE = was;
       return `<div class="eyebrow">Appearance</div><h2>Logo & icons</h2>
         <div class="ms-t mt12">Logo</div><p class="small muted mt8">Loading screen and app icon. Re-add Waylink to your Home Screen to change an installed icon.</p>
         <div class="brands mt12">${BRANDS.map(([k, nm]) => `<button class="brandopt anim b-${k} ${brandOf(s) === k ? 'on' : ''}" data-act="brand" data-arg="${k}"><span class="bo-art">${{ turns: TURNS, loop: LOOP }[k]}</span><span class="nm">${nm}</span></button>`).join('')}</div>
@@ -1066,7 +1066,7 @@ function sheetInner(c, key) {
           <div class="give-chips">${[...UPI_AMOUNTS, 0].map((a) => `<button class="${amt === a ? 'on' : ''}" data-act="support-amt" data-arg="${a}">${a ? `₹${a}` : 'Other'}</button>`).join('')}</div>
           ${SUPPORT.upi ? `<a class="btn ink block mt16" href="${upi}">Pay ${amt ? `₹${amt} ` : ''}with any UPI app</a>
           <button class="give-copy" data-act="copy-upi">${icon('copy')} ${esc(SUPPORT.upi)}</button>` : `<button class="btn ink block mt16" disabled>Pay ${amt ? `₹${amt} ` : ''}with any UPI app</button>
-          <div class="give-note">${icon('info')} Payments open as soon as the developer adds a UPI ID.</div>`}
+          <div class="give-note">${icon('info')} Payments open once a UPI ID is added.</div>`}
         </div>
         ${SUPPORT.links.length ? `<div class="list mt12">${SUPPORT.links.map(([n, u]) => li({ ic: 'love', t: esc(n), d: esc(u.replace(/^https?:\/\//, '')), tag: 'a', href: u })).join('')}</div>` : ''}
         <div class="eyebrow mt24">Free ways to help</div>

@@ -1473,3 +1473,29 @@ html[data-font="system"] { --serif: -apple-system, BlinkMacSystemFont, system-ui
 .tab svg { width: 29px; height: 29px; }
 /* Tab bar: a very light hairline along its top edge */
 .tabbar { box-shadow: inset 0 var(--hair) 0 color-mix(in srgb, var(--ink) 9%, transparent); }
+/* Filled duotone icons: closed shapes get a soft fill of the same colour */
+svg.i.ifill circle, svg.i.ifill rect, svg.i.ifill ellipse, svg.i.ifill path[d$="Z"], svg.i.ifill path[d$="z"] { fill: currentColor; fill-opacity: .2; }
+.tab:not(.on) svg.i.ifill * { fill-opacity: .12; }
+/* Long names and big numbers stay on one line */
+.profile-card .grow { min-width: 0; }
+.pc-name { font-size: 22px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clamp1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-title, .row-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-main { min-width: 0; } .row-val { flex: none; white-space: nowrap; }
+.two > .card { min-width: 0; }
+/* Alerts cards: open the app beside Clear */
+.ac-btns { display: flex; gap: 8px; } .ac-btns > * { flex: 1; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
+.ac-btns svg { width: 16px; height: 16px; flex: none; }
+.dashed { align-items: center; } .dashed > svg { margin-top: 0; }
+/* Bike tiles: the theme tone covers the whole tile, the checker shows faintly through it */
+.art.icon-mode, html[data-theme="obsidian"] .art.icon-mode, html[data-theme="amoled"] .art.icon-mode {
+  background-image: linear-gradient(color-mix(in srgb, color-mix(in srgb, var(--ink) 4%, var(--card)) 55%, transparent), color-mix(in srgb, color-mix(in srgb, var(--ink) 4%, var(--card)) 55%, transparent)), conic-gradient(color-mix(in srgb, var(--ink) 5%, transparent) 25%, transparent 0 50%, color-mix(in srgb, var(--ink) 5%, transparent) 0 75%, transparent 0) !important;
+  background-size: 100% 100%, 16px 16px !important; }
+/* Lighter progress fill so on-track bars don't shout */
+.fgauge .fg i.k { background: color-mix(in srgb, var(--ink) 30%, transparent); }
+.pg { --c: color-mix(in srgb, var(--ink) 32%, transparent); }
+/* FAB: a soft glass ring with a faint glow */
+.fab { box-shadow: 0 0 0 4px color-mix(in srgb, var(--bg) 55%, transparent), 0 0 0 5px color-mix(in srgb, var(--ink) 10%, transparent), 0 8px 24px -6px color-mix(in srgb, var(--ink) 40%, transparent) !important; }
+.fab::after { content: ""; position: absolute; inset: 2px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--bg) 28%, transparent); pointer-events: none; }
+.fab.rec { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent), 0 8px 24px -6px color-mix(in srgb, var(--accent) 55%, transparent) !important; }
+.segs i.k, .hero .segs i.k { background: color-mix(in srgb, var(--ink) 24%, transparent) !important; }

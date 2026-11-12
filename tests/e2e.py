@@ -48,7 +48,7 @@ async def main():
         chip = await text(pg, '.bc-main')
         check('plate is upper-cased on the vehicle chip', 'KA 01 AB 1234' in chip, chip)
         check('fresh bike gets default reminders', len(await pg.query_selector_all('.upnext .upcard')) >= 1)
-        check('coming-up cards have icons and a bar', await pg.query_selector('.upcard .row-ic svg') and await pg.query_selector('.upcard .fgauge i'))
+        check('coming-up cards: icons, bar only when due', await pg.query_selector('.upcard .row-ic svg') and not await pg.query_selector('.upcard.s .fgauge'))
 
         # Erase and load sample data
         await pg.evaluate("localStorage.clear()"); await pg.reload(); await pg.wait_for_timeout(500)
