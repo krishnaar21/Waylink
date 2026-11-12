@@ -169,10 +169,24 @@ function rowValue(st) {
   if (st.byTime || st.remKm == null) return { v: num(st.remDays), u: st.remDays === 1 ? 'day' : 'days', cls: '' };
   return { v: num(st.remKm), u: 'km', cls: '' };
 }
-function serviceSegs(st, n = 14, extra = '') {
-  if (st.status === 'overdue') return segs(n, n, 'r', extra);
-  const fresh = Math.round((1 - st.frac) * n);
-  return segs(n, Math.max(1, fresh), st.status === 'soon' ? 'a' : 's', extra);
+// Progress style for service jobs: 'gauge' (fuel bars, E to F) or 'ruler' (tick scale with a marker).
+let PROGRESS = 'gauge';
+export const setProgress = (v) => { PROGRESS = v === 'ruler' ? 'ruler' : 'gauge'; };
+function rulerBar(st, extra = '') {
+  const left = st.status === 'overdue' ? 0 : Math.max(0.02, 1 - st.frac), n = 20;
+  const cls = st.status === 'overdue' ? 'r' : st.status === 'soon' ? 'a' : 'k';
+  let t = '';
+  for (let i = 0; i <= n; i++) t += `<i class="${i % 5 === 0 ? 'maj' : ''} ${i / n <= left + 1e-6 ? 'on' : ''}"></i>`;
+  return `<div class="ruler ${cls} ${extra}" role="img" aria-label="${st.status === 'overdue' ? 'Overdue' : Math.round(left * 100) + '% left'}"><div class="rt">${t}<b style="left:${(left * 100).toFixed(1)}%"></b></div><div class="rl"><span>Due</span><span>Fresh</span></div></div>`;
+}
+// Life left, read like the bike's fuel bars: F is freshly done, E is due.
+function serviceSegs(st, n = 10, extra = '') {
+  if (PROGRESS === 'ruler') return rulerBar(st, extra);
+  const fresh = st.status === 'overdue' ? 0 : Math.max(1, Math.round((1 - st.frac) * n));
+  const cls = st.status === 'overdue' ? 'r' : st.status === 'soon' ? 'a' : 'k';
+  let h = '';
+  for (let i = 0; i < n; i++) h += `<i class="${i < fresh ? cls : st.status === 'overdue' ? 'ro' : ''}"></i>`;
+  return `<div class="fgauge ${extra}" role="img" aria-label="${st.status === 'overdue' ? 'Overdue' : Math.round((1 - st.frac) * 100) + '% left'}"><span class="${st.status === 'overdue' ? 'red' : ''}">E</span><div class="fg">${h}</div><span>F</span></div>`;
 }
 export function dueSentence(st) {
   if (st.status === 'overdue') {
@@ -357,7 +371,7 @@ export function upCard(it, st) {
     <div class="uc-top"><span class="row-ic ${tone}">${icon(it.icon || 'wrench')}</span><span class="uc-tag">${st.status === 'overdue' ? 'Overdue' : st.status === 'soon' ? 'Due soon' : 'On track'}</span></div>
     <div class="uc-v"><span class="big">${v.v}</span><span class="unit">${v.u.replace(' overdue', '')}${st.status === 'overdue' ? ' late' : ' left'}</span></div>
     <div class="uc-n">${esc(it.name)}</div>
-    <div class="uc-bar"><i style="width:${(left * 100).toFixed(1)}%"></i></div></button>`;
+    ${serviceSegs(st, 8, 'sm')}</button>`;
 }
 export function serviceRow(it, st) {
   const v = rowValue(st);
@@ -696,6 +710,7 @@ export function settings(c) {
   </div>
   <div class="list mt12">
     ${li({ ic: 'palette', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
+    ${li({ ic: 'gauge', t: 'Progress style', end: `<span class="pick-val">${st.progress === 'ruler' ? 'Ruler' : 'Fuel gauge'}</span>`, act: 'sheet', arg: 'pick-progress' })}
     ${li({ ic: 'sparkles', t: 'App icon', end: `<img class="pick-logo" src="img/logos/${st.logo || 'wl-turn'}.svg" alt=""><span class="pick-val">${(LOGOS.find(([k]) => k === st.logo) || LOGOS[0])[1]}</span>`, act: 'sheet', arg: 'pick-logo' })}
   </div></div>
   <div class="section">${sh('Data & region', '', 'backup')}<div class="list">
@@ -912,7 +927,7 @@ function sheetInner(c, key) {
       const hint = { oil: md.oil, tyres: `Cold: ${md.psi[0]} front, ${md.psi[2]} rear psi solo. ${md.psi[1]} / ${md.psi[3]} with a pillion.`, chain: `Slack ${md.chain.replace(' slack', '')}.`, service: md.oil, coolant: md.coolant }[it.kind];
       return `<div class="eyebrow">${esc(clip(S.vehicleTitle(s)))} · ${everyText(it)}</div><h2>${esc(it.name)}</h2>
         <div class="flex between mt16" style="align-items:baseline"><span><span class="big ${v.cls}" style="font-size:52px">${v.v}</span><span class="unit ${v.cls}" style="font-size:14px">${st.status === 'overdue' ? v.u : v.u + ' left'}</span></span><span class="small muted">Last done ${dMed(it.lastDate)}</span></div>
-        <div class="mt12">${serviceSegs(st, 14, 'thick')}</div>
+        <div class="mt12">${serviceSegs(st, 10, 'thick')}</div>
         <p class="lead">${dueSentence(st)}</p>${hint ? `<p class="hint">${esc(hint)}</p>` : ''}
         <button class="btn ink block mt20" data-act="svc-done" data-arg="${it.id}">${icon('check')} Mark as done</button>
         <div class="eyebrow mt24">Done earlier?</div>
@@ -982,13 +997,20 @@ function sheetInner(c, key) {
     case 'pick-font':
     case 'pick-body': {
       const st = s.settings, cur = st.bodyFont || 'system';
-      const opt = ([k, nm, fam, w]) => `<button class="fontopt ${st.font === k ? 'on' : ''}" data-act="font" data-arg="${k}"><div class="sample" style="font-family:${fam}, Georgia, system-ui, sans-serif;font-weight:${w}">Today</div><div class="nm">${nm}</div></button>`;
-      return `<div class="eyebrow">Appearance</div><h2>Fonts</h2><p class="lead">One for titles and big numbers, one for everything you read.</p>
-        <div class="ms-t mt24">Titles</div>
+      const opt = ([k, nm, fam, w]) => `<button class="fontopt ${st.font === k ? 'on' : ''}" data-act="font" data-arg="${k}"><div class="sample" style="font-family:${fam}, Georgia, system-ui, sans-serif;font-weight:${w}">${nm}</div></button>`;
+      return `<div class="eyebrow">Appearance</div><h2>Fonts</h2>
+        <div class="ms-t mt20">Titles</div>
         <div class="eyebrow mt12">Sans serif</div><div class="fonts two mt8">${FONTS.filter((f) => f[4] === 'sans').map(opt).join('')}</div>
         <div class="eyebrow mt16">Serif</div><div class="fonts two mt8">${FONTS.filter((f) => f[4] === 'serif').map(opt).join('')}</div>
         <div class="ms-t mt32">Body text</div>
-        <div class="bodylist mt12">${BODY_FONTS.map(([k, nm, fam, w]) => `<button class="bodyrow ${cur === k ? 'on' : ''}" data-act="body-font" data-arg="${k}" style="font-family:${fam}, system-ui, sans-serif;font-weight:${w || 400}"><span class="aa">Aa</span><span class="grow"><span class="nm">${nm}</span><span class="sample">Chain clean due in 120 km. Petrol ₹110.82 a litre.</span></span></button>`).join('')}</div>`;
+        <div class="fonts two mt12">${BODY_FONTS.map(([k, nm, fam, w]) => `<button class="fontopt ${cur === k ? 'on' : ''}" data-act="body-font" data-arg="${k}"><div class="sample" style="font-family:${fam}, system-ui, sans-serif;font-weight:${w || 400}">${nm}</div></button>`).join('')}</div>`;
+    }
+    case 'pick-progress': {
+      const cur = s.settings.progress === 'ruler' ? 'ruler' : 'gauge', was = PROGRESS, demo = { status: 'ok', frac: 0.35 };
+      const card = (k, nm) => { PROGRESS = k; const h = serviceSegs(demo); return `<button class="progopt ${cur === k ? 'on' : ''}" data-act="progress-style" data-arg="${k}"><div class="nm">${nm}</div>${h}</button>`; };
+      const out = `<div class="eyebrow">Appearance</div><h2>Progress style</h2><p class="lead">How service jobs show the time or distance left.</p>
+        <div class="progs mt16">${card('gauge', 'Fuel gauge')}${card('ruler', 'Ruler')}</div>`;
+      PROGRESS = was; return out;
     }
     case 'pick-logo':
       return `<div class="eyebrow">Appearance</div><h2>App icon</h2><p class="lead">Shown on your Home Screen. Re-add Waylink there after changing it.</p>
@@ -1001,10 +1023,11 @@ function sheetInner(c, key) {
       const amt = live.supportAmt ?? 99, has = SUPPORT.upi || SUPPORT.links.length;
       const upi = SUPPORT.upi ? `upi://pay?pa=${encodeURIComponent(SUPPORT.upi)}&pn=${encodeURIComponent(SUPPORT.payee)}&cu=INR&tn=${encodeURIComponent('Support Waylink')}${amt ? `&am=${amt}` : ''}` : '';
       return `<div class="support-hero"><span class="sh-heart">${icon('love')}</span><h2>Support Waylink</h2><p class="lead">Waylink is free, with no ads and no tracking. If it makes your rides easier, you can chip in towards new features and upkeep.</p></div>
-        ${SUPPORT.upi ? `<div class="card pad mt16"><div class="ms-t">Chip in with UPI</div><div class="small muted">GPay, PhonePe, Paytm or any UPI app.</div>
+        ${true ? `<div class="card pad mt16"><div class="ms-t">Chip in with UPI</div><div class="small muted">GPay, PhonePe, Paytm or any UPI app.</div>
           <div class="amts mt16">${UPI_AMOUNTS.map((a) => `<button class="amt ${amt === a ? 'on' : ''}" data-act="support-amt" data-arg="${a}">${amtIcon(a)}<b>₹${a}</b><small>${AMT_ICON[a][0]}</small></button>`).join('')}<button class="amt ${!amt ? 'on' : ''}" data-act="support-amt" data-arg="0">${amtIcon(0)}<b>Any</b><small>You pick</small></button></div>
-          <a class="btn ink block mt16" href="${upi}">${icon('rupee')} Pay ${amt ? `₹${amt}` : ''} with UPI</a>
-          <button class="btn line block mt8" data-act="copy-upi">${icon('copy')} Copy UPI ID · ${esc(SUPPORT.upi)}</button></div>` : ''}
+          ${SUPPORT.upi ? `<a class="btn ink block mt16" href="${upi}">${icon('rupee')} Pay ${amt ? `₹${amt}` : ''} with UPI</a>
+          <button class="btn line block mt8" data-act="copy-upi">${icon('copy')} Copy UPI ID · ${esc(SUPPORT.upi)}</button>` : `<button class="btn ink block mt16" disabled>${icon('rupee')} Pay ${amt ? `₹${amt}` : ''} with UPI</button>
+          <p class="hint" style="text-align:center">UPI payments switch on once the developer adds a UPI ID.</p>`}</div>` : ''}
         ${SUPPORT.links.length ? `<div class="list mt12">${SUPPORT.links.map(([n, u]) => li({ ic: 'love', t: esc(n), d: esc(u.replace(/^https?:\/\//, '')), tag: 'a', href: u })).join('')}</div>` : ''}
         <div class="eyebrow mt24">Free ways to help</div>
         <div class="list mt8">

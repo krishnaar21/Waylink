@@ -200,7 +200,7 @@ function render(anim = '') {
   applyTheme();
   const vid = S.veh(s).id;
   live.gloveHere = live.glove.filter((d) => d.slot.startsWith(vid + ':') || d.slot.startsWith('rider:'));
-  V.setLocale(S.country(s).locale);
+  V.setLocale(S.country(s).locale); V.setProgress(s.settings.progress);
   const views = $('#views');
   if (!s.onboarded) {
     views.innerHTML = V.onboarding(s);
@@ -743,6 +743,7 @@ const A = {
     if (path === 'streetNames') link.sendStreetNames = s.settings.streetNames;
     buzz(6); commit();
   },
+  'progress-style': (k) => { s.settings.progress = k === 'ruler' ? 'ruler' : 'gauge'; SND.click(true); commit(); refreshSheet(); },
   theme: (k) => { s.settings.theme = k; commit(); },
   accent: (k) => { s.settings.accent = k; commit(); },
   'switch-vehicle': (id) => {

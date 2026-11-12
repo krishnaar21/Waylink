@@ -85,7 +85,7 @@ export function freshState() {
   return bindVehicle({
     v: 2, onboarded: false, sample: false,
     profile: { name: '', phone: '', email: '', city: '', country: 'IN', licenceNo: '', licenceExpiry: null, blood: '', medical: '', iceName: '', icePhone: '', photo: null, since: Date.now() },
-    settings: { theme: 'auto', accent: 'rust', font: 'crimson', logo: 'wl-turn', devFrames: false, rideLayout: 0, art: 'photo', autoRide: true, autoRecord: true, wakeLock: true, streetNames: false, sounds: true, bodyFont: 'atkinson', simulated: false, alerts: { calls: true, waCalls: true, waMsgs: true } },
+    settings: { theme: 'auto', accent: 'rust', font: 'crimson', logo: 'wl-turn', devFrames: false, rideLayout: 0, art: 'photo', autoRide: true, autoRecord: true, wakeLock: true, streetNames: false, sounds: true, progress: 'gauge', bodyFont: 'atkinson', simulated: false, alerts: { calls: true, waCalls: true, waMsgs: true } },
     alerts: { missed: [], wa: [], sent: 0, log: [] },
     vehicles: [v], active: v.id,
   });

@@ -48,7 +48,7 @@ async def main():
         chip = await text(pg, '.bc-main')
         check('plate is upper-cased on the vehicle chip', 'KA 01 AB 1234' in chip, chip)
         check('fresh bike gets default reminders', len(await pg.query_selector_all('.upnext .upcard')) >= 1)
-        check('coming-up cards have icons and a bar', await pg.query_selector('.upcard .row-ic svg') and await pg.query_selector('.upcard .uc-bar i'))
+        check('coming-up cards have icons and a bar', await pg.query_selector('.upcard .row-ic svg') and await pg.query_selector('.upcard .fgauge i'))
 
         # Erase and load sample data
         await pg.evaluate("localStorage.clear()"); await pg.reload(); await pg.wait_for_timeout(500)
@@ -152,7 +152,7 @@ async def main():
         await pg.click('[data-arg="pick-font"]'); await pg.wait_for_timeout(500)
         await pg.click('[data-act="font"][data-arg="onest"]'); await pg.wait_for_timeout(300)
         check('title font switches', await pg.evaluate("document.documentElement.dataset.font") == "onest")
-        check('six title fonts offered', len(await pg.query_selector_all('.sheet .fontopt')) == 6)
+        check('six title fonts offered', len(await pg.query_selector_all('.sheet [data-act="font"]')) == 6)
         await pg.click('[data-act="font"][data-arg="garamond"]'); await pg.wait_for_timeout(300)
         await pg.click('[data-act="body-font"][data-arg="inter"]'); await pg.wait_for_timeout(300)
         check('body font switches', await pg.evaluate("document.documentElement.dataset.body") == 'inter')
