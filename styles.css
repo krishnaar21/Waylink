@@ -2181,3 +2181,11 @@ html[data-theme="obsidian"] .onb-link .onb-img, html[data-theme="amoled"] .onb-l
 .link-wave { animation: fadeIn .4s ease 1.45s both; }
 .link-badge { animation: badgeIn .5s cubic-bezier(.3,1.4,.5,1) 1.7s both, lbPulse 2.4s ease-in-out 2.2s infinite !important; }
 @keyframes badgeIn { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
+/* Service history rows: title gets the room, cost and details stay short */
+.rec-row { display: grid; grid-template-columns: 40px 1fr auto; grid-template-rows: auto auto; column-gap: 12px; row-gap: 3px; width: 100%; padding: 13px 16px; text-align: left; align-items: start; }
+.rec-row + .rec-row { border-top: 1px solid var(--line); }
+.rec-ic { grid-row: 1 / 3; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink-2); }
+.rec-ic svg { width: 20px; height: 20px; }
+.rec-t { font-size: 15.5px; font-weight: 500; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rec-c { font-size: 15px; font-weight: 600; white-space: nowrap; padding-top: 1px; }
+.rec-d { grid-column: 2 / 4; font-size: 13px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -437,7 +437,7 @@ export function logbook(c) {
   <div class="section">${sh('Reminders · most urgent first', '', 'reminders')}
     <div class="rows" id="svc-rows">${list.map(({ it, st }) => serviceRow(it, st)).join('') || '<div class="empty">No reminders yet. Tap + to add one.</div>'}</div></div>
   <div class="section">${sh('Workshop visits', '<button class="link" data-act="sheet" data-arg="rec:new">Add visit</button>', 'visits')}
-    ${s.records.length ? `<div class="list">${[...s.records].sort((a, b) => b.date - a.date).map((r) => li({ ic: 'wrench', t: esc(r.title), d: `${dFull(r.date)} · ${num(r.odo)} km`, end: r.cost ? `${cur}${num(r.cost)}` : '', act: 'sheet', arg: 'rec:' + r.id })).join('')}</div>
+    ${s.records.length ? `<div class="list">${[...s.records].sort((a, b) => b.date - a.date).map((r) => `<button class="rec-row" data-act="sheet" data-arg="rec:${r.id}"><span class="rec-ic">${icon('wrench')}</span><span class="rec-t">${esc(r.title)}</span><span class="rec-c">${r.cost ? cur + short(r.cost) : ''}</span><span class="rec-d">${dShort(r.date)} · ${short(r.odo)} km</span></button>`).join('')}</div>
     <div class="flex between mt12 small muted" style="padding:0 4px"><span>Spent on service</span><b style="font-weight:500;color:var(--ink)">${cur}${num(spent)}</b></div>` : '<div class="card empty">Log each visit. A full history helps at resale.</div>'}
   </div>
   <div class="section">${sh('For the mechanic', `<span class="eyebrow">${s.checklist.filter((x) => !x.done).length} open</span>`, 'mechanic')}
