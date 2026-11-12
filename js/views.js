@@ -29,7 +29,6 @@ export const clip = (t, n = 18) => { t = String(t ?? ''); return t.length > n ? 
 export const LIMITS = { nickname: 20, plate: 13, person: 30, item: 40, title: 60, place: 40, city: 24 };
 export const dShort = (ts) => new Date(ts).toLocaleDateString(DL(), { day: 'numeric', month: 'short' });
 export const dMed = (ts) => new Date(ts).toLocaleDateString(DL(), { weekday: 'short', day: 'numeric', month: 'short' });
-export const dLong = (ts) => new Date(ts).toLocaleDateString(DL(), { weekday: 'long', day: 'numeric', month: 'long' });
 export const dFull = (ts) => new Date(ts).toLocaleDateString(DL(), { day: 'numeric', month: 'short', year: 'numeric' });
 export const tShort = (ts) => new Date(ts).toLocaleTimeString(DL(), { hour: 'numeric', minute: '2-digit' }).replace(/\s?(am|pm)$/i, (m) => ' ' + m.trim().toLowerCase());
 export const dur = (sec) => { sec = Math.round(sec); const h = Math.floor(sec / 3600), m = Math.round((sec % 3600) / 60); return h ? `${h} h ${String(m).padStart(2, '0')}` : `${m} min`; };
@@ -55,7 +54,6 @@ export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400]
 export const THEMES = [['auto', 'Auto', '#EDEFF2', '#F9FAFB', '#12151A'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Navy', '#0B1530', '#13203F', '#EAF0FF'], ['sketch', 'Paper', '#EEE7DA', '#F7F1E6', '#2A2620'], ['sketchdark', 'Paper dark', '#1E1B17', '#2A2621', '#EDE5D6']];
 export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
 // Icons: Hugeicons (MIT), credited in About.
-export const ICON_CREDIT = '<a href="https://hugeicons.com" target="_blank" rel="noopener">Hugeicons</a>';
 // One icon family everywhere: Hugeicons (stroke). Unknown keys draw nothing rather than mixing styles.
 // Duotone: the same drawing again underneath, thick and soft, so every icon gets an even second tone.
 let ICON_STYLE = 'line';
@@ -63,7 +61,6 @@ export const setIconStyle = (v) => { ICON_STYLE = v === 'duo' || v === 'fill' ? 
 export const icon = (n, cls = '') => { const b = HUGE_ICONS[n] || ''; return `<svg class="i ${ICON_STYLE === 'fill' ? 'ifill ' : ''}${cls}" viewBox="-1 -1 26 26" ${HUGE_SET.attrs} aria-hidden="true">${ICON_STYLE === 'duo' && b ? `<g class="duo">${b}</g>` : ''}${b}</svg>`; };
 
 // ---------- Vehicle pictures ----------
-const lum = (h) => { const n = [1, 3, 5].map((i) => parseInt(String(h || '#888888').slice(i, i + 2), 16)); return (n[0] * 299 + n[1] * 587 + n[2] * 114) / 255000; };
 // Bump when bike pictures change, so phones fetch the new ones instead of a saved copy.
 export const ART_V = '75';
 export function vehicleArt(s, v, size = 'thumb') {
@@ -343,10 +340,6 @@ function recRow(live) {
   const r = live.rec;
   return `<div class="bc-conn conn-compact rec-row"><button class="cc-main" data-act="go" data-arg="trips"><span class="cc-ic rec"><span class="dot x pulse"></span>${icon('trips')}</span><span class="cc-tx"><span class="cc-t">Ride in progress</span><span class="cc-s"><span data-live="rec-km">${num(r.km, 2)}</span> km · <span data-live="rec-time">${clock((Date.now() - r.start) / 1000)}</span> · <span data-live="speed">${num(live.speed)}</span> km/h</span></span></button><button class="btn sm cc-act" data-act="sheet" data-arg="rec-end" style="background:var(--accent);color:var(--on-accent)">${icon('stop')}End</button></div>`;
 }
-function recCard(live) {
-  const r = live.rec;
-  return `<div class="card pad mt12 flex gap12" style="align-items:center"><div class="grow"><span class="tag x"><span class="dot x pulse"></span>Ride in progress</span><div class="flex gap12 mt12" style="align-items:baseline"><span class="big" style="font-size:34px"><span data-live="rec-km">${num(r.km, 2)}</span><span class="unit">km</span></span><span class="small muted"><span data-live="rec-time">${clock((Date.now() - r.start) / 1000)}</span> · <span data-live="speed">${num(live.speed)}</span> km/h</span></div></div><button class="circle" data-act="sheet" data-arg="rec-end" aria-label="End ride" style="background:var(--accent);color:var(--on-accent)">${icon('stop')}</button></div>`;
-}
 function tile(to, name, dot, status, bar) {
   const ic = { fuel: 'fuel', logbook: 'wrench', trips: 'trips', glovebox: 'folder' }[to];
   return `<button class="card tile" data-act="${to === 'glovebox' ? 'sheet' : 'go'}" data-arg="${to}"><span class="tile-ic ${dot}">${icon(ic)}</span><div class="serif">${name}</div><div class="status"><span class="dot ${dot === 's' ? '' : dot}"></span>${status}</div>${bar}</button>`;
@@ -578,7 +571,6 @@ export function rideCharts(trips) {
   const wd = [0, 0, 0, 0, 0, 0, 0], wn = [0, 0, 0, 0, 0, 0, 0];
   for (const t of trips || []) { const g = new Date(t.start || t.ts || 0).getDay(); wd[g] += t.km || 0; wn[g]++; }
   const wdMax = Math.max(1, ...wd), fav = wd.indexOf(Math.max(...wd)), WDN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const spoke = (i, r0, r1) => { const a = (i / 7) * Math.PI * 2 - Math.PI / 2; return [Math.cos(a) * r0, Math.sin(a) * r0, Math.cos(a) * r1, Math.sin(a) * r1].map((v) => (110 + v).toFixed(1)); };
   const radial = `<div class="rc-wk">${[1, 2, 3, 4, 5, 6, 0].map((i) => `<div class="rc-wr${i === fav && wd[i] ? ' top' : ''}" title="${WDN[i]} · ${num(wd[i], 1)} km, ${plural(wn[i], 'ride', 'rides')}"><span>${WDN[i]}</span><div><i style="width:${wd[i] ? Math.max(4, (wd[i] / wdMax) * 100) : 0}%"></i></div><b>${wd[i] ? num(wd[i], wd[i] < 100 ? 1 : 0) : '–'}</b></div>`).join('')}</div>`;
   // 4. Each ride: one bubble per ride along the 12 weeks, sized by distance.
   const span = today + 86400000 - start, rr = (trips || []).filter((t) => (t.start || t.ts || 0) >= start);
@@ -591,7 +583,6 @@ export function rideCharts(trips) {
   const pages = [cal, weekly, radial, each];
   return `<div class="rc" data-rc>${pages.map((h, i) => `<section class="rc-p" aria-label="${RC_NAMES[i]}"><div class="rc-name">${RC_NAMES[i]}</div>${h}</section>`).join('')}</div><div class="rc-nav">${navBtn(-1)}<div class="rc-dots">${RC_NAMES.map((n, i) => `<i class="${i === at ? 'on' : ''}" title="${n}"></i>`).join('')}</div>${navBtn(1)}</div>`;
 }
-export const rideHeatmap = rideCharts;
 
 export function trips(c) {
   const { s, live } = c;
@@ -606,7 +597,7 @@ export function trips(c) {
       <div class="flex gap12 mt12" style="align-items:baseline"><span class="big"><span data-live="rec-km">${num(r.km, 2)}</span><span class="unit">km</span></span><span class="small muted"><span data-live="speed">${num(live.speed)}</span> km/h now · top <span data-live="rec-top">${num(r.top)}</span></span></div>
       <button class="btn ink block mt16" data-act="sheet" data-arg="rec-end">${icon('stop')} End ride</button></div>`
     : `<div class="card pad mt20 flex gap12"><div class="grow"><div class="serif" style="font-size:22px">Ready when you are</div><div class="small muted mt8">${s.settings.autoRecord ? 'Rides record by themselves once the bike links.' : 'Tap play to record with your phone’s GPS.'}</div></div><button class="circle ink" data-act="rec-start" aria-label="Record a ride">${icon('play')}</button></div>`}
-  ${(() => { const tot = s.trips.reduce((a, t) => a + (t.km || 0), 0); return `<div class="card pad rides-hero mt12"><div class="ms-t">All rides</div><div class="big rh-n">${s.trips.length}</div><p class="rh-line">${s.trips.length ? `You’ve ridden <u>${num(tot, tot < 100 ? 1 : 0)} km</u> on ${esc(clip(S.vehicleTitle(s), 20))}${s.trips.length > 1 ? `, about ${num(tot / s.trips.length, 0)} km a ride` : ''}.` : 'Your rides will fill this in, one square a day.'}</p>${rideHeatmap(s.trips)}</div>`; })()}
+  ${(() => { const tot = s.trips.reduce((a, t) => a + (t.km || 0), 0); return `<div class="card pad rides-hero mt12"><div class="ms-t">All rides</div><div class="big rh-n">${s.trips.length}</div><p class="rh-line">${s.trips.length ? `You’ve ridden <u>${num(tot, tot < 100 ? 1 : 0)} km</u> on ${esc(clip(S.vehicleTitle(s), 20))}${s.trips.length > 1 ? `, about ${num(tot / s.trips.length, 0)} km a ride` : ''}.` : 'Your rides will fill this in, one square a day.'}</p>${rideCharts(s.trips)}</div>`; })()}
   <div class="card stat2 mt12">${stat('This week', wk)}${stat('Last 30 days', mo)}</div>
   <div class="section">${sh('Rides', '<span class="eyebrow">Newest first</span>')}
     ${s.trips.length ? `<div class="card" style="padding:4px">${s.trips.map((t) => `<button class="ride" data-act="sheet" data-arg="trip-detail:${t.id}">${sketch(t.pts)}<div class="grow"><div class="when">${dMed(t.start)} · ${tShort(t.start)}</div><div class="t">${esc(t.title)}</div><div class="meta"><span><span class="big">${num(t.km, 1)}</span><span class="unit">km</span></span><span>${dur(t.sec)}</span><span>top ${num(t.top)}</span></div></div><span class="no">№${String(t.n).padStart(3, '0')}</span></button>`).join('')}</div>`
@@ -836,7 +827,6 @@ export const BRANDS = [['loop', 'Loop']];
 export const brandOf = () => 'loop';
 export const APP_VERSION = '1.0';
 // Add-a-bike glyph: a motorbike whose front wheel is a plus.
-export const ADD_BIKE = '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="17" r="3"/><circle cx="17.5" cy="17" r="3"/><path d="M5 17l3.6-5.2h4.6l1.6 2.2"/><path d="M8.6 11.8l2.2 4.6h3.6"/><path d="M17.5 17l-2.6-7.4h-1.8"/><path d="M7.2 9.4h3.4"/><path d="M19.5 2.5v5.5M16.75 5.25h5.5"/></svg>';
 export const isIOS = () => typeof navigator !== 'undefined' && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 const BLUEFY_STORE = 'https://apps.apple.com/app/id1492822055';
 export const REPO_URL = 'https://github.com/krishnaar21/Waylink';
@@ -898,7 +888,6 @@ export function tabbar(c, current) {
 }
 
 // ---------- Ride mode ----------
-export const MAX_KMH = 160;
 // Dial range follows the bike: 400cc tops out near 160, so the dial reads to 180; 200–250cc to 160; smaller bikes to 140.
 export const maxKmh = (md) => { const cc = parseFloat(String(md?.engine || '').match(/[\d.]+(?=cc)/)?.[0]) || 200; return cc >= 350 ? 180 : cc >= 190 ? 160 : 140; };
 const rmBars = (fs) => { let h = `<div class="rm-fuelbars ${fs.onReserve ? 'low' : ''}">`; for (let i = 0; i < 6; i++) h += `<i class="${fs.bars != null && i < fs.bars ? 'on' : ''}" style="height:${40 + i * 12}%"></i>`; return h + '</div>'; };
@@ -1188,7 +1177,6 @@ function sheetInner(c, key) {
       const preview = { ...v, photo: live.draftPhoto === undefined ? v.photo : live.draftPhoto };
       return `<form data-form="vehicle" data-arg="${isNew ? 'new' : v.id}"><div class="eyebrow">Garage</div><h2>${isNew ? 'Add a vehicle' : 'Edit vehicle'}</h2>
         <div class="mt16" id="veh-preview">${vehicleArt({ settings: { art: 'photo' } }, preview, 'hero')}</div>
-        ${!preview.photo && S.MODEL_IMAGES[v.model]?.credit ? `<p class="hint" style="margin-top:8px">${esc(S.MODEL_IMAGES[v.model].credit)}</p>` : ''}
         <label class="field"><span class="eyebrow">Model</span><select class="input" name="model" data-input="veh-model">${groups.map((g) => `<optgroup label="${g}">${S.MODELS.filter((m) => m.series === g).map((m) => `<option value="${m.id}" ${m.id === v.model ? 'selected' : ''}>${esc(S.nameOfModel(s, m))}</option>`).join('')}</optgroup>`).join('')}</select></label>
         <div class="two"><label class="field"><span class="eyebrow">Nickname</span><input class="input" name="nickname" value="${esc(v.nickname)}" placeholder="Daily" maxlength="${LIMITS.nickname}"></label>
         <label class="field"><span class="eyebrow">Number plate</span><input class="input" name="plate" value="${esc(v.plate)}" placeholder="KA 05 MX 2481" maxlength="${LIMITS.plate}" style="text-transform:uppercase"></label></div>
@@ -1296,12 +1284,6 @@ function sheetInner(c, key) {
     case 'models':
       return `<div class="eyebrow">Garage</div><h2>Bike models</h2><p class="lead">Every model ${appName(s)} knows.</p>
       <div class="list flat mt16">${S.MODELS.map((m) => li({ ic: 'bike', t: esc(S.nameOfModel(s, m)), d: `${esc(m.series)} · ${num(m.tank, m.tank % 1 ? 1 : 0)} L tank`, chev: false, tag: 'div' })).join('')}</div>`;
-    case 'credits': {
-      const rows = Object.entries(S.MODEL_IMAGES);
-      return `<div class="eyebrow">About</div><h2>Photo credits</h2><p class="lead">Bike photos are used under their open licences. Tap one to see its source.</p>
-      ${rows.length ? `<div class="list flat mt16">${rows.map(([k, m]) => li({ lead: vehicleArt({ settings: { art: 'photo' } }, { model: k, colour: '#888888' }), t: esc(S.MODELS.find((x) => x.id === k)?.name || k), d: esc(m.credit || 'No credit recorded'), href: m.source || '', tag: m.source ? 'a' : 'div', chev: !!m.source })).join('')}</div>` : '<div class="empty">No model photos yet.</div>'}
-      <p class="hint">Add more with tools/fetch_bike_photos.py. It only uses CC0, public-domain, CC BY and CC BY-SA photos from Wikimedia Commons.</p>`;
-    }
     case 'clear': {
       const wa = arg === 'clear-wa', n = wa ? s.alerts.wa.length : s.alerts.missed.length;
       return `<div class="eyebrow">Alerts</div><h2>${wa ? 'Clear WhatsApp alerts?' : 'Clear missed calls?'}</h2><p class="lead">${plural(n, wa ? 'chat' : 'call', wa ? 'chats' : 'calls')} will be removed here and the count on your bike goes to zero. Your phone keeps its own history.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="${arg}">Clear</button><button class="btn line block mt8" data-act="close">Keep them</button>`;

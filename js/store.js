@@ -49,10 +49,6 @@ export const model = (s) => modelOf(veh(s));
 export const nameOfModel = (s, m) => (country(s).rouser ? m.name.replace('Pulsar', 'Rouser') : m.name);
 export const bikeName = (s) => nameOfModel(s, model(s));
 export const vehicleTitle = (s, v = veh(s)) => v.nickname?.trim() || nameOfModel(s, modelOf(v));
-// Model pictures come from img/bikes/manifest.json (filled by tools/fetch_bike_photos.py,
-// which records each photo's author and licence). Models without one show their colour tile.
-export const MODEL_IMAGES = {};
-export function setModelImages(m) { for (const [k, v] of Object.entries(m || {})) if (!k.startsWith('_') && v?.src) MODEL_IMAGES[k] = v; }
 export const COLOURS = [['#B3261E', 'Racing red'], ['#1F3A5F', 'Midnight blue'], ['#2F4F3E', 'Forest green'], ['#E9E6DF', 'Pearl white'], ['#2A2A2A', 'Graphite black'], ['#C9822B', 'Copper'], ['#5B6470', 'Slate grey']];
 
 const KEY = 'pulsarnav-web-v2';

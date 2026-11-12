@@ -1195,9 +1195,9 @@ const within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))
 // First launch: keep the splash up until the onboarding pictures are ready (at most ~3 s more).
 const onbReady = () => {
   if (s.onboarded) return Promise.resolve();
-  const dark = ['obsidian', 'amoled'].includes(document.documentElement.dataset.theme), m = dark ? 'dark' : 'light';
+  const h = document.documentElement, dark = ['obsidian', 'amoled'].includes(h.dataset.theme) || 'night' in h.dataset, m = dark ? 'dark' : 'light';
   const load = (src) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = src; (i.decode?.() || Promise.resolve()).then(r, r); });
-  return Promise.race([Promise.all([load(`img/onb/scene-${m}.webp`), load('img/onb/rider-dominar.webp'), load('img/onb/rider-street.webp'), load('img/rider.png')]), new Promise((r) => setTimeout(r, 3000))]);
+  return Promise.race([Promise.all([load(`img/onb/scene-${m}.webp`), load('img/onb/rider-street.webp')]), new Promise((r) => setTimeout(r, 3000))]);
 };
 function hideSplash() {
   const sp0 = $('#splash'); if (sp0 && !sp0._waited && !s.onboarded) { sp0._waited = true; sp0.classList.add('waiting'); onbReady().then(() => hideSplash()); return; }
