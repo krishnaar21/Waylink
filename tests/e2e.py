@@ -120,10 +120,13 @@ async def main():
 
         # Profile autosave
         await pg.evaluate("location.hash='profile'"); await pg.wait_for_timeout(600)
-        await pg.fill('[name=licenceNo]', 'KA02 20150099887'); await pg.wait_for_timeout(700)
+        await pg.click('.pr-card[data-arg="prof:licence"]'); await pg.wait_for_timeout(600)
+        await pg.fill('.sheet [name=licenceNo]', 'KA02 20150099887'); await pg.wait_for_timeout(700)
         saved = await pg.evaluate("JSON.parse(localStorage.getItem('pulsarnav-web-v2')).profile.licenceNo")
         check('profile autosaves', saved == 'KA02 20150099887', saved)
+        check('profile page shows the summary', 'KA02 20150099887' in await text(pg, '.view'))
         await shot(pg, '05-profile')
+        await pg.evaluate("document.querySelector('.sheet-head [data-act=close]').click()"); await pg.wait_for_timeout(500)
 
         # Picture modes
         await pg.evaluate("location.hash='settings'"); await pg.wait_for_timeout(500)

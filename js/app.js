@@ -1097,9 +1097,9 @@ function autosaveProfile(f) {
   profTimer = setTimeout(() => {
     const p = s.profile, oldCity = p.city;
     for (const k of ['name', 'phone', 'email', 'city', 'licenceNo', 'blood', 'medical', 'iceName', 'icePhone']) if (f[k]) p[k] = f[k].value.trim();
-    const d = f.licenceExpiry?.value ? new Date(f.licenceExpiry.value).getTime() : null; p.licenceExpiry = isNaN(d) ? null : d;
+    if (f.licenceExpiry) { const d = f.licenceExpiry.value ? new Date(f.licenceExpiry.value).getTime() : null; p.licenceExpiry = isNaN(d) ? null : d; }
     if (p.city !== oldCity) delete p.weatherAt; // a new city wins over an old location fix
-    S.save(s);
+    S.save(s); if (screen === 'profile') render();
     const el = $('#saved'); if (el) { el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 1400); }
   }, 350);
 }

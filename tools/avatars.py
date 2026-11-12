@@ -1,50 +1,60 @@
-# Rider avatars: helmets and gear, front view, pastel with paper grain. 100x100, round tile.
-def grain(i): return f'<filter id="g{i}" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="{i}"/><feColorMatrix values="0 0 0 0 .3  0 0 0 0 .25  0 0 0 0 .2  0 0 0 .32 -.05"/><feComposite in2="SourceGraphic" operator="in"/></filter>'
-SH = '<ellipse cx="50" cy="88" rx="26" ry="4" fill="#000" opacity=".1"/>'
-def fullface(c, v, live=''):
-    return (SH + f'<path d="M24 52c0-19 12-32 26-32s26 13 26 32v14c0 8-6 16-14 18H38c-8-2-14-10-14-18z" fill="{c}"/>'
-            f'{live}<path d="M28 46c4-7 12-11 22-11s18 4 22 11v12c0 3-3 5-6 5H34c-3 0-6-2-6-5z" fill="{v}"/>'
-            '<path d="M33 44c4-4 9-5 15-5" stroke="#fff" stroke-width="3" opacity=".55" stroke-linecap="round" fill="none"/>'
-            '<path d="M40 74h20M42 79h16" stroke="#000" stroke-opacity=".18" stroke-width="2.2" stroke-linecap="round"/>'
-            '<path d="M30 30c6-6 13-9 20-9" stroke="#fff" stroke-width="3" opacity=".35" stroke-linecap="round" fill="none"/>')
-def openface(c, strap, lens, live=''):
-    return (SH + f'<path d="M24 56c0-21 12-34 26-34s26 13 26 34v8H24z" fill="{c}"/>{live}'
-            '<path d="M30 54c0-14 9-22 20-22s20 8 20 22v18c0 6-9 12-20 12s-20-6-20-12z" fill="#E7B08A"/>'
-            f'<rect x="24" y="48" width="52" height="7" rx="3.5" fill="{strap}"/>'
-            f'<circle cx="40" cy="52" r="8.5" fill="{strap}"/><circle cx="60" cy="52" r="8.5" fill="{strap}"/>'
-            f'<circle cx="40" cy="52" r="6" fill="{lens}"/><circle cx="60" cy="52" r="6" fill="{lens}"/>'
-            '<circle cx="38" cy="50" r="1.8" fill="#fff" opacity=".8"/><circle cx="58" cy="50" r="1.8" fill="#fff" opacity=".8"/>'
-            '<path d="M42 70c3 3 13 3 16 0" stroke="#5A3B2E" stroke-width="3.4" stroke-linecap="round" fill="none"/>'
-            '<path d="M30 30c6-6 13-9 20-9" stroke="#fff" stroke-width="3" opacity=".35" stroke-linecap="round" fill="none"/>')
-def mx(c, peak, goggle, lens, live=''):
-    return (SH + f'<path d="M24 50c0-18 12-30 26-30s26 12 26 30v16c0 4-2 8-6 10l-12 10H42L30 76c-4-2-6-6-6-10z" fill="{c}"/>{live}'
-            f'<path d="M20 34c8-10 20-14 30-14s22 4 30 14l-6 6c-6-6-14-9-24-9s-18 3-24 9z" fill="{peak}"/>'
-            f'<rect x="27" y="44" width="46" height="16" rx="8" fill="{goggle}"/><rect x="31" y="47" width="38" height="10" rx="5" fill="{lens}"/>'
-            '<path d="M35 49h12" stroke="#fff" stroke-width="2" opacity=".6" stroke-linecap="round"/>'
-            '<path d="M43 68l7 10 7-10z" fill="#000" opacity=".2"/><circle cx="44" cy="72" r="1.6" fill="#000" opacity=".25"/><circle cx="56" cy="72" r="1.6" fill="#000" opacity=".25"/>')
-def stripe(col): return f'<path d="M46 21h8v28h-8z" fill="{col}"/>'
-def twin(col): return f'<path d="M42 21h5v24h-5zM53 21h5v24h-5z" fill="{col}"/>'
-def num(n, col): return f'<text x="50" y="35" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="12" fill="{col}">{n}</text>'
-def star(col): return f'<path d="M50 24l2.6 5.4 5.9.8-4.3 4.1 1 5.8L50 37.4l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z" fill="{col}"/>'
-def bolt(col): return f'<path d="M53 22l-9 13h6l-3 10 10-14h-6z" fill="{col}"/>'
-def check(col): return ''.join(f'<rect x="{38 + (k % 4) * 6}" y="{24 + (k // 4) * 6}" width="6" height="6" fill="{col}"/>' for k in range(8) if (k + k // 4) % 2 == 0)
-A = [
- ('#C9D8F5', '#9DB6E8', fullface('#F08A8A', '#3A3F55', stripe('#FFF3E0'))),
- ('#F9E3C2', '#F1C98E', openface('#8FB8A6', '#5B4636', '#9FD3EA')),
- ('#CDEBDD', '#A3D8C0', mx('#F7F2E8', '#F2A65A', '#3A3F55', '#F6C76A', num('7', '#F2A65A'))),
- ('#E2D7F6', '#C6B3EE', fullface('#2F3448', '#A9B9F0', twin('#E5484D'))),
- ('#FAD9C9', '#F3B79E', openface('#F2E6CF', '#7A4E35', '#F7B267', star('#E5484D'))),
- ('#CFE6F5', '#A6CDEB', mx('#6C8FD6', '#F7F2E8', '#2E3550', '#9FE3D6', bolt('#F2C94C'))),
- ('#F7D5DD', '#EFB1C0', fullface('#F7F2E8', '#E8798F', check('#2F3448'))),
- ('#E6EFC9', '#CCE09A', openface('#C2452B', '#2F3448', '#B5E0F5', stripe('#F7F2E8'))),
- ('#D3EEEB', '#A8DCD6', mx('#F2C94C', '#2F3448', '#2F3448', '#F08A8A', num('46', '#2F3448'))),
- ('#F5DFC8', '#EBC29C', fullface('#9A7356', '#F6D6A8', twin('#F7F2E8'))),
- ('#D8DCF7', '#B5BCEE', openface('#3E3A40', '#C9A27A', '#C6B3EE', bolt('#F2C94C'))),
- ('#FBE7B5', '#F5D27A', fullface('#7FB7A8', '#2E3550', star('#F7F2E8'))),
+# Rider avatars, Notion style: white faces, bold black ink, solid black hair, on soft pastel discs.
+# Faces from across India: Sikh, Muslim, Hindu, Christian, Parsi, an elder, a rider; three women.
+K = '#111'
+INK = f'stroke="{K}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"'
+def face(expr='calm'):
+    o = f'<path d="M24 52q-6 1-5 8t8 5" fill="#fff" {INK}/><path d="M76 52q6 1 5 8t-8 5" fill="#fff" {INK}/>'
+    o += f'<path d="M27 44c0-15 10-24 23-24s23 9 23 24v12c0 15-10 26-23 26s-23-11-23-26z" fill="#fff" {INK}/>'
+    o += f'<path d="M49 53l-3 8h5" fill="none" {INK}/>'
+    if expr == 'smile': o += f'<path d="M35 49q4-4 8 0M57 49q4-4 8 0" fill="none" {INK}/><path d="M42 68q8 6 16 0" fill="none" {INK}/>'
+    else: o += f'<circle cx="40" cy="49" r="2.4" fill="{K}"/><circle cx="60" cy="49" r="2.4" fill="{K}"/><path d="M46 70h7" {INK}/>'
+    o += f'<path d="M35 41q5-2 9 0M56 41q5-2 9 0" fill="none" {INK}/><path d="M32 60l2-3M35 61l2-3M64 60l2-3M67 61l2-3" stroke="{K}" stroke-width="1.6" stroke-linecap="round"/>'
+    return o
+P = {
+ 'quiff': f'<path d="M25 46c-3-16 6-28 22-30 10-2 22 2 27 12 3 6 2 14-1 20-2-9-8-15-16-17 3 4 4 9 3 13-8-6-20-8-35 2z" fill="{K}"/>',
+ 'side': f'<path d="M26 44c-1-16 10-25 25-25 13 0 22 8 23 21-5-6-12-9-20-9-2 4-9 8-28 13z" fill="{K}"/>',
+ 'curly': ''.join(f'<circle cx="{x}" cy="{y}" r="7" fill="{K}"/>' for x, y in [(30, 34), (38, 26), (48, 22), (58, 23), (67, 29), (72, 38), (28, 44)]) + f'<path d="M30 40q20-10 40 0" fill="{K}"/>',
+ 'grey': f'<path d="M26 44c-1-16 10-25 25-25 13 0 22 8 23 21-5-6-12-9-20-9-2 4-9 8-28 13z" fill="#fff" {INK}/><path d="M34 32q8-5 16-4M52 27q8 0 14 5" fill="none" stroke="{K}" stroke-width="1.6"/>',
+ 'beard': f'<path d="M27 58c2 16 11 26 23 26s21-10 23-26c-4 4-8 6-11 5-4-4-8-4-12-4s-8 0-12 4c-3 1-7-1-11-5z" fill="{K}"/><path d="M44 69q6 3 12 0" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/>',
+ 'mous': f'<path d="M40 64q10-6 20 0q-5 3-10 1q-5 2-10-1z" fill="{K}"/>',
+ 'turban': f'<path d="M23 46c0-18 12-29 27-29s27 11 27 29c-6-4-15-7-27-7s-21 3-27 7z" fill="#fff" {INK}/><path d="M29 37c8-8 18-12 30-12M31 30c8-5 16-7 26-7M50 17l-6 21" fill="none" stroke="{K}" stroke-width="2"/>',
+ 'cap': f'<path d="M27 37c0-10 10-16 23-16s23 6 23 16z" fill="#fff" {INK}/><path d="M33 31h34M38 26h24" stroke="{K}" stroke-width="1.4" stroke-dasharray="2 3"/>',
+ 'tilak': f'<path d="M50 30v8" stroke="{K}" stroke-width="3" stroke-linecap="round"/>',
+ 'glasses': f'<rect x="31" y="43" width="16" height="11" rx="2.5" fill="none" {INK}/><rect x="53" y="43" width="16" height="11" rx="2.5" fill="none" {INK}/><path d="M47 47h6" {INK}/>',
+ 'round': f'<circle cx="40" cy="49" r="7" fill="none" {INK}/><circle cx="60" cy="49" r="7" fill="none" {INK}/><path d="M47 48h6" {INK}/>',
+ 'cross': f'<path d="M50 88v7M47 91h6" stroke="{K}" stroke-width="2" stroke-linecap="round"/>',
+ 'parsi': f'<path d="M26 40c0-13 10-20 24-20s24 7 24 20c-7-3-15-4-24-4s-17 1-24 4z" fill="{K}"/>',
+ 'longf': f'<path d="M23 50c-3-20 10-32 27-32s30 12 27 32c1 14 0 26-5 34H28c-5-8-6-20-5-34z" fill="{K}"/>',
+ 'fringe': f'<path d="M27 46c0-16 10-26 23-26s23 10 23 26c-5-9-13-14-22-13-4 5-11 9-24 13z" fill="{K}"/>',
+ 'bun': f'<circle cx="50" cy="16" r="9" fill="{K}"/>',
+ 'hijab': f'<path d="M18 62c0-28 14-44 32-44s32 16 32 44v38H18z" fill="#fff" {INK}/><path d="M32 30q18-10 36 0" fill="none" stroke="{K}" stroke-width="1.6"/>',
+ 'bindi': f'<circle cx="50" cy="37" r="2.2" fill="{K}"/>',
+ 'earring': f'<circle cx="23" cy="68" r="2.6" fill="none" {INK}/><circle cx="77" cy="68" r="2.6" fill="none" {INK}/>',
+ 'helmet': f'<path d="M22 50c0-20 12-32 28-32s28 12 28 32v8H66v-8c0-10-7-16-16-16s-16 6-16 16v8H22z" fill="#fff" {INK}/><path d="M50 18v14" stroke="{K}" stroke-width="5"/>',
+}
+SHIRT = f'<path d="M20 100c2-12 13-18 30-18s28 6 30 18" fill="#fff" {INK}/><path d="M44 82l6 7 6-7" fill="none" {INK}/>'
+A = [  # disc colour, parts drawn in order
+ ('#F6D9C7', ['shirt', 'face', 'quiff', 'glasses']),
+ ('#D8E8D2', ['shirt', 'face:smile', 'beard', 'turban']),
+ ('#D3E3F2', ['shirt', 'face', 'beard', 'cap']),
+ ('#F3E1B9', ['shirt', 'face:smile', 'side', 'mous', 'tilak']),
+ ('#E4DCF2', ['shirt', 'face', 'curly', 'cross']),
+ ('#EFE3CF', ['shirt', 'face:smile', 'parsi', 'mous', 'round']),
+ ('#D5ECEA', ['shirt', 'face', 'mous', 'helmet']),
+ ('#EADFD6', ['shirt', 'face:smile', 'grey', 'mous', 'glasses']),
+ ('#F6D3DC', ['longf', 'shirt', 'face:smile', 'fringe', 'bindi', 'earring']),
+ ('#DCEBDF', ['hijab', 'shirt', 'face:smile']),
+ ('#F7E7B4', ['bun', 'shirt', 'face', 'fringe', 'bindi', 'round']),
 ]
-for i, (b0, b1, body) in enumerate(A):
-    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="b{i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{b0}"/><stop offset="1" stop-color="{b1}"/></linearGradient>'
-           f'<clipPath id="c{i}"><circle cx="50" cy="50" r="50"/></clipPath>{grain(i + 1)}</defs><g clip-path="url(#c{i})"><rect width="100" height="100" fill="url(#b{i})"/>'
-           f'<circle cx="80" cy="18" r="28" fill="#fff" opacity=".2"/><g transform="translate(50 56) scale(1.18) translate(-50 -54)">{body}</g><rect width="100" height="100" fill="#fff" filter="url(#g{i + 1})"/></g></svg>')
+for i, (bg, parts) in enumerate(A):
+    body = ''
+    for p in parts:
+        if p == 'shirt': body += SHIRT
+        elif p.startswith('face'): body += face('smile' if ':smile' in p else 'calm')
+        else: body += P[p]
+    if 'hijab' in parts:  # keep the hijab's face opening tight: redraw the head edge over it
+        body = body.replace('<path d="M27 44c0-15', '<path d="M27 44c0-15', 1)
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><clipPath id="c{i}"><circle cx="50" cy="50" r="50"/></clipPath></defs>'
+           f'<g clip-path="url(#c{i})"><rect width="100" height="100" fill="{bg}"/><g transform="translate(50 58) scale(1.04) translate(-50 -56)">{body}</g></g></svg>')
     open(f'img/avatars/a{i + 1}.svg', 'w').write(svg)
 print(len(A))

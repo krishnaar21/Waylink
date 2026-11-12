@@ -2168,3 +2168,10 @@ html[data-theme="obsidian"] .onb-link .onb-img, html[data-theme="amoled"] .onb-l
 .av-opt.on { transform: scale(1.12); z-index: 1; }
 .av-opt.on img { outline: none !important; box-shadow: 0 8px 18px -8px rgba(0,0,0,.35); }
 .av-tick { display: none !important; }
+/* Profile: summaries on the page, forms in sheets */
+.pr-card { display: block; width: 100%; padding: 4px 16px !important; text-align: left; }
+.pr-row { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; padding: 12px 0; }
+.pr-row + .pr-row { border-top: 1px solid var(--line); }
+.pr-k { font-size: 14px; color: var(--ink-3); flex: none; }
+.pr-v { font-size: 15px; font-weight: 500; color: var(--ink); text-align: right; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-v.faint { color: var(--ink-4); font-weight: 400; }

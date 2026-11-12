@@ -645,7 +645,7 @@ export function route(c) {
   <div class="section">${sh('Test one turn', '', 'testturn')}
     <div class="card tt-card"><button class="tt-main" data-act="sheet" data-arg="turn-test"><span class="tt-arrow">${arrow(sel.glyph, isRb ? live.turn.exit : 0, .3, 7.5)}</span><span class="tt-tx"><span class="tt-t">${sel.label}</span><span class="tt-s">${num(live.turn.m)} m${isRb ? ` · exit ${live.turn.exit}` : ''}${live.turn.street ? ` · ${esc(live.turn.street)}` : ''}</span></span><span class="tt-change">Change${icon('chev')}</span></button>
     <button class="btn accent block" data-act="nav-single">Send to bike</button></div></div>
-  <div class="section">${sh('Display')}<div class="list">${li({ ic: 'eye', t: 'Street names on the bike', d: 'Shows the road name next to the arrow. Off keeps names on your phone.', end: sw(s.settings.streetNames, 'toggle', 'streetNames'), chev: false, tag: 'div' })}</div></div>
+  <div class="section">${sh('Display')}<div class="list">${li({ ic: 'eye', t: 'Street names on the bike', d: 'Road name beside the arrow', end: sw(s.settings.streetNames, 'toggle', 'streetNames'), chev: false, tag: 'div' })}</div></div>
   ${s.settings.devFrames ? frameCard(link) : ''}
   </div>`;
 }
@@ -844,23 +844,13 @@ export function profile(c) {
     <div class="ph-tx"><h1 class="title">${esc(shortName(p.name) || 'Your profile')}</h1><div class="subtitle">Rider since ${new Date(p.since || Date.now()).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div></div>
   </div>
   <div class="card stat3 mt20"><div><span class="eyebrow">Bikes</span><span class="big">${s.vehicles.length}</span></div><div><span class="eyebrow">Ridden</span><span class="big">${short(totalKm)}</span><span class="unit" style="margin:0">km</span></div><div><span class="eyebrow">Rides</span><span class="big">${short(rides)}</span></div></div>
-  <form data-form="profile" data-autosave>
-  <div class="section">${sh('About you')}<div class="card pad" style="padding-top:2px">
-    ${f('name', 'Full name', p.name, 'text', 'Arjun Rao', `maxlength="${LIMITS.person}"`)}
-    ${f('phone', 'Phone', p.phone, 'tel', co.dial + ' 98450 12345')}
-    ${f('email', 'Email', p.email, 'email', 'you@example.in')}
-    ${f('city', 'City', p.city, 'text', 'Bengaluru', `maxlength="${LIMITS.city}"`)}
-  </div></div>
-  <div class="section">${sh('Driving licence')}<div class="card pad" style="padding-top:2px">
-    <div class="two">${f('licenceNo', 'Licence number', p.licenceNo, 'text', 'KA05 20190012345', 'maxlength="20"')}${f('licenceExpiry', 'Valid till', p.licenceExpiry ? isoDate(p.licenceExpiry) : '', 'date')}</div>
-    ${p.licenceExpiry && p.licenceExpiry - Date.now() < 60 * 86400000 ? `<p class="hint red">${p.licenceExpiry < Date.now() ? 'Your licence has expired.' : 'Your licence expires soon.'} Renew it on Parivahan.</p>` : ''}
-  </div></div>
-  <div class="section">${sh('Medical ID', '<span class="eyebrow">Shown on SOS</span>', 'medical')}<div class="card pad" style="padding-top:2px">
-    <label class="field"><span class="eyebrow">Blood group</span><select class="input" name="blood">${['', 'A+', 'A−', 'B+', 'B−', 'AB+', 'AB−', 'O+', 'O−'].map((b) => `<option ${b === p.blood ? 'selected' : ''} value="${b}">${b || 'Not set'}</option>`).join('')}</select></label>
-    <label class="field"><span class="eyebrow">Allergies and notes</span><textarea class="input" name="medical" placeholder="Allergic to penicillin">${esc(p.medical)}</textarea></label>
-    ${f('iceName', 'Emergency contact', p.iceName, 'text', 'Amma', `maxlength="${LIMITS.person}"`)}${f('icePhone', 'Their phone', p.icePhone, 'tel', co.dial + ' 98860 55443')}
-  </div></div>
-  </form>
+  ${(() => { const row = (k, v, ph) => `<div class="pr-row"><span class="pr-k">${k}</span><span class="pr-v ${v ? '' : 'faint'}">${v ? esc(v) : ph}</span></div>`;
+    const card = (key, title, help, rows) => `<div class="section">${sh(title, '<button class="link" data-act="sheet" data-arg="prof:' + key + '">Edit</button>', help)}<button class="card pr-card" data-act="sheet" data-arg="prof:${key}">${rows}</button></div>`;
+    const exp = p.licenceExpiry ? dFull(p.licenceExpiry) : '';
+    return card('about', 'About you', '', row('Name', p.name, 'Add') + row('Phone', p.phone, 'Add') + row('Email', p.email, 'Add') + row('City', p.city, 'Add'))
+      + card('licence', 'Driving licence', '', row('Licence number', p.licenceNo, 'Add') + row('Valid till', exp, 'Add'))
+      + (p.licenceExpiry && p.licenceExpiry - Date.now() < 60 * 86400000 ? `<p class="hint red" style="margin:8px 4px 0">${p.licenceExpiry < Date.now() ? 'Your licence has expired.' : 'Your licence expires soon.'} Renew it on Parivahan.</p>` : '')
+      + card('medical', 'Medical ID', 'medical', row('Blood group', p.blood, 'Add') + row('Allergies & notes', p.medical, 'None') + row('Emergency contact', [p.iceName, p.icePhone].filter(Boolean).join(' · '), 'Add')); })()}
   <div class="dashed">${icon('lock')}<span>Your profile stays on this phone. It’s in your backup, and nowhere else.</span></div>
   </div>`;
 }
@@ -1321,6 +1311,14 @@ function sheetInner(c, key) {
       const P = s.profile, cur = P.photo ? 'photo' : P.avatar || '';
       return `<div class="eyebrow">Profile</div><h2>Your picture</h2><p class="lead">Pick a rider, or add a photo.</p>
         <div class="av-grid mt16">${Array.from({ length: 11 }, (_, i) => `a${i + 1}`).map((k) => `<button class="av-opt ${cur === k ? 'on' : ''}" data-act="pick-avatar" data-arg="${k}" aria-label="Avatar ${k.slice(1)}"><img src="img/avatars/${k}.svg" alt=""></button>`).join('')}<label class="av-opt av-photo ${cur === 'photo' ? 'on' : ''}" aria-label="Use a photo">${P.photo ? `<img src="${P.photo}" alt="">` : `<span>${icon('camera')}<b>Photo</b></span>`}<input type="file" accept="image/*" hidden data-input="avatar"></label></div>`;
+    }
+    case 'prof': {
+      const p = s.profile, co = S.country(s);
+      const f = (name, label, val, type = 'text', ph = '', extra = '') => `<label class="field"><span class="eyebrow">${label}</span><input class="input" name="${name}" type="${type}" value="${esc(val ?? '')}" placeholder="${ph}" autocomplete="off" ${extra}></label>`;
+      const body = arg === 'about' ? `${f('name', 'Full name', p.name, 'text', 'Arjun Rao', `maxlength="${LIMITS.person}"`)}${f('phone', 'Phone', p.phone, 'tel', co.dial + ' 98450 12345')}${f('email', 'Email', p.email, 'email', 'you@example.in')}${f('city', 'City', p.city, 'text', 'Bengaluru', `maxlength="${LIMITS.city}"`)}`
+        : arg === 'licence' ? `${f('licenceNo', 'Licence number', p.licenceNo, 'text', 'KA05 20190012345', 'maxlength="20"')}${f('licenceExpiry', 'Valid till', p.licenceExpiry ? isoDate(p.licenceExpiry) : '', 'date')}`
+        : `<label class="field"><span class="eyebrow">Blood group</span><select class="input" name="blood">${['', 'A+', 'A−', 'B+', 'B−', 'AB+', 'AB−', 'O+', 'O−'].map((b) => `<option ${b === p.blood ? 'selected' : ''} value="${b}">${b || 'Not set'}</option>`).join('')}</select></label><label class="field"><span class="eyebrow">Allergies and notes</span><textarea class="input" name="medical" placeholder="Allergic to penicillin">${esc(p.medical)}</textarea></label>${f('iceName', 'Emergency contact', p.iceName, 'text', 'Amma', `maxlength="${LIMITS.person}"`)}${f('icePhone', 'Their phone', p.icePhone, 'tel', co.dial + ' 98860 55443')}`;
+      return `<div class="eyebrow">Profile</div><h2>${{ about: 'About you', licence: 'Driving licence', medical: 'Medical ID' }[arg] || 'Profile'}</h2><form data-form="profile" data-autosave>${body}</form><div class="sheet-cta"><button class="btn ink block" data-act="close">Done</button></div>`;
     }
     case 'erase':
       return `<div class="eyebrow">Backup</div><h2>${s.sample ? 'Erase sample data?' : 'Erase everything?'}</h2><p class="lead">Bikes, rides, fuel, service, alerts and papers on this phone will go. Export a backup first if you want to keep them.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="erase">Erase</button><button class="btn line block mt8" data-act="close">Keep my data</button>`;
