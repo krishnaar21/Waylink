@@ -35,7 +35,7 @@ async def main():
         await pg.goto(URL); await pg.wait_for_timeout(600)
         check('loading screen shows the animated mark', await pg.query_selector('#splash .wl-loop'))
         await shot(pg, '00-loading')
-        await pg.wait_for_timeout(2400)
+        await pg.wait_for_timeout(3600)
         check('loading screen fades away', not await pg.query_selector('#splash'))
         await shot(pg, '00-onboarding')
         check('onboarding shows on first launch', await pg.query_selector('[data-form="onboard"]'))

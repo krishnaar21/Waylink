@@ -1044,8 +1044,8 @@ function sheetInner(c, key) {
     case 'pick-progress': {
       const cur = s.settings.progress || 'gauge', was = PROGRESS;
       const ok = { status: 'ok', frac: 0.35, dueDate: Date.now() + 40 * 86400000 }, soon = { status: 'soon', frac: 0.86, dueDate: Date.now() + 6 * 86400000 };
-      const card = ([k, nm, d]) => { PROGRESS = k; const h = serviceSegs(ok, 10, 'prev') + serviceSegs(soon, 10, 'prev'); return `<button class="progopt ${cur === k ? 'on' : ''}" data-act="progress-style" data-arg="${k}"><div class="pv">${h}</div><div class="nm">${nm}</div><div class="d">${d}</div></button>`; };
-      const out = `<div class="eyebrow">Appearance</div><h2>Progress style</h2><p class="lead">How service jobs show what’s left. Each preview shows a job on track and one due soon.</p>
+      const card = ([k, nm, d]) => { PROGRESS = k; const h = serviceSegs(ok, 10, 'prev') + serviceSegs(soon, 10, 'prev'); return `<button class="progopt ${cur === k ? 'on' : ''}" data-act="progress-style" data-arg="${k}"><div class="pv">${h}</div><div class="nm">${nm}</div></button>`; };
+      const out = `<div class="eyebrow">Appearance</div><h2>Progress style</h2><p class="lead">How service jobs show what’s left.</p>
         <div class="progs mt16">${PROGRESS_STYLES.map(card).join('')}</div>`;
       PROGRESS = was; return out;
     }
@@ -1056,7 +1056,7 @@ function sheetInner(c, key) {
     case 'support': {
       const amt = live.supportAmt ?? 99, has = SUPPORT.upi || SUPPORT.links.length;
       const upi = SUPPORT.upi ? `upi://pay?pa=${encodeURIComponent(SUPPORT.upi)}&pn=${encodeURIComponent(SUPPORT.payee)}&cu=INR&tn=${encodeURIComponent('Support Waylink')}${amt ? `&am=${amt}` : ''}` : '';
-      return `<div class="support-hero"><span class="sh-heart">${icon('love')}</span><h2>Support Waylink</h2><p class="lead">Waylink is free, with no ads and no tracking. If it makes your rides easier, you can chip in towards new features and upkeep.</p></div>
+      return `<div class="support-hero"><h2>Support Waylink</h2><p class="lead">Waylink is free, with no ads and no tracking. If it makes your rides easier, you can chip in towards new features and upkeep.</p></div>
         <div class="give mt20">
           <div class="give-hero"><span class="gi">${amtIcon(amt)}</span><div class="grow"><div class="gv">${amt ? `₹${amt}` : 'Any amount'}</div><div class="gl">${AMT_ICON[amt][2]}</div></div></div>
           <div class="give-chips">${[...UPI_AMOUNTS, 0].map((a) => `<button class="${amt === a ? 'on' : ''}" data-act="support-amt" data-arg="${a}">${a ? `₹${a}` : 'Other'}</button>`).join('')}</div>
