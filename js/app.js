@@ -814,7 +814,7 @@ const A = {
     if (path === 'sounds') SND.setEnabled(o[parts[0]]);
     SND.click(o[parts[0]]);
     if (path === 'streetNames') link.sendStreetNames = s.settings.streetNames;
-    buzz(6); commit();
+    buzz(6); commit(); if (sheetKey) refreshSheet();
   },
   'ride-chart': (k) => { s.settings.rideChart = Math.min(3, Math.max(0, +k || 0)); SND.click(true); commit(); refreshSheet(); },
   'progress-style': (k) => { s.settings.progress = V.PROGRESS_STYLES.some(([x]) => x === k) ? k : 'gauge'; SND.click(true); commit(); refreshSheet(); },
