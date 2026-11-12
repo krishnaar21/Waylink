@@ -1970,3 +1970,70 @@ html[data-theme="obsidian"] .sc-needle, html[data-theme="amoled"] .sc-needle { s
 html[data-theme="obsidian"] .sc-hub, html[data-theme="amoled"] .sc-hub { fill: #F3E9D2; }
 .link-badge { left: 66%; top: 40%; }
 .onb-gets2 { flex-wrap: nowrap; gap: 6px; } .onb-gets2 span { padding: 7px 10px; font-size: 13px; }
+/* Story scene: light, haze and depth */
+.onb-scene .gf0 { stop-color: color-mix(in srgb, var(--accent) 18%, #9AA6BC); } .onb-scene .gf1 { stop-color: color-mix(in srgb, var(--accent) 30%, #5C6B88); }
+.onb-scene .gm0 { stop-color: color-mix(in srgb, var(--accent) 55%, #2A3F6A); } .onb-scene .gm1 { stop-color: color-mix(in srgb, var(--accent) 40%, #0E1830); }
+.onb-scene .gn0 { stop-color: color-mix(in srgb, var(--accent) 35%, #12203A); } .onb-scene .gn1 { stop-color: #070B14; }
+.onb-scene .hz { stop-color: color-mix(in srgb, var(--accent) 12%, #E9EEF6); }
+.onb-scene .sun0 { stop-color: color-mix(in srgb, var(--accent) 40%, #FFE9C2); stop-opacity: .9; } .onb-scene .sun1 { stop-color: color-mix(in srgb, var(--accent) 60%, #FFD9A0); stop-opacity: .35; } .onb-scene .sun2 { stop-color: var(--accent); stop-opacity: 0; }
+.sc-sun { fill: color-mix(in srgb, var(--accent) 35%, #FFF1D8); }
+.sc-moonglow { fill: #F3E9D2; opacity: .18; }
+.sc-edge { fill: none; stroke: rgba(255,255,255,.12); stroke-width: 1.5; }
+html[data-theme="obsidian"] .onb-scene .hz, html[data-theme="amoled"] .onb-scene .hz { stop-color: color-mix(in srgb, var(--accent) 20%, #1A2234); }
+html[data-theme="obsidian"] .onb-scene .gf0, html[data-theme="amoled"] .onb-scene .gf0 { stop-color: color-mix(in srgb, var(--accent) 22%, #46506A); }
+.sc-sun { fill: color-mix(in srgb, var(--accent) 65%, #FFE3B0) !important; }
+.av-photo { display: grid; place-items: center; cursor: pointer; border-radius: 50%; background: var(--card); box-shadow: inset 0 0 0 1.5px var(--line); border: 1.5px dashed color-mix(in srgb, var(--ink) 25%, transparent); box-sizing: border-box; }
+.av-photo > span { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--ink-2); }
+.av-photo > span svg { width: 22px; height: 22px; } .av-photo b { font-size: 11.5px; font-weight: 600; }
+.av-photo img { object-fit: cover; image-rendering: auto !important; }
+.av-photo.on { border-style: solid; }
+.onb-dots button { padding: 8px 2px; display: grid; place-items: center; }
+.onb-dots button i { width: 7px; height: 7px; border-radius: 4px; background: var(--seg-off); transition: width .25s, background .25s; display: block; }
+.onb-dots button.on i { width: 22px; background: var(--ink); }
+.onb-dots { gap: 3px !important; margin: 14px 0 !important; }
+/* ---------- Story scene, monochrome: grey world, the feature in the accent ---------- */
+.onb-scene .s0, .onb-scene .s1 { stop-color: color-mix(in srgb, var(--ink) 4%, var(--bg)) !important; }
+.onb-scene .s2 { stop-color: color-mix(in srgb, var(--ink) 10%, var(--bg)) !important; } .onb-scene .s3 { stop-color: color-mix(in srgb, var(--ink) 16%, var(--bg)) !important; }
+.onb-scene .gf0 { stop-color: color-mix(in srgb, var(--ink) 10%, var(--bg)) !important; } .onb-scene .gf1 { stop-color: color-mix(in srgb, var(--ink) 15%, var(--bg)) !important; }
+.onb-scene .gm0 { stop-color: color-mix(in srgb, var(--ink) 20%, var(--bg)) !important; } .onb-scene .gm1 { stop-color: color-mix(in srgb, var(--ink) 27%, var(--bg)) !important; }
+.onb-scene .gn0 { stop-color: color-mix(in srgb, var(--ink) 30%, var(--bg)) !important; } .onb-scene .gn1 { stop-color: color-mix(in srgb, var(--ink) 38%, var(--bg)) !important; }
+.onb-scene .hz { stop-color: var(--bg) !important; }
+.onb-scene .sun0, .onb-scene .sun1, .onb-scene .sun2 { stop-color: var(--bg) !important; }
+.sc-sun { fill: color-mix(in srgb, var(--ink) 9%, var(--bg)) !important; }
+.sc-moon { fill: color-mix(in srgb, var(--ink) 18%, var(--bg)); } .sc-moonc { fill: color-mix(in srgb, var(--ink) 14%, var(--bg)); opacity: 1; } .sc-moonglow { display: none; }
+.sc-star { fill: color-mix(in srgb, var(--ink) 30%, var(--bg)); }
+.onb-scene [fill="url(#g-road)"] { fill: color-mix(in srgb, var(--ink) 44%, var(--bg)); }
+.sc-lane { stroke: var(--bg); opacity: .9; } .sc-edge { stroke: color-mix(in srgb, var(--bg) 40%, transparent); }
+.sc-post, .sc-hose { fill: color-mix(in srgb, var(--ink) 40%, var(--bg)); stroke: color-mix(in srgb, var(--ink) 40%, var(--bg)); }
+.sc-wheel, .sc-frame { stroke: color-mix(in srgb, var(--ink) 62%, var(--bg)); } .sc-helmet { fill: color-mix(in srgb, var(--ink) 62%, var(--bg)); }
+.sc-streak { stroke: var(--bg); }
+.sc-tick { stroke: color-mix(in srgb, var(--ink) 35%, var(--bg)) !important; } .sc-needle { stroke: var(--ink) !important; } .sc-hub { fill: var(--ink) !important; }
+.sc-house { fill: color-mix(in srgb, var(--ink) 12%, var(--bg)) !important; } .sc-door { fill: color-mix(in srgb, var(--ink) 40%, var(--bg)); }
+.sc-card { fill: var(--card); } .sc-line1 { fill: var(--ink); } .sc-line2 { fill: color-mix(in srgb, var(--ink) 25%, var(--bg)); }
+.sc-screen { fill: color-mix(in srgb, #fff 85%, var(--accent)); }
+.sc-shackle { stroke: var(--accent); }
+/* the feature stays in colour: sign, call, dial, pump + shop badge, lock */
+.sc-plate, .sc-dot, .sc-arc { fill: var(--accent); } .sc-arc { fill: none; stroke: var(--accent); }
+.onb-scene rect[filter="url(#sc-grain)"] { opacity: .5 !important; }
+/* Header floats over the picture; the picture fades out at the top and bottom */
+.onb-intro .onb-top, .onb-link .onb-top { background: transparent !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+.onb-intro .onb-stage { margin-top: calc((var(--top) + 56px) * -1); height: calc(372px + var(--top) + 56px); }
+.onb-stage { -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 34%, #000 82%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 34%, #000 82%, transparent 100%); }
+.onb-stage::after { display: none; }
+.onb-link .onb-stage { margin-top: calc((var(--top) + 56px) * -1); height: calc(250px + var(--top) + 56px); }
+.onb-intro .onb-top .link, .onb-link .onb-top .link { position: relative; z-index: 2; }
+.onb-intro .onb-stage .onb-scene { top: auto; bottom: 0; height: 372px; }
+.onb-link .onb-stage .onb-scene { top: auto; bottom: 0; height: 250px; }
+.onb-intro .onb-stage { -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 20px), #000 calc(var(--top) + 150px), #000 84%, transparent 100%); mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 20px), #000 calc(var(--top) + 150px), #000 84%, transparent 100%); }
+.onb-link .onb-stage { -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 20px), #000 calc(var(--top) + 120px), #000 80%, transparent 100%); mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 20px), #000 calc(var(--top) + 120px), #000 80%, transparent 100%); }
+.link-badge { top: auto; bottom: 120px; margin-top: 0; }
+/* filled motorcycle */
+.sc-tyre { fill: color-mix(in srgb, var(--ink) 62%, var(--bg)); } .sc-rim { fill: color-mix(in srgb, var(--ink) 18%, var(--bg)); }
+.sc-body2 { fill: color-mix(in srgb, var(--ink) 55%, var(--bg)); } .sc-tank { fill: color-mix(in srgb, var(--ink) 70%, var(--bg)); }
+.sc-seat { fill: color-mix(in srgb, var(--ink) 80%, var(--bg)); } .sc-lamp { fill: color-mix(in srgb, var(--ink) 10%, var(--bg)); }
+.sc-fork, .sc-arm { fill: none; stroke: color-mix(in srgb, var(--ink) 62%, var(--bg)); stroke-width: 3.6; stroke-linecap: round; stroke-linejoin: round; }
+.sc-rider { fill: color-mix(in srgb, var(--ink) 66%, var(--bg)); } .sc-helmet { fill: color-mix(in srgb, var(--ink) 75%, var(--bg)) !important; }
+/* icon styles: make the difference visible */
+svg.i .duo { opacity: .22 !important; }
+svg.i.ifill circle, svg.i.ifill rect, svg.i.ifill ellipse, svg.i.ifill path[d$="Z"], svg.i.ifill path[d$="z"] { fill-opacity: .32 !important; }
+.icoopt .io-row svg { width: 26px !important; height: 26px !important; }

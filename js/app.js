@@ -950,6 +950,7 @@ const A = {
   'app-icon': (k) => { s.settings.iconStyle = k; SND.click(true); commit(); refreshSheet(); },
   'onb-test': () => { live.onbTest = true; live.onbStep = 0; render('fade-in'); },
   'onb-step': (k) => { live.onbStep = +k; SND.click(true); render('fade-in'); },
+  'onb-go': (i) => { const el = $('[data-onb-slides]'); if (el) el.scrollTo({ left: +i * el.clientWidth, behavior: 'smooth' }); },
   'onb-next': () => {
     const el = $('[data-onb-slides]'); if (!el) return;
     const i = Math.round(el.scrollLeft / el.clientWidth), n = el.children.length;
@@ -1243,9 +1244,21 @@ document.addEventListener('scroll', (e) => {
   const el = e.target; if (!el?.matches?.('[data-onb-slides]')) return;
   $('[data-onb-stage]')?.style.setProperty('--p', (el.scrollLeft / el.clientWidth).toFixed(3));
   const i = Math.round(el.scrollLeft / el.clientWidth), btn = $('[data-act="onb-next"]');
-  $$('.onb-dots i').forEach((d, k) => d.classList.toggle('on', k === i));
+  $$('.onb-dots button').forEach((d, k) => d.classList.toggle('on', k === i));
   if (btn) btn.textContent = i >= el.children.length - 1 ? 'Set up my bike' : 'Next';
 }, true);
+// The picture above the onboarding text swipes the slides too.
+{
+  let sx = 0, sy = 0, on = false;
+  document.addEventListener('touchstart', (e) => { on = !!e.target.closest('[data-onb-stage]'); sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (!on) return; on = false; const t = e.changedTouches[0], dx = t.clientX - sx;
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(t.clientY - sy)) return;
+    const el = $('[data-onb-slides]'); if (!el) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth) + (dx < 0 ? 1 : -1);
+    if (i >= 0 && i < el.children.length) { SND.swipe(dx < 0 ? 1 : -1); A['onb-go'](i); }
+  }, { passive: true });
+}
 // Swipe sideways on a tabbed list (Alerts: Needs you / Recent) to switch tabs.
 {
   let sx = 0, sy = 0, el = null;

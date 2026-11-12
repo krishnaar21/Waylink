@@ -1320,9 +1320,8 @@ function sheetInner(c, key) {
         <button class="btn ink block mt20" data-act="close">Done</button><p class="hint" style="text-align:center">You can change these later in Settings, under Riding.</p>`;
     case 'avatar': {
       const P = s.profile, cur = P.photo ? 'photo' : P.avatar || '';
-      return `<div class="eyebrow">Profile</div><h2>Your picture</h2><p class="lead">Pick a rider, or use a photo.</p>
-        <div class="av-grid mt16">${Array.from({ length: 12 }, (_, i) => `a${i + 1}`).map((k) => `<button class="av-opt ${cur === k ? 'on' : ''}" data-act="pick-avatar" data-arg="${k}" aria-label="Avatar ${k.slice(1)}"><img src="img/avatars/${k}.svg" alt="">${cur === k ? `<span class="av-tick">${icon('check')}</span>` : ''}</button>`).join('')}</div>
-        <div class="list mt20"><label class="li" style="cursor:pointer"><span class="ic">${icon('camera')}</span><span class="tx"><span class="t">Use a photo</span></span><input type="file" accept="image/*" hidden data-input="avatar"></label>${P.photo || P.avatar ? li({ ic: 'trash', t: 'Use my initials', act: 'pick-avatar', arg: '', cls: 'danger' }) : ''}</div>`;
+      return `<div class="eyebrow">Profile</div><h2>Your picture</h2><p class="lead">Pick a rider, or add a photo.</p>
+        <div class="av-grid mt16">${Array.from({ length: 11 }, (_, i) => `a${i + 1}`).map((k) => `<button class="av-opt ${cur === k ? 'on' : ''}" data-act="pick-avatar" data-arg="${k}" aria-label="Avatar ${k.slice(1)}"><img src="img/avatars/${k}.svg" alt="">${cur === k ? `<span class="av-tick">${icon('check')}</span>` : ''}</button>`).join('')}<label class="av-opt av-photo ${cur === 'photo' ? 'on' : ''}" aria-label="Use a photo">${P.photo ? `<img src="${P.photo}" alt="">` : `<span>${icon('camera')}<b>Photo</b></span>`}${cur === 'photo' ? `<span class="av-tick">${icon('check')}</span>` : ''}<input type="file" accept="image/*" hidden data-input="avatar"></label></div>`;
     }
     case 'erase':
       return `<div class="eyebrow">Backup</div><h2>${s.sample ? 'Erase sample data?' : 'Erase everything?'}</h2><p class="lead">Bikes, rides, fuel, service, alerts and papers on this phone will go. Export a backup first if you want to keep them.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="erase">Erase</button><button class="btn line block mt8" data-act="close">Keep my data</button>`;
@@ -1355,7 +1354,7 @@ export function onboarding(s, step = 0, link = {}) {
     <div class="onb-top"><span class="onb-mark">${LOOP}</span><button class="link" data-act="onb-step" data-arg="1">Skip</button></div>
     <div class="onb-stage" data-onb-stage>${SCENE}</div>
     <div class="onb-slides" data-onb-slides>${ONB_SLIDES.map(([e, t, d]) => `<section class="onb-slide"><div class="eyebrow onb-eb">${e}</div><h1 class="title">${t}</h1><p class="onb-p">${d}</p></section>`).join('')}</div>
-    <div class="onb-dots">${ONB_SLIDES.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
+    <div class="onb-dots">${ONB_SLIDES.map((_, i) => `<button class="${i ? '' : 'on'}" data-act="onb-go" data-arg="${i}" aria-label="Slide ${i + 1}"><i></i></button>`).join('')}</div>
     <div class="onb-foot"><button class="btn ink block" data-act="onb-next">Next</button>${sample}</div>
   </div>`;
   if (step === 2) {
