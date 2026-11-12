@@ -1339,7 +1339,7 @@ function fieldForm(key, eb, label, val, type, suffix, hint = '') {
 // Onboarding: a short intro, then the rider and bike, then linking the bike. Every step can be skipped.
 // The intro is one story told along a single road: dawn, the ride, speed, a pit stop, night.
 // The story is one painted picture, made by tools/onb_scene.py; phones only slide it.
-const SCENE = '<div class="onb-scene onb-img" aria-hidden="true"></div>';
+const SCENE = '<div class="onb-scene onb-img" aria-hidden="true"><div class="ride-anim"><i class="sl s1"></i><i class="sl s2"></i><i class="sl s3"></i><img src="img/onb/rider-street.webp" alt="" decoding="async"></div></div>';
 const ONB_SLIDES = [
   ['Navigate', 'Turns on your display', 'Plan in Google Maps. Arrows show on the cluster.'],
   ['Stay reachable', 'Calls, without your phone', 'Caller names and missed calls, on the bike.'],
