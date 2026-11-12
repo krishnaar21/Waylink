@@ -1,5 +1,5 @@
 // Waylink — offline shell. Caches the app's own files; fonts are cached as they load.
-const CACHE = 'waylink-v33';
+const CACHE = 'waylink-v34';
 const SHELL = ['./', 'index.html', 'styles.css', 'js/app.js', 'js/views.js', 'js/store.js', 'js/link.js', 'js/protocol.js', 'js/icons.js', 'js/sound.js', 'js/icons-uicons.js', 'manifest.webmanifest', 'icon.svg', 'img/logos/wl-route-rust.svg', 'img/logos/wl-route-wine.svg', 'img/logos/wl-route-blue.svg', 'img/logos/wl-route-slate.svg', 'img/logos/wl-route-amber.svg', 'img/logos/wl-route-mint.svg', 'img/logos/wl-bird-rust.svg', 'img/logos/wl-bird-wine.svg', 'img/logos/wl-bird-blue.svg', 'img/logos/wl-bird-slate.svg', 'img/logos/wl-bird-amber.svg', 'img/logos/wl-bird-mint.svg', 'img/logos/png/wl-route-rust-180.png', 'img/bikes/manifest.json', 'img/bikes/ns200-art.webp', ];
 // Cache each file on its own, so one missing file can't block an update.
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => Promise.all(SHELL.map((u) => c.add(new Request(u, { cache: 'reload' })).catch(() => {})))).then(() => self.skipWaiting())); });

@@ -710,7 +710,7 @@ export function settings(c) {
   </div>
   <div class="vc-rows">
     ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
-    ${li({ ic: 'sparkles', t: 'Logo', end: `<img class="pick-logo" src="${appIcon(s)}" alt=""><span class="pick-val">${st.brand === 'bird' ? 'Bird' : 'Route'}</span>`, act: 'sheet', arg: 'pick-brand' })}
+    ${li({ ic: 'sparkles', t: 'Logo', end: `<img class="pick-logo" src="${appIcon(s)}" alt=""><span class="pick-val">${BRANDS.find(([k]) => k === brandOf(s))[1]}</span>`, act: 'sheet', arg: 'pick-brand' })}
     ${li({ ic: 'palette', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
     ${li({ ic: 'gauge', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
   </div></div></div>
@@ -737,7 +737,7 @@ export function settings(c) {
     <div class="mt12"><div class="seg">${[['real', 'My data'], ['empty', 'Empty'], ['edge', 'Edge cases']].map(([k, l]) => `<button class="${(live.scenario || 'real') === k ? 'on' : ''}" data-act="scenario" data-arg="${k}">${l}</button>`).join('')}</div></div>
     <p class="hint">Empty shows a brand-new rider. Edge cases shows long names, huge numbers and everything overdue. Nothing is saved while previewing.</p></div></div>
   <footer class="about">
-    <div class="about-brand">${WORDMARK}</div>
+    <div class="about-brand">${WORDMARK}${TURNS}${LOOP}</div>
     <div class="about-meta">Version ${APP_VERSION} · MIT licence</div>
     <p class="about-legal">Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.</p>
   </footer>
@@ -758,7 +758,11 @@ export const APP_NAME = 'Waylink';
 export const MARK = '<svg class="wl-mark" viewBox="0 0 120 120" aria-hidden="true"><circle class="m-start" cx="30" cy="92" r="9"/><path class="m-road" pathLength="100" d="M41 92H72A14 14 0 0 0 72 64H50A14 14 0 0 1 50 36H68"/><g class="m-pin"><path d="M88 50C79 41 75 35 75 29a13 13 0 0 1 26 0c0 6-4 12-13 21z"/><circle cx="88" cy="29" r="4.6"/></g></svg>';
 // Second logo: a bird in flight whose wings make a W, its head the same dot as the wordmark's pin.
 export const BIRD = '<svg class="wl-bird" viewBox="0 0 120 120" aria-hidden="true"><path class="b-trail" d="M-10 108C12 104 26 94 38 82"/><g class="b-fly"><path class="b-wing b-l" d="M52 72L44 60Q32 38 14 44"/><path class="b-wing b-r" d="M68 72L76 60Q88 38 106 44"/><path class="b-wing" d="M52 72L60 60L68 72"/><circle class="b-head" cx="60" cy="47" r="5.5"/></g></svg>';
-export const BRANDS = [['route', 'Route'], ['bird', 'Bird']];
+// Wordmark-only logos: a slot that cycles through turn signs (like the bike's display), and a w drawn as one looping road.
+export const TURNS = '<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true"><svg class="tg tg0" viewBox="0 0 40 40" style="color:#3E8EF7"><path d="M30 34V22a6 6 0 0 0-6-6H10"/><path d="M16 9l-7 7 7 7"/></svg><svg class="tg tg1" viewBox="0 0 40 40" style="color:#F28A1E"><path d="M10 34V22a6 6 0 0 1 6-6h14"/><path d="M24 9l7 7-7 7"/></svg><svg class="tg tg2" viewBox="0 0 40 40" style="color:#2BB673"><path d="M12 34V17a8 8 0 0 1 16 0v11"/><path d="M21 22l7 7 7-7"/></svg><svg class="tg tg3" viewBox="0 0 40 40" style="color:#E5484D"><circle cx="20" cy="17" r="7"/><path d="M20 34V24"/><path d="M26 12l4-5"/><path d="M24 6h6.5v6.5"/></svg><svg class="tg tg4" viewBox="0 0 40 40" style="color:#7C5CFF"><path d="M20 35s-10-9.5-10-17a10 10 0 0 1 20 0c0 7.5-10 17-10 17z"/><circle cx="20" cy="18" r="3.4"/></svg><svg class="tg tg5" viewBox="0 0 40 40" style="color:#0EA5A5"><path d="M12 34V8l16 16"/><path d="M28 14v10H18"/></svg></span><span aria-hidden="true">link</span></span>';
+export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8 28C10 56 16 80 28 80C40 80 45 58 50 42C54 28 62 14 55 9C48 4 41 16 47 36C52 56 60 80 72 80C84 80 90 56 92 28"/></svg><span class="rest" aria-hidden="true">aylink</span></span>';
+export const BRANDS = [['route', 'Route'], ['bird', 'Bird'], ['turns', 'Turns'], ['loop', 'Loop']];
+export const brandOf = (s) => BRANDS.some(([k]) => k === s.settings.brand) ? s.settings.brand : 'route';
 export const WORDMARK = '<span class="wl-word" aria-label="waylink"><span aria-hidden="true">wayl</span><svg class="wl-i" viewBox="0 0 30 100" aria-hidden="true"><rect class="i-stem" x="8.5" y="31" width="13" height="49" rx="1.5"/><g class="i-pin"><path d="M15 27C9 21 5.5 17 5.5 12a9.5 9.5 0 0 1 19 0c0 5-3.5 9-9.5 15z"/><circle cx="15" cy="12" r="3.4"/></g></svg><span aria-hidden="true">nk</span></span>';
 export const APP_VERSION = '1.0';
 // Add-a-bike glyph: a motorbike whose front wheel is a plus.
@@ -774,7 +778,7 @@ const CUP = '<svg class="i" viewBox="3.5 2.5 17 17.5" fill="none" stroke="curren
 const AMT_ICON = { 49: ['Chai', CUP, 'A cutting chai for the developer'], 99: ['Coffee', CUP, 'A coffee for a late-night fix'], 199: ['Fuel', 'fuel', 'Two litres of petrol for test rides'], 499: ['Service', 'wrench', 'Towards a month of upkeep'], 0: ['Any', 'love', 'You choose the amount in your UPI app'] };
 const amtIcon = (a) => { const g = AMT_ICON[a][1]; return g.startsWith('<svg') ? g : icon(g); };
 // The app icon: one route mark, tinted to match the accent colour.
-export const appIcon = (s, png = false) => { const b = s.settings.brand === 'bird' ? 'bird' : 'route', a = s.settings.accent || 'rust'; return png ? `img/logos/png/wl-${b}-${a}-180.png` : `img/logos/wl-${b}-${a}.svg`; };
+export const appIcon = (s, png = false) => { const b = brandOf(s), a = s.settings.accent || 'rust'; return png ? `img/logos/png/wl-${b}-${a}-180.png` : `img/logos/wl-${b}-${a}.svg`; };
 export const appName = () => APP_NAME;
 
 // ---------- PROFILE ----------
@@ -897,7 +901,7 @@ export function helpSheet(c, k) {
       <a class="btn ink block mt12" href="${REPO_URL}/issues/new" target="_blank" rel="noopener">${icon('flag')} Open a report on GitHub</a>
       <p class="hint">${REPO_URL.replace('https://', '')}/issues</p>`;
   }
-  if (k === 'about') return `<div class="about-sheet"><h2 class="sr-only">Waylink</h2><div class="splash-brand about-hero anim">${MARK}${BIRD}${WORDMARK}</div><p class="lead">Turns, calls and your bike’s care, on one screen. Version ${APP_VERSION}.</p></div>
+  if (k === 'about') return `<div class="about-sheet"><h2 class="sr-only">Waylink</h2><div class="splash-brand about-hero anim">${MARK}${BIRD}${WORDMARK}${TURNS}${LOOP}</div><p class="lead">Turns, calls and your bike’s care, on one screen. Version ${APP_VERSION}.</p></div>
     <div class="list flat mt16">
       ${li({ ic: 'love', t: 'Support Waylink', d: 'Chip in towards development', act: 'sheet', arg: 'support' })}
       ${li({ ic: 'code', t: 'Source code', d: 'MIT licence', end: '', tag: 'a', href: REPO_URL })}
@@ -1016,7 +1020,7 @@ function sheetInner(c, key) {
         </div>`;
     case 'pick-brand':
       return `<div class="eyebrow">Appearance</div><h2>Logo</h2><p class="lead">Shown on the loading screen and as the app icon. Re-add Waylink to your Home Screen to change an installed icon.</p>
-        <div class="brands mt16">${BRANDS.map(([k, nm]) => `<button class="brandopt anim ${(s.settings.brand || 'route') === k ? 'on' : ''}" data-act="brand" data-arg="${k}">${k === 'bird' ? BIRD : MARK}<span class="nm">${nm}</span></button>`).join('')}</div>`;
+        <div class="brands mt16">${BRANDS.map(([k, nm]) => `<button class="brandopt anim b-${k} ${brandOf(s) === k ? 'on' : ''}" data-act="brand" data-arg="${k}"><span class="bo-art">${{ route: MARK, bird: BIRD, turns: TURNS, loop: LOOP }[k]}</span><span class="nm">${nm}</span></button>`).join('')}</div>`;
     case 'pick-progress': {
       const cur = s.settings.progress || 'gauge', was = PROGRESS, demo = { status: 'ok', frac: 0.35, dueDate: Date.now() + 40 * 86400000 };
       const card = ([k, nm, d]) => { PROGRESS = k; const h = serviceSegs(demo); return `<button class="progopt ${cur === k ? 'on' : ''}" data-act="progress-style" data-arg="${k}"><div class="nm">${nm}</div><div class="d">${d}</div>${h}</button>`; };
