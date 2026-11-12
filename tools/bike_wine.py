@@ -11,13 +11,15 @@ WINE = np.array([0xA8, 0x16, 0x2A], np.float32) / 255
 yel = np.clip((1 - np.abs(h - 52) / 32) * 2, 0, 1) * np.clip((s - .15) / .12, 0, 1)
 wine_y = np.clip(WINE * (.5 + .75 * v)[..., None], 0, 1)
 out = rgb * (1 - yel[..., None]) + wine_y * yel[..., None]
-# 2. white panels on the tank and the tail cowl → wine
-H, W = v.shape; yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
-ovals = [(206, 146, 30, 17), (84, 150, 24, 10)]  # tank, tail cowl: centre x, y and radii in image pixels
-region = np.zeros_like(v)
-for cx, cy, rx, ry in ovals: region = np.maximum(region, np.clip(2.2 - 2.2 * np.hypot((xx - cx) / rx, (yy - cy) / ry), 0, 1))
-white = np.clip((v - .62) / .2, 0, 1) * np.clip((.22 - s) / .12, 0, 1) * region
-panel = np.clip(WINE * (.7 + .4 * v[..., None]), 0, 1)
-out = out * (1 - white[..., None]) + panel * white[..., None]
+# 2. whole white panels on the tank, side cover and tail cowl → wine (picked by shape, so each fills edge to edge)
+from scipy import ndimage
+white = (v > .62) & (s < .25) & (al[..., 0] > .5)
+lab, _ = ndimage.label(white)
+PANELS = [(200, 141), (208, 163), (74, 148), (94, 149)]  # a point inside each panel, image pixels
+pick = np.isin(lab, [lab[y, x] for x, y in PANELS if lab[y, x]])
+pick = ndimage.binary_dilation(pick, iterations=2)  # take in the soft anti-aliased rim
+w = (pick * np.clip((v - .28) / .34, 0, 1))[..., None]
+panel = np.clip(WINE * (.62 + .5 * v[..., None]), 0, 1)
+out = out * (1 - w) + panel * w
 Image.fromarray((np.dstack([out, al]) * 255).round().astype(np.uint8), 'RGBA').save('img/onb/rider-street.webp', quality=86, method=6)
 print('ok')

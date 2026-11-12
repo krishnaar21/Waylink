@@ -282,7 +282,7 @@ export function today(c) {
   const good = !v.over && !v.soon && !fs.onReserve;
   const cc = connCard(c, good), ccIn = cc.startsWith('<div class="bc-conn');
   return `<div class="stagger">
-  <div class="pagehead today-head"><div class="th-row"><div style="min-width:0"><h1 class="title">${new Date().toLocaleDateString(DL(), { weekday: 'long' })}</h1><div class="subtitle">${s.sample || live.scenario || link.simulated ? '<span class="demo-pill"><i></i>Demo mode</span>' : new Date().toLocaleDateString(DL(), { day: 'numeric', month: 'long' })}</div></div>
+  <div class="pagehead today-head"><div class="th-row"><div style="min-width:0"><h1 class="title">${new Date().toLocaleDateString(DL(), { weekday: 'long' })}</h1><div class="subtitle">${s.sample || live.scenario || link.simulated ? '<span class="demo-pill">Demo mode<i></i></span>' : new Date().toLocaleDateString(DL(), { day: 'numeric', month: 'long' })}</div></div>
     <div class="head-actions"><button class="circle" data-act="sheet" data-arg="sos" aria-label="Emergency SOS" style="color:var(--red)">${icon('sos')}</button></div></div></div>
   ${live.scenario ? previewBar(live) : ''}
   <div class="bikecard">
