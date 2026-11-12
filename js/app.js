@@ -73,7 +73,7 @@ function applyTheme() {
   SND.setEnabled(s.settings.sounds !== false);
   const t = s.settings.theme === 'auto' ? (mqDark.matches ? 'obsidian' : 'paper') : s.settings.theme;
   document.documentElement.dataset.theme = t;
-  document.documentElement.dataset.accent = s.settings.accent;
+  document.documentElement.dataset.accent = s.settings.accent; document.documentElement.dataset.brand = s.settings.brand === 'bird' ? 'bird' : 'route';
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   $('meta[name=theme-color]')?.setAttribute('content', bg || '#EDEFF2');
 }
@@ -743,6 +743,7 @@ const A = {
     buzz(6); commit();
   },
   'progress-style': (k) => { s.settings.progress = V.PROGRESS_STYLES.some(([x]) => x === k) ? k : 'gauge'; SND.click(true); commit(); refreshSheet(); },
+  brand: (k) => { s.settings.brand = k === 'bird' ? 'bird' : 'route'; document.documentElement.dataset.brand = s.settings.brand; buzz(6); commit(); refreshSheet(); },
   theme: (k) => { s.settings.theme = k; commit(); },
   accent: (k) => { s.settings.accent = k; commit(); },
   'switch-vehicle': (id) => {

@@ -1144,3 +1144,28 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .about-hero .wl-mark { width: 72px; height: 72px; }
 .about-hero .wl-word { font-size: 30px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Bird logo: wings that make a W, head = the wordmark's dot. Shown instead of the route mark when chosen. */
+.wl-bird { display: none; width: 104px; height: 104px; overflow: visible; color: var(--accent); }
+html[data-brand="bird"] .splash-brand .wl-mark, html[data-brand="bird"] .about-hero .wl-mark { display: none; }
+html[data-brand="bird"] .splash-brand .wl-bird, html[data-brand="bird"] .about-hero .wl-bird { display: block; }
+.wl-bird .b-wing { fill: none; stroke: currentColor; stroke-width: 10; stroke-linecap: round; stroke-linejoin: round; }
+.wl-bird .b-head { fill: currentColor; }
+.wl-bird .b-trail { fill: none; stroke: var(--ink); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1 7; opacity: .3; }
+.anim .wl-bird .b-fly { animation: bFly 1.6s cubic-bezier(.3,.7,.3,1) both; }
+.anim .wl-bird .b-l { transform-origin: 52px 72px; animation: bFlapL .36s ease-in-out 4 alternate both, bSetL .5s ease 1.44s both; }
+.anim .wl-bird .b-r { transform-origin: 68px 72px; animation: bFlapR .36s ease-in-out 4 alternate both, bSetR .5s ease 1.44s both; }
+.anim .wl-bird .b-trail { animation: bTrail 1.6s cubic-bezier(.3,.7,.3,1) both; }
+@keyframes bFly { from { transform: translate(-70px, 46px) rotate(-14deg) scale(.7); opacity: 0; } 25% { opacity: 1; } }
+@keyframes bFlapL { from { transform: rotate(26deg); } to { transform: rotate(-22deg); } }
+@keyframes bFlapR { from { transform: rotate(-26deg); } to { transform: rotate(22deg); } }
+@keyframes bSetL { from { transform: rotate(-22deg); } to { transform: rotate(0); } }
+@keyframes bSetR { from { transform: rotate(22deg); } to { transform: rotate(0); } }
+@keyframes bTrail { from { clip-path: inset(0 100% 0 0); } }
+.about-hero .wl-bird { width: 80px; height: 80px; }
+/* Logo picker */
+.brands { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.brandopt { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 20px 10px 14px; border-radius: var(--r-sm); background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); }
+.brandopt.on { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.brandopt .wl-mark, .brandopt .wl-bird { display: block; width: 72px; height: 72px; }
+.brandopt .nm { font-weight: 600; font-size: 14px; }
