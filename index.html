@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="paper" data-accent="rust" data-font="geist">
+<html lang="en" data-theme="paper" data-accent="rust" data-font="crimson" data-body="atkinson">
 <head>
   <meta charset="utf-8">
   <title>Waylink</title>
@@ -15,8 +15,13 @@
   <link rel="apple-touch-icon" href="img/logos/png/wl-turn-180.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&family=Inter:wght@400;500;600;800&display=swap">
-  <link rel="stylesheet" id="font-serif" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap">
+  <!-- Web fonts never block the first paint: the app shows at once in system fonts and swaps when they arrive. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&display=swap" media="print" onload="this.media='all'">
+  <style>html,body{margin:0;background:#ECE8E1}html[data-theme="obsidian"],html[data-theme="obsidian"] body{background:#161514}html[data-theme="amoled"],html[data-theme="amoled"] body{background:#000}</style>
+  <script>/* Paint the saved theme before anything loads, so there's no white flash. */
+  try { var t = (JSON.parse(localStorage.getItem('pulsarnav-web-v2') || '{}').settings || {}).theme || 'auto';
+    if (t === 'auto') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'obsidian' : 'paper';
+    document.documentElement.dataset.theme = t; } catch (e) {}</script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>

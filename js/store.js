@@ -85,7 +85,7 @@ export function freshState() {
   return bindVehicle({
     v: 2, onboarded: false, sample: false,
     profile: { name: '', phone: '', email: '', city: '', country: 'IN', licenceNo: '', licenceExpiry: null, blood: '', medical: '', iceName: '', icePhone: '', photo: null, since: Date.now() },
-    settings: { theme: 'auto', accent: 'rust', font: 'geist', logo: 'wl-turn', devFrames: false, rideLayout: 0, art: 'photo', autoRide: true, autoRecord: true, wakeLock: true, streetNames: false, sounds: true, bodyFont: 'system', simulated: false, alerts: { calls: true, waCalls: true, waMsgs: true } },
+    settings: { theme: 'auto', accent: 'rust', font: 'crimson', logo: 'wl-turn', devFrames: false, rideLayout: 0, art: 'photo', autoRide: true, autoRecord: true, wakeLock: true, streetNames: false, sounds: true, bodyFont: 'atkinson', simulated: false, alerts: { calls: true, waCalls: true, waMsgs: true } },
     alerts: { missed: [], wa: [], sent: 0, log: [] },
     vehicles: [v], active: v.id,
   });
@@ -113,9 +113,11 @@ export function migrate(raw) {
   s.settings.art = s.settings.art === 'icon' ? 'icon' : 'photo';
   if (s.settings.theme === 'carbon') s.settings.theme = 'obsidian';
   if (typeof s.settings.sounds !== 'boolean') s.settings.sounds = true;
-  if (!['system', 'inter', 'rubik', 'lexend', 'plex', 'atkinson', 'chakra', 'space', 'kanit'].includes(s.settings.bodyFont)) s.settings.bodyFont = 'system';
-  if (!['wl-turn', 'wl-summit', 'wl-dusk', 'wl-ribbon', 'wl-road', 'wl-chain', 'wl-nav', 'wl-route'].includes(s.settings.logo)) s.settings.logo = 'wl-turn';
-  if (!s.settings.font || !['onest','geist','garamond','crimson','vollkorn','fraunces'].includes(s.settings.font)) s.settings.font = 'geist';
+  // New type defaults (Crimson titles, Atkinson body), applied once to existing installs too.
+  if (!s.settings.typeV3) { s.settings.font = 'crimson'; s.settings.bodyFont = 'atkinson'; s.settings.typeV3 = true; }
+  if (!['system', 'inter', 'plex', 'atkinson'].includes(s.settings.bodyFont)) s.settings.bodyFont = 'atkinson';
+  if (!['wl-turn', 'wl-dusk', 'wl-ribbon', 'wl-road', 'wl-chain', 'wl-nav', 'wl-route'].includes(s.settings.logo)) s.settings.logo = 'wl-turn';
+  if (!s.settings.font || !['onest','geist','garamond','crimson','vollkorn','fraunces'].includes(s.settings.font)) s.settings.font = 'crimson';
   return bindVehicle(s);
 }
 

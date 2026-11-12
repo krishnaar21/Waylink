@@ -36,7 +36,7 @@ const FONT_CSS = {
   fraunces: 'Fraunces:opsz,wght@9..144,500;9..144,600',
 };
 const fontHref = (keys) => 'https://fonts.googleapis.com/css2?' + keys.map((k) => 'family=' + FONT_CSS[k]).join('&') + '&display=swap';
-const BODY_CSS = { inter: 'Inter:wght@400..700', rubik: 'Rubik:wght@400..700', lexend: 'Lexend:wght@400..700', plex: 'IBM+Plex+Sans:wght@400;500;600;700', atkinson: 'Atkinson+Hyperlegible+Next:wght@400..700', chakra: 'Chakra+Petch:wght@400;500;600;700', space: 'Space+Grotesk:wght@400..700', kanit: 'Kanit:wght@400;500;600' };
+const BODY_CSS = { inter: 'Inter:wght@400..700', plex: 'IBM+Plex+Sans:wght@400;500;600;700', atkinson: 'Atkinson+Hyperlegible+Next:wght@400..700' };
 function applyBody() {
   const k = BODY_CSS[s.settings.bodyFont] ? s.settings.bodyFont : 'system';
   document.documentElement.dataset.body = k;
@@ -46,11 +46,12 @@ function applyBody() {
 }
 function applyFont() {
   applyBody();
-  if (!FONT_CSS[s.settings.font]) s.settings.font = 'geist';
+  if (!FONT_CSS[s.settings.font]) s.settings.font = 'crimson';
   const k = s.settings.font;
   document.documentElement.dataset.font = k;
-  const el = $('#font-serif'); const href = fontHref([k]);
-  if (el && el.getAttribute('href') !== href) el.setAttribute('href', href);
+  let el = $('#font-serif'); const href = fontHref([k]);
+  if (!el) { el = Object.assign(document.createElement('link'), { rel: 'stylesheet', id: 'font-serif' }); document.head.appendChild(el); }
+  if (el.getAttribute('href') !== href) el.setAttribute('href', href);
 }
 let allFontsLoaded = false;
 function loadAllFonts() {
@@ -121,6 +122,58 @@ function refreshWeather() {
   if (screen !== 'today') return;
   const h = $('.view .bc-wx'); if (h) h.innerHTML = V.weatherHead(ctx());
 }
+
+// ---------- Pull to refresh ----------
+// Pull down at the top of any tab: a bike wheel's tyre draws and the wheel rolls as you pull, then spins while it refreshes.
+const PTR_MARK = '<svg viewBox="0 0 100 100" aria-hidden="true"><g class="wh"><circle class="tyre" cx="50" cy="50" r="43" pathLength="100" transform="rotate(-90 50 50)"/><circle class="rim" cx="50" cy="50" r="35"/><path class="spk" d="M59.0 50.0L81.6 67.3M56.4 56.4L60.1 84.5M50.0 59.0L32.7 81.6M43.6 56.4L15.5 60.1M41.0 50.0L18.4 32.7M43.6 43.6L39.9 15.5M50.0 41.0L67.3 18.4M56.4 43.6L84.5 39.9"/><circle class="hub" cx="50" cy="50" r="8"/></g></svg>';
+(function pullToRefresh() {
+  const host = $('#views'); if (!host) return;
+  const ind = Object.assign(document.createElement('div'), { id: 'ptr', innerHTML: PTR_MARK });
+  document.querySelector('.app')?.appendChild(ind);
+  const TRIGGER = 72, HOLD = 58;
+  let y0 = null, x0 = 0, d = 0, pulling = false, busy = false, armed = false, view = null;
+  const set = (px, anim) => {
+    if (!view) return;
+    view.style.animation = 'none';
+    view.style.transition = ind.style.transition = anim ? 'transform .42s cubic-bezier(.2,.9,.25,1.15), opacity .3s' : 'none';
+    view.style.transform = px ? `translateY(${px}px)` : '';
+    const p = Math.min(1, px / TRIGGER);
+    ind.style.transform = `translate(-50%, ${px * 0.55 - 34}px)`;
+    ind.style.opacity = px ? Math.min(1, p * 1.4) : 0;
+    if (!busy) { ind.style.setProperty('--draw', String(100 - p * 100)); ind.style.setProperty('--roll', `${px * 3}deg`); }
+  };
+  host.addEventListener('touchstart', (e) => {
+    view = host.firstElementChild;
+    if (busy || !view || view.scrollTop > 0 || sheetKey || e.touches.length > 1 || !s.onboarded) { y0 = null; return; }
+    y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; pulling = false; armed = false;
+  }, { passive: true });
+  host.addEventListener('touchmove', (e) => {
+    if (y0 == null || busy) return;
+    const dy = e.touches[0].clientY - y0, dx = e.touches[0].clientX - x0;
+    if (!pulling) { if (dy < 6 || Math.abs(dx) > dy || view.scrollTop > 0) { if (dy < 0 || Math.abs(dx) > 10) y0 = null; return; } pulling = true; }
+    e.preventDefault();
+    d = Math.max(0, 120 * (1 - Math.exp(-Math.max(0, dy) / 190)));
+    if (d >= TRIGGER && !armed) { armed = true; buzz(6); }
+    else if (d < TRIGGER) armed = false;
+    set(d, false);
+  }, { passive: false });
+  const end = async () => {
+    if (!pulling) { y0 = null; return; }
+    pulling = false; y0 = null;
+    if (d < TRIGGER) { set(0, true); return; }
+    busy = true; ind.classList.add('spin'); set(HOLD, true);
+    const t0 = Date.now();
+    try {
+      navigator.serviceWorker?.getRegistration?.().then((r) => r?.update()).catch(() => {});
+      if (screen === 'today') await loadWeather(true);
+    } catch {}
+    await new Promise((r) => setTimeout(r, Math.max(0, 900 - (Date.now() - t0))));
+    ind.classList.remove('spin'); ind.classList.add('done');
+    set(0, true);
+    setTimeout(() => { ind.classList.remove('done'); busy = false; render(); }, 380);
+  };
+  host.addEventListener('touchend', end); host.addEventListener('touchcancel', end);
+})();
 
 // FAQ: one answer open at a time (the name attribute does this in new browsers; this covers the rest).
 document.addEventListener('toggle', (e) => { const d = e.target; if (d?.matches?.('details.faq-i') && d.open) $$('details.faq-i[open]').forEach((o) => { if (o !== d) o.open = false; }); }, true);

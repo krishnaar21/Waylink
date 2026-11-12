@@ -51,7 +51,7 @@ export function segs(n, filled, cls = 's', extra = '') {
 // ---------- Icons (Lucide) ----------
 export const selmark = (inline = false) => `<span class="selmark ${inline ? 'inline' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
 // Icon libraries: Lucide is built in; the others load on demand and fall back to Lucide per icon.
-export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400], ['inter', 'Inter', "'Inter'", 450], ['rubik', 'Rubik', "'Rubik'", 420], ['lexend', 'Lexend', "'Lexend'", 400], ['plex', 'IBM Plex Sans', "'IBM Plex Sans'", 450], ['atkinson', 'Atkinson', "'Atkinson Hyperlegible Next'", 450], ['chakra', 'Chakra Petch', "'Chakra Petch'", 500], ['space', 'Space Grotesk', "'Space Grotesk'", 450], ['kanit', 'Kanit', "'Kanit'", 400]];
+export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400], ['inter', 'Inter', "'Inter'", 450], ['plex', 'IBM Plex Sans', "'IBM Plex Sans'", 450], ['atkinson', 'Atkinson', "'Atkinson Hyperlegible Next'", 450]];
 export const THEMES = [['auto', 'Auto', '#ECE8E1', '#F7F5F1', '#161514'], ['paper', 'Light', '#ECE8E1', '#F7F5F1', '#161514'], ['obsidian', 'Dark', '#161514', '#22201E', '#F2EFE9'], ['amoled', 'Black', '#000000', '#141312', '#F2EFE9']];
 export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
 // Icons: Uicons by Flaticon (regular rounded). Its free licence asks for a visible credit, shown in the footer and About.
@@ -521,13 +521,13 @@ export function trips(c) {
   const stat = (lab, p) => `<div><span class="eyebrow">${lab}</span><span class="big">${num(p.km, p.km < 100 ? 1 : 0)}<span class="unit">km</span></span><div class="small muted">${plural(p.rides, 'ride', 'rides')} · ${dur(p.sec)}</div>${p.top ? `<div class="small faint">top ${num(p.top)} km/h</div>` : ''}</div>`;
   return `<div class="stagger">
   <div class="head pagehead"><div style="min-width:0"><h1 class="title">Rides</h1><div class="subtitle">${plural(s.trips.length, 'ride', 'rides')} on ${esc(clip(S.vehicleTitle(s), 20))}</div></div></div>
-  ${(() => { const tot = s.trips.reduce((a, t) => a + (t.km || 0), 0); return `<div class="card pad rides-hero mt20"><div class="ms-t">All rides</div><div class="big rh-n">${s.trips.length}</div><p class="rh-line">${s.trips.length ? `You’ve ridden <u>${num(tot, tot < 100 ? 1 : 0)} km</u> on ${esc(clip(S.vehicleTitle(s), 20))}${s.trips.length > 1 ? `, about ${num(tot / s.trips.length, 0)} km a ride` : ''}.` : 'Your rides will fill this in, one square a day.'}</p>${rideHeatmap(s.trips)}</div>`; })()}
-  <div class="card stat2 mt12">${stat('This week', wk)}${stat('Last 30 days', mo)}</div>
-  ${r ? `<div class="card rec-card mt12"><div class="flex between"><span class="tag x"><span class="dot x pulse"></span>Recording</span><span class="mono small faint" data-live="rec-time">${clock((Date.now() - r.start) / 1000)}</span></div>
+  ${r ? `<div class="card rec-card mt20"><div class="flex between"><span class="tag x"><span class="dot x pulse"></span>Recording</span><span class="mono small faint" data-live="rec-time">${clock((Date.now() - r.start) / 1000)}</span></div>
       <div class="serif mt12" style="font-size:24px">Today’s ride, in progress.</div>
       <div class="flex gap12 mt12" style="align-items:baseline"><span class="big"><span data-live="rec-km">${num(r.km, 2)}</span><span class="unit">km</span></span><span class="small muted"><span data-live="speed">${num(live.speed)}</span> km/h now · top <span data-live="rec-top">${num(r.top)}</span></span></div>
       <button class="btn ink block mt16" data-act="sheet" data-arg="rec-end">${icon('stop')} End ride</button></div>`
-    : `<div class="card pad mt12 flex gap12"><div class="grow"><div class="serif" style="font-size:22px">Ready when you are</div><div class="small muted mt8">${s.settings.autoRecord ? 'Rides record by themselves once the bike links.' : 'Tap play to record with your phone’s GPS.'}</div></div><button class="circle ink" data-act="rec-start" aria-label="Record a ride">${icon('play')}</button></div>`}
+    : `<div class="card pad mt20 flex gap12"><div class="grow"><div class="serif" style="font-size:22px">Ready when you are</div><div class="small muted mt8">${s.settings.autoRecord ? 'Rides record by themselves once the bike links.' : 'Tap play to record with your phone’s GPS.'}</div></div><button class="circle ink" data-act="rec-start" aria-label="Record a ride">${icon('play')}</button></div>`}
+  ${(() => { const tot = s.trips.reduce((a, t) => a + (t.km || 0), 0); return `<div class="card pad rides-hero mt12"><div class="ms-t">All rides</div><div class="big rh-n">${s.trips.length}</div><p class="rh-line">${s.trips.length ? `You’ve ridden <u>${num(tot, tot < 100 ? 1 : 0)} km</u> on ${esc(clip(S.vehicleTitle(s), 20))}${s.trips.length > 1 ? `, about ${num(tot / s.trips.length, 0)} km a ride` : ''}.` : 'Your rides will fill this in, one square a day.'}</p>${rideHeatmap(s.trips)}</div>`; })()}
+  <div class="card stat2 mt12">${stat('This week', wk)}${stat('Last 30 days', mo)}</div>
   <div class="section">${sh('Rides', '<span class="eyebrow">Newest first</span>')}
     ${s.trips.length ? `<div class="card" style="padding:4px">${s.trips.map((t) => `<button class="ride" data-act="sheet" data-arg="trip-detail:${t.id}">${sketch(t.pts)}<div class="grow"><div class="when">${dMed(t.start)} · ${tShort(t.start)}</div><div class="t">${esc(t.title)}</div><div class="meta"><span><span class="big">${num(t.km, 1)}</span><span class="unit">km</span></span><span>${dur(t.sec)}</span><span>top ${num(t.top)}</span></div></div><span class="no">№${String(t.n).padStart(3, '0')}</span></button>`).join('')}</div>`
     : '<div class="card empty"><div class="serif">No rides yet</div>Your first ride shows up here, route and all.</div>'}
@@ -754,7 +754,7 @@ export const REPO_URL = 'https://github.com/krishnaar21/Waylink';
 // Donations. Fill in to switch them on: a UPI ID (e.g. name@okicici) and any of Buy Me a Coffee, Ko-fi or GitHub Sponsors.
 export const SUPPORT = { upi: '', payee: 'Waylink', links: [/* ['Buy Me a Coffee', 'https://buymeacoffee.com/…'], ['Ko-fi', 'https://ko-fi.com/…'], ['GitHub Sponsors', 'https://github.com/sponsors/…'] */] };
 const UPI_AMOUNTS = [49, 99, 199, 499];
-export const LOGOS = [['wl-turn', 'Turn'], ['wl-summit', 'Summit'], ['wl-dusk', 'Dusk'], ['wl-ribbon', 'Ribbon'], ['wl-road', 'Road'], ['wl-chain', 'Chain'], ['wl-nav', 'Arrow'], ['wl-route', 'Route']];
+export const LOGOS = [['wl-turn', 'Turn'], ['wl-dusk', 'Dusk'], ['wl-ribbon', 'Ribbon'], ['wl-road', 'Road'], ['wl-chain', 'Chain'], ['wl-nav', 'Arrow'], ['wl-route', 'Route']];
 export const appName = () => APP_NAME;
 
 // ---------- PROFILE ----------

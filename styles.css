@@ -4,13 +4,8 @@
   --sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
 }
 html[data-body="inter"] { --sans: 'Inter', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
-html[data-body="rubik"] { --sans: 'Rubik', -apple-system, system-ui, sans-serif; --bw: 420; --bw-strong: 600; }
-html[data-body="lexend"] { --sans: 'Lexend', -apple-system, system-ui, sans-serif; --bw: 400; --bw-strong: 600; }
 html[data-body="plex"] { --sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
 html[data-body="atkinson"] { --sans: 'Atkinson Hyperlegible Next', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
-html[data-body="chakra"] { --sans: 'Chakra Petch', -apple-system, system-ui, sans-serif; --bw: 500; --bw-strong: 650; }
-html[data-body="space"] { --sans: 'Space Grotesk', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
-html[data-body="kanit"] { --sans: 'Kanit', -apple-system, system-ui, sans-serif; --bw: 400; --bw-strong: 600; }
 :root {
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
@@ -502,8 +497,8 @@ select.input { appearance: none; background-image: url("data:image/svg+xml,%3Csv
 .range::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--ink) var(--p), var(--seg-off) var(--p)); }
 .range::-moz-range-track { height: 6px; border-radius: 3px; background: var(--seg-off); }
 .range::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--ink); }
-.range::-webkit-slider-thumb { -webkit-appearance: none; width: 25px; height: 19px; margin-top: -6.5px; border-radius: 8px; background: linear-gradient(90deg, transparent 8.5px, var(--grip) 8.5px 10.5px, var(--shine) 10.5px 11.3px, transparent 11.3px 13.7px, var(--grip) 13.7px 15.7px, var(--shine) 15.7px 16.5px, transparent 16.5px) center / 100% 11px no-repeat, linear-gradient(180deg, var(--thumb-hi), var(--thumb) 55%, var(--thumb-lo)); border: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px rgba(0,0,0,.14), 0 1px 2px rgba(0,0,0,.16), 0 5px 12px -4px rgba(0,0,0,.26); transition: transform .2s var(--spring); }
-.range::-moz-range-thumb { width: 25px; height: 19px; border-radius: 8px; background: linear-gradient(90deg, transparent 8.5px, var(--grip) 8.5px 10.5px, var(--shine) 10.5px 11.3px, transparent 11.3px 13.7px, var(--grip) 13.7px 15.7px, var(--shine) 15.7px 16.5px, transparent 16.5px) center / 100% 11px no-repeat, linear-gradient(180deg, var(--thumb-hi), var(--thumb) 55%, var(--thumb-lo)); border: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px rgba(0,0,0,.14), 0 1px 2px rgba(0,0,0,.16), 0 5px 12px -4px rgba(0,0,0,.26); }
+.range::-webkit-slider-thumb { -webkit-appearance: none; box-sizing: border-box; width: 28px; height: 22px; margin-top: -8px; border-radius: 9px; background: linear-gradient(90deg, transparent 10px, var(--grip) 10px 12px, var(--shine) 12px 12.8px, transparent 12.8px 15.2px, var(--grip) 15.2px 17.2px, var(--shine) 17.2px 18px, transparent 18px) center / 100% 13px no-repeat, linear-gradient(180deg, var(--thumb-hi), var(--thumb) 55%, var(--thumb-lo)); border: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px rgba(0,0,0,.14), 0 1px 2px rgba(0,0,0,.16), 0 5px 12px -4px rgba(0,0,0,.26); transition: transform .2s var(--spring); }
+.range::-moz-range-thumb { box-sizing: border-box; width: 28px; height: 22px; border-radius: 9px; background: linear-gradient(90deg, transparent 10px, var(--grip) 10px 12px, var(--shine) 12px 12.8px, transparent 12.8px 15.2px, var(--grip) 15.2px 17.2px, var(--shine) 17.2px 18px, transparent 18px) center / 100% 13px no-repeat, linear-gradient(180deg, var(--thumb-hi), var(--thumb) 55%, var(--thumb-lo)); border: 0; box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 .5px rgba(0,0,0,.14), 0 1px 2px rgba(0,0,0,.16), 0 5px 12px -4px rgba(0,0,0,.26); }
 .range { --thumb: #F7F5F1; --thumb-hi: #FFFFFF; --thumb-lo: #E4E0D9; --grip: rgba(0,0,0,.34); --shine: rgba(255,255,255,.95); }
 html[data-theme="obsidian"] .range, html[data-theme="amoled"] .range { --thumb: #EDEAE4; --thumb-hi: #FFFFFF; --thumb-lo: #D2CEC6; }
 .range:active::-webkit-slider-thumb { transform: scale(1.1, 1.14); }
@@ -952,3 +947,23 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .upcard.a .uc-tag { background: color-mix(in srgb, var(--ink) 6%, transparent); }
 .upcard.s .uc-bar i, .segs i.s, .hero .segs i.s { background: color-mix(in srgb, var(--ink) 30%, transparent); }
 .bc-wx .wh-ic, .wh-ic { color: var(--ink-2); }
+
+/* The bike in the link line stays still: no pulse, glow or breathing. */
+.link-line .bk, .link-line.search .bk, .link-line.connecting .bk { animation: none; }
+.link-line.on .bk::after { content: none; }
+/* Unselected tabs sit back. */
+.tab { color: color-mix(in srgb, var(--ink) 38%, transparent); }
+.tab.on { color: var(--ink); }
+
+/* Pull to refresh: a bike wheel. The tyre draws and the wheel rolls as you pull, then it spins. */
+#ptr { position: absolute; left: 50%; top: var(--top); z-index: 4; width: 34px; height: 34px; opacity: 0; transform: translate(-50%, -34px); pointer-events: none; color: var(--ink); --draw: 100; --roll: 0deg; }
+#ptr svg { width: 100%; height: 100%; fill: none; stroke: currentColor; overflow: visible; }
+#ptr .wh { transform-origin: 50px 50px; transform: rotate(var(--roll)); }
+#ptr .tyre { stroke-width: 9; stroke-linecap: round; stroke-dasharray: 100 100; stroke-dashoffset: var(--draw); }
+#ptr .rim { stroke-width: 2.5; opacity: .45; }
+#ptr .spk { stroke-width: 2.5; stroke-linecap: round; opacity: .7; }
+#ptr .hub { fill: currentColor; stroke: none; }
+#ptr.spin .wh { animation: ptrSpin .7s linear infinite; }
+#ptr.spin .tyre, #ptr.done .tyre { stroke-dashoffset: 0; }
+@keyframes ptrSpin { from { transform: rotate(var(--roll)); } to { transform: rotate(calc(var(--roll) + 360deg)); } }
+.view { will-change: auto; }

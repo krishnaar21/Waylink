@@ -67,7 +67,7 @@ test('Migration and restore reject junk safely', () => {
     const s = S.migrate(raw);
     assert.ok(s.vehicles.length >= 1); assert.ok(Number.isFinite(s.odo));
     assert.notEqual(s.settings.theme, 'carbon');
-    assert.ok(['wl-turn', 'wl-summit', 'wl-dusk', 'wl-ribbon', 'wl-road', 'wl-chain', 'wl-nav', 'wl-route'].includes(s.settings.logo));
+    assert.ok(['wl-turn', 'wl-dusk', 'wl-ribbon', 'wl-road', 'wl-chain', 'wl-nav', 'wl-route'].includes(s.settings.logo));
   }
   for (const bad of ['', 'not json', '{"format":"kickstart-vault","data":null}', '[]']) assert.throws(() => S.importVault(bad));
 });
