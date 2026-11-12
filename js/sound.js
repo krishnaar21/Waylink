@@ -1,102 +1,190 @@
 // Waylink — vehicle sound effects, synthesised live with Web Audio (no audio files).
-// engineStart: starter crank, catch, rev blip, settle to idle. revUp / engineOff for rides.
-// click: indicator-relay tick for switches. tick: gear-detent tick for sliders, pitched by value.
-let ctx = null, master = null, enabled = true;
+// The engine is a single-cylinder model: firing pulses (one every two turns of the crank) excite an exhaust
+// resonance, with mechanical noise riding on each pulse. Clicks and ticks are short filtered bursts.
+let ctx = null, master = null, comp = null, enabled = true, unlocked = false;
 
 export const setEnabled = (v) => { enabled = !!v; };
 function ac() {
   if (!enabled) return null;
   if (!ctx) {
     const C = window.AudioContext || window.webkitAudioContext; if (!C) return null;
-    try { ctx = new C(); master = ctx.createGain(); master.gain.value = 0.55; master.connect(ctx.destination); } catch { return null; }
+    try {
+      ctx = new C({ latencyHint: 'interactive' });
+      comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.2;
+      master = ctx.createGain(); master.gain.value = 0.34; master.connect(comp); comp.connect(ctx.destination);
+      // A small, dark room around everything, so sounds don't feel dry.
+      const verb = ctx.createConvolver(), wet = ctx.createGain(); wet.gain.value = 0.08;
+      const len = Math.floor(ctx.sampleRate * 0.9), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2) * (i < 40 ? i / 40 : 1); }
+      verb.buffer = ir; const damp = ctx.createBiquadFilter(); damp.type = 'lowpass'; damp.frequency.value = 3800;
+      master.connect(verb); verb.connect(damp); damp.connect(wet); wet.connect(comp);
+    } catch { return null; }
   }
-  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  if (ctx.state !== 'running') ctx.resume().catch(() => {});
   return ctx;
 }
 export const ready = () => !!ctx && ctx.state === 'running';
-// Browsers start audio only after a tap. Call this from the first pointerdown.
-export function unlock() { const c = ac(); return !!c; }
+// iOS starts audio only inside a finished tap: resume and play one silent sample right there.
+export function unlock() {
+  const c = ac(); if (!c || unlocked) return !!c;
+  try { const b = c.createBuffer(1, 1, 22050), s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(0); } catch {}
+  if (c.state === 'running') unlocked = true;
+  return true;
+}
 
-function noiseBuf(c, secs) {
-  const b = c.createBuffer(1, Math.ceil(c.sampleRate * secs), c.sampleRate), d = b.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-  return b;
+let NOISE = null;
+function noise(c) {
+  if (NOISE && NOISE.sampleRate === c.sampleRate) return NOISE;
+  const b = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), d = b.getChannelData(0);
+  let last = 0; for (let i = 0; i < d.length; i++) { const w = Math.random() * 2 - 1; last = (last + 0.04 * w) / 1.04; d[i] = w * 0.6 + last * 3; } // a little brown in the white
+  return (NOISE = b);
 }
-// A single-cylinder engine voice: a pulse train (sawtooth through a low-pass) with firing-rate wobble.
-function engine(c, t0, curve, dur, vol = 0.5) {
-  const o1 = c.createOscillator(), o2 = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain(), shaper = c.createWaveShaper();
-  o1.type = 'sawtooth'; o2.type = 'square';
-  const k = new Float32Array(256); for (let i = 0; i < 256; i++) { const x = i / 128 - 1; k[i] = Math.tanh(2.6 * x); } shaper.curve = k;
-  lp.type = 'lowpass'; lp.Q.value = 4;
-  for (const [t, hz] of curve) {
-    o1.frequency.linearRampToValueAtTime(hz, t0 + t);
-    o2.frequency.linearRampToValueAtTime(hz / 2, t0 + t);
-    lp.frequency.linearRampToValueAtTime(Math.min(4200, hz * 7), t0 + t);
+// A narrow pulse: one cylinder firing. Built once as a periodic wave.
+let PULSE = null;
+function pulseWave(c) {
+  if (PULSE) return PULSE;
+  const n = 48, re = new Float32Array(n), im = new Float32Array(n), duty = 0.16;
+  for (let k = 1; k < n; k++) { im[k] = (2 / (k * Math.PI)) * Math.sin(k * Math.PI * duty) * Math.exp(-k / 26); }
+  return (PULSE = c.createPeriodicWave(re, im, { disableNormalization: false }));
+}
+// rpm curve: [[seconds, rpm], ...]. Firing rate = rpm / 120 for a four-stroke single.
+function engine(c, t0, curve, dur, vol = 0.7) {
+  const f = (rpm) => Math.max(6, rpm / 120);
+  const out = c.createGain(); out.gain.setValueAtTime(0, t0); out.gain.linearRampToValueAtTime(vol, t0 + 0.05);
+  out.gain.setValueAtTime(vol, t0 + Math.max(0.06, dur - 0.22)); out.gain.linearRampToValueAtTime(0, t0 + dur);
+  // Firing pulses
+  const fire = c.createOscillator(); fire.setPeriodicWave(pulseWave(c));
+  // Exhaust: a resonant body around 110–180 Hz plus a bark band that opens with revs
+  const body = c.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 140; body.Q.value = 1.4; body.gain.value = 9;
+  const bark = c.createBiquadFilter(); bark.type = 'lowpass'; bark.Q.value = 2.2;
+  const shaper = c.createWaveShaper(); const k = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; k[i] = Math.tanh(3 * x) * 0.9; } shaper.curve = k; shaper.oversample = '2x';
+  const fireG = c.createGain(); fireG.gain.value = 0.9;
+  // Mechanical noise riding on each pulse (valvetrain and intake)
+  const nz = c.createBufferSource(); nz.buffer = noise(c); nz.loop = true;
+  const nzBand = c.createBiquadFilter(); nzBand.type = 'bandpass'; nzBand.Q.value = 0.8;
+  const nzG = c.createGain(); nzG.gain.value = 0;
+  const mod = c.createGain(); mod.gain.value = 0.22; fire.connect(mod); mod.connect(nzG.gain); // pulses open the noise
+  // A low sub layer for weight at idle
+  const sub = c.createOscillator(); sub.type = 'sine'; const subG = c.createGain(); subG.gain.value = 0.35;
+  for (const [t, rpm] of curve) {
+    const at = t0 + t;
+    fire.frequency.linearRampToValueAtTime(f(rpm), at);
+    sub.frequency.linearRampToValueAtTime(f(rpm), at);
+    bark.frequency.linearRampToValueAtTime(Math.min(5200, 260 + rpm * 0.42), at);
+    nzBand.frequency.linearRampToValueAtTime(Math.min(4000, 700 + rpm * 0.25), at);
+    subG.gain.linearRampToValueAtTime(Math.max(0.05, 0.45 - rpm / 20000), at);
   }
-  o1.frequency.setValueAtTime(curve[0][1], t0); o2.frequency.setValueAtTime(curve[0][1] / 2, t0); lp.frequency.setValueAtTime(curve[0][1] * 7, t0);
-  // Firing pulses: amplitude LFO at the firing rate makes the "thump-thump".
-  const lfo = c.createOscillator(), lg = c.createGain(); lfo.type = 'square'; lfo.frequency.value = curve[0][1] / 2; lg.gain.value = vol * 0.35;
-  for (const [t, hz] of curve) lfo.frequency.linearRampToValueAtTime(hz / 2, t0 + t);
-  lfo.connect(lg); lg.connect(g.gain);
-  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(vol, t0 + 0.04);
-  g.gain.setValueAtTime(vol, t0 + dur - 0.25); g.gain.linearRampToValueAtTime(0, t0 + dur);
-  const mix = c.createGain(); mix.gain.value = 0.5;
-  o1.connect(mix); o2.connect(mix); mix.connect(shaper); shaper.connect(lp); lp.connect(g); g.connect(master);
-  for (const o of [o1, o2, lfo]) { o.start(t0); o.stop(t0 + dur + 0.05); }
+  fire.frequency.setValueAtTime(f(curve[0][1]), t0); sub.frequency.setValueAtTime(f(curve[0][1]), t0);
+  bark.frequency.setValueAtTime(260 + curve[0][1] * 0.42, t0); nzBand.frequency.setValueAtTime(700 + curve[0][1] * 0.25, t0);
+  fire.connect(fireG); fireG.connect(shaper); shaper.connect(body); body.connect(bark); bark.connect(out);
+  nz.connect(nzBand); nzBand.connect(nzG); nzG.connect(out);
+  sub.connect(subG); subG.connect(out);
+  out.connect(master);
+  for (const s of [fire, sub, nz]) { s.start(t0); s.stop(t0 + dur + 0.05); }
 }
-function crank(c, t0, dur) {
-  // Starter motor: a whining buzz chopped by compression strokes.
+function burst(c, t0, dur, freq, vol, type = 'bandpass', q = 1.2) {
+  const n = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
+  n.buffer = noise(c); fl.type = type; fl.frequency.value = freq; fl.Q.value = q;
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  n.connect(fl); fl.connect(g); g.connect(master); n.start(t0, Math.random()); n.stop(t0 + dur + 0.01);
+}
+function thud(c, t0, f0, f1, dur, vol) {
+  const o = c.createOscillator(), g = c.createGain(); o.type = 'sine';
+  o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(master); o.start(t0); o.stop(t0 + dur + 0.01);
+}
+function starter(c, t0, dur) {
+  // Starter motor whine, loaded by compression strokes
   const o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(), chop = c.createOscillator(), cg = c.createGain();
-  o.type = 'sawtooth'; o.frequency.setValueAtTime(95, t0); o.frequency.linearRampToValueAtTime(130, t0 + dur);
-  lp.type = 'lowpass'; lp.frequency.value = 900;
-  chop.type = 'square'; chop.frequency.setValueAtTime(7, t0); chop.frequency.linearRampToValueAtTime(11, t0 + dur); cg.gain.value = 0.12;
-  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.16, t0 + 0.03); g.gain.setValueAtTime(0.16, t0 + dur - 0.05); g.gain.linearRampToValueAtTime(0, t0 + dur);
+  o.type = 'sawtooth'; o.frequency.setValueAtTime(180, t0); o.frequency.linearRampToValueAtTime(240, t0 + dur);
+  lp.type = 'bandpass'; lp.frequency.value = 900; lp.Q.value = 1.6;
+  chop.type = 'sine'; chop.frequency.setValueAtTime(6.5, t0); chop.frequency.linearRampToValueAtTime(10, t0 + dur); cg.gain.value = 0.07;
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.12, t0 + 0.04); g.gain.setValueAtTime(0.12, t0 + dur - 0.05); g.gain.linearRampToValueAtTime(0, t0 + dur);
   chop.connect(cg); cg.connect(g.gain); o.connect(lp); lp.connect(g); g.connect(master);
   o.start(t0); chop.start(t0); o.stop(t0 + dur + 0.02); chop.stop(t0 + dur + 0.02);
-}
-function burst(c, t0, dur, freq, vol, type = 'bandpass') {
-  const n = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
-  n.buffer = noiseBuf(c, dur); f.type = type; f.frequency.value = freq; f.Q.value = 1.2;
-  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-  n.connect(f); f.connect(g); g.connect(master); n.start(t0); n.stop(t0 + dur);
+  for (let t = 0.08; t < dur; t += 0.13) burst(c, t0 + t, 0.05, 260, 0.12, 'lowpass', 0.7); // compression chuffs
 }
 
-// App launch: crank, catch, blip, idle. About 1.7 s, timed with the loader's rev.
+// App launch: starter, catch, one blip, settle to idle (about 1.9 s).
 export function engineStart() {
-  const c = ac(); if (!c) return; const t = c.currentTime + 0.02;
-  crank(c, t, 0.55);
-  burst(c, t + 0.55, 0.12, 180, 0.35, 'lowpass');
-  engine(c, t + 0.55, [[0, 34], [0.18, 70], [0.45, 92], [0.75, 40], [1.15, 30]], 1.2, 0.42);
+  const c = ac(); if (!c) return; const t = c.currentTime + 0.03;
+  burst(c, t, 0.02, 2400, 0.08); // the button
+  starter(c, t + 0.05, 0.32);
+  engine(c, t + 0.34, [[0, 900], [0.12, 3000], [0.3, 3600], [0.6, 1500], [0.9, 1300]], 1.0, 0.45);
 }
-// Ride starts: blip and pull away.
+// Ride starts: clutch in, into first, a clean pull away.
 export function revUp() {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.02;
-  engine(c, t, [[0, 30], [0.12, 62], [0.3, 40], [0.55, 55], [0.95, 110], [1.2, 95]], 1.25, 0.4);
+  thud(c, t, 120, 55, 0.1, 0.28); burst(c, t, 0.04, 900, 0.08, 'lowpass', 0.8); // gear goes in
+  engine(c, t + 0.08, [[0, 1300], [0.18, 3400], [0.42, 2300], [0.8, 4600], [1.15, 5600], [1.25, 3800], [1.5, 4600]], 1.6, 0.42);
+  thud(c, t + 1.3, 110, 50, 0.08, 0.2); // up into second
 }
-// Ride ends: roll off the throttle and cut the engine.
+// Ride ends: off the throttle, down to idle, key off, the exhaust ticking as it cools.
 export function engineOff() {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.02;
-  engine(c, t, [[0, 60], [0.35, 34], [0.7, 26], [0.9, 12]], 0.95, 0.38);
-  burst(c, t + 0.92, 0.08, 120, 0.18, 'lowpass');
-  // Cooling tick of the exhaust.
-  [1.25, 1.6].forEach((d) => burst(c, t + d, 0.03, 3200, 0.06));
+  engine(c, t, [[0, 3200], [0.35, 1500], [0.75, 1300], [1.0, 600], [1.1, 300]], 1.12, 0.42);
+  crackles(c, t + 0.12, 3);
+  burst(c, t + 1.12, 0.02, 2600, 0.07); // key turns
+  [1.5, 1.95, 2.55].forEach((d, i) => burst(c, t + d, 0.02, 4200 - i * 300, 0.07, 'bandpass', 6));
 }
-// Switch: an indicator-relay click. Higher and brighter when turning on.
+// Switch: a relay. Two contacts close a few milliseconds apart; brighter when switching on.
 export function click(on = true) {
-  const c = ac(); if (!c) return; const t = c.currentTime + 0.005;
-  burst(c, t, 0.035, on ? 2600 : 1700, 0.32);
-  const o = c.createOscillator(), g = c.createGain();
-  o.type = 'triangle'; o.frequency.setValueAtTime(on ? 190 : 140, t); o.frequency.exponentialRampToValueAtTime(70, t + 0.05);
-  g.gain.setValueAtTime(0.22, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
-  o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.07);
+  const c = ac(); if (!c) return; const t = c.currentTime + 0.004;
+  burst(c, t, 0.02, on ? 3600 : 2600, on ? 0.72 : 0.5, 'bandpass', 2.2);
+  burst(c, t + 0.009, 0.024, on ? 1800 : 1300, 0.50, 'bandpass', 1.8);
+  thud(c, t, on ? 220 : 170, 90, 0.04, 0.14);
 }
-// Slider: a gear-detent tick whose pitch climbs with the value (0..1), like rising revs.
-let lastTick = 0;
-export function tick(p = 0.5) {
+// Horn: the two-tone electric horn of an Indian commuter bike, two short beeps.
+export function horn(beeps = 2) {
+  const c = ac(); if (!c) return; let t = c.currentTime + 0.02;
+  for (let b = 0; b < beeps; b++) {
+    const len = b === beeps - 1 ? 0.42 : 0.16;
+    const g = c.createGain(), bp = c.createBiquadFilter(), sh = c.createWaveShaper();
+    const k = new Float32Array(512); for (let i = 0; i < 512; i++) { const x = i / 256 - 1; k[i] = Math.tanh(4 * x); } sh.curve = k;
+    bp.type = 'bandpass'; bp.frequency.value = 1200; bp.Q.value = 0.7;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.14, t + 0.012); g.gain.setValueAtTime(0.14, t + len - 0.04); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    for (const f of [410, 505]) { const o = c.createOscillator(); o.type = 'square'; o.frequency.value = f; o.detune.value = (Math.random() - 0.5) * 8; o.connect(sh); o.start(t); o.stop(t + len + 0.02); }
+    sh.connect(bp); bp.connect(g); g.connect(master);
+    t += len + 0.09;
+  }
+}
+// A single throttle blip at idle.
+export function blip() {
+  const c = ac(); if (!c) return; const t = c.currentTime + 0.02;
+  engine(c, t, [[0, 1350], [0.1, 4800], [0.34, 2100], [0.6, 1350]], 0.75, 0.38);
+}
+// Rising revs that follow a slider: one running engine, its revs set by the value (0..1), fading out when you stop.
+let live = null, liveStop = 0, lastP = null, lastAt = 0;
+export function revTo(p = 0) {
   const c = ac(); if (!c) return;
-  const now = performance.now(); if (now - lastTick < 45) return; lastTick = now;
-  const t = c.currentTime + 0.003, o = c.createOscillator(), g = c.createGain();
-  o.type = 'square'; o.frequency.value = 420 + p * 900;
-  g.gain.setValueAtTime(0.13, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.025);
-  o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.03);
+  p = Math.max(0, Math.min(1, p));
+  const rpm = 1300 + p * 6200, f = rpm / 120, now = c.currentTime;
+  // Quiet when nudged, a little fuller when dragged fast.
+  const dt = Math.max(0.016, now - lastAt), speed = lastP == null ? 0 : Math.abs(p - lastP) / dt;
+  lastP = p; lastAt = now;
+  const lvl = 0.08 + Math.min(1, speed / 3) * 0.17;
+  if (!live) {
+    const out = c.createGain(); out.gain.setValueAtTime(0, now); out.gain.linearRampToValueAtTime(lvl, now + 0.08);
+    const fire = c.createOscillator(); fire.setPeriodicWave(pulseWave(c));
+    const sh = c.createWaveShaper(); const k = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; k[i] = Math.tanh(3 * x) * 0.9; } sh.curve = k;
+    const body = c.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 140; body.Q.value = 1.4; body.gain.value = 9;
+    const bark = c.createBiquadFilter(); bark.type = 'lowpass'; bark.Q.value = 2.2;
+    fire.connect(sh); sh.connect(body); body.connect(bark); bark.connect(out); out.connect(master); fire.start();
+    live = { out, fire, bark };
+  }
+  live.fire.frequency.setTargetAtTime(f, now, 0.06);
+  live.bark.frequency.setTargetAtTime(Math.min(5200, 260 + rpm * 0.42), now, 0.06);
+  live.out.gain.cancelScheduledValues(now); live.out.gain.setTargetAtTime(lvl, now, 0.05);
+  clearTimeout(liveStop);
+  liveStop = setTimeout(() => {
+    lastP = null; if (!live) return; const l = live; live = null; const t = c.currentTime;
+    l.fire.frequency.setTargetAtTime(1300 / 120, t, 0.12); l.out.gain.setTargetAtTime(0, t + 0.15, 0.1); l.fire.stop(t + 0.8);
+  }, 260);
+}
+// Kept for older callers: a slider move now revs the engine.
+export const tick = revTo;
+// Exhaust crackles: a few pops as the throttle closes.
+function crackles(c, t0, n = 6) {
+  for (let i = 0; i < n; i++) { const t = t0 + i * (0.05 + Math.random() * 0.07); burst(c, t, 0.03 + Math.random() * 0.03, 300 + Math.random() * 500, 0.18 + Math.random() * 0.14, 'lowpass', 0.9); thud(c, t, 160, 60, 0.04, 0.1); }
 }

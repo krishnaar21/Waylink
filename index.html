@@ -41,6 +41,29 @@
     <div class="home-ind" aria-hidden="true"></div>
     <div class="rotate-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg><b>Turn your phone upright</b><span>Only Route and ride mode work sideways.</span></div>
   </div>
+  <script>
+    // Safety net: if the app hasn't started within 8 s, or something breaks while starting, take the loader down
+    // and say what happened, with a way to reload. Plain script, so it runs even if a module fails to load.
+    (function () {
+      var t0 = Date.now(), shown = false;
+      function fail(msg) {
+        if (window.__waylinkReady || shown) return; shown = true;
+        var sp = document.getElementById('splash'); if (sp) sp.remove();
+        var d = document.createElement('div'); d.className = 'bootfail';
+        d.innerHTML = '<b>Waylink didn’t start</b><span></span><button type="button">Reload</button><button type="button" class="ghost">Reset the app’s saved files</button>';
+        d.querySelector('span').textContent = msg || 'It took too long to load. Check your connection and try again.';
+        d.querySelector('button').onclick = function () { location.reload(); };
+        d.querySelector('.ghost').onclick = function () {
+          var done = function () { location.reload(); };
+          try { (navigator.serviceWorker ? navigator.serviceWorker.getRegistrations() : Promise.resolve([])).then(function (r) { r.forEach(function (x) { x.unregister(); }); return window.caches ? caches.keys().then(function (k) { return Promise.all(k.map(function (n) { return caches.delete(n); })); }) : 0; }).then(done, done); } catch (e) { done(); }
+        };
+        (document.getElementById('app') || document.body).appendChild(d);
+      }
+      window.addEventListener('error', function (e) { var t = e.target; if (t && t !== window && t.tagName !== 'SCRIPT') return; /* fonts and images may fail; only scripts matter */ if (!window.__waylinkReady) fail('Error: ' + (e.message || 'a file failed to load') + (e.filename ? ' (' + e.filename.split('/').pop() + ')' : '')); }, true);
+      window.addEventListener('unhandledrejection', function (e) { if (!window.__waylinkReady) fail('Error: ' + ((e.reason && e.reason.message) || e.reason)); });
+      setTimeout(function () { if (!window.__waylinkReady) fail(); }, 8000);
+    })();
+  </script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

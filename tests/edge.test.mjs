@@ -67,7 +67,7 @@ test('Migration and restore reject junk safely', () => {
     const s = S.migrate(raw);
     assert.ok(s.vehicles.length >= 1); assert.ok(Number.isFinite(s.odo));
     assert.notEqual(s.settings.theme, 'carbon');
-    assert.ok(['wl-turn', 'wl-link', 'wl-sign', 'wl-swift', 'wl-beacon'].includes(s.settings.logo));
+    assert.ok(['wl-turn', 'wl-road', 'wl-chain', 'wl-nav', 'wl-route'].includes(s.settings.logo));
   }
   for (const bad of ['', 'not json', '{"format":"kickstart-vault","data":null}', '[]']) assert.throws(() => S.importVault(bad));
 });
@@ -175,4 +175,15 @@ test('iPhone pairing guide renders with all four steps', () => {
   const h = V.sheetHTML({ s, link: fakeLink, live: liveOf() }, 'ios-pair');
   assert.equal((h.match(/class="pstep"/g) || []).length, 4);
   assert.ok(h.includes('apps.apple.com') && h.includes('bluefy://'));
+});
+
+test('Support sheet: free ways to help always, UPI only when configured', () => {
+  const s = S.seedSample(S.migrate(null));
+  const ctx = { s, link: fakeLink, live: liveOf() };
+  let h = V.sheetHTML(ctx, 'support');
+  assert.ok(h.includes('Support Waylink') && h.includes('Star it on GitHub') && !h.includes('upi://'));
+  V.SUPPORT.upi = 'rider@okicici';
+  h = V.sheetHTML({ ...ctx, live: liveOf({ supportAmt: 199 }) }, 'support');
+  assert.ok(h.includes('upi://pay?pa=rider%40okicici') && h.includes('am=199') && h.includes('cu=INR'));
+  V.SUPPORT.upi = '';
 });

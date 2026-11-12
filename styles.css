@@ -5,7 +5,12 @@
 }
 html[data-body="inter"] { --sans: 'Inter', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
 html[data-body="rubik"] { --sans: 'Rubik', -apple-system, system-ui, sans-serif; --bw: 420; --bw-strong: 600; }
-html[data-body="lexend"] { --sans: 'Lexend', -apple-system, system-ui, sans-serif; --bw: 400; --bw-strong: 600; letter-spacing: -.005em; }
+html[data-body="lexend"] { --sans: 'Lexend', -apple-system, system-ui, sans-serif; --bw: 400; --bw-strong: 600; }
+html[data-body="plex"] { --sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
+html[data-body="atkinson"] { --sans: 'Atkinson Hyperlegible Next', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
+html[data-body="chakra"] { --sans: 'Chakra Petch', -apple-system, system-ui, sans-serif; --bw: 500; --bw-strong: 650; }
+html[data-body="space"] { --sans: 'Space Grotesk', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
+html[data-body="kanit"] { --sans: 'Kanit', -apple-system, system-ui, sans-serif; --bw: 400; --bw-strong: 600; }
 :root {
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
@@ -35,11 +40,7 @@ html[data-font="onest"] { --serif: 'Onest', -apple-system, system-ui, sans-serif
 html[data-font="geist"] { --serif: 'Geist', -apple-system, system-ui, sans-serif; --dw: 600; --dls: -.04em; --dscale: 1; }
 html[data-font="garamond"] { --serif: 'EB Garamond', Garamond, Georgia, serif; --dw: 500; --dls: -.01em; --dscale: 1.12; }
 html[data-font="vollkorn"] { --serif: 'Vollkorn', Georgia, serif; --dw: 500; --dls: -.01em; --dscale: 1.02; }
-html[data-font="lora"] { --serif: 'Lora', Georgia, serif; --dw: 500; --dls: -.015em; --dscale: 1; }
-html[data-font="sourceserif"] { --serif: 'Source Serif 4', Georgia, serif; --dw: 600; --dls: -.02em; --dscale: 1; }
 html[data-font="fraunces"] { --serif: 'Fraunces', Georgia, serif; --dw: 600; --dls: -.02em; --dscale: 1; }
-html[data-font="literata"] { --serif: 'Literata', Georgia, serif; --dw: 600; --dls: -.02em; --dscale: .98; }
-html[data-font="dmserif"] { --serif: 'DM Serif Display', Georgia, serif; --dw: 400; --dls: -.01em; --dscale: 1.02; }
 html[data-font="crimson"] { --serif: 'Crimson Pro', Georgia, serif; --dw: 500; --dls: -.01em; --dscale: 1.1; }
 .selmark { position: absolute; top: 7px; right: 7px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; box-shadow: 0 0 0 2px var(--raised); animation: pop .35s var(--spring) both; z-index: 2; }
 .selmark svg { width: 12px; height: 12px; stroke-width: 3 !important; }
@@ -250,7 +251,7 @@ p, .hint, .note, .lead, .d, .row-sub, .small { text-wrap: pretty; }
 .chip.on { background: var(--ink); color: var(--bg); box-shadow: none; }
 .chip.ink { background: var(--accent); color: #fff; box-shadow: none; font-weight: 600; }
 
-.fab { position: absolute; right: 20px; bottom: calc(var(--bottom) + 96px); width: 60px; height: 60px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; box-shadow: 0 10px 22px -8px rgba(20,15,10,.5); z-index: 20; transition: transform .25s var(--spring); animation: fabIn .5s var(--spring) both; }
+.fab { position: absolute; right: 14px; bottom: calc(var(--bottom) + 84px); width: 60px; height: 60px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; box-shadow: 0 10px 22px -8px rgba(20,15,10,.5); z-index: 20; transition: transform .25s var(--spring); animation: fabIn .5s var(--spring) both; }
 .fab svg { width: 27px; height: 27px; }
 .track.on { overflow: visible; }
 .fab:active { transform: scale(.9); }
@@ -296,7 +297,7 @@ p, .hint, .note, .lead, .d, .row-sub, .small { text-wrap: pretty; }
 .avatar.xl { width: 96px; height: 96px; font-size: 42px; }
 
 /* Horizontal scroller */
-.hscroll { display: flex; gap: 10px; overflow-x: auto; margin: 0 calc(var(--pad) * -1); padding: 2px var(--pad) 16px; scroll-snap-type: x mandatory; scroll-padding: var(--pad); scrollbar-width: none; }
+.hscroll { display: flex; gap: 10px; overflow-x: auto; margin: 0 calc(var(--pad) * -1); padding: 2px var(--pad) 16px; scroll-snap-type: x mandatory; scroll-padding: 0 var(--pad); scrollbar-width: none; }
 .hscroll::-webkit-scrollbar { display: none; }
 .tile { flex: none; width: 152px; height: 160px; scroll-snap-align: start; text-align: left; padding: 16px; display: flex; flex-direction: column; }
 .tile .segs { margin-top: auto; }
@@ -770,7 +771,7 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 /* Add-vehicle button on Settings: a bike with a small plus */
 .fab.fab-bike { position: absolute; }
 /* Today: coming-up cards, scroll sideways */
-.upnext { display: flex; gap: 10px; overflow-x: auto; margin: 0 calc(var(--pad) * -1); padding: 2px var(--pad) 8px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.upnext { display: flex; gap: 10px; overflow-x: auto; margin: 0 calc(var(--pad) * -1); padding: 2px var(--pad) 8px; scroll-snap-type: x mandatory; scroll-padding: 0 var(--pad); scrollbar-width: none; }
 .upnext::-webkit-scrollbar { display: none; }
 .upcard { flex: none; width: 168px; scroll-snap-align: start; display: flex; flex-direction: column; gap: 6px; padding: 14px 14px 16px; border-radius: var(--r-md); background: var(--card); box-shadow: var(--shadow); text-align: left; }
 .upcard:active { transform: scale(.98); }
@@ -920,3 +921,26 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .lay-a .speed .u { font-family: var(--sans); letter-spacing: 0; text-transform: none; font-size: 17px; }
 .hold .eyebrow { letter-spacing: 0; font-size: 13.5px; }
 .ride .when, .about-meta { font-family: var(--sans); letter-spacing: 0; text-transform: none; font-size: 13.5px; }
+/* Shown only if the app fails to start */
+.bootfail { position: absolute; inset: 0; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 32px; text-align: center; background: var(--bg); color: var(--ink); }
+.bootfail b { font-size: 20px; } .bootfail span { color: var(--ink-2); font-size: 15px; max-width: 32ch; overflow-wrap: anywhere; }
+.bootfail button { margin-top: 8px; height: 48px; padding: 0 22px; border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 600; }
+.bootfail button.ghost { background: none; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--line); margin-top: 0; }
+/* Support */
+.support-card { display: flex; align-items: center; gap: 14px; width: 100%; margin-top: 34px; padding: 16px 16px 16px 14px; border-radius: var(--r-md); text-align: left; background: color-mix(in srgb, var(--accent) 9%, var(--card)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent); }
+.support-card b { display: block; font-size: 16.5px; } .support-card span span, .support-card .grow > span { display: block; font-size: 14px; color: var(--ink-2); margin-top: 2px; }
+.support-card > svg:last-child { width: 18px; height: 18px; color: var(--ink-3); flex: none; }
+.sh-heart { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--accent); color: #fff; flex: none; }
+.sh-heart svg { width: 22px; height: 22px; }
+.support-hero { display: flex; flex-direction: column; align-items: flex-start; }
+.support-hero .sh-heart { width: 56px; height: 56px; border-radius: 18px; margin-bottom: 14px; }
+.support-hero .sh-heart svg { width: 28px; height: 28px; }
+.amts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.amt { height: 44px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); background: var(--raised); font-weight: 600; font-size: 15px; }
+.amt.on { background: var(--ink); color: var(--bg); box-shadow: none; }
+.soon-card { background: var(--raised); }
+
+/* Colours: dots only, one row */
+.accents { grid-template-columns: repeat(6, 1fr); gap: 6px; justify-items: center; }
+.accentopt, .accentopt.on { width: 46px; height: 46px; padding: 0; justify-content: center; border-radius: 50%; background: none; box-shadow: none; }
+.accentopt .dot { width: 32px; height: 32px; }

@@ -59,6 +59,7 @@ C = {  # key: (hugeicons, uicons)
  'user': (['user'], ['user']),
  'userEdit': (['user-edit-01'], ['user-pen', 'user-gear']),
  'heart': (['heart-check', 'favourite'], ['heart-rate', 'heart']),
+ 'love': (['favourite'], ['heart']),
  'doc': (['file-01', 'note'], ['document']),
  'palette': (['paint-board'], ['palette']),
  'code': (['source-code'], ['code-simple', 'brackets-curly']),

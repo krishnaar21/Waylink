@@ -33,14 +33,10 @@ const FONT_CSS = {
   garamond: 'EB+Garamond:wght@400;500;600',
   crimson: 'Crimson+Pro:wght@400;500;600',
   vollkorn: 'Vollkorn:wght@400;500;600',
-  lora: 'Lora:wght@400;500;600',
-  sourceserif: 'Source+Serif+4:opsz,wght@8..60,500;8..60,600',
   fraunces: 'Fraunces:opsz,wght@9..144,500;9..144,600',
-  literata: 'Literata:opsz,wght@7..72,500;7..72,600',
-  dmserif: 'DM+Serif+Display',
 };
 const fontHref = (keys) => 'https://fonts.googleapis.com/css2?' + keys.map((k) => 'family=' + FONT_CSS[k]).join('&') + '&display=swap';
-const BODY_CSS = { inter: 'Inter:wght@400..700', rubik: 'Rubik:wght@400..700', lexend: 'Lexend:wght@400..700' };
+const BODY_CSS = { inter: 'Inter:wght@400..700', rubik: 'Rubik:wght@400..700', lexend: 'Lexend:wght@400..700', plex: 'IBM+Plex+Sans:wght@400;500;600;700', atkinson: 'Atkinson+Hyperlegible+Next:wght@400..700', chakra: 'Chakra+Petch:wght@400;500;600;700', space: 'Space+Grotesk:wght@400..700', kanit: 'Kanit:wght@400;500;600' };
 function applyBody() {
   const k = BODY_CSS[s.settings.bodyFont] ? s.settings.bodyFont : 'system';
   document.documentElement.dataset.body = k;
@@ -525,7 +521,7 @@ function ring(name, source = 'Phone') {
   logAlert('call', name); sent();
   clearTimeout(ringTimer);
   ringTimer = setTimeout(() => { if (live.call?.state === 'ringing') missedFrom(live.call.name); }, 25000);
-  buzz([30, 60, 30]);
+  buzz([30, 60, 30]); if (s.settings.sounds !== false) SND.horn(2);
   S.save(s); renderOverlay();
 }
 function missedFrom(name) {
@@ -627,6 +623,9 @@ const A = {
   close: () => closeSheet(),
   'sheet-back': () => sheetBack(),
   font: (k) => { s.settings.font = k; buzz(6); commit(); refreshSheet(); },
+  'support-amt': (a) => { live.supportAmt = +a; buzz(6); refreshSheet(); },
+  'copy-upi': async () => { try { await navigator.clipboard.writeText(V.SUPPORT.upi); toast('UPI ID copied.'); } catch { toast(`UPI ID: ${V.SUPPORT.upi}`); } },
+  'copy-app-link': async () => { const u = location.origin + location.pathname; try { await navigator.clipboard.writeText(u); toast('Link copied. Thanks for sharing!'); } catch { toast(u); } },
   'body-font': (k) => { s.settings.bodyFont = k; buzz(6); commit(); refreshSheet(); },
   logo: (k) => { s.settings.logo = k; buzz(6); commit(); refreshSheet(); toast('Icon updated. Re-add to Home Screen to change an installed icon.'); },
   'show-loader': () => showLoader(),
@@ -963,26 +962,63 @@ setInterval(() => {
 }, 1000);
 
 // ---------- Boot ----------
-// Launch sound. Browsers only allow audio after a tap, so if the page opened without one,
-// the first tap while the loader is still up starts the engine instead.
+// Launch sound. Browsers, and iPhones most strictly, start audio only inside a finished tap. If the page opened
+// without one (as it does from the Home Screen), the first tap in the first 6 s starts the engine instead.
 const bootAt = performance.now(); let launched = false;
 function launchSound() { if (launched || s.settings.sounds === false) return; launched = true; SND.engineStart(); }
-SND.unlock();
-setTimeout(() => { if (SND.ready()) launchSound(); }, 60);
-addEventListener('pointerdown', () => { SND.unlock(); if (performance.now() - bootAt < 4000) setTimeout(launchSound, 30); }, { once: true, capture: true });
+setTimeout(() => { SND.unlock(); if (SND.ready()) launchSound(); }, 60);
+const firstTap = () => {
+  SND.unlock();
+  if (performance.now() - bootAt < 6000) launchSound();
+  ['touchend', 'click', 'keydown'].forEach((t) => removeEventListener(t, firstTap, true));
+};
+['touchend', 'click', 'keydown'].forEach((t) => addEventListener(t, firstTap, true));
+const within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
+function hideSplash() {
+  const sp = $('#splash'); if (!sp || location.hash === '#loading') return;
+  setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 600); }, Math.max(300, 2200 - performance.now()));
+}
 (async function boot() {
-  applyTheme();
-  link.sendStreetNames = s.settings.streetNames;
-  screen = SCREENS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'today';
-  render('fade-in');
-  await loadGlove();
-  try { S.setModelImages(await (await fetch('img/bikes/manifest.json', { cache: 'no-cache' })).json()); } catch {}
-  if (s.onboarded) render();
-  if (s.settings.simulated) link.startSimulated();
-  else if (s.bike.id) link.restore(s.bike.id);
   splashTpl = $('#splash')?.outerHTML || '';
-  // Loading screen: let the climb play for a moment, then fade. Add #loading to the URL to keep it up.
-  const sp = $('#splash');
-  if (sp && location.hash !== '#loading') setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 600); }, Math.max(300, 2200 - performance.now()));
-  if ('serviceWorker' in navigator && !inFrame && /^https:|localhost|127\.0\.0\.1/.test(location.origin)) navigator.serviceWorker.register('sw.js').catch(() => {});
+  try {
+    applyTheme();
+    link.sendStreetNames = s.settings.streetNames;
+    screen = SCREENS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'today';
+    render('fade-in');
+    window.__waylinkReady = true; // the page is up; the safety net in index.html stands down
+    // Neither of these may hold the loader: each gets a short time limit and fails quietly.
+    await within(loadGlove().catch(() => {}), 2500);
+    await within(fetch('img/bikes/manifest.json', { cache: 'no-cache' }).then((r) => r.json()).then(S.setModelImages).catch(() => {}), 2500);
+    if (s.onboarded) render();
+    if (s.settings.simulated) link.startSimulated();
+    else if (s.bike.id) link.restore(s.bike.id);
+  } catch (err) {
+    console.error(err);
+    toast('Something went wrong while starting. Try Settings, Help, Report a problem.');
+  } finally {
+    window.__waylinkReady = true;
+    hideSplash();
+  }
+  registerUpdates();
 })();
+
+// ---------- Updates: a new version installs in the background and the app reloads itself ----------
+function registerUpdates() {
+  if (!('serviceWorker' in navigator) || inFrame || !/^https:|localhost|127\.0\.0\.1/.test(location.origin)) return;
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  const reloadWhenIdle = () => {
+    if (reloading) return;
+    if (live.ride.open || live.call) { setTimeout(reloadWhenIdle, 15000); return; } // never mid-ride or mid-call
+    reloading = true;
+    try { sessionStorage.setItem('waylink-updated', '1'); } catch {}
+    location.reload();
+  };
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) reloadWhenIdle(); });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+    const check = () => reg.update().catch(() => {});
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+    setInterval(check, 30 * 60e3);
+  }).catch(() => {});
+  try { if (sessionStorage.getItem('waylink-updated')) { sessionStorage.removeItem('waylink-updated'); setTimeout(() => toast('Updated to the latest version.'), 1200); } } catch {}
+}
