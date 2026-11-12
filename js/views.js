@@ -1241,8 +1241,8 @@ function sheetInner(c, key) {
     }
     case 'models':
       return `<div class="eyebrow">Garage</div><h2>Bike models</h2><p class="lead">Every model ${appName(s)} knows. Models without a photo show a plain tile.</p>
-      <div class="models mt16">${S.MODELS.map((m, i) => `<div class="m">${vehicleArt({ settings: { art: 'photo' } }, { model: m.id, colour: S.COLOURS[i % S.COLOURS.length][0] }, 'model')}<div class="t">${esc(S.nameOfModel(s, m))}</div><div class="d">${num(m.tank, m.tank % 1 ? 1 : 0)} L · ${esc(m.series)}${S.MODEL_IMAGES[m.id] ? ' · photo' : ''}</div></div>`).join('')}</div>
-      <p class="hint">To add photos, run tools/fetch_bike_photos.py once. Credits appear in About Waylink, Photo credits.</p>`;
+      <div class="models mt16">${S.MODELS.map((m, i) => `<div class="m">${vehicleArt({ settings: { art: 'photo' } }, { model: m.id, colour: S.COLOURS[i % S.COLOURS.length][0] }, 'model')}<div class="t">${esc(S.nameOfModel(s, m))}</div><div class="d">${num(m.tank, m.tank % 1 ? 1 : 0)} L · ${esc(m.series)}${S.MODEL_IMAGES[m.id] ? ' · art' : ''}</div></div>`).join('')}</div>
+      <p class="hint">Artwork credits are in About Waylink, Photo credits.</p>`;
     case 'credits': {
       const rows = Object.entries(S.MODEL_IMAGES);
       return `<div class="eyebrow">About</div><h2>Photo credits</h2><p class="lead">Bike photos are used under their open licences. Tap one to see its source.</p>

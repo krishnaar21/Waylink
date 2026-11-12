@@ -8,26 +8,51 @@
   "ns400z": {
     "src": "img/bikes/ns400z.webp",
     "fit": "contain",
-    "credit": "Bajaj Auto press image, background removed"
+    "credit": "Illustration by the Waylink team, traced from Bajaj Auto press images"
   },
   "ns160": {
     "src": "img/bikes/ns160.webp",
     "fit": "contain",
-    "credit": "Bajaj Auto press image, background removed"
+    "credit": "Illustration by the Waylink team, traced from Bajaj Auto press images"
   },
   "ns125": {
     "src": "img/bikes/ns125.webp",
     "fit": "contain",
-    "credit": "Bajaj Auto press image, background removed"
+    "credit": "Illustration by the Waylink team, traced from Bajaj Auto press images"
   },
   "n250": {
     "src": "img/bikes/n250.webp",
     "fit": "contain",
-    "credit": "Bajaj Auto press image, background removed"
+    "credit": "Illustration by the Waylink team, traced from Bajaj Auto press images"
   },
   "n160": {
     "src": "img/bikes/n160.webp",
     "fit": "contain",
-    "credit": "Bajaj Auto press image, background removed"
+    "credit": "Illustration by the Waylink team, traced from Bajaj Auto press images"
+  },
+  "rs200": {
+    "src": "img/bikes/rs200.webp",
+    "fit": "contain",
+    "credit": "Illustration by the Waylink team, traced from Bajaj Auto press images"
+  },
+  "dominar250": {
+    "src": "img/bikes/dominar250.webp",
+    "fit": "contain",
+    "credit": "Illustration by the Waylink team, traced from Bajaj Auto press images"
+  },
+  "dominar400": {
+    "src": "img/bikes/dominar400.webp",
+    "fit": "contain",
+    "credit": "Illustration by the Waylink team, traced from Bajaj Auto press images"
+  },
+  "pulsar150": {
+    "src": "img/bikes/pulsar150.webp",
+    "fit": "contain",
+    "credit": "Illustration by the Waylink team, traced from Bajaj Auto press images"
+  },
+  "pulsar220f": {
+    "src": "img/bikes/pulsar220f.webp",
+    "fit": "contain",
+    "credit": "Illustration by the Waylink team, traced from Bajaj Auto press images"
   }
 }
