@@ -156,11 +156,11 @@ test('Weather: codes map, hints are actionable, bad payloads throw', () => {
     { const cx = { s: S.migrate(null), live: liveOf({ weather: st }) }; assert.ok(V.weatherHead(cx).includes('wh-ic')); assert.ok(V.weatherSheet(cx).includes('<h2>') || V.weatherSheet(cx).includes('Weather')); }
 });
 
-test('Every icon the app draws exists in UIcons or the Lucide Bluetooth fallback', async () => {
+test('Every icon the app draws exists in Hugeicons', async () => {
   const src = (await import('node:fs')).readFileSync(new URL('../js/views.js', import.meta.url), 'utf8') + (await import('node:fs')).readFileSync(new URL('../js/app.js', import.meta.url), 'utf8');
   const used = [...new Set([...src.matchAll(/icon\('([a-zA-Z]+)'/g)].map((m) => m[1]))];
-  const ui = (await import('../js/icons-uicons.js')).ICONS, lu = (await import('../js/icons.js')).ICONS;
-  assert.deepEqual(used.filter((k) => !ui[k] && !lu[k]), []);
+  const hi = (await import('../js/icons-huge.js')).ICONS;
+  assert.deepEqual(used.filter((k) => !hi[k]), []);
   assert.ok(V.icon('bike').includes('<path') && V.icon('bt').includes('<path'));
 });
 

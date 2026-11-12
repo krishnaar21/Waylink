@@ -1192,3 +1192,47 @@ html[data-brand="loop"] .splash-brand > :not(.wl-loop), html[data-brand="loop"] 
 .brandopt .bo-art { display: grid; place-items: center; height: 72px; }
 .brandopt .wl-turns, .brandopt .wl-loop { display: inline-flex; font-size: 26px; }
 .about-brand .wl-turns, .about-brand .wl-loop { font-size: 24px; }
+
+/* Icon style: Duotone lays a soft tint inside every closed shape of the line icons. */
+html[data-icons="duo"] svg.i :is(path[d$="Z"], path[d$="z"], circle, rect, ellipse) { fill: currentColor; fill-opacity: .18; }
+html[data-icons="duo"] .row-ic svg.i :is(path[d$="Z"], path[d$="z"], circle, rect, ellipse),
+html[data-icons="duo"] .tab.on svg.i :is(path[d$="Z"], path[d$="z"], circle, rect, ellipse) { fill: var(--accent); fill-opacity: .28; }
+.seg.mini { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 6%, transparent); box-shadow: none; }
+.seg.mini button { height: 30px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--ink-3); }
+.seg.mini button.on { background: var(--raised); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.1); }
+
+/* ---------- Progress styles from the toolkit ---------- */
+.pg { margin-top: 12px; --c: color-mix(in srgb, var(--ink) 72%, transparent); }
+.pg.a { --c: var(--amber); } .pg.r { --c: var(--red); }
+.pg .pl { display: flex; justify-content: space-between; margin-top: 6px; font: 600 10.5px/1 var(--sans); color: var(--ink-3); letter-spacing: .01em; }
+.pg.r .pl { color: var(--red); }
+/* On the road */
+.p-road .rd { position: relative; height: 18px; display: flex; align-items: center; }
+.p-road .rd::before { content: ''; position: absolute; left: 0; right: 14px; height: 6px; border-radius: 3px; background: var(--seg-off); }
+.p-road .rd::after { content: ''; position: absolute; left: 3px; right: 17px; height: 1.5px; background: repeating-linear-gradient(90deg, var(--card) 0 6px, transparent 6px 11px); }
+.p-road .done { position: absolute; left: 0; height: 6px; border-radius: 3px; background: var(--c); max-width: calc(100% - 14px); }
+.p-road .bk { position: absolute; top: -9px; transform: translateX(-50%); color: var(--c); width: 22px; height: 22px; background: var(--card); border-radius: 50%; display: grid; place-items: center; z-index: 1; }
+.p-road .bk svg { width: 17px; height: 17px; }
+.p-road .fl { position: absolute; right: -2px; top: -8px; color: var(--ink-2); }
+.p-road .fl svg { width: 16px; height: 16px; }
+.p-road .pl { margin-top: 8px; }
+/* Tyre tread */
+.p-tread .tb { display: flex; gap: 3px; height: 13px; align-items: flex-end; padding: 0 3px; }
+.p-tread .tb i { flex: 1; height: 4px; border-radius: 2px; background: var(--seg-off); transform: skewX(-28deg); transition: height .3s; }
+.p-tread .tb i.on { height: 13px; background: var(--c); }
+.pg.r.p-tread .tb i { background: color-mix(in srgb, var(--red) 28%, transparent); }
+/* Dipstick */
+.p-dip .ds { position: relative; height: 16px; display: flex; align-items: center; }
+.p-dip .ds::before { content: ''; position: absolute; left: 0; right: 16px; height: 5px; border-radius: 3px 1px 1px 3px; background: var(--seg-off); }
+.p-dip .ds::after { content: ''; position: absolute; left: 6%; width: 74%; height: 9px; top: 3.5px; border-radius: 2px; background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 18%, transparent) 0 1.5px, transparent 1.5px 5px); }
+.p-dip .oil { position: absolute; left: 0; height: 5px; border-radius: 3px 1px 1px 3px; background: var(--c); z-index: 1; }
+.p-dip .mk { position: absolute; top: 1px; width: 2px; height: 14px; border-radius: 1px; background: var(--ink-3); }
+.p-dip .mn { left: 6%; } .p-dip .mx { left: 80%; }
+.p-dip .hd { position: absolute; right: 0; width: 15px; height: 15px; border-radius: 50%; box-shadow: inset 0 0 0 3px var(--ink-3); }
+/* Chain */
+.p-chain .ch { display: flex; align-items: center; height: 14px; padding-left: 4px; }
+.p-chain .ch i { flex: 1; height: 11px; margin-left: -4px; border-radius: 6px; box-shadow: inset 0 0 0 2.5px var(--seg-off); }
+.p-chain .ch i.b { height: 8px; }
+.p-chain .ch i.on { box-shadow: inset 0 0 0 2.5px var(--c); }
+.pg.r.p-chain .ch i { box-shadow: inset 0 0 0 2.5px color-mix(in srgb, var(--red) 35%, transparent); }
+.pg.sm .pl { font-size: 9.5px; } .pg.sm.p-road .bk { width: 18px; height: 18px; top: -7px; } .pg.sm.p-road .bk svg { width: 14px; height: 14px; }

@@ -1,7 +1,6 @@
 // Waylink — views. Pure functions: state in, HTML out.
 import { MANEUVERS, maneuverByKey, toHex, UUID } from './protocol.js';
-import { ICONS as LUCIDE_ICONS } from './icons.js';
-import { ICONS as UICONS, SET as UICONS_SET } from './icons-uicons.js';
+import { ICONS as HUGE_ICONS, SET as HUGE_SET } from './icons-huge.js';
 import * as S from './store.js';
 
 // ---------- Format helpers (Indian English by default) ----------
@@ -48,17 +47,15 @@ export function segs(n, filled, cls = 's', extra = '') {
   return h + '</div>';
 }
 
-// ---------- Icons (Lucide) ----------
+// ---------- Icons ----------
 export const selmark = (inline = false) => `<span class="selmark ${inline ? 'inline' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
-// Icon libraries: Lucide is built in; the others load on demand and fall back to Lucide per icon.
 export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400], ['inter', 'Inter', "'Inter'", 450], ['plex', 'IBM Plex Sans', "'IBM Plex Sans'", 450], ['atkinson', 'Atkinson', "'Atkinson Hyperlegible Next'", 450], ['public', 'Public Sans', "'Public Sans'", 450]];
 export const THEMES = [['auto', 'Auto', '#EDEFF2', '#F9FAFB', '#12151A'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Black', '#000000', '#101215', '#EDEFF3']];
 export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
-// Icons: Uicons by Flaticon (regular rounded). Its free licence asks for a visible credit, shown in the footer and About.
-export const ICON_CREDIT = '<a href="https://www.flaticon.com/uicons" target="_blank" rel="noopener">Uicons by Flaticon</a>';
-const LUCIDE = { SET: { vb: '0 0 24 24', attrs: 'fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"' }, ICONS: LUCIDE_ICONS };
-const UI = { SET: UICONS_SET, ICONS: UICONS };
-export const icon = (n, cls = '') => { const g = UI.ICONS[n] ? UI : LUCIDE; return `<svg class="i ${cls}" viewBox="${g.SET.vb}" ${g.SET.attrs} aria-hidden="true">${g.ICONS[n] || ''}</svg>`; };
+// Icons: Hugeicons (MIT), credited in About.
+export const ICON_CREDIT = '<a href="https://hugeicons.com" target="_blank" rel="noopener">Hugeicons</a>';
+// One icon family everywhere: Hugeicons (stroke). Unknown keys draw nothing rather than mixing styles.
+export const icon = (n, cls = '') => `<svg class="i ${cls}" viewBox="${HUGE_SET.vb}" ${HUGE_SET.attrs} aria-hidden="true">${HUGE_ICONS[n] || ''}</svg>`;
 
 // ---------- Vehicle pictures ----------
 const lum = (h) => { const n = [1, 3, 5].map((i) => parseInt(String(h || '#888888').slice(i, i + 2), 16)); return (n[0] * 299 + n[1] * 587 + n[2] * 114) / 255000; };
@@ -170,15 +167,38 @@ function rowValue(st) {
   return { v: num(st.remKm), u: 'km', cls: '' };
 }
 // Progress style for service jobs. Each reads "how much is left" a different way.
-export const PROGRESS_STYLES = [['gauge', 'Fuel gauge', 'Bars from E to F, like the bike'], ['battery', 'Battery', 'Charge left, with a number'], ['line', 'Line', 'One slim bar and a due date'], ['dots', 'Dots', 'Ten dots, filled for what’s left']];
+export const PROGRESS_STYLES = [
+  ['gauge', 'Fuel gauge', 'Bars from E to F, like the bike'],
+  ['road', 'On the road', 'Your bike riding towards the next service'],
+  ['tread', 'Tyre tread', 'Tall blocks are tread left; they wear flat'],
+  ['dipstick', 'Dipstick', 'Oil level between MIN and MAX'],
+  ['chain', 'Chain', 'Dark links are what’s left before it’s due'],
+];
 let PROGRESS = 'gauge';
 export const setProgress = (v) => { PROGRESS = PROGRESS_STYLES.some(([k]) => k === v) ? v : 'gauge'; };
 function progressBar(st, extra = '') {
   const over = st.status === 'overdue', left = over ? 0 : Math.max(0.03, 1 - st.frac), pct = Math.round(left * 100);
   const cls = over ? 'r' : st.status === 'soon' ? 'a' : 'k', label = over ? 'Overdue' : `${pct}% left`;
-  if (PROGRESS === 'battery') return `<div class="pbat ${cls} ${extra}" role="img" aria-label="${label}"><span class="cell"><i style="width:${pct}%"></i></span><span class="cap"></span><span class="pl">${label}</span></div>`;
-  if (PROGRESS === 'line') return `<div class="pline ${cls} ${extra}" role="img" aria-label="${label}"><div class="tr"><i style="width:${Math.max(pct, over ? 100 : 2)}%"></i></div><div class="lb"><span>${over ? 'Overdue' : st.dueDate ? `Due ${dShort(st.dueDate)}` : st.dueKm ? `Due at ${num(st.dueKm)} km` : 'Due'}</span><span>${over ? '' : `${pct}% left`}</span></div></div>`;
-  if (PROGRESS === 'dots') { let d = ''; const n = 10, f = over ? 0 : Math.max(1, Math.round(left * n)); for (let i = 0; i < n; i++) d += `<i class="${i < f ? 'on' : ''}"></i>`; return `<div class="pdots ${cls} ${extra}" role="img" aria-label="${label}">${d}</div>`; }
+  const wrap = (kind, inner) => `<div class="pg ${kind} ${cls} ${extra}" role="img" aria-label="${label}">${inner}</div>`;
+  if (PROGRESS === 'road') {
+    // The bike has covered `frac` of the way since the last service; the flag is the next one.
+    const at = over ? 100 : Math.min(96, Math.max(4, st.frac * 100));
+    return wrap('p-road', `<div class="rd"><i class="done" style="width:${at}%"></i><span class="bk" style="left:${at}%">${icon('bike')}</span><span class="fl">${icon('flag')}</span></div><div class="pl"><span>Last service</span><span>${over ? 'Overdue' : 'Next'}</span></div>`);
+  }
+  if (PROGRESS === 'tread') {
+    const n = 16, f = over ? 0 : Math.max(1, Math.round(left * n)); let t = '';
+    for (let i = 0; i < n; i++) t += `<i class="${i < f ? 'on' : ''}"></i>`;
+    return wrap('p-tread', `<div class="tb">${t}</div><div class="pl"><span>${over ? 'Worn out. Time to service' : `${pct}% tread left`}</span><span></span></div>`);
+  }
+  if (PROGRESS === 'dipstick') {
+    const lvl = over ? 4 : 8 + left * 78;
+    return wrap('p-dip', `<div class="ds"><i class="oil" style="width:${lvl}%"></i><span class="mk mn"></span><span class="mk mx"></span><span class="hd"></span></div><div class="pl"><span style="margin-left:6%">MIN</span><span style="margin-right:12%">MAX</span></div>`);
+  }
+  if (PROGRESS === 'chain') {
+    const n = 12, f = over ? 0 : Math.max(1, Math.round(left * n)); let t = '';
+    for (let i = 0; i < n; i++) t += `<i class="${i < f ? 'on' : ''} ${i % 2 ? 'b' : ''}"></i>`;
+    return wrap('p-chain', `<div class="ch">${t}</div>`);
+  }
   return null;
 }
 function serviceSegs(st, n = 10, extra = '') {
@@ -267,7 +287,7 @@ export function today(c) {
     <div class="head-actions"><button class="circle" data-act="sheet" data-arg="sos" aria-label="Emergency SOS" style="color:var(--red)">${icon('sos')}</button></div></div></div>
   ${live.scenario ? previewBar(live) : ''}
   <div class="bikecard">
-    <button class="bc-main" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">${vehicleArt(s, v0, 'lg')}<div class="grow"><div class="t">${esc(S.vehicleTitle(s))}</div><div class="m">${esc(v0.nickname ? S.bikeName(s) : S.model(s).series)} · ${short(s.odo)} km</div><div class="d">${esc(v0.plate || 'No number plate')}</div></div><span class="bc-swap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9.5l4-4 4 4M8 14.5l4 4 4-4"/></svg></span></button>
+    <button class="bc-main" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">${vehicleArt(s, v0, 'lg')}<div class="grow"><div class="t">${esc(S.vehicleTitle(s))}</div><div class="m">${esc(v0.nickname ? S.bikeName(s) : S.model(s).series)} · ${short(s.odo)} km</div><div class="d">${esc(v0.plate || 'No number plate')}</div></div><span class="bc-swap">${icon('updown')}</span></button>
     <button class="bc-wx" data-act="sheet" data-arg="weather" aria-label="Weather details">${weatherHead(c)}</button>
   </div>
   ${live.rec ? recCard(live) : ''}
@@ -711,6 +731,7 @@ export function settings(c) {
   <div class="vc-rows">
     ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
     ${li({ ic: 'sparkles', t: 'Logo', end: `<img class="pick-logo" src="${appIcon(s)}" alt=""><span class="pick-val">${BRANDS.find(([k]) => k === brandOf(s))[1]}</span>`, act: 'sheet', arg: 'pick-brand' })}
+    ${li({ ic: 'grid', t: 'Icon style', end: `<div class="seg mini">${[['line', 'Line'], ['duo', 'Duotone']].map(([k, l]) => `<button class="${(st.icons || 'line') === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}">${l}</button>`).join('')}</div>`, chev: false, tag: 'div' })}
     ${li({ ic: 'palette', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
     ${li({ ic: 'gauge', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
   </div></div></div>
@@ -774,8 +795,7 @@ export const REPO_URL = 'https://github.com/krishnaar21/Waylink';
 export const SUPPORT = { upi: '', payee: 'Waylink', links: [/* ['Buy Me a Coffee', 'https://buymeacoffee.com/…'], ['Ko-fi', 'https://ko-fi.com/…'], ['GitHub Sponsors', 'https://github.com/sponsors/…'] */] };
 const UPI_AMOUNTS = [49, 99, 199, 499];
 // What each amount buys, shown as a small picture on its button.
-const CUP = '<svg class="i" viewBox="3.5 2.5 17 17.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M9 3.5c-.6.8-.6 1.7 0 2.5M12.5 3.5c-.6.8-.6 1.7 0 2.5"/></svg>';
-const AMT_ICON = { 49: ['Chai', CUP, 'A cutting chai for the developer'], 99: ['Coffee', CUP, 'A coffee for a late-night fix'], 199: ['Fuel', 'fuel', 'Two litres of petrol for test rides'], 499: ['Service', 'wrench', 'Towards a month of upkeep'], 0: ['Any', 'love', 'You choose the amount in your UPI app'] };
+const AMT_ICON = { 49: ['Chai', 'tea', 'A cutting chai for the developer'], 99: ['Coffee', 'coffee', 'A coffee for a late-night fix'], 199: ['Fuel', 'fuel', 'Two litres of petrol for test rides'], 499: ['Service', 'wrench', 'Towards a month of upkeep'], 0: ['Any', 'love', 'You choose the amount in your UPI app'] };
 const amtIcon = (a) => { const g = AMT_ICON[a][1]; return g.startsWith('<svg') ? g : icon(g); };
 // The app icon: one route mark, tinted to match the accent colour.
 export const appIcon = (s, png = false) => { const b = brandOf(s), a = s.settings.accent || 'rust'; return png ? `img/logos/png/wl-${b}-${a}-180.png` : `img/logos/wl-${b}-${a}.svg`; };
@@ -906,7 +926,7 @@ export function helpSheet(c, k) {
       ${li({ ic: 'love', t: 'Support Waylink', d: 'Chip in towards development', act: 'sheet', arg: 'support' })}
       ${li({ ic: 'code', t: 'Source code', d: 'MIT licence', end: '', tag: 'a', href: REPO_URL })}
       ${li({ ic: 'bt', t: 'Bike protocol', d: 'PulsarNav on GitHub', tag: 'a', href: 'https://github.com/nikhilmaity00/pulsarnav' })}
-      ${li({ ic: 'grid', t: 'Icons', d: 'Uicons by Flaticon', tag: 'a', href: 'https://www.flaticon.com/uicons' })}
+      ${li({ ic: 'grid', t: 'Icons', d: 'Hugeicons', tag: 'a', href: 'https://hugeicons.com' })}
       ${li({ ic: 'image', t: 'Photo credits', d: 'Authors and licences of bike photos', act: 'sheet', arg: 'credits' })}
       ${li({ ic: 'wxPart', t: 'Weather', d: 'Open-Meteo, free and open data', chev: false, tag: 'div' })}
       ${li({ ic: 'pin', t: 'Places', d: 'OpenStreetMap Nominatim', chev: false, tag: 'div' })}
@@ -1022,7 +1042,7 @@ function sheetInner(c, key) {
       return `<div class="eyebrow">Appearance</div><h2>Logo</h2><p class="lead">Shown on the loading screen and as the app icon. Re-add Waylink to your Home Screen to change an installed icon.</p>
         <div class="brands mt16">${BRANDS.map(([k, nm]) => `<button class="brandopt anim b-${k} ${brandOf(s) === k ? 'on' : ''}" data-act="brand" data-arg="${k}"><span class="bo-art">${{ route: MARK, bird: BIRD, turns: TURNS, loop: LOOP }[k]}</span><span class="nm">${nm}</span></button>`).join('')}</div>`;
     case 'pick-progress': {
-      const cur = s.settings.progress || 'gauge', was = PROGRESS, demo = { status: 'ok', frac: 0.35, dueDate: Date.now() + 40 * 86400000 };
+      const cur = s.settings.progress || 'gauge', was = PROGRESS, demo = { status: 'ok', frac: 0.4, dueDate: Date.now() + 40 * 86400000 };
       const card = ([k, nm, d]) => { PROGRESS = k; const h = serviceSegs(demo); return `<button class="progopt ${cur === k ? 'on' : ''}" data-act="progress-style" data-arg="${k}"><div class="nm">${nm}</div><div class="d">${d}</div>${h}</button>`; };
       const out = `<div class="eyebrow">Appearance</div><h2>Progress style</h2><p class="lead">How service jobs show what’s left before they’re due.</p>
         <div class="progs mt16">${PROGRESS_STYLES.map(card).join('')}</div>`;

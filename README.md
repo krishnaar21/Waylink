@@ -21,5 +21,5 @@ Pushing to `main` deploys to GitHub Pages through `.github/workflows/pages.yml`
 (repo Settings → Pages → Source: **GitHub Actions**).
 
 ## Credits
-Bluetooth protocol from PulsarNav · icons: Uicons by Flaticon (https://www.flaticon.com/uicons), with Bluetooth glyphs from Lucide (ISC) · weather by Open-Meteo · places by OpenStreetMap Nominatim.
+Bluetooth protocol from PulsarNav · icons: Hugeicons (https://hugeicons.com, MIT) · weather by Open-Meteo · places by OpenStreetMap Nominatim.
 Not affiliated with Bajaj Auto, OTC, Google or WhatsApp. MIT licence.
