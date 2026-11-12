@@ -111,7 +111,8 @@ export function migrate(raw) {
     vehicles, active: vehicles.some((v) => v.id === active) ? active : vehicles[0].id,
   };
   for (const k of VKEYS) delete s[k];
-  s.settings.art = s.settings.art === 'icon' ? 'icon' : 'photo';
+  // Pictures are always shown when a bike has one; the old 'icons only' choice is gone.
+  s.settings.art = 'photo';
   if (s.settings.theme === 'carbon') s.settings.theme = 'obsidian';
   if (typeof s.settings.sounds !== 'boolean') s.settings.sounds = true;
   // New type defaults (Crimson titles, Atkinson body), applied once to existing installs too.

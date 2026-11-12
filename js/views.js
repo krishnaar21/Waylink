@@ -65,12 +65,11 @@ export const icon = (n, cls = '') => { const b = HUGE_ICONS[n] || ''; return `<s
 // ---------- Vehicle pictures ----------
 const lum = (h) => { const n = [1, 3, 5].map((i) => parseInt(String(h || '#888888').slice(i, i + 2), 16)); return (n[0] * 299 + n[1] * 587 + n[2] * 114) / 255000; };
 // Bump when bike pictures change, so phones fetch the new ones instead of a saved copy.
-export const ART_V = '74';
+export const ART_V = '75';
 export function vehicleArt(s, v, size = 'thumb') {
   const cls = size === 'hero' ? 'art hero-art' : size === 'model' ? 'art model-art' : size === 'card' ? 'art card-art' : size === 'lg' ? 'art thumb lg' : 'art thumb';
   // Bikes without a photo: a soft tile tinted with the bike's colour, so it sits with the theme instead of shouting.
   const tile = () => `<div class="${cls} icon-mode" style="--bc:${v.colour}">${icon('bike')}</div>`;
-  if (s.settings.art === 'icon') return tile();
   if (v.photo) return `<div class="${cls}"><img class="photo" src="${v.photo}" alt=""></div>`;
   const img = S.MODEL_IMAGES[v.model];
   if (img) return `<div class="${cls}"><img class="${img.fit === 'cover' ? 'photo' : 'model'}" src="${img.src}${img.src.includes('?') ? '&' : '?'}v=${ART_V}" alt="${esc(S.MODELS.find((m) => m.id === v.model)?.name || '')}" decoding="async"></div>`;
@@ -292,10 +291,9 @@ export function today(c) {
   ${live.scenario ? previewBar(live) : ''}
   <div class="bikecard">
     <button class="bc-main" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">${vehicleArt(s, v0, 'lg')}<div class="grow"><div class="t">${esc(S.vehicleTitle(s))}</div><div class="m">${esc(v0.nickname ? S.bikeName(s) : S.model(s).series)} · ${short(s.odo)} km</div><div class="d">${esc(v0.plate || 'No number plate')}</div></div><span class="bc-swap">${icon('updown')}</span></button>
-    ${ccIn ? cc : good ? `<div class="bc-conn conn-compact"><button class="cc-main" data-act="go" data-arg="logbook"><span class="cc-ic good">${icon('ok')}</span><span class="cc-tx"><span class="cc-t">Road ready</span><span class="cc-s">All ${v.ok} jobs on track</span></span></button></div>` : ''}
+    ${live.rec ? recRow(live, ccIn ? 'link ok' : '') : ccIn ? cc : good ? `<div class="bc-conn conn-compact"><button class="cc-main" data-act="go" data-arg="logbook"><span class="cc-ic good">${icon('ok')}</span><span class="cc-tx"><span class="cc-t">Road ready</span><span class="cc-s">All ${v.ok} jobs on track</span></span></button></div>` : ''}
     <button class="bc-wx" data-act="sheet" data-arg="weather" aria-label="Weather details">${weatherHead(c)}</button>
   </div>
-  ${live.rec ? recCard(live) : ''}
   ${good ? '' : `<button class="hero ${fs.onReserve && !v.over ? 'soon' : v.cls}" data-act="go" data-arg="logbook">
     <div class="eyebrow">Verdict</div>
     <div class="verdict">${v.word}</div>
@@ -343,6 +341,11 @@ export function inbox(c) {
   return out;
 }
 export const previewBar = (live) => `<div class="preview-bar">${icon('flask')}<span>Previewing ${live.scenario === 'empty' ? 'the empty state' : 'edge cases'}. Nothing is saved.</span><button class="chip" data-act="scenario" data-arg="real">Exit</button></div>`;
+// Ride in progress, as the row inside the Today bike card.
+function recRow(live) {
+  const r = live.rec;
+  return `<div class="bc-conn conn-compact rec-row"><button class="cc-main" data-act="go" data-arg="trips"><span class="cc-ic rec"><span class="dot x pulse"></span>${icon('trips')}</span><span class="cc-tx"><span class="cc-t">Ride in progress</span><span class="cc-s"><span data-live="rec-km">${num(r.km, 2)}</span> km · <span data-live="rec-time">${clock((Date.now() - r.start) / 1000)}</span> · <span data-live="speed">${num(live.speed)}</span> km/h</span></span></button><button class="btn sm cc-act" data-act="sheet" data-arg="rec-end" style="background:var(--accent);color:var(--on-accent)">${icon('stop')}End</button></div>`;
+}
 function recCard(live) {
   const r = live.rec;
   return `<div class="card pad mt12 flex gap12" style="align-items:center"><div class="grow"><span class="tag x"><span class="dot x pulse"></span>Ride in progress</span><div class="flex gap12 mt12" style="align-items:baseline"><span class="big" style="font-size:34px"><span data-live="rec-km">${num(r.km, 2)}</span><span class="unit">km</span></span><span class="small muted"><span data-live="rec-time">${clock((Date.now() - r.start) / 1000)}</span> · <span data-live="speed">${num(live.speed)}</span> km/h</span></div></div><button class="circle" data-act="sheet" data-arg="rec-end" aria-label="End ride" style="background:var(--accent);color:var(--on-accent)">${icon('stop')}</button></div>`;
@@ -624,11 +627,11 @@ export function route(c) {
   const isRb = sel.glyph.startsWith('roundabout');
   const totalKm = REHEARSAL.steps.reduce((a, x) => a + x.m, 0) / 1000;
   return `<div class="stagger">
-  <div class="head pagehead"><div><h1 class="title">Where to?</h1><div class="subtitle">Plan in Google Maps, see turns on your bike</div></div></div>
-  <form class="card pad mt20" data-form="maps">
+  <div class="head pagehead"><div><h1 class="title">Route</h1><div class="subtitle">Plan in Google Maps, see turns on your bike</div></div></div>
+  <div class="section">${sh('Where to?')}<form class="card pad" data-form="maps">
     <label class="field" style="margin-top:0"><span class="eyebrow">Destination</span><input class="input" name="dest" placeholder="Nandi Hills" value="${esc(live.dest || '')}" autocomplete="off"></label>
     <button class="btn ink block mt12" type="submit">${icon('map')} Open in Google Maps</button>
-  </form>
+  </form></div>
   <div class="section">${sh('How this works')}<div class="card pad howto">
     <div><span><b>Plan the ride in Google Maps.</b> It draws the map and gives voice directions on your phone.</span></div>
     <div><span><b>Rehearse a route</b> to see how turns look on your bike’s display before you ride.</span></div>
@@ -718,7 +721,7 @@ export function settings(c) {
   const co = S.country(s), md = S.model(s), v = S.veh(s);
   const connText = { connected: 'Connected', connecting: 'Connecting', reconnecting: 'Searching', picking: 'Choosing', idle: link.device || v.bike?.id ? 'Paired' : 'Not paired', error: 'Error' }[link.state];
   return `<div class="stagger">
-  <div class="head pagehead"><div><h1 class="title">You & your bikes</h1><div class="subtitle">Profile, garage and how the app looks</div></div></div>
+  <div class="head pagehead"><div><h1 class="title">Settings</h1><div class="subtitle">You, your bikes and how the app looks</div></div></div>
   ${live.scenario ? previewBar(live) : ''}
   ${(() => { const P = s.profile, rows = [P.blood ? ['drop', 'Blood', esc(P.blood)] : null, P.iceName ? ['phone', 'Emergency contact', esc(P.iceName)] : null, P.medical ? ['hospital', 'Medical notes', esc(P.medical)] : null].filter(Boolean);
     const sum = [P.blood ? `Blood ${esc(P.blood)}` : '', P.iceName ? 'ICE' : '', P.medical ? 'Medical' : ''].filter(Boolean).join(' · ');
@@ -764,6 +767,7 @@ export function settings(c) {
     ${li({ ic: 'globe', t: 'Country', d: 'Currency, fuel and SOS numbers', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
     ${li({ ic: 'down', t: 'Backup & restore', d: 'Save, move or bring back your data', act: 'sheet', arg: 'backup' })}
     ${li({ ic: 'trash', t: s.sample ? 'Erase sample data' : 'Erase everything', cls: 'danger', act: 'sheet', arg: 'erase' })}
+    ${li({ ic: 'refresh', t: 'Reset the app', d: 'Data, settings and saved files. Like a fresh install', cls: 'danger', act: 'sheet', arg: 'reset' })}
   </div><input type="file" id="import-file" accept=".json,.pnav,application/json" hidden></div>
   <div class="section">${sh('Help & about')}<div class="list">
     ${li({ ic: 'info', t: 'Questions and answers', d: 'Pairing, fuel, weather, privacy', act: 'sheet', arg: 'faq' })}
@@ -805,7 +809,7 @@ const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnLeft', '#3E8EF7'], ['straigh
 export const TURNS = `<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true">${TURN_SIGNS.map(([k, col, f], i) => `<svg class="tg tg${i} ${f || ''}" viewBox="0 0 24 24" fill="none" style="color:${col}">${HUGE_ICONS[k]}</svg>`).join('')}</span><span aria-hidden="true">link</span></span>`;
 // In-app loading screen: the turn signs take turns in a circle, with a line of text below.
 export const loader = (text = 'Loading') => `<div class="wl-loader" role="status" aria-live="polite"><span class="ld-ring">${TURN_SIGNS.map(([k], i) => `<svg class="ld-i ld${i}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${HUGE_ICONS[k]}</svg>`).join('')}</span><div class="ld-t">${esc(text)}<span class="ld-dots"><i>.</i><i>.</i><i>.</i></span></div></div>`;
-export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8.5 26L8.5 30C10 56 16 80 28 80C40 80 44.5 62 46.6 49C47.6 43 52.4 43 53.4 49C55.5 62 60 80 72 80C84 80 90 56 91.5 30L91.5 26"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
+export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M9 34C10 58 16 80 28 80C40 80 45 62 48 46C50 35 60.5 26 60 15C59.6 6 44.6 5.4 44.2 15C43.8 25 49.6 35 52 46C55 62 60 80 72 80C84 80 90 56 91.5 26L91.5 14"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
 export const BRANDS = [['loop', 'Loop']];
 export const brandOf = () => 'loop';
 export const APP_VERSION = '1.0';
@@ -868,7 +872,7 @@ export function tabbar(c, current) {
   const tabs = [
     ['today', 'Today', 'today', needs ? '<span class="pip"></span>' : ''],
     ['route', 'Route', 'route', live.nav ? '<span class="pip g"></span>' : ''],
-    ['trips', 'Trips', 'trips', live.rec ? '<span class="pip x"></span>' : ''],
+    ['trips', 'Rides', 'trips', live.rec ? '<span class="pip x"></span>' : ''],
     ['alerts', 'Alerts', 'alerts', badge ? '<span class="pip"></span>' : ''],
     ['settings', 'Settings', 'settings', ''],
   ];
@@ -1090,10 +1094,6 @@ function sheetInner(c, key) {
         <div class="progs mt16">${PROGRESS_STYLES.map(card).join('')}</div>`;
       PROGRESS = was; return out;
     }
-    case 'pick-art':
-      return `<div class="eyebrow">Appearance</div><h2>Vehicle pictures</h2><p class="lead">How bikes look in the garage and on Today.</p>
-        <div class="seg mt16">${[['photo', 'Photos', 'camera'], ['icon', 'Icons', 'bike']].map(([k, l, ic]) => `<button class="${s.settings.art === k ? 'on' : ''}" data-act="art-mode" data-arg="${k}">${icon(ic)}${l}</button>`).join('')}</div>
-        <p class="hint">Bikes without a photo show their colour tile. Add one in Edit vehicle.</p>`;
     case 'support': {
       const amt = live.supportAmt ?? 99, has = SUPPORT.upi || SUPPORT.links.length;
       const upi = SUPPORT.upi ? `upi://pay?pa=${encodeURIComponent(SUPPORT.upi)}&pn=${encodeURIComponent(SUPPORT.payee)}&cu=INR&tn=${encodeURIComponent('Support Waylink')}${amt ? `&am=${amt}` : ''}` : '';
@@ -1276,6 +1276,8 @@ function sheetInner(c, key) {
       const wa = arg === 'clear-wa', n = wa ? s.alerts.wa.length : s.alerts.missed.length;
       return `<div class="eyebrow">Alerts</div><h2>${wa ? 'Clear WhatsApp alerts?' : 'Clear missed calls?'}</h2><p class="lead">${plural(n, wa ? 'chat' : 'call', wa ? 'chats' : 'calls')} will be removed here and the count on your bike goes to zero. Your phone keeps its own history.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="${arg}">Clear</button><button class="btn line block mt8" data-act="close">Keep them</button>`;
     }
+    case 'reset':
+      return `<div class="eyebrow">Backup</div><h2>Reset Waylink?</h2><p class="lead">Everything on this phone goes: bikes, rides, fuel, service, papers, your profile, theme and every setting. The app starts again like a fresh install. Export a backup first if you might want any of it.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="reset-all">Reset everything</button><button class="btn line block mt8" data-act="close">Cancel</button>`;
     case 'erase':
       return `<div class="eyebrow">Backup</div><h2>${s.sample ? 'Erase sample data?' : 'Erase everything?'}</h2><p class="lead">Bikes, rides, fuel, service, alerts and papers on this phone will go. Export a backup first if you want to keep them.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="erase">Erase</button><button class="btn line block mt8" data-act="close">Keep my data</button>`;
     case 'paste':

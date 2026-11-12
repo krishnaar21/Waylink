@@ -357,7 +357,7 @@ function fitArch(root = document) {
 function showLoader() {
   if (!splashTpl) return;
   SND.engineStart();
-  $('#splash')?.remove();
+  $('#splash')?.remove(); document.documentElement.classList.remove('no-splash');
   $('#app').insertAdjacentHTML('beforeend', splashTpl);
   const sp = $('#splash'); fitArch(sp);
   const hide = () => { if (!sp.isConnected) return; sp.classList.add('out'); setTimeout(() => sp.remove(), 600); };
@@ -764,6 +764,7 @@ const A = {
   'copy-upi': async () => { try { await navigator.clipboard.writeText(V.SUPPORT.upi); toast('UPI ID copied.'); } catch { toast(`UPI ID: ${V.SUPPORT.upi}`); } },
   'hard-refresh': async () => {
     // Fresh copy of the app's own files; saved rides, fuel and settings are untouched.
+    try { sessionStorage.setItem('wl-splashed', '1'); } catch {}
     showLoading('Getting the latest version');
     try { const ks = await caches.keys(); await Promise.all(ks.map((k) => caches.delete(k))); } catch {}
     try { const rs = await navigator.serviceWorker?.getRegistrations?.(); await Promise.all((rs || []).map((r) => r.unregister())); } catch {}
@@ -828,7 +829,6 @@ const A = {
     if (s.active === id) s.active = s.vehicles[0].id;
     closeSheet(); commit(); toast(`${S.vehicleTitle(s, gone)} removed.`);
   },
-  'art-mode': (k) => { s.settings.art = k; commit(); refreshSheet(); },
   'set-country': (c) => { s.profile.country = c; s.fuelPrice = null; closeSheet(); commit(); },
   'svc-done': (id) => {
     const it = s.service.find((x) => x.id === id); if (!it) return;
@@ -909,6 +909,18 @@ const A = {
   import: () => { if (inFrame) openSheet('paste'); else $('#import-file')?.click(); },
   'copy-backup': () => openSheet('copy'),
   'copy-text': async () => { const t = $('#backup-text'); try { await navigator.clipboard.writeText(t.value); toast('Copied.'); } catch { t.select(); toast('Selected — copy it from the menu.'); } },
+  // Start over: every setting, ride, paper and saved app file goes, as if freshly installed.
+  'reset-all': async () => {
+    closeSheet(); link.disconnect(); stopRecording(false);
+    showLoading('Resetting Waylink');
+    try { for (const d of live.glove) await S.gloveDelete(d.slot); } catch {}
+    try { S.wipe(); } catch {}
+    try { localStorage.clear(); sessionStorage.clear(); } catch {}
+    try { const dbs = await indexedDB.databases?.(); await Promise.all((dbs || []).map((d) => new Promise((r) => { const q = indexedDB.deleteDatabase(d.name); q.onsuccess = q.onerror = q.onblocked = r; }))); } catch {}
+    try { const ks = await caches.keys(); await Promise.all(ks.map((k) => caches.delete(k))); } catch {}
+    try { const rs = await navigator.serviceWorker?.getRegistrations?.(); await Promise.all((rs || []).map((r) => r.unregister())); } catch {}
+    location.replace(location.pathname);
+  },
   erase: async () => {
     closeSheet(); link.disconnect(); stopRecording(false);
     for (const d of live.glove) await S.gloveDelete(d.slot);
@@ -1127,7 +1139,7 @@ setInterval(() => {
 // clock as running but hold the sound back until the first tap, which would make it play later, so check the clock moves.
 let launched = false;
 function launchSound() {
-  if (launched || s.settings.sounds === false) return; launched = true;
+  if (launched || s.settings.sounds === false || document.documentElement.classList.contains('no-splash')) return; launched = true;
   // iPhone holds back sound until a tap, then plays what was queued, so the engine would start late. Only play
   // when sound is genuinely allowed now: never on iPhone before a tap.
   if (V.isIOS() && !navigator.userActivation?.hasBeenActive) return;
@@ -1140,6 +1152,7 @@ const firstTap = () => { SND.unlock(); };
 const within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
 function hideSplash() {
   const sp = $('#splash'); if (!sp || location.hash === '#loading') return;
+  if (document.documentElement.classList.contains('no-splash')) { sp.remove(); return; }
   setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 380); }, Math.max(300, (document.documentElement.dataset.brand === 'turns' ? 2250 : 2050) - performance.now()));
 }
 (async function boot() {

@@ -170,7 +170,7 @@ async def main():
         await pg.click('.conn [data-act="sim-on"]'); await pg.wait_for_timeout(150)
         check('connecting state shows first', await pg.query_selector('.conn-compact .cc-ic.connecting'))
         await pg.wait_for_timeout(1000)
-        check('connected state follows', await pg.query_selector('.conn-compact .cc-ic.on'))
+        check('connected state follows (or a ride row once riding)', await pg.query_selector('.conn-compact .cc-ic.on, .rec-row'))
         await shot(pg, '07-connected')
         await pg.wait_for_timeout(8000)
         check('ride mode opens by itself at speed', await pg.query_selector('#ride-mode'))
