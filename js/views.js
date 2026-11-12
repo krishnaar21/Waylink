@@ -1042,9 +1042,10 @@ function sheetInner(c, key) {
       return `<div class="eyebrow">Appearance</div><h2>Logo</h2><p class="lead">Shown on the loading screen and as the app icon. Re-add Waylink to your Home Screen to change an installed icon.</p>
         <div class="brands mt16">${BRANDS.map(([k, nm]) => `<button class="brandopt anim b-${k} ${brandOf(s) === k ? 'on' : ''}" data-act="brand" data-arg="${k}"><span class="bo-art">${{ turns: TURNS, loop: LOOP }[k]}</span><span class="nm">${nm}</span></button>`).join('')}</div>`;
     case 'pick-progress': {
-      const cur = s.settings.progress || 'gauge', was = PROGRESS, demo = { status: 'ok', frac: 0.4, dueDate: Date.now() + 40 * 86400000 };
-      const card = ([k, nm, d]) => { PROGRESS = k; const h = serviceSegs(demo); return `<button class="progopt ${cur === k ? 'on' : ''}" data-act="progress-style" data-arg="${k}"><div class="nm">${nm}</div><div class="d">${d}</div>${h}</button>`; };
-      const out = `<div class="eyebrow">Appearance</div><h2>Progress style</h2><p class="lead">How service jobs show what’s left before they’re due.</p>
+      const cur = s.settings.progress || 'gauge', was = PROGRESS;
+      const ok = { status: 'ok', frac: 0.35, dueDate: Date.now() + 40 * 86400000 }, soon = { status: 'soon', frac: 0.86, dueDate: Date.now() + 6 * 86400000 };
+      const card = ([k, nm, d]) => { PROGRESS = k; const h = serviceSegs(ok, 10, 'prev') + serviceSegs(soon, 10, 'prev'); return `<button class="progopt ${cur === k ? 'on' : ''}" data-act="progress-style" data-arg="${k}"><div class="pv">${h}</div><div class="nm">${nm}</div><div class="d">${d}</div></button>`; };
+      const out = `<div class="eyebrow">Appearance</div><h2>Progress style</h2><p class="lead">How service jobs show what’s left. Each preview shows a job on track and one due soon.</p>
         <div class="progs mt16">${PROGRESS_STYLES.map(card).join('')}</div>`;
       PROGRESS = was; return out;
     }

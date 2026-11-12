@@ -1063,7 +1063,7 @@ const firstTap = () => {
 const within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
 function hideSplash() {
   const sp = $('#splash'); if (!sp || location.hash === '#loading') return;
-  setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 600); }, Math.max(300, 2200 - performance.now()));
+  setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 380); }, Math.max(300, 2250 - performance.now()));
 }
 (async function boot() {
   splashTpl = $('#splash')?.outerHTML || '';

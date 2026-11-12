@@ -53,6 +53,36 @@ function pulseWave(c) {
   for (let k = 1; k < n; k++) { im[k] = (2 / (k * Math.PI)) * Math.sin(k * Math.PI * duty) * Math.exp(-k / 26); }
   return (PULSE = c.createPeriodicWave(re, im, { disableNormalization: false }));
 }
+// A cleaner, sportier rev: a stack of detuned saws at the firing rate of a twin (rpm / 60) with its octave,
+// a filter that opens with the revs, low end trimmed so it never "putts", and a breath of intake noise.
+function revRise(c, t0, curve, dur, vol = 0.5) {
+  const f = (rpm) => rpm / 60;
+  const out = c.createGain(); out.gain.setValueAtTime(0, t0); out.gain.linearRampToValueAtTime(vol, t0 + 0.04);
+  out.gain.setValueAtTime(vol, t0 + Math.max(0.05, dur - 0.3)); out.gain.linearRampToValueAtTime(0, t0 + dur);
+  const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 70; hp.Q.value = 0.7;
+  const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 3.2;
+  const body = c.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 420; body.Q.value = 1; body.gain.value = 5;
+  const sh = c.createWaveShaper(); const k = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; k[i] = Math.tanh(2.2 * x); } sh.curve = k; sh.oversample = '4x';
+  const mix = c.createGain(); mix.gain.value = 0.32;
+  const oscs = [];
+  for (const [type, mult, det, g] of [['sawtooth', 1, -7, 0.5], ['sawtooth', 1, 6, 0.5], ['square', 2, 0, 0.22], ['sawtooth', 0.5, 0, 0.18]]) {
+    const o = c.createOscillator(); o.type = type; o.detune.value = det; const og = c.createGain(); og.gain.value = g;
+    o.connect(og); og.connect(mix); oscs.push([o, mult]);
+  }
+  const nz = c.createBufferSource(); nz.buffer = noise(c); nz.loop = true;
+  const nb = c.createBiquadFilter(); nb.type = 'bandpass'; nb.Q.value = 1.1; const ng = c.createGain(); ng.gain.value = 0.05;
+  for (const [o, m] of oscs) o.frequency.setValueAtTime(f(curve[0][1]) * m, t0);
+  lp.frequency.setValueAtTime(500 + curve[0][1] * 0.45, t0); nb.frequency.setValueAtTime(1200 + curve[0][1] * 0.2, t0);
+  for (const [t, rpm] of curve) {
+    const at = t0 + t;
+    for (const [o, m] of oscs) o.frequency.exponentialRampToValueAtTime(f(rpm) * m, at);
+    lp.frequency.exponentialRampToValueAtTime(Math.min(6000, 500 + rpm * 0.45), at);
+    nb.frequency.exponentialRampToValueAtTime(Math.min(5000, 1200 + rpm * 0.2), at);
+  }
+  mix.connect(sh); sh.connect(hp); hp.connect(body); body.connect(lp); lp.connect(out);
+  nz.connect(nb); nb.connect(ng); ng.connect(out); out.connect(master);
+  for (const [o] of oscs) { o.start(t0); o.stop(t0 + dur + 0.05); } nz.start(t0); nz.stop(t0 + dur + 0.05);
+}
 // rpm curve: [[seconds, rpm], ...]. Firing rate = rpm / 120 for a four-stroke single.
 function engine(c, t0, curve, dur, vol = 0.7) {
   const f = (rpm) => Math.max(6, rpm / 120);
@@ -115,21 +145,21 @@ function starter(c, t0, dur) {
 // App launch: starter, catch, one blip, settle to idle (about 1.9 s).
 export function engineStart() {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.03;
-  burst(c, t, 0.02, 2400, 0.08); // the button
-  starter(c, t + 0.05, 0.32);
-  engine(c, t + 0.34, [[0, 900], [0.12, 3000], [0.3, 3600], [0.6, 1500], [0.9, 1300]], 1.0, 0.45);
+  burst(c, t, 0.02, 2400, 0.06); // the starter button
+  // Catch, a quick blip, then one clean rising pull before it settles.
+  revRise(c, t + 0.06, [[0, 1600], [0.12, 3400], [0.28, 2200], [0.95, 9800], [1.08, 9400], [1.5, 2600], [1.8, 1700]], 1.85, 0.42);
 }
 // Ride starts: clutch in, into first, a clean pull away.
 export function revUp() {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.02;
   thud(c, t, 120, 55, 0.1, 0.28); burst(c, t, 0.04, 900, 0.08, 'lowpass', 0.8); // gear goes in
-  engine(c, t + 0.08, [[0, 1300], [0.18, 3400], [0.42, 2300], [0.8, 4600], [1.15, 5600], [1.25, 3800], [1.5, 4600]], 1.6, 0.42);
+  revRise(c, t + 0.08, [[0, 1700], [0.5, 7800], [0.62, 4300], [1.2, 8200], [1.6, 5200]], 1.6, 0.38);
   thud(c, t + 1.3, 110, 50, 0.08, 0.2); // up into second
 }
 // Ride ends: off the throttle, down to idle, key off, the exhaust ticking as it cools.
 export function engineOff() {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.02;
-  engine(c, t, [[0, 3200], [0.35, 1500], [0.75, 1300], [1.0, 600], [1.1, 300]], 1.12, 0.42);
+  revRise(c, t, [[0, 3600], [0.4, 1800], [0.8, 1500], [1.05, 700], [1.15, 400]], 1.15, 0.36);
   crackles(c, t + 0.12, 3);
   burst(c, t + 1.12, 0.02, 2600, 0.07); // key turns
   [1.5, 1.95, 2.55].forEach((d, i) => burst(c, t + d, 0.02, 4200 - i * 300, 0.07, 'bandpass', 6));
