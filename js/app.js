@@ -1155,19 +1155,18 @@ function registerUpdates() {
     if (n) { A[box.dataset.swipeTabs](n); requestAnimationFrame(() => $('[data-swipe-tabs]')?.classList.add(dx < 0 ? 'in-l' : 'in-r')); }
   }, { passive: true });
 }
-// Slide a finger along the tab bar to jump to the tab under it.
+// Swipe on the tab bar to page between tabs, like swiping between pages:
+// swipe left for the next tab, right for the previous one. One step per swipe.
 {
-  let on = false, sx = 0, moved = false, hit = null;
-  const tabAt = (x, y) => document.elementFromPoint(x, y)?.closest?.('.tab');
-  document.addEventListener('touchstart', (e) => { on = !!e.target.closest('#tabbar'); sx = e.touches[0].clientX; moved = false; hit = null; }, { passive: true });
-  document.addEventListener('touchmove', (e) => {
-    if (!on) return; const t = e.touches[0]; if (Math.abs(t.clientX - sx) > 14) moved = true; if (!moved) return;
-    const tab = tabAt(t.clientX, Math.min(t.clientY, window.innerHeight - 30));
-    if (tab && tab !== hit) { hit = tab; $$('#tabbar .tab').forEach((b) => b.classList.toggle('scrub', b === tab)); buzz(4); }
-  }, { passive: true });
-  document.addEventListener('touchend', () => {
-    if (!on) return; on = false; $$('#tabbar .tab.scrub').forEach((b) => b.classList.remove('scrub'));
-    if (moved && hit && hit.dataset.arg !== screen) { A._lastToday = 0; go(hit.dataset.arg); }
-    if (moved) { A._skipTap = Date.now(); }
+  let on = false, sx = 0, sy = 0, t0 = 0;
+  document.addEventListener('touchstart', (e) => { on = !!e.target.closest('#tabbar'); if (!on) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; t0 = Date.now(); }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (!on) return; on = false;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) < 36 || Math.abs(dx) < Math.abs(dy) * 1.4 || Date.now() - t0 > 700) return;
+    const order = $$('#tabbar .tab').map((b) => b.dataset.arg), i = order.indexOf($('#tabbar .tab.on')?.dataset.arg || screen);
+    const next = order[(i < 0 ? 0 : i) + (dx < 0 ? 1 : -1)];
+    A._skipTap = Date.now();
+    if (next) { A._lastToday = 0; buzz(6); go(next); }
   }, { passive: true });
 }

@@ -399,7 +399,7 @@ export function serviceRow(it, st) {
   const v = rowValue(st);
   const tone = st.status === 'overdue' ? 'r' : st.status === 'soon' ? 'a' : 's';
   return `<button class="row has-ic" data-act="sheet" data-arg="svc:${it.id}" data-flip="${it.id}">
-    <div class="row-top"><div class="row-main"><span class="row-ic ${tone}">${icon(it.icon || 'wrench')}</span><div style="min-width:0"><div class="row-title">${esc(it.name)}</div><div class="row-sub">${st.status === 'overdue' ? '<span class="opill">Overdue</span>' : ''}${everyText(it)}</div></div></div>
+    <div class="row-top"><div class="row-main"><span class="row-ic ${tone}">${icon(it.icon || 'wrench')}</span><div style="min-width:0"><div class="row-title">${esc(it.name)}</div><div class="row-sub">${everyText(it)}</div>${st.status === 'overdue' ? '<div class="row-pill"><span class="opill">Overdue</span></div>' : ''}</div></div>
     <div class="row-val"><span class="big">${v.v}</span><span class="unit">${v.u.replace(' overdue', '')}</span></div></div>
     ${st.status === 'soon' || st.status === 'overdue' ? serviceSegs(st) : ''}</button>`;
 }
@@ -652,23 +652,23 @@ export function alerts(c) {
   const { s, link, live } = c;
   const a = s.settings.alerts;
   const m = s.alerts.missed, w = s.alerts.wa;
-  const card = (ic, lab, n, sub, act, open) => `<div class="card pad"><div class="eyebrow flex gap8">${icon(ic).replace('<svg', '<svg style="width:14px;height:14px"')}${lab}</div><div class="big mt12" style="font-size:56px">${short(n)}</div><div class="small muted mt8 clamp1">${sub}</div><div class="push"></div><div class="ac-btns mt16">${open}<button class="btn line sm" data-act="sheet" data-arg="clear:${act}" ${n ? '' : 'disabled'}>Clear</button></div></div>`;
+  const card = (ic, lab, n, sub, act, open) => /* calls & chats */ `<div class="card pad"><div class="eyebrow flex gap8">${icon(ic).replace('<svg', '<svg style="width:14px;height:14px"')}${lab}</div><div class="big mt12" style="font-size:56px">${short(n)}</div><div class="small muted mt8 clamp1">${sub}</div><div class="push"></div><div class="ac-btns mt16">${open}<button class="btn line sm" data-act="sheet" data-arg="clear:${act}" ${n ? '' : 'disabled'}>Clear</button></div></div>`;
   const needs = inbox(c).filter((x) => x.ic !== 'missed' && x.ic !== 'chat');
   return `<div class="stagger">
   <div class="head pagehead"><div><h1 class="title">Alerts</h1><div class="subtitle">${needs.length ? `${plural(needs.length, 'thing needs', 'things need')} you` : 'Nothing needs you right now'}</div></div></div>
   ${(() => { const tab = live.alertsTab === 'recent' ? 'recent' : 'needs';
-    const needsHTML = needs.length ? `<div class="list">${needs.map((x) => li({ lead: `<span class="ic">${icon(x.ic)}</span>`, t: x.t, d: x.d, act: x.act, arg: x.arg })).join('')}</div>` : '<div class="card empty">Nothing needs you right now.</div>';
+    const needsHTML = needs.length ? `<div class="list">${needs.map((x) => li({ lead: `<span class="ic">${icon(x.ic)}</span>`, t: x.t, d: x.d, act: x.act, arg: x.arg })).join('')}</div>` : '<div class="card empty">Nothing needs you right now. Service, papers and fuel reminders show up here.</div>';
     // Recent: a notification feed, grouped by day. What reached the bike, when.
     const day = (ts) => { const d = new Date(ts), t = new Date(); t.setHours(0, 0, 0, 0); const y = t - 864e5; return ts >= +t ? 'Today' : ts >= y ? 'Yesterday' : d.toLocaleDateString(DL(), { day: 'numeric', month: 'short' }); };
     const NT = { wa: ['chat', 'WhatsApp message', 'Shown on your bike'], missed: ['missed', 'Missed call', 'Count sent to your bike'], call: ['phone', 'Incoming call', 'Name shown on your bike'], button: ['hand', 'Handlebar button', 'Pressed on the bike'] };
     let lastDay = '';
     const recentHTML = s.alerts.log.length ? s.alerts.log.slice(0, 30).map((x) => { const [ic, what, sub] = NT[x.kind] || NT.call, dd = day(x.ts), head = dd !== lastDay ? `<div class="nf-day">${dd}</div>` : ''; lastDay = dd;
       return `${head}<div class="nf"><span class="nf-ic">${icon(ic)}</span><div class="nf-tx"><div class="nf-t"><b>${esc(x.kind === 'button' ? 'Handlebar' : shortName(x.name))}</b><span class="nf-time">${new Date(x.ts).toLocaleTimeString(DL(), { hour: "numeric", minute: "2-digit" })}</span></div><div class="nf-d">${what} · ${sub}</div></div></div>`; }).join('') : '<div class="card empty">No notifications yet.</div>';
-    return `<div class="section" style="margin-top:20px"><div class="ltabs" role="tablist"><button role="tab" class="${tab === 'needs' ? 'on' : ''}" aria-selected="${tab === 'needs'}" data-act="alerts-tab" data-arg="needs">Needs you${needs.length ? `<span class="lt-n">${needs.length}</span>` : ''}</button><button role="tab" class="${tab === 'recent' ? 'on' : ''}" aria-selected="${tab === 'recent'}" data-act="alerts-tab" data-arg="recent">Recent</button></div><div class="lt-body" data-swipe-tabs="alerts-tab" data-tabs="needs,recent" data-cur="${tab}">${tab === 'needs' ? needsHTML : `<div class="nf-list">${recentHTML}</div>`}</div></div>`; })()}
-  <div class="section">${sh('Calls & messages', `<span class="eyebrow">${short(s.alerts.sent)} sent</span>`)}
-  <div class="two">${card('missed', 'Missed', m.length, m.length ? `Last: ${esc(shortName(m[m.length - 1].name))}` : 'None waiting', 'clear-missed', IS_IOS ? '' : `<a class="btn line sm" href="tel:" aria-label="Open the Phone app">${icon('phone')}Phone</a>`)}${card('chat', 'WhatsApp', w.length, w.length ? `Last: ${esc(shortName(w[w.length - 1].name))}` : 'None waiting', 'clear-wa', `<a class="btn line sm" href="whatsapp://" aria-label="Open WhatsApp">${icon('chat')}Chats</a>`)}</div>
-  <div class="dashed">${icon('lock')}<span>Only <b>names and counts</b> reach your bike. Message text never leaves this phone.</span></div>
-  </div>
+    const callsHTML = `<div class="two">${card('missed', 'Missed calls', m.length, m.length ? 'On your bike' : 'None waiting', 'clear-missed', IS_IOS ? '' : `<a class="btn line sm" href="tel:" aria-label="Open the Phone app">${icon('phone')}Phone</a>`)}${card('chat', 'WhatsApp', w.length, w.length ? 'On your bike' : 'None waiting', 'clear-wa', `<a class="btn line sm" href="whatsapp://" aria-label="Open WhatsApp">${icon('chat')}Chats</a>`)}</div>`;
+    const tabs = `<div class="ltabs" role="tablist"><button role="tab" class="${tab === 'needs' ? 'on' : ''}" aria-selected="${tab === 'needs'}" data-act="alerts-tab" data-arg="needs">Alerts${needs.length ? `<span class="lt-n">${needs.length}</span>` : ''}</button><button role="tab" class="${tab === 'recent' ? 'on' : ''}" aria-selected="${tab === 'recent'}" data-act="alerts-tab" data-arg="recent">Notifications${m.length + w.length ? `<span class="lt-n">${m.length + w.length}</span>` : ''}</button><span class="grow"></span><span class="eyebrow lt-aside">${short(s.alerts.sent)} sent</span></div>`;
+    const body = tab === 'needs' ? needsHTML : `${callsHTML}<div class="nf-list mt20">${recentHTML}</div>`;
+    return `<div class="section" style="margin-top:20px">${tabs}<div class="lt-body" data-swipe-tabs="alerts-tab" data-tabs="needs,recent" data-cur="${tab}">${body}</div></div>`; })()}
+  <div class="section"><div class="dashed">${icon('lock')}<span>Only <b>names and counts</b> reach your bike. Message text never leaves this phone.</span></div></div>
   <div class="section">${sh('Show on the bike', '', 'showbike')}<div class="list">
     ${li({ ic: 'phone', t: 'Phone calls', d: 'Caller name and missed calls', end: sw(a.calls, 'toggle', 'alerts.calls'), chev: false, tag: 'div' })}
     ${li({ ic: 'waCall', t: 'WhatsApp calls', d: 'Caller name while ringing', end: sw(a.waCalls, 'toggle', 'alerts.waCalls'), chev: false, tag: 'div' })}
@@ -701,7 +701,8 @@ export function settings(c) {
   return `<div class="stagger">
   <div class="head pagehead"><div><h1 class="title">You & your bikes</h1><div class="subtitle">Profile, garage and how the app looks</div></div></div>
   ${live.scenario ? previewBar(live) : ''}
-  <button class="card pad profile-card mt20 flex gap12" style="width:100%;text-align:left" data-act="go" data-arg="profile">${avatar(s.profile)}<div class="grow"><div class="serif pc-name">${esc(shortName(s.profile.name) || 'Add your name')}</div><div class="small faint">${s.profile.blood || s.profile.iceName ? [s.profile.blood ? `Blood ${esc(s.profile.blood)}` : '', s.profile.iceName ? `ICE ${esc(clip(s.profile.iceName, 14))}` : ''].filter(Boolean).join(' · ') : 'Licence, blood group, emergency contact'}</div>${s.profile.medical ? `<div class="small faint pc-med">${esc(clip(s.profile.medical, 40))}</div>` : ''}</div>${icon('chev', 'faint')}</button>
+  ${(() => { const P = s.profile, rows = [P.blood ? ['drop', 'Blood group', esc(P.blood)] : null, P.iceName ? ['phone', 'Emergency contact', esc(P.iceName)] : null, P.medical ? ['hospital', 'Medical notes', esc(P.medical)] : null].filter(Boolean);
+    return `<div class="card profile-card mt20"><button class="pc-top flex gap12" data-act="go" data-arg="profile">${avatar(P)}<div class="grow" style="min-width:0"><div class="serif pc-name">${esc(shortName(P.name) || 'Add your name')}</div><div class="small faint">${rows.length ? 'Rider profile' : 'Licence, blood group, emergency contact'}</div></div>${icon('chev', 'faint')}</button>${rows.length ? `<div class="pc-info">${rows.map(([ic, k, v]) => `<div class="pc-row">${icon(ic)}<span class="pc-k">${k}</span><span class="pc-v">${v}</span></div>`).join('')}</div>` : ''}</div>`; })()}
   <div class="section">${sh('Garage', s.vehicles.length > 1 ? '<button class="link" data-act="sheet" data-arg="garage">Switch</button>' : '')}
     <div class="card vcard"><button class="flex gap12" style="width:100%;text-align:left;padding:12px 16px 12px 12px" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">
       ${vehicleArt(s, v, 'card')}

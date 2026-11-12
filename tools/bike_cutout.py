@@ -12,7 +12,7 @@ def cut(src, out):
         # already transparent: drop the soft shadow (half-transparent) along the ground only
         a[band & (a < 250)] = 0
     else:
-        white = (mn > 236) & (sat < 14)
+        white = (mn > 249) & (sat < 8)
         # shadow: grey, unsaturated, in the ground band, touching the backdrop
         band2 = np.zeros((h, w), bool); band2[int(ybot - (ybot - ytop) * 0.26):, :] = True
         shadow = (band & (sat < 24) & (mn > 60)) | (band2 & (sat < 14) & (mn > 185))

@@ -33,5 +33,8 @@ def illus(src, out, k=22, W=900):
     rim = cv2.morphologyEx(mm, cv2.MORPH_GRADIENT, np.ones((3, 3), np.uint8)).astype(bool)
     qf[rim] = qf[rim] * .35 + ink * .65
     o = cv2.cvtColor(np.clip(qf, 0, 255).astype(np.uint8), cv2.COLOR_BGR2RGB)
-    Image.fromarray(np.dstack([o, al])).save(out, quality=88, method=6)
+    res = Image.fromarray(np.dstack([o, al]))
+    # breathing room so nothing ever sits flush with the edge
+    p = int(max(res.size) * 0.04); canvas = Image.new('RGBA', (res.width + 2 * p, res.height + 2 * p), (0, 0, 0, 0)); canvas.paste(res, (p, p))
+    canvas.save(out, quality=88, method=6)
 for s_, o in zip(sys.argv[1::2], sys.argv[2::2]): illus(s_, o)
