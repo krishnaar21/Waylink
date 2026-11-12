@@ -946,6 +946,7 @@ const A = {
   'doc-del': async (slot) => { await S.gloveDelete(slot); await loadGlove(); openSheet('glovebox'); render(); },
   'quick-chain': () => { const it = s.service.find((x) => x.kind === 'chain'); closeSheet(); if (it) { S.markServiceDone(s, it); commit(); toast(`Chain lubed at ${V.num(s.odo)} km.`); } },
   'replay-logo': (_, el) => { const b = el || $('.brand-final'); if (!b) return; b.classList.remove('anim'); void b.offsetWidth; b.classList.add('anim'); },
+  'pick-avatar': (k) => { s.profile.avatar = k || null; s.profile.photo = null; SND.click(true); commit(); refreshSheet(); },
   'app-icon': (k) => { s.settings.iconStyle = k; SND.click(true); commit(); refreshSheet(); },
   'onb-test': () => { live.onbTest = true; live.onbStep = 0; render('fade-in'); },
   'onb-step': (k) => { live.onbStep = +k; SND.click(true); render('fade-in'); },
@@ -1131,7 +1132,7 @@ document.addEventListener('change', async (e) => {
     try { await S.glovePut({ slot: el.dataset.arg, name: file.name, type: file.type || 'application/octet-stream', blob: file, added: Date.now(), expiry: prev?.expiry || null }); await loadGlove(); refreshSheet(); render(); toast('Stored on this phone.'); }
     catch { toast('Couldn’t store that file in this browser.'); }
   } else if (el.dataset.input === 'avatar' && el.files[0]) {
-    try { s.profile.photo = await resizeImage(el.files[0], 320, 320); commit(); toast('Photo updated.'); } catch { toast('Couldn’t read that image.'); }
+    try { s.profile.photo = await resizeImage(el.files[0], 320, 320); if (sheetKey === 'avatar') closeSheet(); commit(); toast('Photo updated.'); } catch { toast('Couldn’t read that image.'); }
   } else if (el.dataset.input === 'veh-photo' && el.files[0]) {
     try { live.draftPhoto = await resizeImage(el.files[0], 1000, 600); refreshVehicleSheet(el.closest('form')); } catch { toast('Couldn’t read that image.'); }
   } else if (el.dataset.input === 'doc-expiry') {
@@ -1240,6 +1241,7 @@ function registerUpdates() {
 
 document.addEventListener('scroll', (e) => {
   const el = e.target; if (!el?.matches?.('[data-onb-slides]')) return;
+  $('[data-onb-stage]')?.style.setProperty('--p', (el.scrollLeft / el.clientWidth).toFixed(3));
   const i = Math.round(el.scrollLeft / el.clientWidth), btn = $('[data-act="onb-next"]');
   $$('.onb-dots i').forEach((d, k) => d.classList.toggle('on', k === i));
   if (btn) btn.textContent = i >= el.children.length - 1 ? 'Set up my bike' : 'Next';

@@ -1,5 +1,6 @@
 // Waylink — views. Pure functions: state in, HTML out.
 import { MANEUVERS, maneuverByKey, toHex, UUID } from './protocol.js';
+import { SCENE } from './onb-scene.js';
 import { ICONS as HUGE_ICONS, SET as HUGE_SET } from './icons-huge.js';
 import * as S from './store.js';
 
@@ -77,7 +78,7 @@ export function vehicleArt(s, v, size = 'thumb') {
 }
 export function avatar(p, xl = false) {
   const init = (p.name || '?').trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
-  return `<div class="avatar ${xl ? 'xl' : ''}">${p.photo ? `<img src="${p.photo}" alt="">` : esc(init)}</div>`;
+  return `<div class="avatar ${xl ? 'xl' : ''}${p.avatar && !p.photo ? ' pix' : ''}">${p.photo ? `<img src="${p.photo}" alt="">` : p.avatar ? `<img src="img/avatars/${p.avatar}.svg" alt="">` : esc(init)}</div>`;
 }
 
 
@@ -840,7 +841,7 @@ export function profile(c) {
   return `<div class="stagger">
   <header class="pagehead">${topbar(backBtn('settings'), `<span class="saved" id="saved">${icon('check')} Saved</span>`)}</header>
   <div class="prof-hero">
-    <label style="position:relative;cursor:pointer">${avatar(p, true)}<span class="circle" style="position:absolute;right:-4px;bottom:-4px;width:32px;height:32px">${icon('camera').replace('<svg', '<svg style="width:15px;height:15px"')}</span><input type="file" accept="image/*" hidden data-input="avatar"></label>
+    <button style="position:relative" data-act="sheet" data-arg="avatar" aria-label="Change picture">${avatar(p, true)}<span class="circle" style="position:absolute;right:-4px;bottom:-4px;width:32px;height:32px">${icon('edit').replace('<svg', '<svg style="width:15px;height:15px"')}</span></button>
     <div class="ph-tx"><h1 class="title">${esc(shortName(p.name) || 'Your profile')}</h1><div class="subtitle">Rider since ${new Date(p.since || Date.now()).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div></div>
   </div>
   <div class="card stat3 mt20"><div><span class="eyebrow">Bikes</span><span class="big">${s.vehicles.length}</span></div><div><span class="eyebrow">Ridden</span><span class="big">${short(totalKm)}</span><span class="unit" style="margin:0">km</span></div><div><span class="eyebrow">Rides</span><span class="big">${short(rides)}</span></div></div>
@@ -1317,6 +1318,12 @@ function sheetInner(c, key) {
       return `<div class="eyebrow">Linked</div><h2>Start rides by themselves?</h2><p class="lead">Waylink can record a ride as soon as the bike links, and open ride mode once you're moving. Both are off unless you turn them on.</p>
         <div class="list mt16">${li({ ic: 'route', t: 'Record rides by themselves', d: 'When the bike links', end: sw(s.settings.autoRecord, 'toggle', 'autoRecord'), chev: false, tag: 'div' })}${li({ ic: 'speed', t: 'Open ride mode by itself', d: 'Above 15 km/h', end: sw(s.settings.autoRide, 'toggle', 'autoRide'), chev: false, tag: 'div' })}</div>
         <button class="btn ink block mt20" data-act="close">Done</button><p class="hint" style="text-align:center">You can change these later in Settings, under Riding.</p>`;
+    case 'avatar': {
+      const P = s.profile, cur = P.photo ? 'photo' : P.avatar || '';
+      return `<div class="eyebrow">Profile</div><h2>Your picture</h2><p class="lead">Pick a rider, or use a photo.</p>
+        <div class="av-grid mt16">${Array.from({ length: 12 }, (_, i) => `a${i + 1}`).map((k) => `<button class="av-opt ${cur === k ? 'on' : ''}" data-act="pick-avatar" data-arg="${k}" aria-label="Avatar ${k.slice(1)}"><img src="img/avatars/${k}.svg" alt="">${cur === k ? `<span class="av-tick">${icon('check')}</span>` : ''}</button>`).join('')}</div>
+        <div class="list mt20"><label class="li" style="cursor:pointer"><span class="ic">${icon('camera')}</span><span class="tx"><span class="t">Use a photo</span></span><input type="file" accept="image/*" hidden data-input="avatar"></label>${P.photo || P.avatar ? li({ ic: 'trash', t: 'Use my initials', act: 'pick-avatar', arg: '', cls: 'danger' }) : ''}</div>`;
+    }
     case 'erase':
       return `<div class="eyebrow">Backup</div><h2>${s.sample ? 'Erase sample data?' : 'Erase everything?'}</h2><p class="lead">Bikes, rides, fuel, service, alerts and papers on this phone will go. Export a backup first if you want to keep them.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="erase">Erase</button><button class="btn line block mt8" data-act="close">Keep my data</button>`;
     case 'paste':
@@ -1334,20 +1341,20 @@ function fieldForm(key, eb, label, val, type, suffix, hint = '') {
 
 // ---------- Onboarding ----------
 // Onboarding: a short intro, then the rider and bike, then linking the bike. Every step can be skipped.
+// The intro is one story told along a single road: dawn, the ride, speed, a pit stop, night.
 const ONB_SLIDES = [
-  ['turnRight', ['map', 'pinSimple', 'signpost'], 'Turns on your display', 'Plan in Google Maps. Every turn reaches your Bajaj cluster with the distance counting down.', ['Turn arrows', 'Distance to turn', 'Roundabout exits', 'Street names']],
-  ['phone', ['chat', 'missed', 'hand'], 'Calls, without your phone', 'See who’s calling on the cluster. Answer or decline with the handlebar button.', ['Caller names', 'Missed calls', 'WhatsApp counts', 'Handlebar control']],
-  ['speed', ['clock', 'fuel', 'thermo'], 'Ride mode', 'A big, glanceable screen while you ride: speed, time, fuel and the next turn.', ['Speed dial', 'Fuel & range', 'Engine temp', 'Rides record']],
-  ['wrench', ['drop', 'doc', 'bell'], 'Your bike’s care, sorted', 'Service, fuel and papers in one place, with a nudge before anything is due.', ['Service reminders', 'Mileage', 'Papers & expiry', 'Many bikes']],
-  ['lock', ['phoneDev', 'shield', 'folder'], 'Private by design', 'No account and no cloud. Everything stays on this phone until you export it.', ['No sign-up', 'Works offline', 'Backup & restore', 'SOS contacts']],
+  ['01 · Navigate', 'Turns on your display', 'Plan in Google Maps. Arrows show on the cluster.'],
+  ['02 · Stay reachable', 'Calls, without your phone', 'Caller names and missed calls, on the bike.'],
+  ['03 · Ride', 'Everything at a glance', 'Speed, time, fuel and the next turn.'],
+  ['04 · Look after it', 'Service and fuel, sorted', 'A nudge before anything is due.'],
+  ['05 · Yours alone', 'Private by design', 'No account, no cloud. It stays on this phone.'],
 ];
-// Abstract art in the app's own language: a tinted tile at the centre, three small cards orbiting it.
-const onbArt = (main, sats, k = 0) => `<div class="ab ab${k % 3}"><span class="ab-blob"></span><span class="ab-ring r1"></span><span class="ab-ring r2"></span>${sats.map((ic, i) => `<span class="ab-sat s${i}">${icon(ic)}</span>`).join('')}<span class="ab-main">${icon(main)}</span></div>`;
 export function onboarding(s, step = 0, link = {}) {
   const sample = '<button class="link onb-sample" type="button" data-act="onboard-sample">Explore with sample data</button>';
   if (step === 0) return `<div class="onb onb-intro">
     <div class="onb-top"><span class="onb-mark">${LOOP}</span><button class="link" data-act="onb-step" data-arg="1">Skip</button></div>
-    <div class="onb-slides" data-onb-slides>${ONB_SLIDES.map(([m, sats, t, d, f], k) => `<section class="onb-slide"><div class="onb-art">${onbArt(m, sats, k)}</div><h1 class="title">${t}</h1><p class="onb-p">${d}</p><div class="onb-feats">${f.map((x) => `<span>${icon('check')}${x}</span>`).join('')}</div></section>`).join('')}</div>
+    <div class="onb-stage" data-onb-stage>${SCENE}</div>
+    <div class="onb-slides" data-onb-slides>${ONB_SLIDES.map(([e, t, d]) => `<section class="onb-slide"><div class="eyebrow onb-eb">${e}</div><h1 class="title">${t}</h1><p class="onb-p">${d}</p></section>`).join('')}</div>
     <div class="onb-dots">${ONB_SLIDES.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
     <div class="onb-foot"><button class="btn ink block" data-act="onb-next">Next</button>${sample}</div>
   </div>`;
@@ -1356,8 +1363,8 @@ export function onboarding(s, step = 0, link = {}) {
       : isIOS() ? `<button class="btn ink block" data-act="onb-finish" data-arg="ios">${icon('bt')} Pair on iPhone</button>` : '';
     return `<div class="onb onb-link">
       <div class="onb-top"><button class="circle" data-act="onb-step" data-arg="1" aria-label="Back">${icon('back')}</button><button class="link" data-act="onb-finish" data-arg="later">Skip</button></div>
-      <div class="onb-body"><div class="ab ab-link"><span class="ab-blob"></span><span class="ab-sat big">${icon('phoneDev')}</span><span class="ab-wave"><i></i><i></i><i></i></span><span class="ab-main sm">${icon('bt')}</span><span class="ab-wave"><i></i><i></i><i></i></span><span class="ab-sat big">${icon('bike')}</span></div><div class="eyebrow mt24">Step 2 of 2</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once with the ignition on. After that Waylink reconnects by itself every time you ride.</p>
-      <div class="onb-gets">${[['turnRight', 'Turn arrows', 'From Google Maps'], ['phone', 'Caller names', 'Calls and WhatsApp'], ['clock', 'Time & trips', 'Kept in sync'], ['fuel', 'Fuel & range', 'Read from the cluster']].map(([ic, t, d]) => `<div class="og"><span class="og-ic">${icon(ic)}</span><span class="og-t"><b>${t}</b><span>${d}</span></span></div>`).join('')}</div></div>
+      <div class="onb-body"><div class="onb-stage still" style="--p:2">${SCENE}<span class="link-badge">${icon('bt')}</span></div><div class="eyebrow mt24">Step 2 of 2</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once with the ignition on. It reconnects by itself after that.</p>
+      <div class="onb-gets2">${[['turnRight', 'Turns'], ['phone', 'Callers'], ['clock', 'Time'], ['fuel', 'Fuel']].map(([ic, t]) => `<span>${icon(ic)}${t}</span>`).join('')}</div></div>
       <div class="onb-foot">${pair}<button class="btn ${pair ? 'line' : 'ink'} block mt8" data-act="onb-finish" data-arg="sim">${icon('bolt')} Try the simulated bike</button><button class="link onb-sample" data-act="onb-finish" data-arg="later">I’ll do this later</button></div>
     </div>`;
   }
@@ -1365,7 +1372,7 @@ export function onboarding(s, step = 0, link = {}) {
   <div class="onb-top"><button class="circle" data-act="onb-step" data-arg="0" aria-label="Back">${icon('back')}</button><button class="link" data-act="onb-skip-reg">Skip</button></div>
   <div class="eyebrow">Step 1 of 2</div>
   <h1 class="title">About you and your bike</h1>
-  <p class="onb-p">So reminders, fuel and the display fit your bike.</p>
+  <p class="onb-p">So reminders and the display fit your bike.</p>
   <form data-form="onboard" class="mt16">
     <label class="field"><span class="eyebrow">Your name</span><input class="input" name="name" placeholder="Arjun" maxlength="${LIMITS.person}" autocomplete="given-name"></label>
     <label class="field"><span class="eyebrow">Your bike</span><select class="input" name="model">${S.MODELS.map((m) => `<option value="${m.id}">${m.name}</option>`).join('')}</select></label>
