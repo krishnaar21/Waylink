@@ -19,9 +19,23 @@ white = (v > .62) & (s < .25) & (al[..., 0] > .5)
 lab, _ = ndimage.label(white)
 PANELS = [(200, 141), (208, 163), (74, 148), (94, 149)]  # a point inside each panel, image pixels
 pick = np.isin(lab, [lab[y, x] for x, y in PANELS if lab[y, x]])
-pick = ndimage.binary_dilation(pick, iterations=2)  # take in the soft anti-aliased rim
-w = (pick * np.clip((v - .28) / .34, 0, 1))[..., None]
-panel = np.clip(WINE * (.62 + .5 * v[..., None]), 0, 1)
+# soft mask: grow a touch, then feather, so the wine melts into the black outlines like the helmet
+pick = ndimage.gaussian_filter(ndimage.binary_dilation(pick, iterations=1).astype(np.float32), 1.1)
+w = (np.clip(pick * 1.4, 0, 1) * np.clip((v - .22) / .4, 0, 1))[..., None]
+# shade each panel like the helmet: deep wine at its edges, lighter inside, a pale sheen along its top
+core = np.isin(lab, [lab[y, x] for x, y in PANELS if lab[y, x]])
+depth = np.clip(ndimage.distance_transform_edt(core) / 4.5, 0, 1)
+rel = np.zeros_like(v)
+for x, y in PANELS:
+    k = lab[y, x]
+    if not k: continue
+    ys = np.where(lab == k)[0]; m = lab == k
+    rel[m] = (np.where(m)[0] - ys.min()) / max(1, ys.max() - ys.min())
+rel = ndimage.gaussian_filter(rel, 1.2)
+tint = np.clip(WINE * (.62 + .5 * depth)[..., None], 0, 1)
+sheen = (np.clip(1 - rel * 2.6, 0, 1) * depth * .45)[..., None]
+panel = tint * (1 - sheen) + np.array([.98, .9, .9]) * sheen
+panel = panel * (.75 + .25 * v[..., None])
 out = out * (1 - w) + panel * w
 Image.fromarray((np.dstack([out, al]) * 255).round().astype(np.uint8), 'RGBA').save('img/onb/rider-street.webp', quality=86, method=6)
 print('ok')
