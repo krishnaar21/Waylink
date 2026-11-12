@@ -1367,3 +1367,13 @@ html[data-brand="turns"] .splash-brand .wl-turns .slot .tg { inset: 26%; width: 
 .sheet:has([data-act="sheet-back"]) .sheet-body > .support-hero:first-child h2 { padding-left: 46px; }
 .sheet-body > :first-child:not(h2):not(.support-hero):not(.about-sheet) { margin-top: 44px; }
 .about-sheet .about-hero { margin-top: 30px; }
+/* Optical kerning for the Loop wordmark: more room after the w's open arm and between straight stems,
+   a touch less where round meets diagonal. */
+.wl-loop svg.lw-w { margin-right: .035em; }
+.wl-loop .rest i { margin-right: 0; }
+.wl-loop .rest i.ty0 { margin-right: -.012em; } /* a|y */
+.wl-loop .rest i.ty1 { margin-right: .004em; }  /* y|l */
+.wl-loop .rest i.ty2 { margin-right: .028em; }  /* l|i */
+.wl-loop .rest i.ty3 { margin-right: .024em; }  /* i|n */
+.wl-loop .rest i.ty4 { margin-right: .012em; }  /* n|k */
+.wl-loop { letter-spacing: 0; }
