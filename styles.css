@@ -1337,3 +1337,9 @@ html[data-brand="turns"] .splash-brand .wl-turns > span:last-child { grid-row: 2
 .splash.out { transition: opacity .35s ease, visibility .35s; }
 .anim .wl-loop .rest i.ty0 { animation-delay: .95s; } .anim .wl-loop .rest i.ty1 { animation-delay: 1.1s; } .anim .wl-loop .rest i.ty2 { animation-delay: 1.25s; }
 .anim .wl-loop .rest i.ty3 { animation-delay: 1.4s; } .anim .wl-loop .rest i.ty4 { animation-delay: 1.55s; } .anim .wl-loop .rest i.ty5 { animation-delay: 1.7s; }
+/* A little air between the wordmark letters */
+.wl-loop, .wl-turns { letter-spacing: .01em; }
+.wl-loop .rest i { margin-right: .01em; }
+/* Turns splash: the sign sits inside a circle */
+html[data-brand="turns"] .splash-brand .wl-turns .slot { width: 1.7em; height: 1.7em; border-radius: 50%; background: var(--raised); box-shadow: 0 0 0 1px var(--line), 0 10px 24px -14px rgba(15,22,35,.4); }
+html[data-brand="turns"] .splash-brand .wl-turns .slot .tg { inset: 26%; width: 48%; height: 48%; }
