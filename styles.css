@@ -2142,3 +2142,5 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .av-opt.av-photo { background: var(--raised); border: 1.5px dashed color-mix(in srgb, var(--ink) 45%, transparent); }
 .av-photo > span { color: var(--ink); }
 .av-photo > span svg { width: 24px; height: 24px; } .av-photo b { font-size: 12.5px; font-weight: 650; }
+/* Onboarding art: its top edge melts into the page instead of a hard line */
+.onb-stage .onb-img { -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.35) 18%, #000 46%); mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.35) 18%, #000 46%); }
