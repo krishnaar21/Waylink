@@ -286,7 +286,7 @@ export function today(c) {
   const good = !v.over && !v.soon && !fs.onReserve;
   const cc = connCard(c, good), ccIn = cc.startsWith('<div class="bc-conn');
   return `<div class="stagger">
-  <div class="pagehead today-head"><div class="th-row"><div style="min-width:0"><h1 class="title">${new Date().toLocaleDateString(DL(), { weekday: 'long' })}</h1><div class="subtitle">${new Date().toLocaleDateString(DL(), { day: 'numeric', month: 'long' })}</div></div>
+  <div class="pagehead today-head"><div class="th-row"><div style="min-width:0"><h1 class="title">${new Date().toLocaleDateString(DL(), { weekday: 'long' })}</h1><div class="subtitle">${s.sample || live.scenario || link.simulated ? '<span class="demo-pill"><i></i>Demo mode</span>' : new Date().toLocaleDateString(DL(), { day: 'numeric', month: 'long' })}</div></div>
     <div class="head-actions"><button class="circle" data-act="sheet" data-arg="sos" aria-label="Emergency SOS" style="color:var(--red)">${icon('sos')}</button></div></div></div>
   ${live.scenario ? previewBar(live) : ''}
   <div class="bikecard">
@@ -754,7 +754,7 @@ export function settings(c) {
   </div>
   <div class="vc-rows">
     ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
-    ${li({ ic: 'sparkles', t: 'Icons', end: `<span class="pick-val">${{ duo: 'Glow', fill: 'Duotone' }[st.icons] || 'Line'}</span>`, act: 'sheet', arg: 'pick-brand' })}
+    ${li({ ic: 'sparkles', t: 'Icons', end: `<span class="pick-val">${(ICON_STYLES.find(([k]) => k === st.iconStyle) || ICON_STYLES[0])[1]} · ${{ duo: 'Glow', fill: 'Duotone' }[st.icons] || 'Line'}</span>`, act: 'sheet', arg: 'pick-brand' })}
     ${li({ ic: 'font', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
     ${li({ ic: 'progress', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
   </div></div></div>
@@ -821,7 +821,12 @@ const UPI_AMOUNTS = [49, 99, 199, 499];
 const AMT_ICON = { 49: ['Chai', 'tea', 'A cutting chai for the developer'], 99: ['Coffee', 'coffee', 'A coffee for a late-night fix'], 199: ['Fuel', 'fuel', 'Two litres of petrol for test rides'], 499: ['Service', 'wrench', 'Towards a month of upkeep'], 0: ['Any', 'love', 'You choose the amount in your UPI app'] };
 const amtIcon = (a) => { const g = AMT_ICON[a][1]; return g.startsWith('<svg') ? g : icon(g); };
 // The app icon: one route mark, tinted to match the accent colour.
-export const appIcon = (s, png = false) => { const b = brandOf(s), a = s.settings.accent || 'rust'; return png ? `img/logos/png/wl-${b}-${a}-180.png` : `img/logos/wl-${b}-${a}.svg`; };
+export const ICON_STYLES = [['classic', 'Classic'], ['paper', 'Paper'], ['midnight', 'Midnight'], ['sunset', 'Sunset'], ['road', 'Road'], ['tank', 'Tank'], ['carbon', 'Carbon'], ['dev', 'Dev'], ['mono', 'Mono']];
+export const appIcon = (s, png = false) => {
+  const st = ICON_STYLES.some(([k]) => k === s.settings.iconStyle) ? s.settings.iconStyle : 'classic', a = s.settings.accent || 'rust';
+  if (st !== 'classic') return png ? `img/logos/png/wl-icon-${st}-180.png` : `img/logos/wl-icon-${st}.svg`;
+  return png ? `img/logos/png/wl-loop-${a}-180.png` : `img/logos/wl-loop-${a}.svg`;
+};
 export const appName = () => APP_NAME;
 
 // ---------- PROFILE ----------
@@ -907,6 +912,7 @@ export function rideMode(c) {
   const b = rideBits(c);
   return `<div class="ride-mode" id="ride-mode" data-page="0">
     <div class="rm-pages">${layoutA({ ...b, tags: `${live.rec ? '<span class="tag x"><span class="dot x pulse"></span>Recording</span>' : ''}${link.connected ? '' : '<span class="tag k">Bike not linked</span>'}${live.gpsErr ? '<span class="tag a">No GPS</span>' : ''}` })}</div>
+    ${s.settings.autoRide ? '<p class="rm-note">Ride mode opens by itself once you’re moving. Turn this off in Settings › Riding.</p>' : ''}
     <div class="rm-foot2">
       <div class="hold"><svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="11" fill="none" stroke="var(--seg-off)" stroke-width="2"/><circle class="p" cx="13" cy="13" r="11" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="69.1" stroke-dashoffset="69.1" transform="rotate(-90 13 13)"/><circle cx="13" cy="13" r="4" fill="var(--ink-3)"/></svg><span class="eyebrow" data-live="rm-hint">Hold to leave</span></div>
     </div></div>`;
@@ -1078,6 +1084,8 @@ function sheetInner(c, key) {
       const icoHTML = card('line', 'Line', 'Clean single strokes') + card('duo', 'Glow', 'A soft glow under each line') + card('fill', 'Duotone', 'Shapes filled with a second tone'); ICON_STYLE = was;
       return `<div class="eyebrow">Appearance</div><h2>Icons</h2>
         <div class="brand-final mt12 anim">${LOOP}</div>
+        <div class="ms-t mt24">App icon</div><p class="small muted mt8">On your Home Screen. Remove Waylink and add it again to change an installed icon.</p>
+        <div class="appicons mt12">${ICON_STYLES.map(([k, nm]) => `<button class="appicon ${(s.settings.iconStyle || 'classic') === k ? 'on' : ''}" data-act="app-icon" data-arg="${k}"><img src="${appIcon({ settings: { ...s.settings, iconStyle: k } })}" alt="" width="56" height="56"><span>${nm}</span></button>`).join('')}</div>
         <div class="ms-t mt24">Icon style</div>
         <div class="icoopts mt12">${icoHTML}</div>`;
     }
@@ -1312,19 +1320,43 @@ function fieldForm(key, eb, label, val, type, suffix, hint = '') {
 }
 
 // ---------- Onboarding ----------
-export function onboarding(s) {
-  return `<div class="onb stagger">
-  <div class="eyebrow">${appName(s)} · for riders</div>
-  <h1 class="title">Your bike, <em>on your phone.</em></h1>
-  <p class="muted" style="font-size:16px;line-height:1.55;margin-top:16px;text-wrap:pretty">Turn arrows, caller names and the time on your Bajaj display. Fuel, rides and service, all kept on this phone.</p>
-  <form data-form="onboard" class="mt24">
+// Onboarding: a short intro, then the rider and bike, then linking the bike. Every step can be skipped.
+const ONB_SLIDES = [
+  ['turnRight', 'Turns on your display', 'Plan in Google Maps. Each turn shows on your Bajaj cluster with the distance, so your phone stays in your pocket.'],
+  ['phone', 'Know who’s calling', 'Caller names, missed calls and WhatsApp counts reach the bike. Never the message itself.'],
+  ['wrench', 'Your bike’s care, sorted', 'Fuel, rides, service and papers in one place, with reminders before anything is due.'],
+];
+export function onboarding(s, step = 0, link = {}) {
+  const sample = '<button class="link onb-sample" type="button" data-act="onboard-sample">Explore with sample data</button>';
+  if (step === 0) return `<div class="onb onb-intro">
+    <div class="onb-top"><span class="onb-mark">${LOOP}</span><button class="link" data-act="onb-step" data-arg="1">Skip</button></div>
+    <div class="onb-slides" data-onb-slides>${ONB_SLIDES.map(([ic, t, d], i) => `<section class="onb-slide"><div class="onb-art a${i}"><span class="oa-ring"></span><span class="oa-ic">${icon(ic)}</span></div><h1 class="title">${t}</h1><p class="onb-p">${d}</p></section>`).join('')}</div>
+    <div class="onb-dots">${ONB_SLIDES.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
+    <div class="onb-foot"><button class="btn ink block" data-act="onb-next">Next</button>${sample}</div>
+  </div>`;
+  if (step === 2) {
+    const pair = link.supported ? `<button class="btn ink block" data-act="onb-finish" data-arg="pair">${icon('bt')} Pair your bike</button>`
+      : isIOS() ? `<button class="btn ink block" data-act="onb-finish" data-arg="ios">${icon('bt')} Pair on iPhone</button>` : '';
+    return `<div class="onb onb-link">
+      <div class="onb-top"><button class="circle" data-act="onb-step" data-arg="1" aria-label="Back">${icon('back')}</button><button class="link" data-act="onb-finish" data-arg="later">Skip</button></div>
+      <div class="onb-body"><div class="onb-pair"><span class="op-end">${icon('phoneDev')}</span><span class="op-line"><i></i><i></i><i></i></span><span class="op-end">${icon('bike')}</span></div>
+      <div class="eyebrow mt24">Step 2 of 2</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once with the ignition on. After that Waylink reconnects by itself every time you ride.</p></div>
+      <div class="onb-foot">${pair}<button class="btn ${pair ? 'line' : 'ink'} block mt8" data-act="onb-finish" data-arg="sim">${icon('bolt')} Try the simulated bike</button><button class="link onb-sample" data-act="onb-finish" data-arg="later">I’ll do this later</button></div>
+    </div>`;
+  }
+  return `<div class="onb onb-reg">
+  <div class="onb-top"><button class="circle" data-act="onb-step" data-arg="0" aria-label="Back">${icon('back')}</button><button class="link" data-act="onb-skip-reg">Skip</button></div>
+  <div class="eyebrow">Step 1 of 2</div>
+  <h1 class="title">About you and your bike</h1>
+  <p class="onb-p">So reminders, fuel and the display fit your bike.</p>
+  <form data-form="onboard" class="mt16">
     <label class="field"><span class="eyebrow">Your name</span><input class="input" name="name" placeholder="Arjun" maxlength="${LIMITS.person}" autocomplete="given-name"></label>
     <label class="field"><span class="eyebrow">Your bike</span><select class="input" name="model">${S.MODELS.map((m) => `<option value="${m.id}">${m.name}</option>`).join('')}</select></label>
     <div class="two"><label class="field"><span class="eyebrow">Number plate</span><input class="input" name="plate" placeholder="KA 05 MX 2481" maxlength="${LIMITS.plate}" style="text-transform:uppercase"></label>
     <label class="field"><span class="eyebrow">Odometer</span><div class="input-wrap"><input class="input" name="odo" type="number" inputmode="numeric" min="0" placeholder="0"><span class="suffix">km</span></div></label></div>
     <label class="field"><span class="eyebrow">Country</span><select class="input" name="country">${S.COUNTRIES.map((c) => `<option value="${c.code}">${c.name}</option>`).join('')}</select></label>
-    <button class="btn ink block mt24" type="submit">Get started</button>
-    <button class="btn line block mt8" type="button" data-act="onboard-sample">Explore with sample data</button>
+    <button class="btn ink block mt24" type="submit">Continue</button>
+    ${sample}
   </form>
   <div class="dashed mt24">${icon('lock')}<span>No account, no cloud, no tracking. Your data stays here until you export it.</span></div>
   </div>`;

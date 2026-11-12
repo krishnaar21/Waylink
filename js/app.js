@@ -217,7 +217,7 @@ function render(anim = '') {
   V.setLocale(S.country(s).locale); V.setProgress(s.settings.progress); V.setIconStyle(s.settings.icons);
   const views = $('#views');
   if (!s.onboarded) {
-    views.innerHTML = V.onboarding(s);
+    views.innerHTML = V.onboarding(s, live.onbStep || 0, link);
     for (const id of ['#tabbar', '#fab', '#pill']) { const el = $(id); el.innerHTML = ''; el._h = ''; }
     return;
   }
@@ -940,6 +940,25 @@ const A = {
   'park-clear': () => { s.parking = null; closeSheet(); commit(); },
   'doc-del': async (slot) => { await S.gloveDelete(slot); await loadGlove(); openSheet('glovebox'); render(); },
   'quick-chain': () => { const it = s.service.find((x) => x.kind === 'chain'); closeSheet(); if (it) { S.markServiceDone(s, it); commit(); toast(`Chain lubed at ${V.num(s.odo)} km.`); } },
+  'app-icon': (k) => { s.settings.iconStyle = k; SND.click(true); commit(); refreshSheet(); },
+  'onb-step': (k) => { live.onbStep = +k; SND.click(true); render('fade-in'); },
+  'onb-next': () => {
+    const el = $('[data-onb-slides]'); if (!el) return;
+    const i = Math.round(el.scrollLeft / el.clientWidth), n = el.children.length;
+    if (i >= n - 1) return A['onb-step'](1);
+    SND.swipe(1); el.scrollTo({ left: (i + 1) * el.clientWidth, behavior: 'smooth' });
+  },
+  'onb-skip-reg': () => {
+    if (!s.vehicles.length) { const v = S.newVehicle({}); s.vehicles = [v]; s.active = v.id; }
+    s.profile.since = s.profile.since || Date.now(); S.saveNow(s); live.onbStep = 2; render('fade-in');
+  },
+  'onb-finish': (how) => {
+    if (!s.vehicles.length) { const v = S.newVehicle({}); s.vehicles = [v]; s.active = v.id; }
+    s.profile.since = s.profile.since || Date.now();
+    s.onboarded = true; live.onbStep = 0; S.saveNow(s); screen = 'today'; render('fade-in');
+    if (how === 'pair') A.pair?.(); else if (how === 'sim') A['sim-on'](); else if (how === 'ios') A.sheet('ios-pair');
+    else { try { localStorage.setItem('wl-pair-nudge', new Date().toDateString()); } catch {} }
+  },
   'onboard-sample': () => { S.seedSample(s); s.onboarded = true; S.saveNow(s); screen = 'today'; render('fade-in'); toast('Sample data loaded. Erase it any time in Settings.', 3600); },
 };
 
@@ -947,8 +966,8 @@ const FORMS = {
   onboard: (f) => {
     s.profile.name = f.name.value.trim(); s.profile.country = f.country.value; s.profile.since = Date.now();
     const v = S.newVehicle({ model: f.model.value, plate: f.plate.value.trim().toUpperCase(), odo: Math.max(0, +f.odo.value || 0) });
-    s.vehicles = [v]; s.active = v.id;
-    s.onboarded = true; S.saveNow(s); screen = 'today'; render('fade-in');
+    s.vehicles = [v]; s.active = v.id; S.saveNow(s);
+    live.onbStep = 2; SND.click(true); render('fade-in');
   },
   field: (f) => {
     const key = f.dataset.arg, v = f.v.value;
@@ -1209,6 +1228,12 @@ function registerUpdates() {
   try { if (sessionStorage.getItem('waylink-updated')) { sessionStorage.removeItem('waylink-updated'); setTimeout(() => toast('Updated to the latest version.'), 1200); } } catch {}
 }
 
+document.addEventListener('scroll', (e) => {
+  const el = e.target; if (!el?.matches?.('[data-onb-slides]')) return;
+  const i = Math.round(el.scrollLeft / el.clientWidth), btn = $('[data-act="onb-next"]');
+  $$('.onb-dots i').forEach((d, k) => d.classList.toggle('on', k === i));
+  if (btn) btn.textContent = i >= el.children.length - 1 ? 'Set up my bike' : 'Next';
+}, true);
 // Swipe sideways on a tabbed list (Alerts: Needs you / Recent) to switch tabs.
 {
   let sx = 0, sy = 0, el = null;
