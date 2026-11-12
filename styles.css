@@ -1394,3 +1394,18 @@ html[data-theme="obsidian"] .tab, html[data-theme="amoled"] .tab { color: var(--
 /* Turns wordmark: room for descenders (y) */
 .wl-turns { line-height: 1.25; padding-bottom: .06em; overflow: visible; }
 .splash-brand { overflow: visible; }
+/* Bike colour tiles follow the theme: a light tint of the bike's colour, icon in a deeper shade */
+.art.icon-mode { background: color-mix(in srgb, var(--bc, var(--ink)) 16%, var(--card)) !important; color: color-mix(in srgb, var(--bc, var(--ink)) 70%, var(--ink)); }
+html[data-theme="obsidian"] .art.icon-mode, html[data-theme="amoled"] .art.icon-mode { background: color-mix(in srgb, var(--bc, var(--ink)) 22%, var(--card)) !important; color: color-mix(in srgb, var(--bc, var(--ink)) 55%, var(--ink)); }
+/* Support card: a plain card like the others */
+.support-card { background: var(--card); box-shadow: var(--shadow); }
+.support-card .sh-heart { background: color-mix(in srgb, var(--ink) 7%, transparent); color: var(--ink); }
+/* Turns wordmark: never clip the y */
+.wl-turns, .wl-turns > span { overflow: visible; }
+.wl-turns > span { display: inline-block; padding-bottom: .22em; margin-bottom: -.22em; }
+.brandopt, .brandopt .bo-art, .about-brand { overflow: visible; }
+/* Tabs: the active one gets a soft pill behind its icon and full-strength colour */
+.tab { color: var(--ink-4); }
+.tab svg { padding: 3px 14px; box-sizing: content-box; border-radius: 14px; transition: background .25s, color .25s; }
+.tab.on { color: var(--ink); }
+.tab.on svg { background: color-mix(in srgb, var(--ink) 10%, transparent); }

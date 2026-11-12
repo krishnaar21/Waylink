@@ -64,7 +64,8 @@ export const icon = (n, cls = '') => { const b = HUGE_ICONS[n] || ''; return `<s
 const lum = (h) => { const n = [1, 3, 5].map((i) => parseInt(String(h || '#888888').slice(i, i + 2), 16)); return (n[0] * 299 + n[1] * 587 + n[2] * 114) / 255000; };
 export function vehicleArt(s, v, size = 'thumb') {
   const cls = size === 'hero' ? 'art hero-art' : size === 'model' ? 'art model-art' : size === 'card' ? 'art card-art' : size === 'lg' ? 'art thumb lg' : 'art thumb';
-  const tile = () => `<div class="${cls} icon-mode" style="background:${v.colour};color:${lum(v.colour) > 0.6 ? '#161514' : '#FFFFFF'}">${icon('bike')}</div>`;
+  // Bikes without a photo: a soft tile tinted with the bike's colour, so it sits with the theme instead of shouting.
+  const tile = () => `<div class="${cls} icon-mode" style="--bc:${v.colour}">${icon('bike')}</div>`;
   if (s.settings.art === 'icon') return tile();
   if (v.photo) return `<div class="${cls}"><img class="photo" src="${v.photo}" alt=""></div>`;
   const img = S.MODEL_IMAGES[v.model];

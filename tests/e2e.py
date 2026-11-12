@@ -98,8 +98,8 @@ async def main():
         await shot(pg, '04-add-vehicle')
         await pg.click('form[data-form=vehicle] button[type=submit]'); await pg.wait_for_timeout(800)
         check('new vehicle becomes active', 'Appa’s 150' in await text(pg, '.bc-main'))
-        col = await pg.evaluate("getComputedStyle(document.querySelector('.bc-main .art.icon-mode')).color")
-        check('bike icon tile is readable on its colour', col in ('rgb(255, 255, 255)', 'rgb(22, 21, 20)'), col)
+        tile = await pg.evaluate("(()=>{const e=document.querySelector('.bc-main .art.icon-mode'), cs=getComputedStyle(e); return [cs.color, cs.backgroundColor, e.style.getPropertyValue('--bc')]})()")
+        check('bike icon tile is tinted with the bike colour', bool(tile[2]) and tile[0] != tile[1], str(tile))
         count = await pg.evaluate("JSON.parse(localStorage.getItem('pulsarnav-web-v2')).vehicles.length")
         check('garage saved with 3 bikes', count == 3, str(count))
 
