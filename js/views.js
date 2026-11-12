@@ -8,6 +8,8 @@ export const esc = (x) => String(x ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&a
 let LOCALE = 'en-IN';
 export const setLocale = (l) => { LOCALE = l || 'en-IN'; };
 const DL = () => (LOCALE.startsWith('en') ? 'en-IN' : LOCALE);
+// Big readings stay short: 1,99,999 shows as 1.99L (or 199.9K outside India), never rounded up.
+export const big = (n) => { if (n == null || isNaN(n) || Math.abs(n) < 100000) return num(n); const f = Math.floor(n / 1000) * 1000; return Number(f).toLocaleString(LOCALE, { notation: 'compact', maximumFractionDigits: 2 }); };
 export const num = (n, d = 0) => (n == null || isNaN(n) ? '—' : Number(n).toLocaleString(LOCALE, { minimumFractionDigits: d, maximumFractionDigits: d }));
 // Compact, never rounds up: 1,99,999.9 → "1.99 L"; 45,280 → "45.2K"; 9,999.9 → "9,999".
 const trunc = (x, d) => Math.floor(x * 10 ** d + 1e-9) / 10 ** d;
@@ -296,12 +298,12 @@ export function today(c) {
   </button>`}
   <div class="section" style="margin-top:22px">${sh(urgent.length ? 'Do these first' : 'Coming up', '<button class="link" data-act="go" data-arg="logbook">See all</button>')}
     <div class="upnext two-up">${(urgent.length ? urgent : list).slice(0, 4).map(({ it, st }) => upCard(it, st)).join('')}</div></div>
-  ${missed.length ? `<button class="banner" data-act="go" data-arg="alerts">${icon('missed')}<span class="t"><span class="big" style="font-size:20px">${missed.length}</span> missed ${missed.length === 1 ? 'call' : 'calls'} · ${esc(missed[missed.length - 1].name)}</span>${icon('chev', 'faint')}</button>` : ''}
+  ${missed.length ? `<button class="banner" data-act="go" data-arg="alerts">${icon('missed')}<span class="t"><span class="big" style="font-size:20px">${missed.length > 99 ? '99+' : missed.length}</span> missed · ${esc(missed[missed.length - 1].name)}</span>${icon('chev', 'faint')}</button>` : ''}
   ${s.parking && !link.connected ? `<button class="banner plain" data-act="sheet" data-arg="parking">${icon('pin')}<span class="t">Parked ${ago(s.parking.ts)} <span class="faint small">· walk back</span></span>${icon('chev', 'faint')}</button>` : ''}
   ${ccIn ? '' : cc}
   <div class="section">${sh('Readings', `<span class="eyebrow">${esc(S.model(s).series)}</span>`, 'readings')}
     <div class="card readings">
-      <div class="odo"><span class="eyebrow">Odometer</span><span><span class="big" data-live="odo">${num(Math.floor(s.odo))}</span><span class="unit">km</span></span></div>
+      <div class="odo"><span class="eyebrow">Odometer</span><span><span class="big" data-live="odo">${big(Math.floor(s.odo))}</span><span class="unit">km</span></span></div>
       <div class="grid3">
         <button data-act="sheet" data-arg="trip:A"><span class="eyebrow">Trip A</span><span class="big">${tripv(s.tripA.km)}<span class="unit">km</span></span></button>
         <button data-act="sheet" data-arg="trip:B"><span class="eyebrow">Trip B</span><span class="big">${tripv(s.tripB.km)}<span class="unit">km</span></span></button>
@@ -370,7 +372,7 @@ function connCard(c, good = false) {
     title = 'Not connected'; dot = 'k'; mode = 'idle'; sub = `${name} · paired`;
     body = `<div class="btns"><button class="btn ink" data-act="reconnect">${icon('bt')} Reconnect</button><button class="btn ghost" data-act="ride">${icon('speed')} Ride mode</button></div>`;
   } else {
-    title = 'No bike linked'; dot = 'k'; mode = 'idle'; sub = 'Pair once. It reconnects by itself.';
+    title = 'No bike linked'; dot = 'k'; mode = 'idle'; sub = 'Pair once, then it’s automatic';
     body = link.supported
       ? `<button class="btn ink block" data-act="pair">${icon('bt')} Pair your bike</button><button class="btn line block mt8" data-act="sim-on">Try the simulated bike</button>`
       : isIOS() ? `<button class="btn ink block" data-act="sheet" data-arg="ios-pair">${icon('bt')} Pair on iPhone</button><button class="btn line block mt8" data-act="sim-on">${icon('bolt')} Try the simulated bike</button><p class="note">iPhone browsers need one extra app for Bluetooth. It takes a minute.</p>`
@@ -382,7 +384,7 @@ function connCard(c, good = false) {
       : !known ? `<button class="btn ink sm cc-act" data-act="sheet" data-arg="pair-intro">${icon('bt')}Pair</button>`
       : st === 'idle' || st === 'error' ? `<button class="btn ink sm cc-act" data-act="reconnect">${icon('bt')}Connect</button>`
       : `<button class="btn line sm cc-act" data-act="cancel-link">${st === 'connecting' ? 'Cancel' : 'Stop'}</button>`;
-    const t = good ? 'Road ready' : title, sb = good ? `${title} · ${sub}` : sub;
+    const t = good ? 'Road ready' : title, sb = good ? (mode === 'idle' ? title : `${title} · ${sub}`) : sub;
     return `<div class="bc-conn conn-compact"><button class="cc-main" data-act="sheet" data-arg="bike" aria-label="Bike link details"><span class="cc-ic ${mode}${good ? ' good' : ''}">${icon(good ? 'ok' : 'signal')}<span class="dot ${dot}"></span></span><span class="cc-tx"><span class="cc-t">${t}</span><span class="cc-s">${sb}</span></span></button>${act}</div>`;
   }
   return `<div class="card conn mt12">
@@ -776,8 +778,8 @@ export function settings(c) {
     ${li({ ic: 'eye', t: 'Street names on the bike', d: 'Road name beside the arrow', end: sw(st.streetNames, 'toggle', 'streetNames'), chev: false, tag: 'div' })}
   </div></div>
   <div class="section">${sh('Look & sound')}<div class="card themecard"><div class="tc-top">
-    <div class="themes">${THEMES.filter(([k]) => st.allThemes || ['auto', 'sketch', 'sketchdark'].includes(k)).map(([k, l, bg, card, ink]) => `<button class="themeopt ${st.theme === k ? 'on' : ''}" data-act="theme" data-arg="${k}" aria-pressed="${st.theme === k}">
-      <span class="tp t-${k}" style="--tbg:${bg};--tcard:${card};--tink:${ink}"><u></u><i></i><i></i><b></b>${k === 'auto' ? '<em></em>' : ''}</span><span class="nm">${l}</span><span class="tsub">${{ auto: 'Follows phone', sketch: 'Light', sketchdark: 'Dark', paper: 'Light', obsidian: 'Dark', amoled: 'Dark' }[k] || ''}</span></button>`).join('')}</div>
+    ${(() => { const shown = THEMES.filter(([k]) => st.allThemes || ['auto', 'sketch', 'sketchdark'].includes(k)); return `<div class="themes" style="--n:${shown.length}">${shown.map(([k, l, bg, card, ink]) => `<button class="themeopt ${st.theme === k ? 'on' : ''}" data-act="theme" data-arg="${k}" aria-pressed="${st.theme === k}">
+      <span class="tp t-${k}" style="--tbg:${bg};--tcard:${card};--tink:${ink}"><u></u><i></i><i></i><b></b>${k === 'auto' ? '<em></em>' : ''}</span><span class="nm">${l}</span><span class="tsub">${{ auto: 'Follows phone', sketch: 'Light', sketchdark: 'Dark', paper: 'Light', obsidian: 'Dark', amoled: 'Dark' }[k] || ''}</span></button>`).join('')}</div>`; })()}
     <div class="eyebrow mt24">Accent</div>
     <div class="accents mt12">${ACCENTS.map(([k, col, l]) => `<button class="accentopt ${st.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${st.accent === k}" aria-label="${l}" title="${l}"><span class="dot" style="background-color:${col};--c:${col}"></span></button>`).join('')}</div>
   </div>
@@ -944,7 +946,7 @@ export function rideMode(c) {
   const b = rideBits(c);
   return `<div class="ride-mode" id="ride-mode" data-page="0">
     <div class="rm-pages">${layoutA({ ...b, tags: `${live.rec ? '<span class="tag x"><span class="dot x pulse"></span>Recording</span>' : ''}${link.connected ? '' : '<span class="tag k">Bike not linked</span>'}${live.gpsErr ? '<span class="tag a">No GPS</span>' : ''}` })}</div>
-    <button class="rm-note" data-act="goto-riding">${s.settings.autoRide ? 'Opens by itself. Change in Settings › Riding' : 'Auto-open: Settings › Riding'}</button>
+    <button class="rm-note" data-act="goto-riding">${s.settings.autoRide ? 'Auto-opens · Settings › Riding' : 'Auto-open · Settings › Riding'}</button>
     <div class="rm-foot2">
       <div class="hold"><svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="11" fill="none" stroke="var(--seg-off)" stroke-width="2"/><circle class="p" cx="13" cy="13" r="11" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="69.1" stroke-dashoffset="69.1" transform="rotate(-90 13 13)"/><circle cx="13" cy="13" r="4" fill="var(--ink-3)"/></svg><span class="eyebrow" data-live="rm-hint">Hold to leave</span></div>
     </div></div>`;
@@ -990,7 +992,6 @@ export function helpSheet(c, k) {
     <div class="list flat mt16">
       ${li({ ic: 'love', t: 'Support Waylink', d: 'Chip in towards development', act: 'sheet', arg: 'support' })}
       ${li({ ic: 'bike', t: 'Bike models', d: `${S.MODELS.length} models work with Waylink`, act: 'sheet', arg: 'models' })}
-      ${li({ ic: 'code', t: 'Source code', d: 'MIT licence', end: '', tag: 'a', href: REPO_URL })}
       ${li({ ic: 'bt', t: 'Bike protocol', d: 'PulsarNav on GitHub', tag: 'a', href: 'https://github.com/nikhilmaity00/pulsarnav' })}
       ${li({ ic: 'grid', t: 'Icons', d: 'Hugeicons', tag: 'a', href: 'https://hugeicons.com' })}
       ${li({ ic: 'wxPart', t: 'Weather', d: 'Open-Meteo, free and open data', chev: false, tag: 'div' })}

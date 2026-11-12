@@ -2117,3 +2117,23 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .themeopt .tp.t-auto i, .themeopt .tp.t-auto u, .themeopt .tp.t-auto b { z-index: 1; }
 .themeopt .tp.t-auto i { background: rgba(255, 250, 240, .32); box-shadow: 0 0 0 .5px rgba(120, 105, 85, .25); }
 .themeopt .tp.t-auto u { background: #8C8273; }
+/* Support: the chosen amount reads clearly */
+.give-chips button.on { background: var(--ink); color: var(--bg); box-shadow: none; }
+/* Ride mode hint: one line */
+.rm-note { white-space: nowrap; max-width: none !important; }
+/* Missed-call banner: one line */
+.banner .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* Onboarding panorama: a screen-wide box whose picture slides, instead of a five-screen-wide layer
+   (iPhone Safari stops drawing very wide moving layers past the first part) */
+.onb-stage .onb-scene.onb-img { width: 100% !important; transform: none !important; will-change: auto; background-size: 500% 100% !important; background-position: calc(var(--p) * 25%) bottom !important; }
+.onb-stage.still .onb-scene.onb-img { transform: none !important; background-position: 100% bottom !important; }
+.onb-stage .onb-img .ride-anim { width: 29% !important; left: calc((2.5 - var(--p)) * 100% - 14.5%) !important; }
+/* Theme cards share the full width, one equal column each */
+.themes { display: grid !important; grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)) !important; width: 100%; }
+.themeopt { width: 100%; min-width: 0; }
+.themeopt .tp { width: 100%; }
+.themeopt .tp { aspect-ratio: 1.25 !important; border-radius: 14px; margin-bottom: 8px; }
+.themeopt .tp u { top: 13%; height: 7%; } .themeopt .tp i:nth-of-type(1) { top: 30%; height: 17%; } .themeopt .tp i:nth-of-type(2) { top: 53%; height: 17%; }
+.themeopt .tp b { bottom: 10%; height: 9%; }
+.av-opt:not(.on) { transform: scale(.99); }
+.themeopt .tp.t-auto em::after { width: 15%; right: 7%; bottom: 8%; box-shadow: inset -4px -2px 0 0 #EDE5D6; }

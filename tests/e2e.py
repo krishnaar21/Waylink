@@ -304,7 +304,7 @@ async def main():
         await shot(pg, '12-edge-settings')
         await pg.evaluate("location.hash='today'"); await pg.wait_for_timeout(500)
         txt = await text(pg, '.readings')
-        check('edge readings show whole trip km and floored odometer', '9,999' in txt and '1,99,999' in txt and '2,00,000' not in txt, txt[:120])
+        check('edge readings show whole trip km and floored odometer', '9,999' in txt and '1.99L' in txt and '2L' not in txt, txt[:120])
         await shot(pg, '13-edge-today')
         await pg.evaluate("location.hash='trips'"); await pg.wait_for_timeout(500)
         eb = await pg.eval_on_selector('.pagehead .subtitle', 'e => getComputedStyle(e).whiteSpace == "nowrap" && e.getBoundingClientRect().height < 30')

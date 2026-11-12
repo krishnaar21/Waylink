@@ -326,7 +326,7 @@ function tickLive() {
   updateRideGauges();
   const sb = $('#sb-time'); if (sb) sb.textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   setLive('speed', V.num(live.speed));
-  setLive('odo', V.num(Math.floor(s.odo)));
+  setLive('odo', V.big(Math.floor(s.odo)));
   if (live.engine != null) setLive('engine', live.engine);
   setLive('clock', new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
   if (live.rec) { setLive('pill-rec', `${V.num(live.rec.km, 1)} km · ${V.clock((Date.now() - live.rec.start) / 1000)}`); setLive('rec-km', V.num(live.rec.km, live.ride.open ? 1 : 2)); setLive('rec-time', V.clock((Date.now() - live.rec.start) / 1000)); setLive('rec-top', V.num(live.rec.top)); }
