@@ -754,6 +754,10 @@ export const REPO_URL = 'https://github.com/krishnaar21/Waylink';
 // Donations. Fill in to switch them on: a UPI ID (e.g. name@okicici) and any of Buy Me a Coffee, Ko-fi or GitHub Sponsors.
 export const SUPPORT = { upi: '', payee: 'Waylink', links: [/* ['Buy Me a Coffee', 'https://buymeacoffee.com/…'], ['Ko-fi', 'https://ko-fi.com/…'], ['GitHub Sponsors', 'https://github.com/sponsors/…'] */] };
 const UPI_AMOUNTS = [49, 99, 199, 499];
+// What each amount buys, shown as a small picture on its button.
+const CUP = '<svg class="i" viewBox="3.5 2.5 17 17.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M9 3.5c-.6.8-.6 1.7 0 2.5M12.5 3.5c-.6.8-.6 1.7 0 2.5"/></svg>';
+const AMT_ICON = { 49: ['Chai', CUP], 99: ['Coffee', CUP], 199: ['Fuel', 'fuel'], 499: ['Service', 'wrench'], 0: ['Any', 'love'] };
+const amtIcon = (a) => { const g = AMT_ICON[a][1]; return g.startsWith('<svg') ? g : icon(g); };
 export const LOGOS = [['wl-turn', 'Turn'], ['wl-dusk', 'Dusk'], ['wl-ribbon', 'Ribbon'], ['wl-road', 'Road'], ['wl-chain', 'Chain'], ['wl-nav', 'Arrow'], ['wl-route', 'Route']];
 export const appName = () => APP_NAME;
 
@@ -999,7 +1003,7 @@ function sheetInner(c, key) {
       const upi = SUPPORT.upi ? `upi://pay?pa=${encodeURIComponent(SUPPORT.upi)}&pn=${encodeURIComponent(SUPPORT.payee)}&cu=INR&tn=${encodeURIComponent('Support Waylink')}${amt ? `&am=${amt}` : ''}` : '';
       return `<div class="support-hero"><span class="sh-heart">${icon('love')}</span><h2>Support Waylink</h2><p class="lead">Waylink is free, with no ads and no tracking. If it makes your rides easier, you can chip in towards new features and upkeep.</p></div>
         ${SUPPORT.upi ? `<div class="card pad mt16"><div class="ms-t">Chip in with UPI</div><div class="small muted">GPay, PhonePe, Paytm or any UPI app.</div>
-          <div class="amts mt16">${UPI_AMOUNTS.map((a) => `<button class="amt ${amt === a ? 'on' : ''}" data-act="support-amt" data-arg="${a}">₹${a}</button>`).join('')}<button class="amt ${!amt ? 'on' : ''}" data-act="support-amt" data-arg="0">Any</button></div>
+          <div class="amts mt16">${UPI_AMOUNTS.map((a) => `<button class="amt ${amt === a ? 'on' : ''}" data-act="support-amt" data-arg="${a}">${amtIcon(a)}<b>₹${a}</b><small>${AMT_ICON[a][0]}</small></button>`).join('')}<button class="amt ${!amt ? 'on' : ''}" data-act="support-amt" data-arg="0">${amtIcon(0)}<b>Any</b><small>You pick</small></button></div>
           <a class="btn ink block mt16" href="${upi}">${icon('rupee')} Pay ${amt ? `₹${amt}` : ''} with UPI</a>
           <button class="btn line block mt8" data-act="copy-upi">${icon('copy')} Copy UPI ID · ${esc(SUPPORT.upi)}</button></div>` : ''}
         ${SUPPORT.links.length ? `<div class="list mt12">${SUPPORT.links.map(([n, u]) => li({ ic: 'love', t: esc(n), d: esc(u.replace(/^https?:\/\//, '')), tag: 'a', href: u })).join('')}</div>` : ''}

@@ -930,9 +930,14 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .support-hero { display: flex; flex-direction: column; align-items: flex-start; }
 .support-hero .sh-heart { width: 56px; height: 56px; border-radius: 18px; margin-bottom: 14px; }
 .support-hero .sh-heart svg { width: 28px; height: 28px; }
-.amts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-.amt { height: 44px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); background: var(--raised); font-weight: 600; font-size: 15px; }
+.amts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.amt { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 12px; align-items: center; text-align: left; padding: 12px 14px; border-radius: 16px; box-shadow: inset 0 0 0 1px var(--line); background: var(--raised); }
+.amt svg { grid-row: span 2; width: 22px; height: 22px; color: var(--ink-2); }
+.amt b { font-weight: 650; font-size: 17px; line-height: 1.1; }
+.amt small { font-size: 12.5px; color: var(--ink-3); }
+.amt:last-child { grid-column: 1 / -1; }
 .amt.on { background: var(--ink); color: var(--bg); box-shadow: none; }
+.amt.on svg, .amt.on small { color: color-mix(in srgb, var(--bg) 72%, transparent); }
 .soon-card { background: var(--raised); }
 
 /* Colours: dots only, one row */

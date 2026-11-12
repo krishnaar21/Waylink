@@ -179,6 +179,23 @@ const PTR_MARK = '<svg viewBox="0 0 100 100" aria-hidden="true"><g class="wh"><c
 document.addEventListener('toggle', (e) => { const d = e.target; if (d?.matches?.('details.faq-i') && d.open) $$('details.faq-i[open]').forEach((o) => { if (o !== d) o.open = false; }); }, true);
 
 // ---------- Render ----------
+// A small DOM patcher: brings `to` into `from` node by node, touching only what differs.
+function morphChildren(from, to) {
+  const a = [...from.childNodes], b = [...to.childNodes];
+  b.forEach((nb, i) => {
+    const na = a[i];
+    if (!na) { from.appendChild(nb); return; }
+    if (na.nodeType !== nb.nodeType || na.nodeName !== nb.nodeName || (na.nodeType === 1 && na.id !== nb.id)) { from.replaceChild(nb, na); return; }
+    if (na.nodeType !== 1) { if (na.nodeValue !== nb.nodeValue) na.nodeValue = nb.nodeValue; return; }
+    for (const { name, value } of [...nb.attributes]) if (na.getAttribute(name) !== value) na.setAttribute(name, value);
+    for (const { name } of [...na.attributes]) if (!nb.hasAttribute(name)) na.removeAttribute(name);
+    if (na.tagName === 'INPUT' || na.tagName === 'TEXTAREA') { if (document.activeElement !== na && na.value !== (nb.getAttribute('value') ?? '')) na.value = nb.getAttribute('value') ?? ''; if (na.type === 'checkbox' || na.type === 'radio') na.checked = nb.hasAttribute('checked'); return; }
+    if (na.tagName === 'SELECT') { na.innerHTML = nb.innerHTML; return; }
+    if (na.tagName === 'svg' || na.namespaceURI === 'http://www.w3.org/2000/svg') { if (na.innerHTML !== nb.innerHTML) na.innerHTML = nb.innerHTML; return; }
+    morphChildren(na, nb);
+  });
+  for (let i = a.length - 1; i >= b.length; i--) a[i].remove();
+}
 function render(anim = '') {
   applyTheme();
   const vid = S.veh(s).id;
@@ -187,25 +204,31 @@ function render(anim = '') {
   const views = $('#views');
   if (!s.onboarded) {
     views.innerHTML = V.onboarding(s);
-    $('#tabbar').innerHTML = ''; $('#fab').innerHTML = ''; $('#pill').innerHTML = '';
+    for (const id of ['#tabbar', '#fab', '#pill']) { const el = $(id); el.innerHTML = ''; el._h = ''; }
     return;
   }
   const prev = views.firstElementChild;
   const same = prev && prev.dataset.screen === screen;
-  const scroll = same ? prev.scrollTop : 0;
   let html = V[screen](ctx());
-  if (same) html = html.replace('class="stagger"', 'class=""');
-  views.innerHTML = `<main class="view ${same ? '' : anim || 'fade-in'}" data-screen="${screen}">${html}</main>`;
-  const vEl = views.firstElementChild;
-  vEl.scrollTop = scroll;
-  const ph = $('.pagehead', vEl);
-  if (ph) { const upd = () => ph.classList.toggle('stuck', vEl.scrollTop > 6); upd(); vEl.addEventListener('scroll', upd, { passive: true }); }
-  // The FAB steps aside while you scroll and comes back when you stop.
-  let fabT; vEl.addEventListener('scroll', () => { const f = $('#fab'); f.classList.add('away'); clearTimeout(fabT); fabT = setTimeout(() => f.classList.remove('away'), 420); }, { passive: true });
-  $('#tabbar').innerHTML = V.tabbar(ctx(), screen);
-  $('#fab').innerHTML = screen === 'today' ? `<button class="fab" data-act="sheet" data-arg="quick" aria-label="Quick actions">${V.icon('plus')}</button>`
+  if (same) {
+    // Same screen: patch only what changed, so toggles and edits don't flash the page or reload pictures.
+    html = html.replace('class="stagger"', 'class=""');
+    const tpl = document.createElement('template'); tpl.innerHTML = html;
+    morphChildren(prev, tpl.content);
+    $('.pagehead', prev)?.classList.toggle('stuck', prev.scrollTop > 6);
+  } else {
+    views.innerHTML = `<main class="view ${anim || 'fade-in'}" data-screen="${screen}">${html}</main>`;
+    const vEl = views.firstElementChild;
+    const ph = () => $('.pagehead', vEl);
+    const upd = () => ph()?.classList.toggle('stuck', vEl.scrollTop > 6); upd(); vEl.addEventListener('scroll', upd, { passive: true });
+    // The FAB steps aside while you scroll and comes back when you stop.
+    let fabT; vEl.addEventListener('scroll', () => { const f = $('#fab'); f.classList.add('away'); clearTimeout(fabT); fabT = setTimeout(() => f.classList.remove('away'), 420); }, { passive: true });
+  }
+  const setHTML = (el, h) => { if (el && el._h !== h) { el.innerHTML = h; el._h = h; } };
+  setHTML($('#tabbar'), V.tabbar(ctx(), screen));
+  setHTML($('#fab'), screen === 'today' ? `<button class="fab" data-act="sheet" data-arg="quick" aria-label="Quick actions">${V.icon('plus')}</button>`
     : screen === 'settings' ? `<button class="fab fab-bike" data-act="sheet" data-arg="vehicle:new" aria-label="Add a vehicle">${V.ADD_BIKE}</button>`
-    : '';
+    : '');
   renderPill();
   renderOverlay();
   if (screen === 'fuel') wireChart();
@@ -1022,7 +1045,6 @@ function launchSound() { if (launched || s.settings.sounds === false) return; la
 setTimeout(() => { SND.unlock(); if (SND.ready()) launchSound(); }, 60);
 const firstTap = () => {
   SND.unlock();
-  if (performance.now() - bootAt < 6000) launchSound();
   ['touchend', 'click', 'keydown'].forEach((t) => removeEventListener(t, firstTap, true));
 };
 ['touchend', 'click', 'keydown'].forEach((t) => addEventListener(t, firstTap, true));
