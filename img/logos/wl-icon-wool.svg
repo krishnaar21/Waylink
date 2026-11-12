@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs>
+<pattern id="knit" width="14" height="12" patternUnits="userSpaceOnUse"><rect width="14" height="12" fill="#123E44"/><path d="M0 0L7 9L14 0" fill="none" stroke="#1D5A61" stroke-width="3.2"/><path d="M0 4L7 12" stroke="#0C2F34" stroke-width="1"/></pattern>
+<pattern id="thread" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-40)"><rect width="5" height="5" fill="#BFE6E6"/><rect width="5" height="1.6" fill="#8FC9CA"/></pattern>
+<filter id="fz"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="4"/></filter>
+<filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity=".45"/></filter></defs>
+<rect width="512" height="512" rx="114" fill="url(#knit)"/><rect x="40" y="40" width="432" height="432" rx="86" fill="none" stroke="#0A262A" stroke-width="6" stroke-dasharray="2 6"/>
+<g transform="translate(256 266) scale(3.5) translate(-47 -48)" filter="url(#sh)"><path d="M2.5 44C3 64 12 80 25 80C37 80 42 64 46 50C48.8 40.5 54.5 31 54 22C53.6 13.5 39 12.5 38.6 22C38.2 31 43.4 40.5 46.8 50C51 64 58 80 71 80C84 80 90 56 91.5 26L91.5 14" fill="none" stroke="url(#thread)" stroke-width="11" stroke-linejoin="round" filter="url(#fz)"/></g></svg>

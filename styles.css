@@ -1870,3 +1870,45 @@ button.brand-final { width: 100%; display: grid; place-items: center; cursor: po
 .appicons { grid-template-columns: repeat(5, 1fr) !important; gap: 16px 4px !important; }
 .appicon img { width: 56px !important; height: 56px !important; border-radius: 13px !important; }
 .appicon { font-size: 11.5px !important; }
+/* App icons: two rows of four */
+.appicons { grid-template-columns: repeat(4, 1fr) !important; gap: 18px 6px !important; }
+.appicon img { width: 64px !important; height: 64px !important; border-radius: 15px !important; }
+.appicon { font-size: 12.5px !important; }
+/* Ride mode hint: room above, one short line */
+.rm-note { bottom: calc(var(--bottom) + 140px) !important; font-size: 12px !important; }
+.ride-mode .rm-page { padding-bottom: calc(var(--bottom) + 190px) !important; }
+/* ---------- Onboarding art: abstract, in the app's card language ---------- */
+.ab { position: relative; width: 240px; height: 200px; margin: 0 auto; }
+.ab-blob { position: absolute; left: 50%; top: 50%; width: 190px; height: 190px; margin: -95px 0 0 -95px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--accent) 26%, transparent), transparent 68%); filter: blur(6px); }
+.ab-ring { position: absolute; left: 50%; top: 50%; border-radius: 50%; border: 1.5px dashed color-mix(in srgb, var(--ink) 14%, transparent); }
+.ab-ring.r1 { width: 132px; height: 132px; margin: -66px 0 0 -66px; }
+.ab-ring.r2 { width: 196px; height: 196px; margin: -98px 0 0 -98px; border-style: solid; border-color: color-mix(in srgb, var(--ink) 7%, transparent); animation: abSpin 40s linear infinite; }
+@keyframes abSpin { to { transform: rotate(360deg); } }
+.ab-main { position: absolute; left: 50%; top: 50%; width: 84px; height: 84px; margin: -42px 0 0 -42px; border-radius: 26px; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); box-shadow: 0 16px 34px -14px var(--accent), inset 0 1px 0 rgba(255,255,255,.25); z-index: 2; }
+.ab-main svg { width: 40px; height: 40px; }
+.ab-sat { position: absolute; width: 50px; height: 50px; border-radius: 16px; display: grid; place-items: center; background: var(--card); color: var(--ink-2); box-shadow: 0 0 0 1px var(--line), 0 12px 24px -16px rgba(0,0,0,.45); z-index: 3; animation: abFloat 5s ease-in-out infinite; }
+.ab-sat svg { width: 23px; height: 23px; }
+.ab-sat.s0 { left: 18px; top: 26px; } .ab-sat.s1 { right: 14px; top: 46px; animation-delay: -1.6s; } .ab-sat.s2 { left: 52px; bottom: 6px; animation-delay: -3.2s; }
+.ab1 .ab-sat.s0 { left: 30px; top: 12px; } .ab1 .ab-sat.s1 { right: 22px; top: 92px; } .ab1 .ab-sat.s2 { left: 14px; bottom: 30px; }
+.ab2 .ab-sat.s0 { left: 12px; top: 70px; } .ab2 .ab-sat.s1 { right: 36px; top: 10px; } .ab2 .ab-sat.s2 { right: 18px; bottom: 14px; left: auto; }
+@keyframes abFloat { 50% { transform: translateY(-6px); } }
+.onb-art { display: block; }
+/* Step 2: phone ⟶ link ⟶ bike */
+.ab-link { width: 300px; height: 150px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.ab-link .ab-blob { width: 170px; height: 170px; margin: -85px 0 0 -85px; }
+.ab-link .ab-sat { position: relative; left: auto !important; top: auto !important; right: auto !important; bottom: auto !important; animation: none; }
+.ab-sat.big { width: 66px; height: 66px; border-radius: 20px; } .ab-sat.big svg { width: 30px; height: 30px; color: var(--ink); }
+.ab-link .ab-main.sm { position: relative; left: auto; top: auto; margin: 0; width: 52px; height: 52px; border-radius: 50%; }
+.ab-link .ab-main.sm svg { width: 24px; height: 24px; }
+.ab-link .ab-main.sm::after { content: ""; position: absolute; inset: -8px; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; animation: abPing 2s ease-out infinite; }
+@keyframes abPing { 0% { transform: scale(.8); opacity: .7; } 100% { transform: scale(1.5); opacity: 0; } }
+.ab-wave { display: flex; gap: 5px; } .ab-wave i { width: 5px; height: 5px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 70%, transparent); animation: opDot 1.2s ease-in-out infinite; }
+.ab-wave i:nth-child(2) { animation-delay: .2s; } .ab-wave i:nth-child(3) { animation-delay: .4s; }
+/* Step 2: what linking gives you, as one list card */
+.onb-gets { grid-template-columns: 1fr !important; gap: 0 !important; max-width: 360px !important; border-radius: var(--r-md); background: var(--card); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
+.og { display: flex !important; align-items: center; gap: 12px; padding: 11px 14px !important; border-radius: 0 !important; box-shadow: none !important; background: none !important; }
+.og + .og { border-top: 1px solid var(--line); }
+.og-ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in srgb, var(--accent) 14%, transparent); flex: none; }
+.og-ic svg { width: 18px !important; height: 18px !important; color: var(--accent); margin: 0 !important; }
+.og-t { display: flex; flex-direction: column; } .og-t b { font-size: 14.5px; } .og-t span { font-size: 12.5px; color: var(--ink-3); }
+.onb-link .onb-body { justify-content: flex-start; padding-top: 4px; }

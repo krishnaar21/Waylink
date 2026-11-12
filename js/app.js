@@ -308,7 +308,7 @@ function go(to) { if (location.hash.slice(1) === to) navigate(to); else location
 // ---------- Live ticks ----------
 function setLive(key, val) { $$(`[data-live="${key}"]`).forEach((el) => { if (el.innerHTML !== String(val)) el.innerHTML = val; }); }
 function updateRideGauges() {
-  const f = Math.max(0, Math.min(1, live.speed / V.MAX_KMH));
+  const f = Math.max(0, Math.min(1, live.speed / V.maxKmh(S.model(s))));
   const arc = $('#rm-arc'); if (arc) arc.setAttribute('stroke-dasharray', `${(arc.dataset.len * f).toFixed(1)} ${arc.dataset.len}`);
   const nd = $('#rm-needle'); if (nd) nd.style.transform = `rotate(${(f * 180).toFixed(1)}deg)`;
   const hb = $('#rm-hud'); if (hb) hb.style.width = (f * 100).toFixed(1) + '%';
