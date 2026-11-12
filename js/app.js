@@ -78,7 +78,7 @@ function applyTheme() {
   const t = s.settings.theme === 'auto' ? (mqDark.matches ? 'obsidian' : 'paper') : s.settings.theme;
   document.documentElement.dataset.theme = t;
   // Launch images follow the app's theme, not just the phone's, so a dark theme never opens on white.
-  const mode = t === 'paper' ? 'light' : 'dark';
+  const mode = t === 'paper' || t === 'sketch' ? 'light' : 'dark';
   $$('link[rel=apple-touch-startup-image]').forEach((l) => { const h = l.getAttribute('href'), n = h.replace(/\/(light|dark)-/, `/${mode}-`); if (n !== h) l.setAttribute('href', n); });
   document.documentElement.dataset.accent = s.settings.accent; document.documentElement.dataset.brand = V.brandOf(s); document.documentElement.dataset.icons = s.settings.icons === 'duo' ? 'duo' : 'line';
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();

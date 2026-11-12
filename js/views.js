@@ -53,7 +53,7 @@ export function segs(n, filled, cls = 's', extra = '') {
 // ---------- Icons ----------
 export const selmark = (inline = false) => `<span class="selmark ${inline ? 'inline' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
 export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400], ['atkinson', 'Atkinson', "'Atkinson Hyperlegible Next'", 450], ['public', 'Public Sans', "'Public Sans'", 450]];
-export const THEMES = [['auto', 'Auto', '#EDEFF2', '#F9FAFB', '#12151A'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Navy', '#0B1530', '#13203F', '#EAF0FF']];
+export const THEMES = [['auto', 'Auto', '#EDEFF2', '#F9FAFB', '#12151A'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Navy', '#0B1530', '#13203F', '#EAF0FF'], ['sketch', 'Paper', '#EEE7DA', '#F7F1E6', '#2A2620']];
 export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
 // Icons: Hugeicons (MIT), credited in About.
 export const ICON_CREDIT = '<a href="https://hugeicons.com" target="_blank" rel="noopener">Hugeicons</a>';
@@ -1362,7 +1362,7 @@ export function onboarding(s, step = 0, link = {}) {
       : isIOS() ? `<button class="btn ink block" data-act="onb-finish" data-arg="ios">${icon('bt')} Pair on iPhone</button>` : '';
     return `<div class="onb onb-link">
       <div class="onb-top"><button class="circle" data-act="onb-step" data-arg="1" aria-label="Back">${icon('back')}</button><button class="link" data-act="onb-finish" data-arg="later">Skip</button></div>
-      <div class="onb-body"><div class="onb-stage still" style="--p:2">${SCENE}<span class="link-badge">${icon('bt')}</span></div><div class="eyebrow mt24">Step 2 of 2</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once with the ignition on. It reconnects by itself after that.</p>
+      <div class="onb-body"><div class="onb-stage still" style="--p:2">${SCENE}<img class="link-rider" src="img/rider.png" alt=""><svg class="link-wave" viewBox="0 0 120 30" aria-hidden="true"><path d="M2 15C12 3 22 3 32 15S52 27 62 15S82 3 92 15S112 27 118 15"/></svg><span class="link-badge">${icon('bt')}</span></div><div class="eyebrow mt24">Step 2 of 2</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once with the ignition on. It reconnects by itself after that.</p>
       <div class="onb-gets2">${[['turnRight', 'Turns'], ['phone', 'Callers'], ['clock', 'Time'], ['fuel', 'Fuel']].map(([ic, t]) => `<span>${icon(ic)}${t}</span>`).join('')}</div></div>
       <div class="onb-foot">${pair}<button class="btn ${pair ? 'line' : 'ink'} block mt8" data-act="onb-finish" data-arg="sim">${icon('bolt')} Try the simulated bike</button><button class="link onb-sample" data-act="onb-finish" data-arg="later">I’ll do this later</button></div>
     </div>`;

@@ -37,22 +37,9 @@ parts.append(f'<g class="sc-dial">{ticks}<path d="M{cx + 92*math.cos(math.radian
 parts.append(''.join(f'<path d="M{P(2, x)} {road_y(P(2,x)) - 34 + k*6:.0f}h{l}" class="sc-streak"/>' for k, (x, l) in enumerate([(40, 70), (120, 46), (210, 80), (300, 40)])))
 # 3 · pit stop: fuel pump and a workshop with a wrench
 px = P(3, 120)
-parts.append(f'<g class="sc-pump" filter="url(#sc-shadow)" transform="translate({px} 206)">'
-  '<rect x="-34" y="96" width="76" height="10" rx="3" fill="url(#m-base)"/>'
-  '<rect x="-28" y="0" width="56" height="98" rx="12" fill="url(#m-pump)"/>'
-  '<rect x="-28" y="0" width="56" height="18" rx="12" fill="url(#m-cap)"/>'
-  '<rect x="-19" y="26" width="38" height="24" rx="5" fill="#0E1420"/><rect x="-15" y="31" width="22" height="5" rx="1.5" fill="#7DF3C4" opacity=".9"/><rect x="-15" y="40" width="14" height="4" rx="1.5" fill="#7DF3C4" opacity=".55"/>'
-  '<rect x="-19" y="58" width="38" height="30" rx="6" fill="url(#m-panel)"/><circle cx="-8" cy="73" r="5" fill="#C9CFD8"/><circle cx="8" cy="73" r="5" fill="#C9CFD8"/>'
-  '<path d="M28 30h10a6 6 0 0 1 6 6v40a8 8 0 0 1 -16 0v-6" fill="none" stroke="#2B313C" stroke-width="5" stroke-linecap="round"/>'
-  '<path d="M24 64l10 -4v14l-10 -2z" fill="#2B313C"/><rect x="-22" y="4" width="10" height="9" rx="2" class="sc-plate"/></g>')
+parts.append(f'<g class="sc-pump" transform="translate({px} 222)"><rect x="-24" y="0" width="48" height="84" rx="14" class="sc-plate"/><rect x="-14" y="14" width="28" height="12" rx="4" fill="#fff" opacity=".9"/><path d="M24 26h8a5 5 0 0 1 5 5v34" fill="none" class="sc-hoseline"/><rect x="-30" y="84" width="60" height="6" rx="3" class="sc-baseline"/></g>')
 gx = P(3, 268)
-parts.append(f'<g class="sc-shop" filter="url(#sc-shadow)" transform="translate({gx} 186)">'
-  '<path d="M-70 34L0 -14L70 34Z" fill="url(#m-roof)"/>' + ''.join(f'<path d="M{-62 + k*12} {30 - (min(k,10-k) if k<=10 else 0)*0}L{-62 + k*12} 34" stroke="#000" stroke-opacity=".08"/>' for k in range(11)) +
-  '<rect x="-64" y="32" width="128" height="90" fill="url(#m-wall)"/>'
-  '<rect x="-40" y="56" width="80" height="66" rx="3" fill="url(#m-shutter)"/>' + ''.join(f'<rect x="-40" y="{60 + k*7}" width="80" height="1.4" fill="#000" opacity=".12"/>' for k in range(9)) +
-  '<rect x="-40" y="56" width="80" height="6" fill="#000" opacity=".18"/>'
-  '<rect x="-30" y="38" width="60" height="14" rx="3" fill="#1E2430"/><rect x="-24" y="43" width="34" height="4" rx="2" fill="#EDEFF3" opacity=".85"/>'
-  '<circle cx="46" cy="44" r="13" class="sc-dot"/><path d="M41 49L49 41M47 37a5 5 0 1 0 5 5" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/></g>')
+parts.append(f'<g class="sc-shop" transform="translate({gx} 200)"><path d="M-56 34L0 -6L56 34V96H-56Z" class="sc-house"/><rect x="-26" y="50" width="52" height="46" rx="4" class="sc-door"/><circle cx="0" cy="24" r="12" class="sc-dot"/><path d="M-4 28L4 20M2 16a4 4 0 1 0 4 4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></g>')
 # 4 · night: moon, stars, parked bike with a lock
 parts.append(f'<circle cx="{P(4,286)}" cy="96" r="70" class="sc-moonglow" filter="url(#sc-soft)"/><circle class="sc-moon" cx="{P(4,286)}" cy="96" r="28"/><circle class="sc-moonc" cx="{P(4,298)}" cy="88" r="24"/>')
 stars = ''.join(f'<circle cx="{P(4, random.randint(20, 370))}" cy="{random.randint(30, 190)}" r="{random.choice([1.2, 1.6, 2.2])}" class="sc-star"/>' for _ in range(22))
@@ -61,7 +48,7 @@ parts.append(stars)
 lx, ly = P(4, 150), road_y(P(4, 150)) - 6
 pass
 pass
-parts.append(f'<g class="sc-lock" filter="url(#sc-shadow)" transform="translate({P(4,170)} 186)">'
+parts.append(f'<g class="sc-lock" filter="url(#sc-shadow)" transform="translate({P(4,195)} 186)">'
   '<ellipse cx="0" cy="96" rx="64" ry="9" fill="#000" opacity=".12"/>'
   '<path d="M-30 6V-18a30 30 0 0 1 60 0V6" fill="none" stroke="url(#m-shackle)" stroke-width="13" stroke-linecap="round"/>'
   '<rect x="-48" y="0" width="96" height="86" rx="22" fill="url(#m-lock)"/>'
