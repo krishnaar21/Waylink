@@ -85,7 +85,7 @@ export function freshState() {
   return bindVehicle({
     v: 2, onboarded: false, sample: false,
     profile: { name: '', phone: '', email: '', city: '', country: 'IN', licenceNo: '', licenceExpiry: null, blood: '', medical: '', iceName: '', icePhone: '', photo: null, since: Date.now() },
-    settings: { theme: 'auto', accent: 'rust', font: 'crimson', devFrames: false, rideLayout: 0, art: 'photo', autoRide: true, autoRecord: true, wakeLock: true, streetNames: false, sounds: true, progress: 'gauge', bodyFont: 'atkinson', simulated: false, alerts: { calls: true, waCalls: true, waMsgs: true } },
+    settings: { theme: 'auto', accent: 'rust', font: 'spectral', devFrames: false, rideLayout: 0, art: 'photo', autoRide: true, autoRecord: true, wakeLock: true, streetNames: false, sounds: true, progress: 'gauge', bodyFont: 'public', simulated: false, alerts: { calls: true, waCalls: true, waMsgs: true } },
     alerts: { missed: [], wa: [], sent: 0, log: [] },
     vehicles: [v], active: v.id,
   });
@@ -114,10 +114,10 @@ export function migrate(raw) {
   if (s.settings.theme === 'carbon') s.settings.theme = 'obsidian';
   if (typeof s.settings.sounds !== 'boolean') s.settings.sounds = true;
   // New type defaults (Crimson titles, Atkinson body), applied once to existing installs too.
-  if (!s.settings.typeV3) { s.settings.font = 'crimson'; s.settings.bodyFont = 'atkinson'; s.settings.typeV3 = true; }
-  if (!['system', 'inter', 'plex', 'atkinson'].includes(s.settings.bodyFont)) s.settings.bodyFont = 'atkinson';
+  if (!s.settings.typeV4) { s.settings.font = 'spectral'; s.settings.bodyFont = 'public'; s.settings.typeV4 = true; }
+  if (!['system', 'inter', 'plex', 'atkinson', 'public'].includes(s.settings.bodyFont)) s.settings.bodyFont = 'public';
   delete s.settings.logo;
-  if (!s.settings.font || !['onest','geist','garamond','crimson','vollkorn','fraunces'].includes(s.settings.font)) s.settings.font = 'crimson';
+  if (!s.settings.font || !['onest','geist','spectral','garamond','crimson','vollkorn','fraunces'].includes(s.settings.font)) s.settings.font = 'spectral';
   return bindVehicle(s);
 }
 

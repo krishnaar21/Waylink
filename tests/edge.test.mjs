@@ -166,7 +166,7 @@ test('Every icon the app draws exists in UIcons or the Lucide Bluetooth fallback
 
 test('Help sheets render and the FAQ has answers', () => {
   const s = S.seedSample(S.migrate(null));
-  for (const k of ['faq', 'report', 'about']) assert.ok(V.sheetHTML({ s, link: fakeLink, live: liveOf() }, k).includes('<h2>'), k);
+  for (const k of ['faq', 'report', 'about']) assert.ok(V.sheetHTML({ s, link: fakeLink, live: liveOf() }, k).includes('<h2'), k);
   assert.ok(V.FAQ.length >= 6 && V.FAQ.every(([q, a]) => q.endsWith('?') || a.length > 20));
 });
 

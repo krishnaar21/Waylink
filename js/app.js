@@ -30,13 +30,14 @@ const mqDark = matchMedia('(prefers-color-scheme: dark)');
 const FONT_CSS = {
   onest: 'Onest:wght@400;500;600',
   geist: 'Geist:wght@400;500;600',
+  spectral: 'Spectral:wght@400;500;600',
   garamond: 'EB+Garamond:wght@400;500;600',
   crimson: 'Crimson+Pro:wght@400;500;600',
   vollkorn: 'Vollkorn:wght@400;500;600',
   fraunces: 'Fraunces:opsz,wght@9..144,500;9..144,600',
 };
 const fontHref = (keys) => 'https://fonts.googleapis.com/css2?' + keys.map((k) => 'family=' + FONT_CSS[k]).join('&') + '&display=swap';
-const BODY_CSS = { inter: 'Inter:wght@400..700', plex: 'IBM+Plex+Sans:wght@400;500;600;700', atkinson: 'Atkinson+Hyperlegible+Next:wght@400..700' };
+const BODY_CSS = { inter: 'Inter:wght@400..700', plex: 'IBM+Plex+Sans:wght@400;500;600;700', atkinson: 'Atkinson+Hyperlegible+Next:wght@400..700', public: 'Public+Sans:wght@400..700' };
 function applyBody() {
   const k = BODY_CSS[s.settings.bodyFont] ? s.settings.bodyFont : 'system';
   document.documentElement.dataset.body = k;
@@ -46,7 +47,7 @@ function applyBody() {
 }
 function applyFont() {
   applyBody();
-  if (!FONT_CSS[s.settings.font]) s.settings.font = 'crimson';
+  if (!FONT_CSS[s.settings.font]) s.settings.font = 'spectral';
   const k = s.settings.font;
   document.documentElement.dataset.font = k;
   let el = $('#font-serif'); const href = fontHref([k]);
@@ -74,7 +75,7 @@ function applyTheme() {
   document.documentElement.dataset.theme = t;
   document.documentElement.dataset.accent = s.settings.accent;
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
-  $('meta[name=theme-color]')?.setAttribute('content', bg || '#EEEBE6');
+  $('meta[name=theme-color]')?.setAttribute('content', bg || '#EDEFF2');
 }
 mqDark.addEventListener?.('change', applyTheme);
 

@@ -5,6 +5,7 @@
 }
 html[data-body="inter"] { --sans: 'Inter', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
 html[data-body="plex"] { --sans: 'IBM Plex Sans', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
+html[data-body="public"] { --sans: 'Public Sans', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
 html[data-body="atkinson"] { --sans: 'Atkinson Hyperlegible Next', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
 :root {
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -33,6 +34,7 @@ html[data-body="atkinson"] { --sans: 'Atkinson Hyperlegible Next', -apple-system
 }
 html[data-font="onest"] { --serif: 'Onest', -apple-system, system-ui, sans-serif; --dw: 600; --dls: -.035em; --dscale: 1; }
 html[data-font="geist"] { --serif: 'Geist', -apple-system, system-ui, sans-serif; --dw: 600; --dls: -.04em; --dscale: 1; }
+html[data-font="spectral"] { --serif: 'Spectral', Georgia, serif; --dw: 500; --dls: -.015em; --dscale: 1; }
 html[data-font="garamond"] { --serif: 'EB Garamond', Garamond, Georgia, serif; --dw: 500; --dls: -.01em; --dscale: 1.12; }
 html[data-font="vollkorn"] { --serif: 'Vollkorn', Georgia, serif; --dw: 500; --dls: -.01em; --dscale: 1.02; }
 html[data-font="fraunces"] { --serif: 'Fraunces', Georgia, serif; --dw: 600; --dls: -.02em; --dscale: 1; }
@@ -740,8 +742,8 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .themeopt .tp i { position: absolute; left: 14%; right: 14%; height: 18%; border-radius: 5px; background: var(--tcard); }
 .themeopt .tp i:first-child { top: 16%; } .themeopt .tp i:nth-child(2) { top: 40%; }
 .themeopt .tp b { position: absolute; left: 14%; bottom: 14%; width: 38%; height: 9%; border-radius: 4px; background: var(--accent); }
-.themeopt .tp.auto { background: linear-gradient(135deg, #ECE8E1 50%, #161514 50%); }
-.themeopt .tp.auto i { background: linear-gradient(135deg, #F7F5F1 50%, #2A2826 50%); }
+.themeopt .tp.auto { background: linear-gradient(135deg, #EDEFF2 50%, #0E1013 50%); }
+.themeopt .tp.auto i { background: linear-gradient(135deg, #F9FAFB 50%, #23272D 50%); }
 .themeopt .nm { font-size: 13px; color: var(--ink-3); }
 .themeopt.on .tp { box-shadow: 0 0 0 2px var(--card), 0 0 0 3px var(--ink); }
 .themeopt.on .nm { color: var(--ink); font-weight: 600; }
@@ -1071,3 +1073,74 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .bc-swap svg { width: 15px; height: 15px; }
 /* Profile card lines up with list rows */
 .profile-card { padding: 14px 16px !important; }
+
+/* Colour schemes v2. Light "Mist": cool, clean neutrals. Dark "Graphite": blue-black with soft steel text. */
+:root {
+  --bg: #EDEFF2; --card: #F9FAFB; --sheet: #F5F6F8; --raised: #FFFFFF;
+  --ink: #12151A; --ink-2: #3C424B; --ink-3: #626973; --ink-4: #9AA0A9;
+  --line: rgba(18, 21, 26, .09); --seg-off: #D9DDE2;
+  --sage: #7F9C8A; --sage-ink: #3F6150; --amber: #B86E10; --red: #B8352A;
+  --tint-sage: #E1EAE4; --tint-amber: #F4E9D6; --tint-red: #F7E6E3;
+  --hero-ok: radial-gradient(90% 70% at 50% 0%, rgba(255,255,255,.6), rgba(255,255,255,0) 70%), linear-gradient(180deg, #D8E5DD 0%, #E5EDE8 55%, #EEF2EF 100%);
+  --hero-soon: radial-gradient(90% 70% at 50% 0%, rgba(255,255,255,.6), rgba(255,255,255,0) 70%), linear-gradient(180deg, #F1E4CB 0%, #F5EDDF 55%, #F7F4EE 100%);
+  --hero-bad: radial-gradient(90% 70% at 50% 0%, rgba(255,255,255,.6), rgba(255,255,255,0) 70%), linear-gradient(180deg, #F1DAD5 0%, #F5E7E4 55%, #F7F0EF 100%);
+  --hero-off: radial-gradient(90% 70% at 50% 0%, rgba(255,255,255,.6), rgba(255,255,255,0) 70%), linear-gradient(180deg, #E1E4E9 0%, #E9EBEF 55%, #F0F1F4 100%);
+  --shadow: 0 .5px 0 rgba(15,22,35,.04), 0 10px 28px -18px rgba(15,22,35,.22);
+  --shadow-btn: 0 1px 2px rgba(15,22,35,.07), 0 6px 16px -8px rgba(15,22,35,.22);
+  --backdrop: rgba(25,32,44,.34);
+}
+[data-theme="obsidian"], [data-theme="amoled"] {
+  --bg: #0E1013; --card: #171A1F; --sheet: #1A1D22; --raised: #23272D;
+  --ink: #EDEFF3; --ink-2: #BCC2CB; --ink-3: #8C939D; --ink-4: #5E656E;
+  --line: rgba(255,255,255,.08); --seg-off: #2D323A;
+  --sage: #86A796; --sage-ink: #A9C9B8; --amber: #E6A24E; --red: #F08A7C;
+  --tint-sage: #1E2B25; --tint-amber: #33291C; --tint-red: #33211F;
+  --hero-ok: linear-gradient(180deg, #1F2D27 0%, #1A2320 55%, #171C1C 100%);
+  --hero-soon: linear-gradient(180deg, #342A1C 0%, #28231D 55%, #1E1D1C 100%);
+  --hero-bad: linear-gradient(180deg, #3A2322 0%, #2B2021 55%, #201C1F 100%);
+  --hero-off: linear-gradient(180deg, #22262C 0%, #1B1E23 100%);
+  --backdrop: rgba(0,0,0,.6);
+}
+[data-theme="amoled"] { --bg: #000; --card: #101215; --sheet: #13161A; --raised: #1C1F24; }
+.wx-place { margin-top: 14px; }
+.wx-place summary { list-style: none; display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-3); cursor: pointer; padding: 6px 2px; }
+.wx-place summary::-webkit-details-marker { display: none; }
+.wx-place summary svg { width: 15px; height: 15px; }
+.wx-place summary .link { color: var(--ink); font-weight: 600; }
+.wx-place[open] summary .link { opacity: .5; }
+/* Cards that hold their own list rows (garage, look & sound) */
+.vc-rows { border-top: var(--hair) solid var(--line); }
+.vc-rows .li { background: transparent; }
+.themecard { padding: 0; overflow: hidden; }
+.themecard .tc-top { padding: 18px 20px 20px; }
+
+/* ---------- Brand: animated route mark and wordmark ---------- */
+.wl-mark { width: 92px; height: 92px; overflow: visible; color: var(--accent); }
+.wl-mark .m-start { fill: none; stroke: currentColor; stroke-width: 7; }
+.wl-mark .m-road { fill: none; stroke: var(--ink); stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 100 100; stroke-dashoffset: 0; }
+.wl-mark .m-pin { fill: currentColor; }
+.wl-mark .m-pin circle { fill: var(--bg); }
+.wl-word { display: inline-flex; align-items: baseline; font-family: var(--sans); font-weight: 700; font-size: 34px; letter-spacing: -.035em; color: var(--ink); line-height: 1; }
+.wl-word .wl-i { width: .3em; height: 1em; margin: 0 .01em; align-self: baseline; transform: translateY(.2em); overflow: visible; }
+.wl-word .i-stem { fill: var(--ink); }
+.wl-word .i-pin { fill: var(--accent); }
+.wl-word .i-pin circle { fill: var(--bg); }
+/* Motion: the start ring pops, the road draws, the pin drops in; the wordmark's i grows and its pin lands. */
+.anim .wl-mark .m-start { transform-origin: 30px 92px; animation: mkPop .45s var(--spring) both; }
+.anim .wl-mark .m-road { animation: mkDraw .9s cubic-bezier(.6,0,.25,1) .25s both; }
+.anim .wl-mark .m-pin { transform-origin: 88px 50px; animation: mkDrop .7s cubic-bezier(.3,1.5,.5,1) 1.05s both; }
+.anim .wl-word > span { animation: wmIn .5s ease 1.2s both; }
+.anim .wl-word .i-stem { transform-origin: 15px 80px; animation: wmStem .4s var(--spring) 1.35s both; }
+.anim .wl-word .i-pin { transform-origin: 15px 27px; animation: wmPin .65s cubic-bezier(.3,1.6,.5,1) 1.6s both; }
+@keyframes mkPop { from { transform: scale(0); } }
+@keyframes mkDraw { from { stroke-dashoffset: 100; } }
+@keyframes mkDrop { 0% { transform: translateY(-34px) scale(.6); opacity: 0; } 60% { opacity: 1; } }
+@keyframes wmIn { from { opacity: 0; transform: translateY(6px); } }
+@keyframes wmStem { from { transform: scaleY(0); } }
+@keyframes wmPin { 0% { transform: translateY(-28px); opacity: 0; } 50% { opacity: 1; } 75% { transform: translateY(2px) scaleY(.9); } }
+.splash-brand { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.about-brand .wl-word { font-size: 24px; }
+.about-hero { margin: 4px 0 6px; gap: 12px; }
+.about-hero .wl-mark { width: 72px; height: 72px; }
+.about-hero .wl-word { font-size: 30px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

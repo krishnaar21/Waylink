@@ -51,12 +51,12 @@ export function segs(n, filled, cls = 's', extra = '') {
 // ---------- Icons (Lucide) ----------
 export const selmark = (inline = false) => `<span class="selmark ${inline ? 'inline' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
 // Icon libraries: Lucide is built in; the others load on demand and fall back to Lucide per icon.
-export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400], ['inter', 'Inter', "'Inter'", 450], ['plex', 'IBM Plex Sans', "'IBM Plex Sans'", 450], ['atkinson', 'Atkinson', "'Atkinson Hyperlegible Next'", 450]];
-export const THEMES = [['auto', 'Auto', '#ECE8E1', '#F7F5F1', '#161514'], ['paper', 'Light', '#ECE8E1', '#F7F5F1', '#161514'], ['obsidian', 'Dark', '#161514', '#22201E', '#F2EFE9'], ['amoled', 'Black', '#000000', '#141312', '#F2EFE9']];
+export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400], ['inter', 'Inter', "'Inter'", 450], ['plex', 'IBM Plex Sans', "'IBM Plex Sans'", 450], ['atkinson', 'Atkinson', "'Atkinson Hyperlegible Next'", 450], ['public', 'Public Sans', "'Public Sans'", 450]];
+export const THEMES = [['auto', 'Auto', '#EDEFF2', '#F9FAFB', '#12151A'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Black', '#000000', '#101215', '#EDEFF3']];
 export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
 // Icons: Uicons by Flaticon (regular rounded). Its free licence asks for a visible credit, shown in the footer and About.
 export const ICON_CREDIT = '<a href="https://www.flaticon.com/uicons" target="_blank" rel="noopener">Uicons by Flaticon</a>';
-const LUCIDE = { SET: { vb: '0 0 24 24', attrs: 'fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"' }, ICONS: LUCIDE_ICONS };
+const LUCIDE = { SET: { vb: '0 0 24 24', attrs: 'fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"' }, ICONS: LUCIDE_ICONS };
 const UI = { SET: UICONS_SET, ICONS: UICONS };
 export const icon = (n, cls = '') => { const g = UI.ICONS[n] ? UI : LUCIDE; return `<svg class="i ${cls}" viewBox="${g.SET.vb}" ${g.SET.attrs} aria-hidden="true">${g.ICONS[n] || ''}</svg>`; };
 
@@ -248,7 +248,8 @@ export function weatherSheet(c) {
     <div class="eyebrow mt20">Next 12 hours</div>
     <div class="wx-hours scroll">${d.hours.slice(0, 12).map((h, i) => `<div><span class="eyebrow">${i ? hourFmt(h.ts) : 'Now'}</span>${icon(S.wmo(h.code, h.day).ic)}<b>${Math.round(h.temp)}°</b><span class="rp ${h.rain >= 50 ? 'hi' : ''}">${h.rain >= 20 ? h.rain + '%' : ''}</span></div>`).join('')}</div>
     <p class="hint">Updated ${ago(d.ts)} · Open-Meteo</p>
-    <button class="btn line block mt12 ${w.state === 'loading' ? 'busy' : ''}" data-act="wx-refresh">${icon('refresh')} Refresh</button>${loc}`;
+    <button class="btn line block mt12 ${w.state === 'loading' ? 'busy' : ''}" data-act="wx-refresh">${icon('refresh')} Refresh</button>
+    <details class="wx-place"><summary>${icon('pin')}<span class="grow">Showing ${esc(d.place || 'your location')}</span><span class="link">Change</span></summary>${loc}</details>`;
 }
 
 export function today(c) {
@@ -266,7 +267,7 @@ export function today(c) {
     <div class="head-actions"><button class="circle" data-act="sheet" data-arg="sos" aria-label="Emergency SOS" style="color:var(--red)">${icon('sos')}</button></div></div></div>
   ${live.scenario ? previewBar(live) : ''}
   <div class="bikecard">
-    <button class="bc-main" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">${vehicleArt(s, v0, 'lg')}<div class="grow"><div class="t">${esc(S.vehicleTitle(s))}</div><div class="m">${esc(v0.nickname ? S.bikeName(s) : S.model(s).series)} · ${short(s.odo)} km</div><div class="d">${esc(v0.plate || 'No number plate')}</div></div><span class="bc-swap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9.5l4-4 4 4M8 14.5l4 4 4-4"/></svg></span></button>
+    <button class="bc-main" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">${vehicleArt(s, v0, 'lg')}<div class="grow"><div class="t">${esc(S.vehicleTitle(s))}</div><div class="m">${esc(v0.nickname ? S.bikeName(s) : S.model(s).series)} · ${short(s.odo)} km</div><div class="d">${esc(v0.plate || 'No number plate')}</div></div><span class="bc-swap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9.5l4-4 4 4M8 14.5l4 4 4-4"/></svg></span></button>
     <button class="bc-wx" data-act="sheet" data-arg="weather" aria-label="Weather details">${weatherHead(c)}</button>
   </div>
   ${live.rec ? recCard(live) : ''}
@@ -679,20 +680,18 @@ export function settings(c) {
       ${vehicleArt(s, v, 'card')}
       <div class="grow vc-tx"><div class="serif vc-name">${esc(S.vehicleTitle(s))}</div><div class="small muted vc-line">${v.nickname ? esc(S.bikeName(s)) + ' · ' : ''}${esc(v.plate || 'No plate')}</div><div class="eyebrow vc-line" style="margin-top:8px">${short(s.odo)} km · ${connText}</div></div>
     </button><button class="circle edit" data-act="sheet" data-arg="vehicle:${v.id}" aria-label="Edit vehicle">${icon('edit')}</button>
-      <button class="vc-spec" data-act="sheet" data-arg="specs"><span class="grow"><b>Spec sheet</b> · Oil, tyres, chain, plugs</span>${icon('chev')}</button></div>
-    <div class="list mt12">
+      <div class="vc-rows">
+      ${li({ ic: 'list', t: 'Spec sheet', d: 'Oil, tyres, chain, plugs', act: 'sheet', arg: 'specs' })}
       ${s.vehicles.length > 1 ? li({ ic: 'swap', t: 'Switch vehicle', end: `${s.vehicles.length} bikes`, act: 'sheet', arg: 'garage' }) : ''}
       ${li({ ic: 'grid', t: 'All bike models', d: `${S.MODELS.length} models · ${Object.keys(S.MODEL_IMAGES).length} with photos`, act: 'sheet', arg: 'models' })}
       ${li({ ic: 'gauge', t: 'Odometer', d: 'Correct it if it drifts', end: num(Math.floor(s.odo)) + ' km', act: 'sheet', arg: 'odo' })}
       ${li({ ic: 'bt', t: 'Bluetooth', d: 'Pair and check the link', end: connText, act: 'sheet', arg: 'bike' })}
-    </div></div>
+    </div></div></div>
   <button class="support-card mt16" data-act="sheet" data-arg="support"><span class="sh-heart">${icon('love')}</span><span class="grow"><b>Support Waylink</b><span>Chip in if it helps</span></span>${icon('chev')}</button>
-  <div class="section">${sh('Records', '', 'papers')}<div class="list">
+  <div class="section">${sh('Records & safety', '', 'papers')}<div class="list">
     ${li({ ic: 'wrench', t: 'Logbook', d: 'Reminders and visits', end: S.needsYou(s) ? `${S.needsYou(s)} due` : 'All good', act: 'go', arg: 'logbook' })}
     ${li({ ic: 'fuel', t: 'Fuel', d: 'Fill-ups and petrol price', end: `${s.fuel.length} fills`, act: 'go', arg: 'fuel' })}
     ${li({ ic: 'folder', t: 'Digital glovebox', d: 'RC, insurance, PUC, licence', end: `${live.gloveHere.length}`, act: 'sheet', arg: 'glovebox' })}
-  </div></div>
-  <div class="section">${sh('Safety')}<div class="list">
     ${li({ ic: 'sos', t: 'Emergency SOS', d: `${co.amb} ambulance · ${co.sos} emergency`, act: 'sheet', arg: 'sos' })}
     ${li({ ic: 'heart', t: 'Medical ID', d: s.profile.blood ? `Blood group ${esc(s.profile.blood)} · shown on SOS` : 'Blood group, allergies, who to call', act: 'go', arg: 'profile' })}
     ${li({ ic: 'pin', t: 'Parked bike', d: 'Find your way back to it', end: s.parking ? ago(s.parking.ts) : 'Not saved', act: 'sheet', arg: 'parking' })}
@@ -703,17 +702,17 @@ export function settings(c) {
     ${li({ ic: 'sparkles', t: 'Keep the screen on', d: 'While in ride mode', end: sw(st.wakeLock, 'toggle', 'wakeLock'), chev: false, tag: 'div' })}
     ${li({ ic: 'eye', t: 'Street names on the bike', d: 'Road name beside the arrow', end: sw(st.streetNames, 'toggle', 'streetNames'), chev: false, tag: 'div' })}
   </div></div>
-  <div class="section">${sh('Theme & colour')}<div class="card pad">
+  <div class="section">${sh('Look & sound')}<div class="card themecard"><div class="tc-top">
     <div class="themes">${THEMES.map(([k, l, bg, card, ink]) => `<button class="themeopt ${st.theme === k ? 'on' : ''}" data-act="theme" data-arg="${k}" aria-pressed="${st.theme === k}">
       <span class="tp ${k}" style="--tbg:${bg};--tcard:${card};--tink:${ink}"><i></i><i></i><b></b></span><span class="nm">${l}</span></button>`).join('')}</div>
     <div class="eyebrow mt24">Accent</div>
     <div class="accents mt12">${ACCENTS.map(([k, col, l]) => `<button class="accentopt ${st.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${st.accent === k}" aria-label="${l}" title="${l}"><span class="dot" style="background-color:${col};--c:${col}"></span></button>`).join('')}</div>
   </div>
-  <div class="list mt12">
+  <div class="vc-rows">
     ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
     ${li({ ic: 'palette', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
     ${li({ ic: 'gauge', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
-  </div></div>
+  </div></div></div>
   <div class="section">${sh('Data & region', '', 'backup')}<div class="list">
     ${li({ ic: 'map', t: 'Country', d: 'Currency, fuel and SOS numbers', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
     ${li({ ic: 'down', t: 'Backup & restore', d: 'Save, move or bring back your data', act: 'sheet', arg: 'backup' })}
@@ -737,8 +736,7 @@ export function settings(c) {
     <div class="mt12"><div class="seg">${[['real', 'My data'], ['empty', 'Empty'], ['edge', 'Edge cases']].map(([k, l]) => `<button class="${(live.scenario || 'real') === k ? 'on' : ''}" data-act="scenario" data-arg="${k}">${l}</button>`).join('')}</div></div>
     <p class="hint">Empty shows a brand-new rider. Edge cases shows long names, huge numbers and everything overdue. Nothing is saved while previewing.</p></div></div>
   <footer class="about">
-    <img src="img/logos/wl-route-${st.accent || 'rust'}.svg" alt="" width="40" height="40">
-    <div class="about-name">${appName(s)}</div>
+    <div class="about-brand">${WORDMARK}</div>
     <div class="about-meta">Version ${APP_VERSION} · MIT licence</div>
     <p class="about-legal">Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.</p>
   </footer>
@@ -748,15 +746,19 @@ export function settings(c) {
 export const FONTS = [
   ['onest', 'Onest', "'Onest'", 600, 'sans'],
   ['geist', 'Geist', "'Geist'", 600, 'sans'],
+  ['spectral', 'Spectral', "'Spectral'", 500, 'serif'],
   ['garamond', 'Garamond', "'EB Garamond'", 500, 'serif'],
   ['crimson', 'Crimson', "'Crimson Pro'", 500, 'serif'],
   ['vollkorn', 'Vollkorn', "'Vollkorn'", 500, 'serif'],
   ['fraunces', 'Fraunces', "'Fraunces'", 600, 'serif'],
 ];
 export const APP_NAME = 'Waylink';
+// Brand: the route mark (start ring, winding road, destination pin) and the "waylink" wordmark whose i is a map pin.
+export const MARK = '<svg class="wl-mark" viewBox="0 0 120 120" aria-hidden="true"><circle class="m-start" cx="30" cy="92" r="9"/><path class="m-road" pathLength="100" d="M41 92H72A14 14 0 0 0 72 64H50A14 14 0 0 1 50 36H68"/><g class="m-pin"><path d="M88 50C79 41 75 35 75 29a13 13 0 0 1 26 0c0 6-4 12-13 21z"/><circle cx="88" cy="29" r="4.6"/></g></svg>';
+export const WORDMARK = '<span class="wl-word" aria-label="waylink"><span aria-hidden="true">wayl</span><svg class="wl-i" viewBox="0 0 30 100" aria-hidden="true"><rect class="i-stem" x="8.5" y="31" width="13" height="49" rx="1.5"/><g class="i-pin"><path d="M15 27C9 21 5.5 17 5.5 12a9.5 9.5 0 0 1 19 0c0 5-3.5 9-9.5 15z"/><circle cx="15" cy="12" r="3.4"/></g></svg><span aria-hidden="true">nk</span></span>';
 export const APP_VERSION = '1.0';
 // Add-a-bike glyph: a motorbike whose front wheel is a plus.
-export const ADD_BIKE = '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="17" r="3"/><circle cx="17.5" cy="17" r="3"/><path d="M5 17l3.6-5.2h4.6l1.6 2.2"/><path d="M8.6 11.8l2.2 4.6h3.6"/><path d="M17.5 17l-2.6-7.4h-1.8"/><path d="M7.2 9.4h3.4"/><path d="M19.5 2.5v5.5M16.75 5.25h5.5"/></svg>';
+export const ADD_BIKE = '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="17" r="3"/><circle cx="17.5" cy="17" r="3"/><path d="M5 17l3.6-5.2h4.6l1.6 2.2"/><path d="M8.6 11.8l2.2 4.6h3.6"/><path d="M17.5 17l-2.6-7.4h-1.8"/><path d="M7.2 9.4h3.4"/><path d="M19.5 2.5v5.5M16.75 5.25h5.5"/></svg>';
 export const isIOS = () => typeof navigator !== 'undefined' && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 const BLUEFY_STORE = 'https://apps.apple.com/app/id1492822055';
 export const REPO_URL = 'https://github.com/krishnaar21/Waylink';
@@ -764,7 +766,7 @@ export const REPO_URL = 'https://github.com/krishnaar21/Waylink';
 export const SUPPORT = { upi: '', payee: 'Waylink', links: [/* ['Buy Me a Coffee', 'https://buymeacoffee.com/…'], ['Ko-fi', 'https://ko-fi.com/…'], ['GitHub Sponsors', 'https://github.com/sponsors/…'] */] };
 const UPI_AMOUNTS = [49, 99, 199, 499];
 // What each amount buys, shown as a small picture on its button.
-const CUP = '<svg class="i" viewBox="3.5 2.5 17 17.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M9 3.5c-.6.8-.6 1.7 0 2.5M12.5 3.5c-.6.8-.6 1.7 0 2.5"/></svg>';
+const CUP = '<svg class="i" viewBox="3.5 2.5 17 17.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M9 3.5c-.6.8-.6 1.7 0 2.5M12.5 3.5c-.6.8-.6 1.7 0 2.5"/></svg>';
 const AMT_ICON = { 49: ['Chai', CUP, 'A cutting chai for the developer'], 99: ['Coffee', CUP, 'A coffee for a late-night fix'], 199: ['Fuel', 'fuel', 'Two litres of petrol for test rides'], 499: ['Service', 'wrench', 'Towards a month of upkeep'], 0: ['Any', 'love', 'You choose the amount in your UPI app'] };
 const amtIcon = (a) => { const g = AMT_ICON[a][1]; return g.startsWith('<svg') ? g : icon(g); };
 // The app icon: one route mark, tinted to match the accent colour.
@@ -891,7 +893,7 @@ export function helpSheet(c, k) {
       <a class="btn ink block mt12" href="${REPO_URL}/issues/new" target="_blank" rel="noopener">${icon('flag')} Open a report on GitHub</a>
       <p class="hint">${REPO_URL.replace('https://', '')}/issues</p>`;
   }
-  if (k === 'about') return `<div class="about-sheet"><img src="img/logos/wl-route-${s.settings.accent || 'rust'}.svg" alt="" width="64" height="64"><h2>Waylink</h2><p class="lead">Turns, calls and your bike’s care, on one screen. Version ${APP_VERSION}.</p></div>
+  if (k === 'about') return `<div class="about-sheet"><h2 class="sr-only">Waylink</h2><div class="splash-brand about-hero anim">${MARK}${WORDMARK}</div><p class="lead">Turns, calls and your bike’s care, on one screen. Version ${APP_VERSION}.</p></div>
     <div class="list flat mt16">
       ${li({ ic: 'love', t: 'Support Waylink', d: 'Chip in towards development', act: 'sheet', arg: 'support' })}
       ${li({ ic: 'code', t: 'Source code', d: 'MIT licence', end: '', tag: 'a', href: REPO_URL })}
