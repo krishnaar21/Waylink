@@ -2152,3 +2152,19 @@ html[data-theme="sketch"] .tabbar::after { display: none !important; }
 .onb-reg .onb-top + .eyebrow { margin-top: 28px; }
 .onb-link .onb-stage .onb-img { width: 100%; background-image: url(img/onb/link-light.webp); transform: none !important; }
 html[data-theme="obsidian"] .onb-link .onb-img, html[data-theme="amoled"] .onb-link .onb-img { background-image: url(img/onb/link-dark.webp); }
+/* Images: a soft shimmer until they arrive, then a quick fade in */
+.art:has(> img.model:not(.ld)) { background-image: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--ink) 6%, transparent) 50%, transparent 70%) !important; background-size: 220% 100% !important; animation: shimmer 1.2s linear infinite; }
+.art > img.model { opacity: 0; transition: opacity .3s ease; } .art > img.model.ld { opacity: 1; }
+@keyframes shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+.onb-stage { background: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--ink) 4%, transparent) 50%, transparent 70%) 0 0 / 220% 100%; animation: shimmer 1.4s linear infinite; }
+.onb-img { animation: fadeIn .4s ease both; }
+/* Ride hint is a link to the right place in Settings */
+.rm-note { background: none; border: 0; width: auto; left: 50% !important; right: auto !important; transform: translateX(-50%); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--ink) 25%, transparent); text-underline-offset: 3px; cursor: pointer; }
+.section.flash { animation: secFlash 1.6s ease; border-radius: var(--r-md); }
+@keyframes secFlash { 0%, 60% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); } 100% { box-shadow: 0 0 0 3px transparent; } }
+.tc-more summary > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tc-more summary > svg { margin-left: auto; }
+.av-opt { transition: transform .25s var(--spring); }
+.av-opt.on { transform: scale(1.12); z-index: 1; }
+.av-opt.on img { outline: none !important; box-shadow: 0 8px 18px -8px rgba(0,0,0,.35); }
+.av-tick { display: none !important; }

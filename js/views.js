@@ -72,7 +72,7 @@ export function vehicleArt(s, v, size = 'thumb') {
   const tile = () => `<div class="${cls} icon-mode" style="--bc:${v.colour}">${icon('bike')}</div>`;
   if (v.photo) return `<div class="${cls}"><img class="photo" src="${v.photo}" alt=""></div>`;
   const img = S.MODEL_IMAGES[v.model];
-  if (img) return `<div class="${cls}"><img class="${img.fit === 'cover' ? 'photo' : 'model'}" src="${img.src}${img.src.includes('?') ? '&' : '?'}v=${ART_V}" alt="${esc(S.MODELS.find((m) => m.id === v.model)?.name || '')}" decoding="async"></div>`;
+  if (img) return `<div class="${cls}"><img class="${img.fit === 'cover' ? 'photo' : 'model'}" src="${img.src}${img.src.includes('?') ? '&' : '?'}v=${ART_V}" onload="this.classList.add('ld')" alt="${esc(S.MODELS.find((m) => m.id === v.model)?.name || '')}" decoding="async"></div>`;
   return tile();
 }
 export function avatar(p, xl = false) {
@@ -740,7 +740,7 @@ export function settings(c) {
     ${li({ ic: 'folder', t: 'Digital glovebox', d: 'RC, insurance, PUC, licence', end: `${live.gloveHere.length}`, act: 'sheet', arg: 'glovebox' })}
     ${li({ ic: 'pin', t: 'Parked bike', d: 'Find your way back to it', end: s.parking ? ago(s.parking.ts) : 'Not saved', act: 'sheet', arg: 'parking' })}
   </div></div>
-  <div class="section">${sh('Riding', '', 'riding')}<div class="list">
+  <div class="section" id="sec-riding">${sh('Riding', '', 'riding')}<div class="list">
     ${li({ ic: 'speed', t: 'Open ride mode by itself', d: 'Above 15 km/h', end: sw(st.autoRide, 'toggle', 'autoRide'), chev: false, tag: 'div' })}
     ${li({ ic: 'route', t: 'Record rides by themselves', d: 'When the bike links', end: sw(st.autoRecord, 'toggle', 'autoRecord'), chev: false, tag: 'div' })}
     ${li({ ic: 'sparkles', t: 'Keep the screen on', d: 'While in ride mode', end: sw(st.wakeLock, 'toggle', 'wakeLock'), chev: false, tag: 'div' })}
@@ -752,7 +752,7 @@ export function settings(c) {
     <div class="eyebrow mt24">Accent</div>
     <div class="accents mt12">${ACCENTS.map(([k, col, l]) => `<button class="accentopt ${st.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${st.accent === k}" aria-label="${l}" title="${l}"><span class="dot" style="background-color:${col};--c:${col}"></span></button>`).join('')}</div>
   </div>
-  <details class="tc-more"${live.lookOpen ? ' open' : ''}><summary data-act="look-toggle"><span>Sound, icons, fonts & progress</span><span class="tcm-s">${st.sounds !== false ? 'Sound on' : 'Sound off'} · ${(ICON_STYLES.find(([k]) => k === st.iconStyle) || ICON_STYLES[0])[1]}</span>${icon('chev')}</summary><div class="vc-rows">
+  <details class="tc-more"${live.lookOpen ? ' open' : ''}><summary data-act="look-toggle"><span>Sound, icons & fonts</span>${icon('chev')}</summary><div class="vc-rows">
     ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
     ${li({ ic: 'sparkles', t: 'Icons', end: `<span class="pick-val">${(ICON_STYLES.find(([k]) => k === st.iconStyle) || ICON_STYLES[0])[1]} · ${{ duo: 'Glow', fill: 'Duotone' }[st.icons] || 'Line'}</span>`, act: 'sheet', arg: 'pick-brand' })}
     ${li({ ic: 'font', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
@@ -925,7 +925,7 @@ export function rideMode(c) {
   const b = rideBits(c);
   return `<div class="ride-mode" id="ride-mode" data-page="0">
     <div class="rm-pages">${layoutA({ ...b, tags: `${live.rec ? '<span class="tag x"><span class="dot x pulse"></span>Recording</span>' : ''}${link.connected ? '' : '<span class="tag k">Bike not linked</span>'}${live.gpsErr ? '<span class="tag a">No GPS</span>' : ''}` })}</div>
-    <p class="rm-note">${s.settings.autoRide ? 'Opens by itself. Change in Settings › Riding' : 'Auto-open: Settings › Riding'}</p>
+    <button class="rm-note" data-act="goto-riding">${s.settings.autoRide ? 'Opens by itself. Change in Settings › Riding' : 'Auto-open: Settings › Riding'}</button>
     <div class="rm-foot2">
       <div class="hold"><svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="11" fill="none" stroke="var(--seg-off)" stroke-width="2"/><circle class="p" cx="13" cy="13" r="11" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="69.1" stroke-dashoffset="69.1" transform="rotate(-90 13 13)"/><circle cx="13" cy="13" r="4" fill="var(--ink-3)"/></svg><span class="eyebrow" data-live="rm-hint">Hold to leave</span></div>
     </div></div>`;
@@ -1320,7 +1320,7 @@ function sheetInner(c, key) {
     case 'avatar': {
       const P = s.profile, cur = P.photo ? 'photo' : P.avatar || '';
       return `<div class="eyebrow">Profile</div><h2>Your picture</h2><p class="lead">Pick a rider, or add a photo.</p>
-        <div class="av-grid mt16">${Array.from({ length: 11 }, (_, i) => `a${i + 1}`).map((k) => `<button class="av-opt ${cur === k ? 'on' : ''}" data-act="pick-avatar" data-arg="${k}" aria-label="Avatar ${k.slice(1)}"><img src="img/avatars/${k}.svg" alt="">${cur === k ? `<span class="av-tick">${icon('check')}</span>` : ''}</button>`).join('')}<label class="av-opt av-photo ${cur === 'photo' ? 'on' : ''}" aria-label="Use a photo">${P.photo ? `<img src="${P.photo}" alt="">` : `<span>${icon('camera')}<b>Photo</b></span>`}${cur === 'photo' ? `<span class="av-tick">${icon('check')}</span>` : ''}<input type="file" accept="image/*" hidden data-input="avatar"></label></div>`;
+        <div class="av-grid mt16">${Array.from({ length: 11 }, (_, i) => `a${i + 1}`).map((k) => `<button class="av-opt ${cur === k ? 'on' : ''}" data-act="pick-avatar" data-arg="${k}" aria-label="Avatar ${k.slice(1)}"><img src="img/avatars/${k}.svg" alt=""></button>`).join('')}<label class="av-opt av-photo ${cur === 'photo' ? 'on' : ''}" aria-label="Use a photo">${P.photo ? `<img src="${P.photo}" alt="">` : `<span>${icon('camera')}<b>Photo</b></span>`}<input type="file" accept="image/*" hidden data-input="avatar"></label></div>`;
     }
     case 'erase':
       return `<div class="eyebrow">Backup</div><h2>${s.sample ? 'Erase sample data?' : 'Erase everything?'}</h2><p class="lead">Bikes, rides, fuel, service, alerts and papers on this phone will go. Export a backup first if you want to keep them.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="erase">Erase</button><button class="btn line block mt8" data-act="close">Keep my data</button>`;

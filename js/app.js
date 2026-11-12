@@ -895,6 +895,10 @@ const A = {
   'clear-missed': () => { s.alerts.missed = []; link.setMissedCount(0); closeSheet(); commit(); toast('Missed calls cleared.'); },
   'clear-wa': () => { s.alerts.wa = []; closeSheet(); commit(); toast('WhatsApp alerts cleared.'); },
   'alerts-tab': (k) => { if (live.alertsTab === k) return; live.alertsTab = k === 'recent' ? 'recent' : 'needs'; if (!A._swiped) SND.click(true); render(); },
+  'goto-riding': () => {
+    closeRide(); go('settings');
+    setTimeout(() => { const el = $('#sec-riding'); if (!el) return; el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); }, 450);
+  },
   'look-toggle': () => { live.lookOpen = !live.lookOpen; SND.click(live.lookOpen); render(); },
   'pc-toggle': () => { live.pcOpen = !live.pcOpen; SND.click(live.pcOpen); render(); },
   'show-loading': () => showLoading('Loading your garage', 3200),
