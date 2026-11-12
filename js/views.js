@@ -266,7 +266,7 @@ export function today(c) {
     <div class="head-actions"><button class="circle" data-act="sheet" data-arg="sos" aria-label="Emergency SOS" style="color:var(--red)">${icon('sos')}</button></div></div></div>
   ${live.scenario ? previewBar(live) : ''}
   <div class="bikecard">
-    <button class="bc-main" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">${vehicleArt(s, v0, 'lg')}<div class="grow"><div class="t">${esc(S.vehicleTitle(s))}</div><div class="m">${esc(v0.nickname ? S.bikeName(s) : S.model(s).series)} · ${short(s.odo)} km</div><div class="d">${esc(v0.plate || 'No number plate')}</div></div><span class="bc-swap">${icon('swap')}</span></button>
+    <button class="bc-main" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">${vehicleArt(s, v0, 'lg')}<div class="grow"><div class="t">${esc(S.vehicleTitle(s))}</div><div class="m">${esc(v0.nickname ? S.bikeName(s) : S.model(s).series)} · ${short(s.odo)} km</div><div class="d">${esc(v0.plate || 'No number plate')}</div></div><span class="bc-swap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9.5l4-4 4 4M8 14.5l4 4 4-4"/></svg></span></button>
     <button class="bc-wx" data-act="sheet" data-arg="weather" aria-label="Weather details">${weatherHead(c)}</button>
   </div>
   ${live.rec ? recCard(live) : ''}
@@ -673,7 +673,7 @@ export function settings(c) {
   return `<div class="stagger">
   <div class="head pagehead"><div><h1 class="title">You & your bikes</h1><div class="subtitle">Profile, garage and how the app looks</div></div></div>
   ${live.scenario ? previewBar(live) : ''}
-  <button class="card pad mt20 flex gap12" style="width:100%;text-align:left" data-act="go" data-arg="profile">${avatar(s.profile)}<div class="grow"><div class="serif" style="font-size:24px">${esc(s.profile.name || 'Add your name')}</div><div class="small faint">Profile, licence and medical ID</div></div>${icon('chev', 'faint')}</button>
+  <button class="card pad profile-card mt20 flex gap12" style="width:100%;text-align:left" data-act="go" data-arg="profile">${avatar(s.profile)}<div class="grow"><div class="serif" style="font-size:24px">${esc(s.profile.name || 'Add your name')}</div><div class="small faint">Profile, licence and medical ID</div></div>${icon('chev', 'faint')}</button>
   <div class="section">${sh('Garage', s.vehicles.length > 1 ? '<button class="link" data-act="sheet" data-arg="garage">Switch</button>' : '')}
     <div class="card vcard"><button class="flex gap12" style="width:100%;text-align:left;padding:12px 16px 12px 12px" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">
       ${vehicleArt(s, v, 'card')}
@@ -716,9 +716,7 @@ export function settings(c) {
   </div></div>
   <div class="section">${sh('Data & region', '', 'backup')}<div class="list">
     ${li({ ic: 'map', t: 'Country', d: 'Currency, fuel and SOS numbers', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
-    ${li({ ic: 'down', t: 'Export backup', d: 'One .json file', act: 'export' })}
-    ${li({ ic: 'up', t: 'Restore a backup', d: 'From an exported file', act: 'import' })}
-    ${li({ ic: 'copy', t: 'Copy as text', d: 'Paste it on your new phone', act: 'copy-backup' })}
+    ${li({ ic: 'down', t: 'Backup & restore', d: 'Save, move or bring back your data', act: 'sheet', arg: 'backup' })}
     ${li({ ic: 'trash', t: s.sample ? 'Erase sample data' : 'Erase everything', cls: 'danger', act: 'sheet', arg: 'erase' })}
   </div><input type="file" id="import-file" accept=".json,.pnav,application/json" hidden></div>
   <div class="section">${sh('Help & about')}<div class="list">
@@ -731,20 +729,17 @@ export function settings(c) {
     ${li({ ic: 'sparkles', t: 'Show the loading screen', d: 'Plays it once. Tap to close.', act: 'show-loader' })}
     ${li({ ic: 'bolt', t: 'Simulated bike', d: 'Try it all without a bike', end: sw(link.simulated && link.state !== 'idle', 'sim-toggle'), chev: false, tag: 'div' })}
     ${li({ ic: 'code', t: 'Show Bluetooth messages', d: 'Raw bytes on the Route tab', end: sw(!!st.devFrames, 'toggle', 'devFrames'), chev: false, tag: 'div' })}
-  </div></div>
-  <div class="section">${sh('Preview states', '<span class="eyebrow">Your data is safe</span>', 'preview')}<div class="card pad">
-    <div class="seg">${[['real', 'My data'], ['empty', 'Empty'], ['edge', 'Edge cases']].map(([k, l]) => `<button class="${(live.scenario || 'real') === k ? 'on' : ''}" data-act="scenario" data-arg="${k}">${l}</button>`).join('')}</div>
-    <p class="hint">Empty shows a brand-new rider. Edge cases shows long names, huge numbers and everything overdue. Nothing is saved while previewing.</p>
-  </div><div class="list mt12">
     ${li({ ic: 'bt', t: 'Pair from all devices', d: 'If your bike isn’t listed', act: 'pair-all', cls: link.supported ? '' : 'disabled' })}
     ${li({ ic: 'list', t: 'Connection log', d: 'Each step of the Bluetooth link', end: `${link.log.length}`, act: 'sheet', arg: 'log' })}
     ${li({ ic: 'code', t: 'Protocol', d: 'Service, frames and timings', act: 'sheet', arg: 'protocol' })}
-  </div></div>
+  </div>
+    <div class="card pad mt12"><div class="flex between"><span class="ms-t">Preview states</span><span class="eyebrow">Your data is safe</span></div>
+    <div class="mt12"><div class="seg">${[['real', 'My data'], ['empty', 'Empty'], ['edge', 'Edge cases']].map(([k, l]) => `<button class="${(live.scenario || 'real') === k ? 'on' : ''}" data-act="scenario" data-arg="${k}">${l}</button>`).join('')}</div></div>
+    <p class="hint">Empty shows a brand-new rider. Edge cases shows long names, huge numbers and everything overdue. Nothing is saved while previewing.</p></div></div>
   <footer class="about">
     <img src="img/logos/wl-route-${st.accent || 'rust'}.svg" alt="" width="40" height="40">
     <div class="about-name">${appName(s)}</div>
     <div class="about-meta">Version ${APP_VERSION} · MIT licence</div>
-    <p class="about-credits">Bike protocol from PulsarNav · ${ICON_CREDIT}</p>
     <p class="about-legal">Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.</p>
   </footer>
   </div>`;
@@ -900,8 +895,8 @@ export function helpSheet(c, k) {
     <div class="list flat mt16">
       ${li({ ic: 'love', t: 'Support Waylink', d: 'Chip in towards development', act: 'sheet', arg: 'support' })}
       ${li({ ic: 'code', t: 'Source code', d: 'MIT licence', end: '', tag: 'a', href: REPO_URL })}
-      ${li({ ic: 'bt', t: 'Bike protocol', d: 'From the PulsarNav project', chev: false, tag: 'div' })}
-      ${li({ ic: 'grid', t: 'Icons', d: 'Uicons by Flaticon · Bluetooth from Lucide (ISC)', tag: 'a', href: 'https://www.flaticon.com/uicons' })}
+      ${li({ ic: 'bt', t: 'Bike protocol', d: 'PulsarNav on GitHub', tag: 'a', href: 'https://github.com/nikhilmaity00/pulsarnav' })}
+      ${li({ ic: 'grid', t: 'Icons', d: 'Uicons by Flaticon', tag: 'a', href: 'https://www.flaticon.com/uicons' })}
       ${li({ ic: 'image', t: 'Photo credits', d: 'Authors and licences of bike photos', act: 'sheet', arg: 'credits' })}
       ${li({ ic: 'wxPart', t: 'Weather', d: 'Open-Meteo, free and open data', chev: false, tag: 'div' })}
       ${li({ ic: 'pin', t: 'Places', d: 'OpenStreetMap Nominatim', chev: false, tag: 'div' })}
@@ -1006,6 +1001,13 @@ function sheetInner(c, key) {
         <div class="ms-t mt32">Body text</div>
         <div class="ftiles mt12">${BODY_FONTS.map(([k, nm, fam, w]) => `<button class="ftile ${cur === k ? 'on' : ''}" data-act="body-font" data-arg="${k}"><span class="ag" style="font-family:${fam}, system-ui, sans-serif;font-weight:${w || 400}">Aa</span><span class="nm">${nm}</span></button>`).join('')}</div>`;
     }
+    case 'backup':
+      return `<div class="eyebrow">Data</div><h2>Backup & restore</h2><p class="lead">Everything stays on this phone. Keep a copy, or move it to a new phone.</p>
+        <div class="list flat mt16">
+          ${li({ ic: 'down', t: 'Export backup', d: 'Save one .json file', act: 'export' })}
+          ${li({ ic: 'up', t: 'Restore a backup', d: 'From an exported file', act: 'import' })}
+          ${li({ ic: 'copy', t: 'Copy as text', d: 'Paste it on your new phone', act: 'copy-backup' })}
+        </div>`;
     case 'pick-progress': {
       const cur = s.settings.progress || 'gauge', was = PROGRESS, demo = { status: 'ok', frac: 0.35, dueDate: Date.now() + 40 * 86400000 };
       const card = ([k, nm, d]) => { PROGRESS = k; const h = serviceSegs(demo); return `<button class="progopt ${cur === k ? 'on' : ''}" data-act="progress-style" data-arg="${k}"><div class="nm">${nm}</div><div class="d">${d}</div>${h}</button>`; };

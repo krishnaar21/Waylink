@@ -789,7 +789,7 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .bikecard { margin-top: 18px; border-radius: var(--r-lg); background: var(--card); box-shadow: var(--shadow); overflow: hidden; }
 .bikecard + .card, .bikecard + .hero, .bikecard + .banner { margin-top: 12px; }
 .bc-main { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 16px 12px 12px; text-align: left; }
-.bc-main .art.thumb.lg { width: 128px; height: 84px; border-radius: var(--r-sm); flex: none; }
+.bc-main .art.thumb.lg { width: 96px; height: 96px; border-radius: var(--r-sm); flex: none; }
 .bc-main .grow { min-width: 0; }
 .bc-main .t { font-family: var(--serif); font-weight: var(--dw); letter-spacing: var(--dls); font-size: 21px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bc-main .m { font-size: 14px; color: var(--ink-2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1066,3 +1066,8 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .vc-spec > svg:last-child { width: 16px; height: 16px; color: var(--ink-4); }
 .vc-spec:active { background: color-mix(in srgb, var(--ink) 3%, transparent); }
 #ptr.spin .tread, #ptr.done .tread { opacity: 1; }
+
+.bc-swap { background: color-mix(in srgb, var(--ink) 6%, transparent); width: 30px; height: 30px; }
+.bc-swap svg { width: 15px; height: 15px; }
+/* Profile card lines up with list rows */
+.profile-card { padding: 14px 16px !important; }
