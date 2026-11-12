@@ -24,6 +24,12 @@ function ac() {
   return ctx;
 }
 export const ready = () => !!ctx && ctx.state === 'running';
+// Runs fn only if the audio clock is actually advancing (sound will be heard now, not queued for later).
+export function whenLive(fn, wait = 160) {
+  const c = ac(); if (!c) return;
+  const t0 = c.currentTime;
+  setTimeout(() => { if (ctx && ctx.state === 'running' && ctx.currentTime > t0 + 0.04) fn(); }, wait);
+}
 // iOS starts audio only inside a finished tap: resume and play one silent sample right there.
 export function unlock() {
   const c = ac(); if (!c || unlocked) return !!c;
@@ -165,15 +171,16 @@ export function revTo(p = 0) {
   lastP = p; lastAt = now;
   const lvl = 0.08 + Math.min(1, speed / 3) * 0.17;
   if (!live) {
-    const out = c.createGain(); out.gain.setValueAtTime(0, now); out.gain.linearRampToValueAtTime(lvl, now + 0.08);
-    const fire = c.createOscillator(); fire.setPeriodicWave(pulseWave(c));
+    const out = c.createGain(); out.gain.setValueAtTime(0, now); out.gain.linearRampToValueAtTime(lvl, now + 0.012);
+    const fire = c.createOscillator(); fire.setPeriodicWave(pulseWave(c)); fire.frequency.setValueAtTime(f, now);
     const sh = c.createWaveShaper(); const k = new Float32Array(1024); for (let i = 0; i < 1024; i++) { const x = i / 512 - 1; k[i] = Math.tanh(3 * x) * 0.9; } sh.curve = k;
     const body = c.createBiquadFilter(); body.type = 'peaking'; body.frequency.value = 140; body.Q.value = 1.4; body.gain.value = 9;
     const bark = c.createBiquadFilter(); bark.type = 'lowpass'; bark.Q.value = 2.2;
     fire.connect(sh); sh.connect(body); body.connect(bark); bark.connect(out); out.connect(master); fire.start();
+    bark.frequency.setValueAtTime(Math.min(5200, 260 + rpm * 0.42), now);
     live = { out, fire, bark };
   }
-  live.fire.frequency.setTargetAtTime(f, now, 0.06);
+  live.fire.frequency.setTargetAtTime(f, now, 0.03);
   live.bark.frequency.setTargetAtTime(Math.min(5200, 260 + rpm * 0.42), now, 0.06);
   live.out.gain.cancelScheduledValues(now); live.out.gain.setTargetAtTime(lvl, now, 0.05);
   clearTimeout(liveStop);

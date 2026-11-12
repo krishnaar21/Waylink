@@ -678,14 +678,15 @@ export function settings(c) {
     <div class="card vcard"><button class="flex gap12" style="width:100%;text-align:left;padding:12px 16px 12px 12px" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">
       ${vehicleArt(s, v, 'card')}
       <div class="grow vc-tx"><div class="serif vc-name">${esc(S.vehicleTitle(s))}</div><div class="small muted vc-line">${v.nickname ? esc(S.bikeName(s)) + ' · ' : ''}${esc(v.plate || 'No plate')}</div><div class="eyebrow vc-line" style="margin-top:8px">${short(s.odo)} km · ${connText}</div></div>
-    </button><button class="circle edit" data-act="sheet" data-arg="vehicle:${v.id}" aria-label="Edit vehicle">${icon('edit')}</button></div>
+    </button><button class="circle edit" data-act="sheet" data-arg="vehicle:${v.id}" aria-label="Edit vehicle">${icon('edit')}</button>
+      <button class="vc-spec" data-act="sheet" data-arg="specs"><span class="grow"><b>Spec sheet</b> · Oil, tyres, chain, plugs</span>${icon('chev')}</button></div>
     <div class="list mt12">
       ${s.vehicles.length > 1 ? li({ ic: 'swap', t: 'Switch vehicle', end: `${s.vehicles.length} bikes`, act: 'sheet', arg: 'garage' }) : ''}
       ${li({ ic: 'grid', t: 'All bike models', d: `${S.MODELS.length} models · ${Object.keys(S.MODEL_IMAGES).length} with photos`, act: 'sheet', arg: 'models' })}
-      ${li({ ic: 'list', t: 'Spec sheet', d: 'Oil, tyres, chain, plugs', act: 'sheet', arg: 'specs' })}
       ${li({ ic: 'gauge', t: 'Odometer', d: 'Correct it if it drifts', end: num(Math.floor(s.odo)) + ' km', act: 'sheet', arg: 'odo' })}
       ${li({ ic: 'bt', t: 'Bluetooth', d: 'Pair and check the link', end: connText, act: 'sheet', arg: 'bike' })}
     </div></div>
+  <button class="support-card mt16" data-act="sheet" data-arg="support"><span class="sh-heart">${icon('love')}</span><span class="grow"><b>Support Waylink</b><span>Chip in if it helps</span></span>${icon('chev')}</button>
   <div class="section">${sh('Records', '', 'papers')}<div class="list">
     ${li({ ic: 'wrench', t: 'Logbook', d: 'Reminders and visits', end: S.needsYou(s) ? `${S.needsYou(s)} due` : 'All good', act: 'go', arg: 'logbook' })}
     ${li({ ic: 'fuel', t: 'Fuel', d: 'Fill-ups and petrol price', end: `${s.fuel.length} fills`, act: 'go', arg: 'fuel' })}
@@ -700,7 +701,6 @@ export function settings(c) {
     ${li({ ic: 'speed', t: 'Open ride mode by itself', d: 'Above 15 km/h', end: sw(st.autoRide, 'toggle', 'autoRide'), chev: false, tag: 'div' })}
     ${li({ ic: 'route', t: 'Record rides by themselves', d: 'When the bike links', end: sw(st.autoRecord, 'toggle', 'autoRecord'), chev: false, tag: 'div' })}
     ${li({ ic: 'sparkles', t: 'Keep the screen on', d: 'While in ride mode', end: sw(st.wakeLock, 'toggle', 'wakeLock'), chev: false, tag: 'div' })}
-    ${li({ ic: 'volume', t: 'Sound effects', d: 'Soft engine and switch sounds', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
     ${li({ ic: 'eye', t: 'Street names on the bike', d: 'Road name beside the arrow', end: sw(st.streetNames, 'toggle', 'streetNames'), chev: false, tag: 'div' })}
   </div></div>
   <div class="section">${sh('Theme & colour')}<div class="card pad">
@@ -710,9 +710,9 @@ export function settings(c) {
     <div class="accents mt12">${ACCENTS.map(([k, col, l]) => `<button class="accentopt ${st.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${st.accent === k}" aria-label="${l}" title="${l}"><span class="dot" style="background-color:${col};--c:${col}"></span></button>`).join('')}</div>
   </div>
   <div class="list mt12">
+    ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
     ${li({ ic: 'palette', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
     ${li({ ic: 'gauge', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
-    ${li({ ic: 'sparkles', t: 'App icon', end: `<img class="pick-logo" src="img/logos/${st.logo || 'wl-turn'}.svg" alt=""><span class="pick-val">${(LOGOS.find(([k]) => k === st.logo) || LOGOS[0])[1]}</span>`, act: 'sheet', arg: 'pick-logo' })}
   </div></div>
   <div class="section">${sh('Data & region', '', 'backup')}<div class="list">
     ${li({ ic: 'map', t: 'Country', d: 'Currency, fuel and SOS numbers', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
@@ -721,7 +721,6 @@ export function settings(c) {
     ${li({ ic: 'copy', t: 'Copy as text', d: 'Paste it on your new phone', act: 'copy-backup' })}
     ${li({ ic: 'trash', t: s.sample ? 'Erase sample data' : 'Erase everything', cls: 'danger', act: 'sheet', arg: 'erase' })}
   </div><input type="file" id="import-file" accept=".json,.pnav,application/json" hidden></div>
-  <button class="support-card mt12" data-act="sheet" data-arg="support"><span class="sh-heart">${icon('love')}</span><span class="grow"><b>Support Waylink</b><span>Chip in if it helps</span></span>${icon('chev')}</button>
   <div class="section">${sh('Help & about')}<div class="list">
     ${li({ ic: 'info', t: 'Questions and answers', d: 'Pairing, fuel, weather, privacy', act: 'sheet', arg: 'faq' })}
     ${li({ ic: 'flag', t: 'Report a problem', d: 'Copy your app details and tell us', act: 'sheet', arg: 'report' })}
@@ -742,7 +741,7 @@ export function settings(c) {
     ${li({ ic: 'code', t: 'Protocol', d: 'Service, frames and timings', act: 'sheet', arg: 'protocol' })}
   </div></div>
   <footer class="about">
-    <img src="img/logos/${st.logo || 'wl-turn'}.svg" alt="" width="40" height="40">
+    <img src="img/logos/wl-route-${st.accent || 'rust'}.svg" alt="" width="40" height="40">
     <div class="about-name">${appName(s)}</div>
     <div class="about-meta">Version ${APP_VERSION} · MIT licence</div>
     <p class="about-credits">Bike protocol from PulsarNav · ${ICON_CREDIT}</p>
@@ -773,7 +772,8 @@ const UPI_AMOUNTS = [49, 99, 199, 499];
 const CUP = '<svg class="i" viewBox="3.5 2.5 17 17.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 11h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M9 3.5c-.6.8-.6 1.7 0 2.5M12.5 3.5c-.6.8-.6 1.7 0 2.5"/></svg>';
 const AMT_ICON = { 49: ['Chai', CUP, 'A cutting chai for the developer'], 99: ['Coffee', CUP, 'A coffee for a late-night fix'], 199: ['Fuel', 'fuel', 'Two litres of petrol for test rides'], 499: ['Service', 'wrench', 'Towards a month of upkeep'], 0: ['Any', 'love', 'You choose the amount in your UPI app'] };
 const amtIcon = (a) => { const g = AMT_ICON[a][1]; return g.startsWith('<svg') ? g : icon(g); };
-export const LOGOS = [['wl-turn', 'Turn'], ['wl-dusk', 'Dusk'], ['wl-ribbon', 'Ribbon'], ['wl-road', 'Road'], ['wl-chain', 'Chain'], ['wl-nav', 'Arrow'], ['wl-route', 'Route']];
+// The app icon: one route mark, tinted to match the accent colour.
+export const appIcon = (s, png = false) => png ? `img/logos/png/wl-route-${s.settings.accent || 'rust'}-180.png` : `img/logos/wl-route-${s.settings.accent || 'rust'}.svg`;
 export const appName = () => APP_NAME;
 
 // ---------- PROFILE ----------
@@ -896,7 +896,7 @@ export function helpSheet(c, k) {
       <a class="btn ink block mt12" href="${REPO_URL}/issues/new" target="_blank" rel="noopener">${icon('flag')} Open a report on GitHub</a>
       <p class="hint">${REPO_URL.replace('https://', '')}/issues</p>`;
   }
-  if (k === 'about') return `<div class="about-sheet"><img src="img/logos/${s.settings.logo || 'wl-turn'}.svg" alt="" width="64" height="64"><h2>Waylink</h2><p class="lead">Turns, calls and your bike’s care, on one screen. Version ${APP_VERSION}.</p></div>
+  if (k === 'about') return `<div class="about-sheet"><img src="img/logos/wl-route-${s.settings.accent || 'rust'}.svg" alt="" width="64" height="64"><h2>Waylink</h2><p class="lead">Turns, calls and your bike’s care, on one screen. Version ${APP_VERSION}.</p></div>
     <div class="list flat mt16">
       ${li({ ic: 'love', t: 'Support Waylink', d: 'Chip in towards development', act: 'sheet', arg: 'support' })}
       ${li({ ic: 'code', t: 'Source code', d: 'MIT licence', end: '', tag: 'a', href: REPO_URL })}
@@ -1013,9 +1013,6 @@ function sheetInner(c, key) {
         <div class="progs mt16">${PROGRESS_STYLES.map(card).join('')}</div>`;
       PROGRESS = was; return out;
     }
-    case 'pick-logo':
-      return `<div class="eyebrow">Appearance</div><h2>App icon</h2><p class="lead">Shown on your Home Screen. Re-add Waylink there after changing it.</p>
-        <div class="logos mt16">${LOGOS.map(([k, nm]) => `<button class="logoopt ${s.settings.logo === k ? 'on' : ''}" data-act="logo" data-arg="${k}" aria-pressed="${s.settings.logo === k}"><img src="img/logos/${k}.svg" alt=""><span class="nm">${nm}</span></button>`).join('')}</div>`;
     case 'pick-art':
       return `<div class="eyebrow">Appearance</div><h2>Vehicle pictures</h2><p class="lead">How bikes look in the garage and on Today.</p>
         <div class="seg mt16">${[['photo', 'Photos', 'camera'], ['icon', 'Icons', 'bike']].map(([k, l, ic]) => `<button class="${s.settings.art === k ? 'on' : ''}" data-act="art-mode" data-arg="${k}">${icon(ic)}${l}</button>`).join('')}</div>

@@ -246,8 +246,8 @@ p, .hint, .note, .lead, .d, .row-sub, .small { text-wrap: pretty; }
 .chip.on { background: var(--ink); color: var(--bg); box-shadow: none; }
 .chip.ink { background: var(--accent); color: #fff; box-shadow: none; font-weight: 600; }
 
-.fab { position: absolute; right: 14px; bottom: calc(max(calc(env(safe-area-inset-bottom, 0px) - 14px), 10px) + 86px); width: 60px; height: 60px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; box-shadow: 0 10px 22px -8px rgba(20,15,10,.5); z-index: 20; transition: transform .25s var(--spring); animation: fabIn .5s var(--spring) both; }
-.fab svg { width: 27px; height: 27px; }
+.fab { position: absolute; right: 15px; bottom: calc(max(calc(env(safe-area-inset-bottom, 0px) - 14px), 10px) + 86px); width: 57px; height: 57px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; box-shadow: 0 10px 22px -8px rgba(20,15,10,.5); z-index: 20; transition: transform .25s var(--spring); animation: fabIn .5s var(--spring) both; }
+.fab svg { width: 25.5px; height: 25.5px; }
 .track.on { overflow: visible; }
 .fab:active { transform: scale(.9); }
 .fab.rec { background: var(--accent); color: var(--on-accent); }
@@ -278,7 +278,7 @@ p, .hint, .note, .lead, .d, .row-sub, .small { text-wrap: pretty; }
 .art.thumb::after { bottom: 7%; height: 9%; }
 .art.thumb.lg { width: 92px; height: 60px; border-radius: var(--r-xs); }
 .art.hero-art { width: 100%; aspect-ratio: 16 / 10; border-radius: var(--r-sm); background: var(--bg); }
-.art.card-art { width: 128px; height: 84px; border-radius: var(--r-sm); }
+.art.card-art { width: 96px; height: 96px; border-radius: var(--r-sm); }
 .vcard { position: relative; }
 .vcard .edit { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; box-shadow: none; background: var(--bg); }
 .vcard .edit svg { width: 15px; height: 15px; }
@@ -961,12 +961,14 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .tab.on { color: var(--ink); }
 
 /* Pull to refresh: a bike wheel. The tyre draws and the wheel rolls as you pull, then it spins. */
-#ptr { position: absolute; left: 50%; top: var(--top); z-index: 4; width: 34px; height: 34px; opacity: 0; transform: translate(-50%, -34px); pointer-events: none; color: var(--ink); --draw: 100; --roll: 0deg; }
+#ptr { position: absolute; left: 50%; top: var(--top); z-index: 4; width: 38px; height: 38px; opacity: 0; transform: translate(-50%, -34px); pointer-events: none; color: var(--ink); --draw: 100; --roll: 0deg; }
 #ptr svg { width: 100%; height: 100%; fill: none; stroke: currentColor; overflow: visible; }
 #ptr .wh { transform-origin: 50px 50px; transform: rotate(var(--roll)); }
-#ptr .tyre { stroke-width: 9; stroke-linecap: round; stroke-dasharray: 100 100; stroke-dashoffset: var(--draw); }
-#ptr .rim { stroke-width: 2.5; opacity: .45; }
-#ptr .spk { stroke-width: 2.5; stroke-linecap: round; opacity: .7; }
+#ptr .tyre { stroke-width: 11; stroke-dasharray: 100 100; stroke-dashoffset: var(--draw); }
+#ptr .tread { stroke-width: 3.5; stroke-dasharray: 3.2 4.1; opacity: calc(1 - var(--draw) / 100); }
+#ptr .rim { stroke-width: 3; }
+#ptr .spk { stroke-width: 3.2; stroke-linecap: round; }
+#ptr .disc { stroke-width: 2; stroke-dasharray: 2.5 3.2; opacity: .55; }
 #ptr .hub { fill: currentColor; stroke: none; }
 #ptr.spin .wh { animation: ptrSpin .7s linear infinite; }
 #ptr.spin .tyre, #ptr.done .tyre { stroke-dashoffset: 0; }
@@ -1057,3 +1059,10 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .pdots.r i { background: transparent; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--red) 55%, transparent); }
 .pdots.sm i { width: 7px; height: 7px; }
 .progopt .d { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
+
+.vc-spec { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 16px; border-top: var(--hair) solid var(--line); text-align: left; font-size: 14px; color: var(--ink-3); }
+.vc-spec b { font-weight: 600; color: var(--ink); }
+.vc-spec > svg:first-child { width: 18px; height: 18px; color: var(--ink-2); }
+.vc-spec > svg:last-child { width: 16px; height: 16px; color: var(--ink-4); }
+.vc-spec:active { background: color-mix(in srgb, var(--ink) 3%, transparent); }
+#ptr.spin .tread, #ptr.done .tread { opacity: 1; }

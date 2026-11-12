@@ -60,12 +60,11 @@ function loadAllFonts() {
   document.head.appendChild(Object.assign(document.createElement('link'), { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?' + Object.values(BODY_CSS).map((f) => 'family=' + f).join('&') + '&display=swap' }));
 }
 function applyLogo() {
-  if (!V.LOGOS.some(([k]) => k === s.settings.logo)) s.settings.logo = 'wl-turn';
-  const href = `img/logos/${s.settings.logo}.svg`, name = V.appName(s);
+  const href = V.appIcon(s), name = V.appName(s);
   if (document.title !== name) document.title = name;
   $('meta[name=apple-mobile-web-app-title]')?.setAttribute('content', name);
   const cr = $('.sp-credit'); if (cr) cr.textContent = name.toUpperCase();
-  const icons = { 'link[rel=icon]': href, 'link[rel=apple-touch-icon]': `img/logos/png/${s.settings.logo}-180.png` };
+  const icons = { 'link[rel=icon]': href, 'link[rel=apple-touch-icon]': V.appIcon(s, true) };
   for (const [sel, h] of Object.entries(icons)) { const l = $(sel); if (l && l.getAttribute('href') !== h) l.setAttribute('href', h); }
 }
 function applyTheme() {
@@ -125,7 +124,7 @@ function refreshWeather() {
 
 // ---------- Pull to refresh ----------
 // Pull down at the top of any tab: a bike wheel's tyre draws and the wheel rolls as you pull, then spins while it refreshes.
-const PTR_MARK = '<svg viewBox="0 0 100 100" aria-hidden="true"><g class="wh"><circle class="tyre" cx="50" cy="50" r="43" pathLength="100" transform="rotate(-90 50 50)"/><circle class="rim" cx="50" cy="50" r="35"/><path class="spk" d="M59.0 50.0L81.6 67.3M56.4 56.4L60.1 84.5M50.0 59.0L32.7 81.6M43.6 56.4L15.5 60.1M41.0 50.0L18.4 32.7M43.6 43.6L39.9 15.5M50.0 41.0L67.3 18.4M56.4 43.6L84.5 39.9"/><circle class="hub" cx="50" cy="50" r="8"/></g></svg>';
+const PTR_MARK = '<svg viewBox="0 0 100 100" aria-hidden="true"><g class="wh"><circle class="tyre" cx="50" cy="50" r="41" pathLength="100" transform="rotate(-90 50 50)"/><circle class="tread" cx="50" cy="50" r="46.5"/><circle class="rim" cx="50" cy="50" r="32"/><path class="spk" d="M50.0 40.0L45.2 20.4M50.0 40.0L54.8 20.4M59.5 46.9L76.7 36.3M59.5 46.9L79.6 45.4M55.9 58.1L71.3 71.2M55.9 58.1L63.5 76.8M44.1 58.1L36.5 76.8M44.1 58.1L28.7 71.2M40.5 46.9L20.4 45.4M40.5 46.9L23.3 36.3"/><circle class="disc" cx="50" cy="50" r="17"/><circle class="hub" cx="50" cy="50" r="7"/></g></svg>';
 (function pullToRefresh() {
   const host = $('#views'); if (!host) return;
   const ind = Object.assign(document.createElement('div'), { id: 'ptr', innerHTML: PTR_MARK });
@@ -710,7 +709,6 @@ const A = {
   },
   'copy-app-link': async () => { const u = location.origin + location.pathname; try { await navigator.clipboard.writeText(u); toast('Link copied. Thanks for sharing!'); } catch { toast(u); } },
   'body-font': (k) => { s.settings.bodyFont = k; buzz(6); commit(); refreshSheet(); },
-  logo: (k) => { s.settings.logo = k; buzz(6); commit(); refreshSheet(); toast('Icon updated. Re-add to Home Screen to change an installed icon.'); },
   'show-loader': () => showLoader(),
   scenario: (k) => {
     if (live.rec) stopRecording(false);
@@ -1046,11 +1044,14 @@ setInterval(() => {
 }, 1000);
 
 // ---------- Boot ----------
-// Launch sound. Browsers, and iPhones most strictly, start audio only inside a finished tap. If the page opened
-// without one (as it does from the Home Screen), the first tap in the first 6 s starts the engine instead.
-const bootAt = performance.now(); let launched = false;
-function launchSound() { if (launched || s.settings.sounds === false) return; launched = true; SND.engineStart(); }
-setTimeout(() => { SND.unlock(); if (SND.ready()) launchSound(); }, 60);
+// Launch sound: only while the splash is on screen, and only if audio is truly playing. iPhones report the audio
+// clock as running but hold the sound back until the first tap, which would make it play later, so check the clock moves.
+let launched = false;
+function launchSound() {
+  if (launched || s.settings.sounds === false) return; launched = true;
+  SND.whenLive(() => { const sp = $('#splash'); if (sp && !sp.classList.contains('out')) SND.engineStart(); });
+}
+setTimeout(() => { SND.unlock(); launchSound(); }, 60);
 const firstTap = () => {
   SND.unlock();
   ['touchend', 'click', 'keydown'].forEach((t) => removeEventListener(t, firstTap, true));
