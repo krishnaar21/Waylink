@@ -2054,3 +2054,11 @@ html[data-accent="rust"] .onb-scene, html[data-accent="wine"] .onb-scene, html[d
 .onb-intro .onb-slides { margin-top: 12vh !important; }
 .onb-intro .onb-stage { -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 20px), #000 calc(var(--top) + 150px), #000 62%, transparent 98%) !important; mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 20px), #000 calc(var(--top) + 150px), #000 62%, transparent 98%) !important; }
 .onb-link .onb-stage { -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 20px), #000 calc(var(--top) + 120px), #000 60%, transparent 98%) !important; mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 20px), #000 calc(var(--top) + 120px), #000 60%, transparent 98%) !important; }
+/* Watercolor story: warm paper, and the picture sits a little lower */
+.onb-intro .onb-stage { height: calc(372px + var(--top) + 56px + 56px) !important; }
+.onb-link .onb-stage { height: calc(250px + var(--top) + 56px + 38px) !important; }
+.onb-intro .onb-slides { margin-top: 6vh !important; }
+html:not([data-theme="obsidian"]):not([data-theme="amoled"]) .onb { background: color-mix(in srgb, #F4EFE6 70%, var(--bg)); }
+html[data-theme="obsidian"] .sc-wcg, html[data-theme="amoled"] .sc-wcg { filter: url(#sc-wc-d); }
+.onb-intro .onb-stage { -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 100px), #000 calc(var(--top) + 210px), #000 64%, transparent 98%) !important; mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 100px), #000 calc(var(--top) + 210px), #000 64%, transparent 98%) !important; }
+.onb-link .onb-stage { -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 80px), #000 calc(var(--top) + 170px), #000 60%, transparent 98%) !important; mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 80px), #000 calc(var(--top) + 170px), #000 60%, transparent 98%) !important; }
