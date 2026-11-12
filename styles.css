@@ -1431,3 +1431,14 @@ html[data-theme="obsidian"] .art.icon-mode, html[data-theme="amoled"] .art.icon-
   -webkit-mask-image: linear-gradient(to top, #000, transparent); mask-image: linear-gradient(to top, #000, transparent); }
 /* Loop w: flat, cut ends like the type's stems instead of round caps */
 .wl-loop .lw { stroke-linecap: butt; stroke-linejoin: miter; stroke-width: 12; }
+
+/* Icons never clip at their edges (strokes that touch the 24px box) */
+svg.i, .tab svg { overflow: visible; }
+/* Softer, consistent card borders everywhere */
+:root { --line: rgba(18, 21, 26, .065); }
+[data-theme="obsidian"] { --line: rgba(255,255,255,.06); }
+[data-theme="amoled"] { --line: rgba(200,215,255,.07); }
+.card, .list, .list.flat, .bikecard, .vcard, .support-card, .upcard, .hero, .give, .progopt, .icoopt, .brandopt, .ftile { box-shadow: 0 0 0 1px var(--line), var(--shadow-soft, 0 8px 24px -20px rgba(15,22,35,.25)); }
+html[data-theme="obsidian"] :is(.card, .list, .bikecard, .vcard, .support-card, .upcard, .hero), html[data-theme="amoled"] :is(.card, .list, .bikecard, .vcard, .support-card, .upcard, .hero) { box-shadow: 0 0 0 1px var(--line); }
+.progopt.on, .icoopt.on, .brandopt.on, .ftile.on { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.ftile.on { box-shadow: none; }
