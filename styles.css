@@ -103,7 +103,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; border: 0; background: none; padding: 0; }
 a { color: inherit; }
 svg { display: block; }
-svg.i > * { vector-effect: non-scaling-stroke; }
+/* (no vector-effect: Safari draws non-scaling strokes on circles as jagged polygons) */
 p, .hint, .note, .lead, .d, .row-sub, .small { text-wrap: pretty; }
 .title, h2, .verdict, .serif { text-wrap: balance; }
 
