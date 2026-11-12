@@ -2175,3 +2175,9 @@ html[data-theme="obsidian"] .onb-link .onb-img, html[data-theme="amoled"] .onb-l
 .pr-k { font-size: 14px; color: var(--ink-3); flex: none; }
 .pr-v { font-size: 15px; font-weight: 500; color: var(--ink); text-align: right; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pr-v.faint { color: var(--ink-4); font-weight: 400; }
+/* Link step: the rider rolls in, stops, then the signal reaches out to Bluetooth */
+.link-rider { animation: riderIn 1.5s cubic-bezier(.22,.8,.3,1) both; }
+@keyframes riderIn { 0% { transform: translateX(-160px); opacity: 0; } 15% { opacity: .78; } 80% { transform: translateX(4px); } 100% { transform: none; opacity: .78; } }
+.link-wave { animation: fadeIn .4s ease 1.45s both; }
+.link-badge { animation: badgeIn .5s cubic-bezier(.3,1.4,.5,1) 1.7s both, lbPulse 2.4s ease-in-out 2.2s infinite !important; }
+@keyframes badgeIn { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
