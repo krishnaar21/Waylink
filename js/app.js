@@ -75,7 +75,7 @@ function applyLogo() {
 function applyTheme() {
   applyFont(); applyLogo();
   SND.setEnabled(s.settings.sounds !== false);
-  let t = s.settings.theme === 'auto' ? (mqDark.matches ? 'obsidian' : 'paper') : s.settings.theme;
+  let t = s.settings.theme === 'auto' ? (mqDark.matches ? 'sketchdark' : 'sketch') : s.settings.theme;
   // Paper dark shares every Paper rule and swaps the inks.
   const night = t === 'sketchdark'; if (night) t = 'sketch';
   document.documentElement.dataset.theme = t;
@@ -246,7 +246,7 @@ function render(anim = '') {
   setHTML($('#fab'), screen === 'today' ? `<button class="fab" data-act="sheet" data-arg="quick" aria-label="Quick actions">${V.icon('plus')}</button>`
     : '');
   // Ride charts reopen on the style you last swiped to.
-  if (!same) { const rc = $('[data-rc]'); if (rc) { let i = 0; try { i = +localStorage.getItem('wl-rc') || 0; } catch {} if (i) requestAnimationFrame(() => { rc.style.scrollBehavior = 'auto'; rc.scrollLeft = i * rc.clientWidth; rc.style.scrollBehavior = ''; }); } }
+  if (!same) { const rc = $('[data-rc]'); if (rc) { const i = V.rideChartAt(s); if (i) requestAnimationFrame(() => { rc.style.scrollBehavior = 'auto'; rc.scrollLeft = i * rc.clientWidth; rc.style.scrollBehavior = ''; }); } }
   renderPill(); fitArch();
   renderOverlay();
   if (screen === 'fuel') wireChart();
@@ -816,6 +816,7 @@ const A = {
     if (path === 'streetNames') link.sendStreetNames = s.settings.streetNames;
     buzz(6); commit();
   },
+  'ride-chart': (k) => { s.settings.rideChart = Math.min(3, Math.max(0, +k || 0)); SND.click(true); commit(); refreshSheet(); },
   'progress-style': (k) => { s.settings.progress = V.PROGRESS_STYLES.some(([x]) => x === k) ? k : 'gauge'; SND.click(true); commit(); refreshSheet(); },
   brand: (k) => { s.settings.brand = V.BRANDS.some(([x]) => x === k) ? k : 'loop'; document.documentElement.dataset.brand = s.settings.brand; buzz(6); commit(); refreshSheet(); },
   'icon-style': (k) => { s.settings.icons = ['duo', 'fill'].includes(k) ? k : 'line'; SND.click(true); commit(); refreshSheet(); },
@@ -1195,7 +1196,7 @@ const within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))
 // First launch: keep the splash up until the onboarding pictures are ready (at most ~3 s more).
 const onbReady = () => {
   if (s.onboarded) return Promise.resolve();
-  const h = document.documentElement, dark = ['obsidian', 'amoled'].includes(h.dataset.theme) || 'night' in h.dataset, m = dark ? 'dark' : 'light';
+  const h = document.documentElement, m = 'night' in h.dataset ? 'night' : ['obsidian', 'amoled'].includes(h.dataset.theme) ? 'dark' : 'light';
   const load = (src) => new Promise((r) => { const i = new Image(); i.onload = i.onerror = r; i.src = src; (i.decode?.() || Promise.resolve()).then(r, r); });
   return Promise.race([Promise.all([load(`img/onb/scene-${m}.webp`), load('img/onb/rider-street.webp')]), new Promise((r) => setTimeout(r, 3000))]);
 };
@@ -1260,7 +1261,11 @@ function registerUpdates() {
 
 document.addEventListener('scroll', (e) => {
   const el = e.target;
-  if (el?.matches?.('[data-rc]')) { const i = Math.round(el.scrollLeft / el.clientWidth); el.nextElementSibling?.querySelectorAll('.rc-dots i').forEach((d, k) => d.classList.toggle('on', k === i)); try { localStorage.setItem('wl-rc', i); } catch {} return; }
+  if (el?.matches?.('[data-rc]')) {
+    const i = Math.round(el.scrollLeft / el.clientWidth); el.nextElementSibling?.querySelectorAll('i').forEach((d, k) => d.classList.toggle('on', k === i));
+    // Swiping picks the chart style too (same choice as Settings), saved once the swipe settles.
+    clearTimeout(el._rcT); el._rcT = setTimeout(() => { if (s.settings.rideChart !== i) { s.settings.rideChart = i; S.save(s); } }, 400); return;
+  }
   if (!el?.matches?.('[data-onb-slides]')) return;
   $('[data-onb-stage]')?.style.setProperty('--p', (el.scrollLeft / el.clientWidth).toFixed(3));
   const i = Math.round(el.scrollLeft / el.clientWidth), btn = $('[data-act="onb-next"]');

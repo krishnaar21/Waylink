@@ -140,10 +140,12 @@ async def main():
         check('selected font is marked, no tick', await pg.query_selector('.ftile.on') and not await pg.query_selector('.ftile .selmark'))
         check('serif fonts offered', await pg.query_selector('[data-act="font"][data-arg="garamond"]') and await pg.query_selector('[data-act="font"][data-arg="fraunces"]'))
         await pg.evaluate("document.querySelector('.backdrop')?.click()"); await pg.wait_for_timeout(500)
-        await pg.click('[data-arg="models"]'); await pg.wait_for_timeout(500)
+        await pg.click('[data-arg="about"]'); await pg.wait_for_timeout(500)
+        await pg.wait_for_timeout(400); await pg.evaluate("[...document.querySelectorAll('[data-arg=models]')].pop().click()"); await pg.wait_for_timeout(600)
         check('model list shows all 11 models', len(await pg.query_selector_all('.sheet .list .li')) == 11)
         await shot(pg, '06b-models')
         await pg.keyboard.press('Escape'); await pg.wait_for_timeout(400)
+        if await pg.query_selector('.sheet'): await pg.keyboard.press('Escape'); await pg.wait_for_timeout(400)
         # Preview states: nothing is saved, every tab renders
         before = await pg.evaluate("localStorage.getItem('pulsarnav-web-v2')")
         for kind in ['edge', 'empty']:
@@ -246,6 +248,10 @@ async def main():
 
         # Dark theme contrast sanity
         await pg.evaluate("location.hash='settings'"); await pg.wait_for_timeout(400)
+        check('only Paper themes by default', not await pg.query_selector('[data-act="theme"][data-arg="obsidian"]') and await pg.query_selector('[data-act="theme"][data-arg="sketchdark"]'))
+        await pg.click('[data-act="theme"][data-arg="sketchdark"]'); await pg.wait_for_timeout(400)
+        check('Paper dark applies', await pg.evaluate("document.documentElement.dataset.theme == 'sketch' && 'night' in document.documentElement.dataset"))
+        await pg.click('[data-act="toggle"][data-arg="allThemes"]'); await pg.wait_for_timeout(400)
         await pg.click('[data-act="theme"][data-arg="obsidian"]'); await pg.wait_for_timeout(400)
         await pg.evaluate("location.hash='settings'"); await pg.wait_for_timeout(400)
         await pg.evaluate("document.querySelector('.view').scrollTo(0, 400)"); await pg.wait_for_timeout(500)

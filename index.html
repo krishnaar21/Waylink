@@ -44,12 +44,12 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&display=swap" media="print" onload="this.media='all'">
   <style>html,body{margin:0;background:#EDEFF2}html[data-theme="obsidian"],html[data-theme="obsidian"] body{background:#0E1013}html[data-theme="sketch"],html[data-theme="sketch"] body{background:#EEE7DA}html[data-night],html[data-night] body{background:#1E1B17}html[data-theme="amoled"],html[data-theme="amoled"] body{background:#0B1530}</style>
   <script>/* Paint the saved theme before anything loads, so there's no white flash. */
-  try { var d = JSON.parse(localStorage.getItem('pulsarnav-web-v2') || '{}'), st = d.settings || {}, h = document.documentElement, t = st.theme || 'amoled';
-    if (t === 'auto') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'obsidian' : 'paper';
+  try { var d = JSON.parse(localStorage.getItem('pulsarnav-web-v2') || '{}'), st = d.settings || {}, h = document.documentElement, t = st.theme || 'auto';
+    if (t === 'auto') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'sketchdark' : 'sketch';
     if (t === 'sketchdark') { t = 'sketch'; h.dataset.night = ''; }
     h.dataset.theme = t; h.dataset.brand = 'loop'; h.dataset.accent = st.accent || 'wine';
     /* First launch only: warm the onboarding pictures for this theme. */
-    if (!d.onboarded) ['img/onb/rider-street.webp', 'img/onb/scene-' + (t === 'paper' || (t === 'sketch' && !('night' in h.dataset)) ? 'light' : 'dark') + '.webp'].forEach(function (u) { var l = document.createElement('link'); l.rel = 'preload'; l.as = 'image'; l.href = u; document.head.appendChild(l); });
+    if (!d.onboarded) ['img/onb/rider-street.webp', 'img/onb/scene-' + ('night' in h.dataset ? 'night' : t === 'paper' || t === 'sketch' ? 'light' : 'dark') + '.webp'].forEach(function (u) { var l = document.createElement('link'); l.rel = 'preload'; l.as = 'image'; l.href = u; document.head.appendChild(l); });
     /* The logo plays once per launch: reloads and updates in the same session skip it. */
     if (sessionStorage.getItem('wl-splashed')) h.classList.add('no-splash'); else sessionStorage.setItem('wl-splashed', '1'); } catch (e) {}</script>
   <link rel="modulepreload" href="js/app.js"><link rel="modulepreload" href="js/views.js"><link rel="modulepreload" href="js/store.js"><link rel="modulepreload" href="js/icons-huge.js"><link rel="modulepreload" href="js/protocol.js"><link rel="modulepreload" href="js/link.js"><link rel="modulepreload" href="js/sound.js">

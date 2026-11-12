@@ -2005,11 +2005,6 @@ html[data-theme="sketch"] .tabbar::after { display: none !important; }
 
  
 
-.rc-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
-.rc-nav .rc-dots { margin-top: 0; }
-.rc-arr { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--ink-2, var(--ink)); display: grid; place-items: center; padding: 0; cursor: pointer; }
-.rc-arr svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-.rc-arr:active { transform: scale(.94); }
 .rc-grid { width: 28px; white-space: nowrap; } .rc-xl { margin-left: 36px; }
 .rc-tot { font-size: 13px; color: var(--ink-3); margin-bottom: 6px; } .rc-tot b { color: var(--ink); font-size: 15px; }
 
@@ -2038,7 +2033,7 @@ html[data-theme="sketch"][data-night][data-accent="rust"] { --accent: #E46A48; }
 .rc-bub { width: 100%; height: 132px; display: block; overflow: visible; }
 .rc-bub .ax { stroke: var(--line); stroke-width: 1.5; } .rc-bub .tk { stroke: var(--line); stroke-dasharray: 2 4; }
 .rc-bub circle { fill: color-mix(in srgb, var(--accent) 55%, transparent); stroke: var(--card); stroke-width: 1.5; }
-html[data-night] .onb-img { background-image: url(img/onb/scene-dark.webp); }
+html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 /* Calls & chats: an app icon on the left, a quiet Clear on the right */
 .ac-btns { display: flex !important; justify-content: space-between; align-items: center; }
 .ac-btns > a.btn { flex: none !important; width: 40px; height: 40px !important; padding: 0 !important; border-radius: 50%; }
@@ -2053,3 +2048,47 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-dark.webp); }
 .rc-wr i { display: block; height: 100%; border-radius: 6px; background: color-mix(in srgb, var(--accent) 50%, var(--seg-off)); }
 .rc-wr.top i { background: var(--accent); } .rc-wr.top span, .rc-wr.top b { color: var(--ink); }
 .rc-wr b { font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+/* Link: a small watercolour Bluetooth badge, pulsing in outline rings */
+.lk-street .lk-bt { left: 244px !important; top: -2px !important; width: 36px !important; height: 36px !important; margin: 0 0 0 -18px !important; box-shadow: none !important; animation: badgeIn .5s cubic-bezier(.3,1.4,.5,1) 1.5s both !important; overflow: visible; }
+.lk-street .lk-bt::before { display: none !important; }
+.lk-street .lk-bt::after { background: url(img/onb/bt-disc.webp) center / 112% 112% no-repeat !important; inset: -2px; }
+.lk-street .lk-bt svg { width: 17px !important; height: 17px !important; }
+.lk-ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid #3B6FE0; opacity: 0; animation: lkRing 2.4s ease-out 2s infinite; pointer-events: none; }
+.lk-ring.r2 { animation-delay: 3.2s; }
+@keyframes lkRing { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(2.3); opacity: 0; } }
+.lk-street .lk-wave { left: 203px; top: 32px; width: 20px; height: 50px; }
+@media (prefers-reduced-motion: reduce) { .lk-ring { animation: none; } }
+.lk-street .lk-bt { background: transparent !important; }
+/* Signal: round dots drifting from the headlight up to the badge */
+.lk-street .lk-wave { left: 201px; top: 32px; width: 24px; height: 52px; }
+.lk-street .lk-wave path { stroke: color-mix(in srgb, var(--ink) 60%, transparent); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 0 7; animation: lkDots .9s linear infinite; }
+@keyframes lkDots { to { stroke-dashoffset: -7; } }
+.lk-street .lk-bt { isolation: isolate; }
+.lk-street .lk-bt::after { z-index: 0 !important; }
+.lk-street .lk-bt svg { position: relative; z-index: 1; color: #fff; }
+.lk-street .lk-bt::after { content: "" !important; position: absolute; border-radius: 50%; }
+/* The dots stop well short of the widest pulse ring */
+@keyframes lkRing { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(1.75); opacity: 0; } }
+.lk-street .lk-wave { left: 195px; top: 46px; width: 19px; height: 41px; }
+.lk-street .lk-wave path { stroke-width: 2.6; stroke-dasharray: 5 5; animation: lkDash .9s linear infinite; }
+@keyframes lkDash { to { stroke-dashoffset: -10; } }
+/* Ride charts: example fill when there's no data yet */
+.rc-dots { margin-top: 14px; }
+.rc-body { position: relative; }
+.rc.demo .rc-body > :not(.rc-demo), .rcopt-v.demo { opacity: .38; filter: saturate(.6); }
+.rc-demo { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: var(--card); color: var(--ink-2); font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; box-shadow: 0 0 0 1px var(--line); white-space: nowrap; }
+/* Ride chart picker */
+.rcopts { display: grid; gap: 10px; }
+.rcopt { display: block; width: 100%; text-align: left; padding: 14px 16px 16px; border-radius: var(--r-md, 16px); background: var(--card); border: 0; box-shadow: 0 0 0 1px var(--line); color: var(--ink); font: inherit; cursor: pointer; }
+.rcopt.on { box-shadow: 0 0 0 2px var(--ink); }
+.rcopt-t { font-weight: 600; font-size: 15px; margin-bottom: 10px; }
+.rcopt-v { pointer-events: none; }
+.rcopt-v .hm { margin-top: 0; }
+/* Avatar picker: faces sit smaller inside their circles; the chosen one fills its circle, with a hairline ring */
+.av-opt { background: #fff; overflow: hidden; }
+.av-opt img { transform: scale(.8); transition: transform .25s var(--spring); }
+.av-opt.on img { transform: none; box-shadow: none !important; }
+.av-opt.on { box-shadow: 0 0 0 1px var(--ink); overflow: visible; }
+.av-opt.on img { border-radius: 50%; }
+.av-opt.on { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent); }
+.av-opt.on img { transform: scale(.95); }

@@ -51,7 +51,7 @@ export function segs(n, filled, cls = 's', extra = '') {
 // ---------- Icons ----------
 export const selmark = (inline = false) => `<span class="selmark ${inline ? 'inline' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
 export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400], ['atkinson', 'Atkinson', "'Atkinson Hyperlegible Next'", 450], ['public', 'Public Sans', "'Public Sans'", 450]];
-export const THEMES = [['auto', 'Auto', '#EDEFF2', '#F9FAFB', '#12151A'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Navy', '#0B1530', '#13203F', '#EAF0FF'], ['sketch', 'Paper', '#EEE7DA', '#F7F1E6', '#2A2620'], ['sketchdark', 'Paper dark', '#1E1B17', '#2A2621', '#EDE5D6']];
+export const THEMES = [['auto', 'Auto', '#EEE7DA', '#2A2621', '#2A2620'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Navy', '#0B1530', '#13203F', '#EAF0FF'], ['sketch', 'Paper', '#EEE7DA', '#F7F1E6', '#2A2620'], ['sketchdark', 'Paper dark', '#1E1B17', '#2A2621', '#EDE5D6']];
 export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
 // Icons: Hugeicons (MIT), credited in About.
 // One icon family everywhere: Hugeicons (stroke). Unknown keys draw nothing rather than mixing styles.
@@ -543,12 +543,21 @@ const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct
 const dayLab = (t) => new Date(t).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 // Fixed km bands, so one ride is shaded by its own distance rather than looking like a "best day".
 const band = (km) => (!km ? 0 : km < 15 ? 1 : km < 40 ? 2 : km < 80 ? 3 : 4);
-const navBtn = (dir) => `<button class="rc-arr" type="button" aria-label="${dir < 0 ? 'Previous' : 'Next'} chart" onclick="const r=this.parentNode.previousElementSibling;r.scrollBy({left:${dir}*r.clientWidth,behavior:'smooth'})"><svg viewBox="0 0 24 24"><path d="${dir < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'}"/></svg></button>`;
 export const RC_NAMES = ['Calendar', 'Km per week', 'Km by weekday', 'Each ride'];
-export function rideCharts(trips) {
-  const today = dayKey(Date.now()), start = addDays(today, -(new Date(today).getDay() + 7 * 11));
+// A sample riding pattern, drawn faintly when there's nothing real to show yet.
+function demoTrips(start, today) {
+  const out = []; let seed = 7; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+  for (let k = start; k <= today; k = addDays(k, 1)) { const wd = new Date(k).getDay(); if (rnd() < (wd === 0 || wd === 6 ? .5 : .22)) out.push({ start: k + 9 * 3600000, km: Math.round(6 + rnd() * (wd === 0 ? 70 : 28)) }); }
+  return out;
+}
+export function ridePages(trips) {
+  const today = dayKey(Date.now()), start = addDays(today, -(new Date(today).getDay() + 7 * 11)), end = addDays(today, 1);
+  // Only rides with a real date up to today count; bad or missing distances count as 0 km.
+  const real = (trips || []).map((t) => ({ start: +(t.start || t.ts), km: Number.isFinite(+t.km) && +t.km > 0 ? +t.km : 0 })).filter((t) => Number.isFinite(t.start) && t.start > 0 && t.start < end);
+  const demo = !real.some((t) => t.start >= start);
+  trips = demo ? demoTrips(start, today) : real;
   const kmBy = {}, nBy = {};
-  for (const t of trips || []) { const k = dayKey(t.start || t.ts || 0); kmBy[k] = (kmBy[k] || 0) + (t.km || 0); nBy[k] = (nBy[k] || 0) + 1; }
+  for (const t of trips) { const k = dayKey(t.start); kmBy[k] = (kmBy[k] || 0) + t.km; nBy[k] = (nBy[k] || 0) + 1; }
   const tip = (k) => `${dayLab(k)}${kmBy[k] ? ` · ${num(kmBy[k], 1)} km${nBy[k] > 1 ? `, ${nBy[k]} rides` : ''}` : ' · no ride'}`;
   // 1. Calendar heatmap: 12 weeks, Sunday on top, today ringed.
   let cols = '', months = '', lastM = -1;
@@ -569,19 +578,24 @@ export function rideCharts(trips) {
   const weekly = `<div class="rc-bars"><div class="rc-grid"><span>${nice}</span><span>${nice / 2}</span><span>0</span></div><div class="rc-cols">${bars}</div></div><div class="rc-xl">${wkLab}</div>`;
   // 3. By weekday: a radial bar per day, km over all rides.
   const wd = [0, 0, 0, 0, 0, 0, 0], wn = [0, 0, 0, 0, 0, 0, 0];
-  for (const t of trips || []) { const g = new Date(t.start || t.ts || 0).getDay(); wd[g] += t.km || 0; wn[g]++; }
+  for (const t of (demo ? trips : real)) { const g = new Date(t.start).getDay(); wd[g] += t.km; wn[g]++; }
   const wdMax = Math.max(1, ...wd), fav = wd.indexOf(Math.max(...wd)), WDN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const radial = `<div class="rc-wk">${[1, 2, 3, 4, 5, 6, 0].map((i) => `<div class="rc-wr${i === fav && wd[i] ? ' top' : ''}" title="${WDN[i]} · ${num(wd[i], 1)} km, ${plural(wn[i], 'ride', 'rides')}"><span>${WDN[i]}</span><div><i style="width:${wd[i] ? Math.max(4, (wd[i] / wdMax) * 100) : 0}%"></i></div><b>${wd[i] ? num(wd[i], wd[i] < 100 ? 1 : 0) : '–'}</b></div>`).join('')}</div>`;
   // 4. Each ride: one bubble per ride along the 12 weeks, sized by distance.
-  const span = today + 86400000 - start, rr = (trips || []).filter((t) => (t.start || t.ts || 0) >= start);
-  const kMax = Math.max(1, ...rr.map((t) => t.km || 0));
-  const bub = rr.map((t, i) => { const bx = (((t.start || t.ts) - start) / span) * 300, r = 3 + Math.sqrt((t.km || 0) / kMax) * 15, by = 60 + (i % 2 ? -1 : 1) * Math.min(14, r * .55);
-    return `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="${r.toFixed(1)}"><title>${dayLab(t.start || t.ts)} · ${num(t.km || 0, 1)} km</title></circle>`; }).join('');
+  const span = end - start, rr = trips.filter((t) => t.start >= start);
+  const kMax = Math.max(1, ...rr.map((t) => t.km));
+  const bub = rr.map((t, i) => { const bx = Math.min(300, Math.max(0, ((t.start - start) / span) * 300)), r = 3 + Math.sqrt(t.km / kMax) * 15, by = 60 + (i % 2 ? -1 : 1) * Math.min(14, r * .55);
+    return `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="${r.toFixed(1)}"><title>${dayLab(t.start)} · ${num(t.km, 1)} km</title></circle>`; }).join('');
   const ticks = [0, 4, 8].map((w) => `<line class="tk" x1="${(w / 12) * 300}" x2="${(w / 12) * 300}" y1="20" y2="100"/>`).join('');
-  const each = `<div class="rc-tot"><b>${plural(rr.length, 'ride', 'rides')}</b> in 12 weeks · biggest ${num(kMax === 1 && !rr.length ? 0 : kMax, 1)} km</div><svg class="rc-bub" viewBox="-12 0 324 120">${ticks}<line class="ax" x1="0" x2="300" y1="60" y2="60"/>${bub}</svg><div class="rc-xl rc-xl3"><span>${new Date(start).getDate()} ${MON[new Date(start).getMonth()]}</span><span>${new Date(addDays(start, 28)).getDate()} ${MON[new Date(addDays(start, 28)).getMonth()]}</span><span>${new Date(addDays(start, 56)).getDate()} ${MON[new Date(addDays(start, 56)).getMonth()]}</span><span>Today</span></div>`;
-  let at = 0; try { at = Math.min(3, +localStorage.getItem('wl-rc') || 0); } catch {}
-  const pages = [cal, weekly, radial, each];
-  return `<div class="rc" data-rc>${pages.map((h, i) => `<section class="rc-p" aria-label="${RC_NAMES[i]}"><div class="rc-name">${RC_NAMES[i]}</div>${h}</section>`).join('')}</div><div class="rc-nav">${navBtn(-1)}<div class="rc-dots">${RC_NAMES.map((n, i) => `<i class="${i === at ? 'on' : ''}" title="${n}"></i>`).join('')}</div>${navBtn(1)}</div>`;
+  const each = `<div class="rc-tot"><b>${plural(rr.length, 'ride', 'rides')}</b> in 12 weeks · biggest ${num(rr.length ? Math.max(...rr.map((t) => t.km)) : 0, 1)} km</div><svg class="rc-bub" viewBox="-12 0 324 120">${ticks}<line class="ax" x1="0" x2="300" y1="60" y2="60"/>${bub}</svg><div class="rc-xl rc-xl3"><span>${new Date(start).getDate()} ${MON[new Date(start).getMonth()]}</span><span>${new Date(addDays(start, 28)).getDate()} ${MON[new Date(addDays(start, 28)).getMonth()]}</span><span>${new Date(addDays(start, 56)).getDate()} ${MON[new Date(addDays(start, 56)).getMonth()]}</span><span>Today</span></div>`;
+  return { pages: [cal, weekly, radial, each], demo };
+}
+export const rideChartAt = (s) => Math.min(3, Math.max(0, +s.settings.rideChart || 0));
+// The rides card: swipe between the four; the one showing is remembered as the chosen style.
+export function rideCharts(s) {
+  const { pages, demo } = ridePages(s.trips), at = rideChartAt(s);
+  const note = demo ? '<div class="rc-demo">An example. Your rides fill this in.</div>' : '';
+  return `<div class="rc${demo ? ' demo' : ''}" data-rc data-at="${at}">${pages.map((h, i) => `<section class="rc-p" aria-label="${RC_NAMES[i]}"><div class="rc-name">${RC_NAMES[i]}</div><div class="rc-body">${h}${note}</div></section>`).join('')}</div><div class="rc-dots">${RC_NAMES.map((n, i) => `<i class="${i === at ? 'on' : ''}" title="${n}"></i>`).join('')}</div>`;
 }
 
 export function trips(c) {
@@ -597,7 +611,7 @@ export function trips(c) {
       <div class="flex gap12 mt12" style="align-items:baseline"><span class="big"><span data-live="rec-km">${num(r.km, 2)}</span><span class="unit">km</span></span><span class="small muted"><span data-live="speed">${num(live.speed)}</span> km/h now · top <span data-live="rec-top">${num(r.top)}</span></span></div>
       <button class="btn ink block mt16" data-act="sheet" data-arg="rec-end">${icon('stop')} End ride</button></div>`
     : `<div class="card pad mt20 flex gap12"><div class="grow"><div class="serif" style="font-size:22px">Ready when you are</div><div class="small muted mt8">${s.settings.autoRecord ? 'Rides record by themselves once the bike links.' : 'Tap play to record with your phone’s GPS.'}</div></div><button class="circle ink" data-act="rec-start" aria-label="Record a ride">${icon('play')}</button></div>`}
-  ${(() => { const tot = s.trips.reduce((a, t) => a + (t.km || 0), 0); return `<div class="card pad rides-hero mt12"><div class="ms-t">All rides</div><div class="big rh-n">${s.trips.length}</div><p class="rh-line">${s.trips.length ? `You’ve ridden <u>${num(tot, tot < 100 ? 1 : 0)} km</u> on ${esc(clip(S.vehicleTitle(s), 20))}${s.trips.length > 1 ? `, about ${num(tot / s.trips.length, 0)} km a ride` : ''}.` : 'Your rides will fill this in, one square a day.'}</p>${rideCharts(s.trips)}</div>`; })()}
+  ${(() => { const tot = s.trips.reduce((a, t) => a + (t.km || 0), 0); return `<div class="card pad rides-hero mt12"><div class="ms-t">All rides</div><div class="big rh-n">${s.trips.length}</div><p class="rh-line">${s.trips.length ? `You’ve ridden <u>${num(tot, tot < 100 ? 1 : 0)} km</u> on ${esc(clip(S.vehicleTitle(s), 20))}${s.trips.length > 1 ? `, about ${num(tot / s.trips.length, 0)} km a ride` : ''}.` : 'Your rides will fill this in, one square a day.'}</p>${rideCharts(s)}</div>`; })()}
   <div class="card stat2 mt12">${stat('This week', wk)}${stat('Last 30 days', mo)}</div>
   <div class="section">${sh('Rides', '<span class="eyebrow">Newest first</span>')}
     ${s.trips.length ? `<div class="card" style="padding:4px">${s.trips.map((t) => `<button class="ride" data-act="sheet" data-arg="trip-detail:${t.id}">${sketch(t.pts)}<div class="grow"><div class="when">${dMed(t.start)} · ${tShort(t.start)}</div><div class="t">${esc(t.title)}</div><div class="meta"><span><span class="big">${num(t.km, 1)}</span><span class="unit">km</span></span><span>${dur(t.sec)}</span><span>top ${num(t.top)}</span></div></div><span class="no">№${String(t.n).padStart(3, '0')}</span></button>`).join('')}</div>`
@@ -745,8 +759,6 @@ export function settings(c) {
     </button><button class="circle edit" data-act="sheet" data-arg="vehicle:${v.id}" aria-label="Edit vehicle">${icon('edit')}</button>
       <div class="vc-rows">
       ${li({ ic: 'spec', t: 'Spec sheet', d: 'Oil, tyres, chain, plugs', act: 'sheet', arg: 'specs' })}
-      ${s.vehicles.length > 1 ? li({ ic: 'swap', t: 'Switch vehicle', end: `${s.vehicles.length} bikes`, act: 'sheet', arg: 'garage' }) : ''}
-      ${li({ ic: 'grid', t: 'All bike models', d: `${S.MODELS.length} models`, act: 'sheet', arg: 'models' })}
       ${li({ ic: 'gauge', t: 'Odometer', d: 'Correct it if it drifts', end: num(Math.floor(s.odo)) + ' km', act: 'sheet', arg: 'odo' })}
       ${li({ ic: 'bt', t: 'Bluetooth', d: 'Pair and check the link', end: connText, act: 'sheet', arg: 'bike' })}
     </div></div></div>
@@ -764,7 +776,7 @@ export function settings(c) {
     ${li({ ic: 'eye', t: 'Street names on the bike', d: 'Road name beside the arrow', end: sw(st.streetNames, 'toggle', 'streetNames'), chev: false, tag: 'div' })}
   </div></div>
   <div class="section">${sh('Look & sound')}<div class="card themecard"><div class="tc-top">
-    <div class="themes">${THEMES.map(([k, l, bg, card, ink]) => `<button class="themeopt ${st.theme === k ? 'on' : ''}" data-act="theme" data-arg="${k}" aria-pressed="${st.theme === k}">
+    <div class="themes">${THEMES.filter(([k]) => st.allThemes || ['auto', 'sketch', 'sketchdark'].includes(k)).map(([k, l, bg, card, ink]) => `<button class="themeopt ${st.theme === k ? 'on' : ''}" data-act="theme" data-arg="${k}" aria-pressed="${st.theme === k}">
       <span class="tp ${k}" style="--tbg:${bg};--tcard:${card};--tink:${ink}"><i></i><i></i><b></b></span><span class="nm">${l}</span></button>`).join('')}</div>
     <div class="eyebrow mt24">Accent</div>
     <div class="accents mt12">${ACCENTS.map(([k, col, l]) => `<button class="accentopt ${st.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${st.accent === k}" aria-label="${l}" title="${l}"><span class="dot" style="background-color:${col};--c:${col}"></span></button>`).join('')}</div>
@@ -773,6 +785,7 @@ export function settings(c) {
     ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
     ${li({ ic: 'sparkles', t: 'Icons', end: `<span class="pick-val">${(ICON_STYLES.find(([k]) => k === st.iconStyle) || ICON_STYLES[0])[1]} · ${{ duo: 'Glow', fill: 'Duotone' }[st.icons] || 'Line'}</span>`, act: 'sheet', arg: 'pick-brand' })}
     ${li({ ic: 'font', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
+    ${li({ ic: 'trips', t: 'Ride chart', end: `<span class="pick-val">${RC_NAMES[rideChartAt(s)]}</span>`, act: 'sheet', arg: 'pick-ridechart' })}
     ${li({ ic: 'progress', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
   </div></details></div></div>
   <div class="section">${sh('Data & region', '', 'backup')}<div class="list">
@@ -792,6 +805,7 @@ export function settings(c) {
     ${li({ ic: 'sparkles', t: 'Show the splash screen', d: 'The logo animation. Tap to close.', act: 'show-loader' })}
     ${li({ ic: 'refresh', t: 'Show the loading screen', d: 'Turn signs while something loads', act: 'show-loading' })}
     ${li({ ic: 'bolt', t: 'Simulated bike', d: 'Try it all without a bike', end: sw(link.simulated && link.state !== 'idle', 'sim-toggle'), chev: false, tag: 'div' })}
+    ${li({ ic: 'sparkles', t: 'Show all themes', d: 'Light, Dark and Navy besides Paper', end: sw(!!st.allThemes, 'toggle', 'allThemes'), chev: false, tag: 'div' })}
     ${li({ ic: 'btMsgs', t: 'Show Bluetooth messages', d: 'Raw bytes on the Route tab', end: sw(!!st.devFrames, 'toggle', 'devFrames'), chev: false, tag: 'div' })}
     ${li({ ic: 'bt', t: 'Pair from all devices', d: 'If your bike isn’t listed', act: 'pair-all', cls: link.supported ? '' : 'disabled' })}
     ${li({ ic: 'list', t: 'Connection log', d: 'Each step of the Bluetooth link', end: `${link.log.length}`, act: 'sheet', arg: 'log' })}
@@ -948,7 +962,7 @@ export function callOverlay(c) {
 
 // ---------- Help ----------
 export const FAQ = [
-  ['Which bikes work?', 'Pulsar and Dominar models with the Bluetooth digital cluster. Settings, Garage, All bike models lists every model Waylink knows. If your cluster can show calls from your phone, it should work.'],
+  ['Which bikes work?', 'Pulsar and Dominar models with the Bluetooth digital cluster. Settings, About Waylink, Bike models lists every model Waylink knows. If your cluster can show calls from your phone, it should work.'],
   ['How do I pair on an iPhone?', 'Safari can’t talk to Bluetooth devices from a web page. On Today, tap Pair on iPhone: it walks you through opening Waylink in the free Bluefy browser, which can. On Android, Chrome pairs directly. Fuel, the logbook, rides and weather work in any browser.'],
   ['How do turn arrows reach the bike?', 'Plan your ride in Google Maps on the same phone, then keep Waylink open in Route. Each turn is sent to the cluster with the distance, and the arrow blinks in the last 100 m.'],
   ['How is mileage worked out?', 'From full tank to full tank: fill to the brim, ride, fill to the brim again. The litres of the second fill, plus any top-ups between, divided by the distance ridden.'],
@@ -975,6 +989,7 @@ export function helpSheet(c, k) {
   if (k === 'about') return `<div class="about-sheet"><h2 class="sr-only">Waylink</h2><div class="splash-brand about-hero anim">${TURNS}${LOOP}</div><p class="lead">Turns, calls and your bike’s care, on one screen. Version ${APP_VERSION}.</p></div>
     <div class="list flat mt16">
       ${li({ ic: 'love', t: 'Support Waylink', d: 'Chip in towards development', act: 'sheet', arg: 'support' })}
+      ${li({ ic: 'bike', t: 'Bike models', d: `${S.MODELS.length} models work with Waylink`, act: 'sheet', arg: 'models' })}
       ${li({ ic: 'code', t: 'Source code', d: 'MIT licence', end: '', tag: 'a', href: REPO_URL })}
       ${li({ ic: 'bt', t: 'Bike protocol', d: 'PulsarNav on GitHub', tag: 'a', href: 'https://github.com/nikhilmaity00/pulsarnav' })}
       ${li({ ic: 'grid', t: 'Icons', d: 'Hugeicons', tag: 'a', href: 'https://hugeicons.com' })}
@@ -1105,6 +1120,11 @@ function sheetInner(c, key) {
         <div class="appicons mt12">${ICON_STYLES.map(([k, nm]) => `<button class="appicon ${(s.settings.iconStyle || 'classic') === k ? 'on' : ''}" data-act="app-icon" data-arg="${k}"><img src="${appIcon({ settings: { ...s.settings, iconStyle: k } })}" alt="" width="56" height="56"><span>${nm}</span></button>`).join('')}</div>
         <div class="ms-t mt24">Icon style</div>
         <div class="icoopts mt12">${icoHTML}</div>`;
+    }
+    case 'pick-ridechart': {
+      const { pages, demo } = ridePages(s.trips), cur = rideChartAt(s);
+      return `<div class="eyebrow">Appearance</div><h2>Ride chart</h2><p class="lead">How the Rides tab draws your riding. You can also swipe the chart there.${demo ? ' Shown with example rides until you have your own.' : ''}</p>
+        <div class="rcopts mt16">${pages.map((h, i) => `<button class="rcopt ${cur === i ? 'on' : ''}" data-act="ride-chart" data-arg="${i}" aria-pressed="${cur === i}"><div class="rcopt-t">${RC_NAMES[i]}</div><div class="rcopt-v${demo ? ' demo' : ''}" aria-hidden="true">${h}</div></button>`).join('')}</div>`;
     }
     case 'pick-progress': {
       const cur = s.settings.progress || 'gauge', was = PROGRESS;
@@ -1367,7 +1387,7 @@ export function onboarding(s, step = 0, link = {}) {
       : isIOS() ? `<button class="btn ink block" data-act="onb-finish" data-arg="ios">${icon('bt')} Pair on iPhone</button>` : '';
     return `<div class="onb onb-link">
       <div class="onb-top"><button class="circle" data-act="onb-step" data-arg="1" aria-label="Back">${icon('back')}</button><button class="link" data-act="onb-finish" data-arg="later">Skip</button></div>
-      <div class="onb-body"><div class="lk-hero lk-street" aria-hidden="true"><span class="lk-glow"></span><span class="lk-beam"></span><img class="lk-img" src="img/onb/rider-street.webp" alt="" decoding="async"><span class="lk-lamp"></span><svg class="lk-wave" viewBox="0 0 80 40" preserveAspectRatio="none"><path d="M2 38C12 30 10 18 22 16S36 26 46 18S58 4 78 4"/></svg><span class="link-badge lk-bt">${icon('bt')}</span></div><div class="eyebrow mt24">Step 2 of 2</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once. It reconnects by itself.</p>
+      <div class="onb-body"><div class="lk-hero lk-street" aria-hidden="true"><span class="lk-glow"></span><span class="lk-beam"></span><img class="lk-img" src="img/onb/rider-street.webp" alt="" decoding="async"><span class="lk-lamp"></span><svg class="lk-wave" viewBox="0 0 24 52"><path d="M3 49C3 38 15 36 13 26S8 10 21 3"/></svg><span class="link-badge lk-bt"><i class="lk-ring"></i><i class="lk-ring r2"></i>${icon('bt')}</span></div><div class="eyebrow mt24">Step 2 of 2</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once. It reconnects by itself.</p>
       <div class="onb-gets2">${[['turnRight', 'Turns'], ['phone', 'Callers'], ['clock', 'Time'], ['fuel', 'Fuel']].map(([ic, t]) => `<span>${icon(ic)}${t}</span>`).join('')}</div></div>
       <div class="onb-foot">${pair}<button class="btn ${pair ? 'line' : 'ink'} block mt8" data-act="onb-finish" data-arg="sim">${icon('bolt')} Try the simulated bike</button><button class="link onb-sample" data-act="onb-finish" data-arg="later">I’ll do this later</button></div>
     </div>`;
