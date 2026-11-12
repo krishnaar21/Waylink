@@ -1169,3 +1169,4 @@ html[data-brand="bird"] .splash-brand .wl-bird, html[data-brand="bird"] .about-h
 .brandopt.on { box-shadow: inset 0 0 0 1.5px var(--ink); }
 .brandopt .wl-mark, .brandopt .wl-bird { display: block; width: 72px; height: 72px; }
 .brandopt .nm { font-weight: 600; font-size: 14px; }
+.splash.out .splash-brand, .splash.out svg { visibility: hidden; opacity: 0; }
