@@ -1447,3 +1447,5 @@ html[data-theme="obsidian"] :is(.card, .list, .bikecard, .vcard, .support-card, 
    Nothing masks the glyph, so the y's tail can never be cut. */
 .anim .wl-loop .rest i { clip-path: none !important; transform-origin: 50% 80%; animation-name: tyGrow !important; animation-timing-function: cubic-bezier(.3, 1.4, .5, 1) !important; animation-duration: .5s !important; animation-fill-mode: both !important; }
 @keyframes tyGrow { 0% { opacity: 0; transform: scale(.4, .2); } 40% { opacity: 1; } 100% { opacity: 1; transform: none; } }
+/* Bike tiles without a photo: neutral grey from the theme, no bike colour */
+.art.icon-mode, html[data-theme="obsidian"] .art.icon-mode, html[data-theme="amoled"] .art.icon-mode { background: color-mix(in srgb, var(--ink) 7%, var(--card)) !important; color: var(--ink-3) !important; }
