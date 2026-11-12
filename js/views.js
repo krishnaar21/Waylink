@@ -1342,11 +1342,11 @@ function fieldForm(key, eb, label, val, type, suffix, hint = '') {
 // Onboarding: a short intro, then the rider and bike, then linking the bike. Every step can be skipped.
 // The intro is one story told along a single road: dawn, the ride, speed, a pit stop, night.
 const ONB_SLIDES = [
-  ['01 · Navigate', 'Turns on your display', 'Plan in Google Maps. Arrows show on the cluster.'],
-  ['02 · Stay reachable', 'Calls, without your phone', 'Caller names and missed calls, on the bike.'],
-  ['03 · Ride', 'Everything at a glance', 'Speed, time, fuel and the next turn.'],
-  ['04 · Look after it', 'Service and fuel, sorted', 'A nudge before anything is due.'],
-  ['05 · Yours alone', 'Private by design', 'No account, no cloud. It stays on this phone.'],
+  ['Navigate', 'Turns on your display', 'Plan in Google Maps. Arrows show on the cluster.'],
+  ['Stay reachable', 'Calls, without your phone', 'Caller names and missed calls, on the bike.'],
+  ['Ride', 'Everything at a glance', 'Speed, time, fuel and the next turn.'],
+  ['Look after it', 'Service and fuel, sorted', 'A nudge before anything is due.'],
+  ['Yours alone', 'Private by design', 'No account, no cloud. It stays on this phone.'],
 ];
 export function onboarding(s, step = 0, link = {}) {
   const sample = '<button class="link onb-sample" type="button" data-act="onboard-sample">Explore with sample data</button>';

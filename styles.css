@@ -2040,3 +2040,17 @@ svg.i.ifill circle, svg.i.ifill rect, svg.i.ifill ellipse, svg.i.ifill path[d$="
 /* the rider silhouette takes the scene's darkest grey */
 .sc-rider-img { filter: drop-shadow(0 4px 3px rgba(0,0,0,.18)); opacity: .82; }
 html[data-theme="obsidian"] .sc-rider-img, html[data-theme="amoled"] .sc-rider-img { filter: invert(1) drop-shadow(0 4px 3px rgba(0,0,0,.4)); opacity: .55; }
+/* Story: a calm highlight colour (never red), green for the call */
+.onb-scene { --hl: var(--accent); }
+html[data-accent="rust"] .onb-scene, html[data-accent="wine"] .onb-scene, html[data-accent="amber"] .onb-scene { --hl: #3B6FE0; }
+.onb-scene .sc-plate, .onb-scene .sc-dot, .onb-scene .sc-sun ~ .x { fill: var(--hl); }
+.onb-scene .sc-arc { stroke: var(--hl); }
+.onb-scene .sc-call .sc-dot { fill: #22A35A; }
+.onb-scene .hl { stop-color: var(--hl); } .onb-scene .hl-d { stop-color: color-mix(in srgb, var(--hl) 70%, #000); } .onb-scene .hl-l { stop-color: color-mix(in srgb, var(--hl) 65%, #fff); }
+.onb-intro .onb-eb { color: var(--hl, var(--accent)); }
+.link-badge { background: var(--accent); }
+.onb-link .sc-lock { display: none; }
+/* Text sits lower; the picture melts into the page at the bottom */
+.onb-intro .onb-slides { margin-top: 12vh !important; }
+.onb-intro .onb-stage { -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 20px), #000 calc(var(--top) + 150px), #000 62%, transparent 98%) !important; mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 20px), #000 calc(var(--top) + 150px), #000 62%, transparent 98%) !important; }
+.onb-link .onb-stage { -webkit-mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 20px), #000 calc(var(--top) + 120px), #000 60%, transparent 98%) !important; mask-image: linear-gradient(to bottom, transparent calc(var(--top) + 20px), #000 calc(var(--top) + 120px), #000 60%, transparent 98%) !important; }

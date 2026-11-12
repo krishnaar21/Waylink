@@ -38,18 +38,36 @@ rx2 = P(2, 120); parts.append(f'<image href="img/rider.png" x="{rx2 - 50}" y="{r
 parts.append(''.join(f'<path d="M{P(2, x)} {road_y(P(2,x)) - 34 + k*6:.0f}h{l}" class="sc-streak"/>' for k, (x, l) in enumerate([(40, 70), (120, 46), (210, 80), (300, 40)])))
 # 3 · pit stop: fuel pump and a workshop with a wrench
 px = P(3, 120)
-parts.append(f'<g class="sc-pump" filter="url(#sc-shadow)" transform="translate({px} 224)"><rect x="-26" y="0" width="52" height="82" rx="10" class="sc-plate"/><rect x="-16" y="12" width="32" height="20" rx="4" class="sc-screen"/><path d="M26 22h12v42a8 8 0 0 1 -16 0v-8" class="sc-hose"/><rect x="-32" y="80" width="64" height="8" rx="3" class="sc-post"/></g>')
+parts.append(f'<g class="sc-pump" filter="url(#sc-shadow)" transform="translate({px} 206)">'
+  '<rect x="-34" y="96" width="76" height="10" rx="3" fill="url(#m-base)"/>'
+  '<rect x="-28" y="0" width="56" height="98" rx="12" fill="url(#m-pump)"/>'
+  '<rect x="-28" y="0" width="56" height="18" rx="12" fill="url(#m-cap)"/>'
+  '<rect x="-19" y="26" width="38" height="24" rx="5" fill="#0E1420"/><rect x="-15" y="31" width="22" height="5" rx="1.5" fill="#7DF3C4" opacity=".9"/><rect x="-15" y="40" width="14" height="4" rx="1.5" fill="#7DF3C4" opacity=".55"/>'
+  '<rect x="-19" y="58" width="38" height="30" rx="6" fill="url(#m-panel)"/><circle cx="-8" cy="73" r="5" fill="#C9CFD8"/><circle cx="8" cy="73" r="5" fill="#C9CFD8"/>'
+  '<path d="M28 30h10a6 6 0 0 1 6 6v40a8 8 0 0 1 -16 0v-6" fill="none" stroke="#2B313C" stroke-width="5" stroke-linecap="round"/>'
+  '<path d="M24 64l10 -4v14l-10 -2z" fill="#2B313C"/><rect x="-22" y="4" width="10" height="9" rx="2" class="sc-plate"/></g>')
 gx = P(3, 268)
-parts.append(f'<g class="sc-shop" filter="url(#sc-shadow)" transform="translate({gx} 196)"><path d="M-62 30L0 -12L62 30V112H-62Z" class="sc-house"/><rect x="-34" y="52" width="68" height="60" rx="4" class="sc-door"/><circle cx="0" cy="18" r="17" class="sc-dot"/><path d="M-6 25L5 14M3 9a6 6 0 1 0 6 6" class="sc-wrench"/></g>')
+parts.append(f'<g class="sc-shop" filter="url(#sc-shadow)" transform="translate({gx} 186)">'
+  '<path d="M-70 34L0 -14L70 34Z" fill="url(#m-roof)"/>' + ''.join(f'<path d="M{-62 + k*12} {30 - (min(k,10-k) if k<=10 else 0)*0}L{-62 + k*12} 34" stroke="#000" stroke-opacity=".08"/>' for k in range(11)) +
+  '<rect x="-64" y="32" width="128" height="90" fill="url(#m-wall)"/>'
+  '<rect x="-40" y="56" width="80" height="66" rx="3" fill="url(#m-shutter)"/>' + ''.join(f'<rect x="-40" y="{60 + k*7}" width="80" height="1.4" fill="#000" opacity=".12"/>' for k in range(9)) +
+  '<rect x="-40" y="56" width="80" height="6" fill="#000" opacity=".18"/>'
+  '<rect x="-30" y="38" width="60" height="14" rx="3" fill="#1E2430"/><rect x="-24" y="43" width="34" height="4" rx="2" fill="#EDEFF3" opacity=".85"/>'
+  '<circle cx="46" cy="44" r="13" class="sc-dot"/><path d="M41 49L49 41M47 37a5 5 0 1 0 5 5" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/></g>')
 # 4 · night: moon, stars, parked bike with a lock
 parts.append(f'<circle cx="{P(4,286)}" cy="96" r="70" class="sc-moonglow" filter="url(#sc-soft)"/><circle class="sc-moon" cx="{P(4,286)}" cy="96" r="28"/><circle class="sc-moonc" cx="{P(4,298)}" cy="88" r="24"/>')
 stars = ''.join(f'<circle cx="{P(4, random.randint(20, 370))}" cy="{random.randint(30, 190)}" r="{random.choice([1.2, 1.6, 2.2])}" class="sc-star"/>' for _ in range(22))
 stars += ''.join(f'<circle cx="{P(3, random.randint(220, 390))}" cy="{random.randint(30, 140)}" r="1.2" class="sc-star dim"/>' for _ in range(6))
 parts.append(stars)
 lx, ly = P(4, 150), road_y(P(4, 150)) - 6
-parts.append(f'<image href="img/bikes/ns200-art.webp" x="{lx - 70}" y="{ly - 90}" width="140" height="96" filter="url(#sc-mono)" preserveAspectRatio="xMidYMax meet"/>')
-parts.append(f'<g class="sc-bike" style="display:none" transform="translate({lx} {ly})"><circle cx="-27" cy="0" r="15" class="sc-tyre"/><circle cx="-27" cy="0" r="7" class="sc-rim"/><circle cx="29" cy="0" r="15" class="sc-tyre"/><circle cx="29" cy="0" r="7" class="sc-rim"/><path d="M-27 0L-6 -6L2 -6Z" class="sc-body2"/><path d="M-10 -8h18l4 -12h-26z" class="sc-body2"/><path d="M-2 -22C2 -32 14 -34 22 -28L20 -20H-2Z" class="sc-tank"/><path d="M-24 -22H-2V-18H-20Z" class="sc-seat"/><path d="M-24 -22L-38 -28L-34 -20Z" class="sc-body2"/><path d="M20 -20L29 0" class="sc-fork"/><path d="M18 -30L24 -38H31" class="sc-fork"/><path d="M24 -26a5 5 0 1 0 0.1 0" class="sc-lamp"/></g>')
-parts.append(f'<g transform="translate({P(4,150)} 196)"><rect x="-22" y="-6" width="44" height="36" rx="10" class="sc-plate"/><path d="M-11 -6V-16a11 11 0 0 1 22 0V-6" class="sc-shackle"/><circle cx="0" cy="11" r="4.5" class="sc-keyhole"/></g>')
+pass
+pass
+parts.append(f'<g class="sc-lock" filter="url(#sc-shadow)" transform="translate({P(4,170)} 186)">'
+  '<ellipse cx="0" cy="96" rx="64" ry="9" fill="#000" opacity=".12"/>'
+  '<path d="M-30 6V-18a30 30 0 0 1 60 0V6" fill="none" stroke="url(#m-shackle)" stroke-width="13" stroke-linecap="round"/>'
+  '<rect x="-48" y="0" width="96" height="86" rx="22" fill="url(#m-lock)"/>'
+  '<rect x="-48" y="0" width="96" height="30" rx="22" fill="#fff" opacity=".14"/>'
+  '<circle cx="0" cy="38" r="10" fill="#0E1420" opacity=".85"/><path d="M-4 42h8l3 22h-14z" fill="#0E1420" opacity=".85"/></g>')
 svg = f'''<svg class="onb-scene" viewBox="0 0 {W} {H}" preserveAspectRatio="xMinYMid slice" aria-hidden="true"><defs><linearGradient id="sc-sky" x1="0" x2="1" y1="0" y2="0"><stop offset="0" class="s0"/><stop offset=".55" class="s1"/><stop offset=".78" class="s2"/><stop offset="1" class="s3"/></linearGradient>
 <linearGradient id="sc-v" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".0"/><stop offset=".6" stop-color="#fff" stop-opacity=".0"/><stop offset="1" stop-color="#fff" stop-opacity=".22"/></linearGradient>
 <linearGradient id="g-far" x1="0" x2="0" y1="0" y2="1"><stop offset="0" class="gf0"/><stop offset="1" class="gf1"/></linearGradient>
@@ -59,6 +77,15 @@ svg = f'''<svg class="onb-scene" viewBox="0 0 {W} {H}" preserveAspectRatio="xMin
 <radialGradient id="g-sun" cx="50%" cy="50%" r="50%"><stop offset="0" class="sun0"/><stop offset=".35" class="sun1"/><stop offset="1" class="sun2"/></radialGradient>
 <linearGradient id="g-haze" x1="0" x2="0" y1="0" y2="1"><stop offset="0" class="hz" stop-opacity="0"/><stop offset="1" class="hz" stop-opacity=".55"/></linearGradient>
 <filter id="sc-grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="5" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .22 0"/></filter>
+<linearGradient id="m-pump" x1="0" x2="1"><stop offset="0" class="hl-d"/><stop offset=".45" class="hl"/><stop offset="1" class="hl-d"/></linearGradient>
+<linearGradient id="m-cap" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<linearGradient id="m-panel" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#EEF1F5"/><stop offset="1" stop-color="#C7CDD6"/></linearGradient>
+<linearGradient id="m-base" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#5A616E"/><stop offset="1" stop-color="#2B313C"/></linearGradient>
+<linearGradient id="m-roof" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#8C939E"/><stop offset="1" stop-color="#5B626D"/></linearGradient>
+<linearGradient id="m-wall" x1="0" x2="1"><stop offset="0" stop-color="#D9DCE1"/><stop offset=".6" stop-color="#EEF0F3"/><stop offset="1" stop-color="#C9CDD4"/></linearGradient>
+<linearGradient id="m-shutter" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#9AA1AC"/><stop offset="1" stop-color="#6B727D"/></linearGradient>
+<linearGradient id="m-lock" x1="0" x2="1" y1="0" y2="1"><stop offset="0" class="hl-l"/><stop offset=".5" class="hl"/><stop offset="1" class="hl-d"/></linearGradient>
+<linearGradient id="m-shackle" x1="0" x2="1"><stop offset="0" stop-color="#8E959F"/><stop offset=".5" stop-color="#F2F4F7"/><stop offset="1" stop-color="#8E959F"/></linearGradient>
 <filter id="sc-mono" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope=".9" intercept=".06"/><feFuncG type="linear" slope=".9" intercept=".06"/><feFuncB type="linear" slope=".9" intercept=".06"/></feComponentTransfer><feDropShadow dx="0" dy="4" stdDeviation="3" flood-opacity=".25"/></filter><filter id="sc-soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>
 <filter id="sc-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".35"/></filter></defs>
 <rect width="{W}" height="{H}" fill="url(#sc-sky)"/><circle cx="{P(0,268)}" cy="118" r="150" fill="url(#g-sun)"/><g class="sc-l far"><path d="{far}" fill="url(#g-far)"/><rect y="200" width="{W}" height="90" fill="url(#g-haze)"/></g><g class="sc-l mid"><path d="{mid}" fill="url(#g-mid)"/><path d="{mid}" fill="url(#sc-v)" opacity=".5"/><rect y="250" width="{W}" height="70" fill="url(#g-haze)" opacity=".7"/></g>
