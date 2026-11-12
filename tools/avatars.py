@@ -28,23 +28,32 @@ P = {
  'fringe': f'<path d="M27 46c0-16 10-26 23-26s23 10 23 26c-5-9-13-14-22-13-4 5-11 9-24 13z" fill="{K}"/>',
  'bun': f'<circle cx="50" cy="16" r="9" fill="{K}"/>',
  'hijab': f'<path d="M18 62c0-28 14-44 32-44s32 16 32 44v38H18z" fill="#fff" {INK}/><path d="M32 30q18-10 36 0" fill="none" stroke="{K}" stroke-width="1.6"/>',
+ 'beanie': f'<path d="M25 44c0-16 11-25 25-25s25 9 25 25z" fill="#fff" {INK}/><path d="M25 44h50v6H25z" fill="{K}"/><path d="M34 30v12M42 25v17M50 23v19M58 25v17M66 30v12" stroke="{K}" stroke-width="1.4"/>',
+ 'bandhead': f'<path d="M26 40c6-6 14-9 24-9s18 3 24 9v6c-6-5-14-8-24-8s-18 3-24 8z" fill="{K}"/><path d="M74 42l8 4-6 4" fill="{K}"/><circle cx="40" cy="38" r="1.3" fill="#fff"/><circle cx="52" cy="36" r="1.3" fill="#fff"/><circle cx="64" cy="38" r="1.3" fill="#fff"/>',
+ 'shadeshead': f'<rect x="32" y="25" width="15" height="8" rx="3.5" fill="{K}" stroke="#fff" stroke-width="1.6"/><rect x="53" y="25" width="15" height="8" rx="3.5" fill="{K}" stroke="#fff" stroke-width="1.6"/><path d="M47 29h6" stroke="#fff" stroke-width="1.6"/><path d="M35 27l3 3M56 27l3 3" stroke="#fff" stroke-width="1.2" opacity=".8"/>',
+ 'goggles': f'<path d="M26 34h48" stroke="{K}" stroke-width="4"/><rect x="32" y="27" width="16" height="11" rx="5" fill="#fff" {INK}/><rect x="52" y="27" width="16" height="11" rx="5" fill="#fff" {INK}/><path d="M36 30l3 3" stroke="{K}" stroke-width="1.4"/>',
+ 'gaiter': f'<path d="M30 78c4 6 12 9 20 9s16-3 20-9v10H30z" fill="{K}"/><path d="M34 82h32" stroke="#fff" stroke-width="1.4" opacity=".6"/>',
+ 'headphones': f'<path d="M24 52c0-20 12-31 26-31s26 11 26 31" fill="none" stroke="{K}" stroke-width="4"/><rect x="17" y="50" width="9" height="15" rx="4" fill="{K}"/><rect x="74" y="50" width="9" height="15" rx="4" fill="{K}"/>',
+ 'stud': f'<circle cx="23" cy="66" r="2" fill="{K}"/>',
+ 'chain': f'<path d="M38 90q12 7 24 0" fill="none" stroke="{K}" stroke-width="1.8" stroke-dasharray="2 2"/>',
+ 'nosering': f'<circle cx="52.5" cy="61" r="2.2" fill="none" stroke="{K}" stroke-width="1.6"/>',
  'bindi': f'<circle cx="50" cy="37" r="2.2" fill="{K}"/>',
  'earring': f'<circle cx="23" cy="68" r="2.6" fill="none" {INK}/><circle cx="77" cy="68" r="2.6" fill="none" {INK}/>',
  'helmet': f'<path d="M22 50c0-20 12-32 28-32s28 12 28 32v8H66v-8c0-10-7-16-16-16s-16 6-16 16v8H22z" fill="#fff" {INK}/><path d="M50 18v14" stroke="{K}" stroke-width="5"/>',
 }
 SHIRT = f'<path d="M20 100c2-12 13-18 30-18s28 6 30 18" fill="#fff" {INK}/><path d="M44 82l6 7 6-7" fill="none" {INK}/>'
-A = [  # disc colour, parts drawn in order
- ('#F6D9C7', ['shirt', 'face', 'quiff', 'glasses']),
- ('#D8E8D2', ['shirt', 'face:smile', 'beard', 'turban']),
- ('#D3E3F2', ['shirt', 'face', 'beard', 'cap']),
- ('#F3E1B9', ['shirt', 'face:smile', 'side', 'mous', 'tilak']),
- ('#E4DCF2', ['shirt', 'face', 'curly', 'cross']),
- ('#EFE3CF', ['shirt', 'face:smile', 'parsi', 'mous', 'round']),
+A = [  # young to middle-aged riders, each with their own kit
+ ('#F6D9C7', ['shirt', 'face', 'quiff', 'glasses', 'gaiter']),
+ ('#D8E8D2', ['shirt', 'face:smile', 'beard', 'turban', 'chain']),
+ ('#D3E3F2', ['shirt', 'face', 'beard', 'cap', 'headphones']),
+ ('#F3E1B9', ['shirt', 'face:smile', 'side', 'mous', 'shadeshead', 'stud']),
+ ('#E4DCF2', ['shirt', 'face', 'curly', 'bandhead', 'cross']),
+ ('#EFE3CF', ['shirt', 'face:smile', 'side', 'beard', 'goggles']),
  ('#D5ECEA', ['shirt', 'face', 'mous', 'helmet']),
- ('#EADFD6', ['shirt', 'face:smile', 'grey', 'mous', 'glasses']),
- ('#F6D3DC', ['longf', 'shirt', 'face:smile', 'fringe', 'bindi', 'earring']),
- ('#DCEBDF', ['hijab', 'shirt', 'face:smile']),
- ('#F7E7B4', ['bun', 'shirt', 'face', 'fringe', 'bindi', 'round']),
+ ('#EADFD6', ['shirt', 'face:smile', 'beanie', 'mous', 'stud']),
+ ('#F6D3DC', ['longf', 'shirt', 'face:smile', 'fringe', 'bindi', 'earring', 'shadeshead']),
+ ('#DCEBDF', ['hijab', 'shirt', 'face:smile', 'gaiter']),
+ ('#F7E7B4', ['bun', 'shirt', 'face', 'fringe', 'nosering', 'goggles']),
 ]
 for i, (bg, parts) in enumerate(A):
     body = ''
