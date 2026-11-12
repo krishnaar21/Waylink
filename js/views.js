@@ -49,7 +49,7 @@ export function segs(n, filled, cls = 's', extra = '') {
 
 // ---------- Icons ----------
 export const selmark = (inline = false) => `<span class="selmark ${inline ? 'inline' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
-export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400], ['inter', 'Inter', "'Inter'", 450], ['plex', 'IBM Plex Sans', "'IBM Plex Sans'", 450], ['atkinson', 'Atkinson', "'Atkinson Hyperlegible Next'", 450], ['public', 'Public Sans', "'Public Sans'", 450]];
+export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400], ['atkinson', 'Atkinson', "'Atkinson Hyperlegible Next'", 450], ['public', 'Public Sans', "'Public Sans'", 450]];
 export const THEMES = [['auto', 'Auto', '#EDEFF2', '#F9FAFB', '#12151A'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Navy', '#0B1530', '#13203F', '#EAF0FF']];
 export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
 // Icons: Hugeicons (MIT), credited in About.
@@ -58,7 +58,7 @@ export const ICON_CREDIT = '<a href="https://hugeicons.com" target="_blank" rel=
 // Duotone: the same drawing again underneath, thick and soft, so every icon gets an even second tone.
 let ICON_STYLE = 'line';
 export const setIconStyle = (v) => { ICON_STYLE = v === 'duo' ? 'duo' : 'line'; };
-export const icon = (n, cls = '') => { const b = HUGE_ICONS[n] || ''; return `<svg class="i ${cls}" viewBox="${HUGE_SET.vb}" ${HUGE_SET.attrs} aria-hidden="true">${ICON_STYLE === 'duo' && b ? `<g class="duo">${b}</g>` : ''}${b}</svg>`; };
+export const icon = (n, cls = '') => { const b = HUGE_ICONS[n] || ''; return `<svg class="i ${cls}" viewBox="-1 -1 26 26" ${HUGE_SET.attrs} aria-hidden="true">${ICON_STYLE === 'duo' && b ? `<g class="duo">${b}</g>` : ''}${b}</svg>`; };
 
 // ---------- Vehicle pictures ----------
 const lum = (h) => { const n = [1, 3, 5].map((i) => parseInt(String(h || '#888888').slice(i, i + 2), 16)); return (n[0] * 299 + n[1] * 587 + n[2] * 114) / 255000; };
@@ -692,7 +692,7 @@ export function settings(c) {
   return `<div class="stagger">
   <div class="head pagehead"><div><h1 class="title">You & your bikes</h1><div class="subtitle">Profile, garage and how the app looks</div></div></div>
   ${live.scenario ? previewBar(live) : ''}
-  <button class="card pad profile-card mt20 flex gap12" style="width:100%;text-align:left" data-act="go" data-arg="profile">${avatar(s.profile)}<div class="grow"><div class="serif" style="font-size:24px">${esc(s.profile.name || 'Add your name')}</div><div class="small faint">Profile, licence and medical ID</div></div>${icon('chev', 'faint')}</button>
+  <button class="card pad profile-card mt20 flex gap12" style="width:100%;text-align:left" data-act="go" data-arg="profile">${avatar(s.profile)}<div class="grow"><div class="serif" style="font-size:24px">${esc(s.profile.name || 'Add your name')}</div><div class="small faint">${s.profile.blood || s.profile.iceName ? [s.profile.blood ? `Blood ${esc(s.profile.blood)}` : '', s.profile.iceName ? `ICE ${esc(clip(s.profile.iceName, 14))}` : ''].filter(Boolean).join(' · ') : 'Licence, blood group, emergency contact'}</div>${s.profile.medical ? `<div class="small faint pc-med">${esc(clip(s.profile.medical, 40))}</div>` : ''}</div>${icon('chev', 'faint')}</button>
   <div class="section">${sh('Garage', s.vehicles.length > 1 ? '<button class="link" data-act="sheet" data-arg="garage">Switch</button>' : '')}
     <div class="card vcard"><button class="flex gap12" style="width:100%;text-align:left;padding:12px 16px 12px 12px" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">
       ${vehicleArt(s, v, 'card')}
@@ -710,8 +710,6 @@ export function settings(c) {
     ${li({ ic: 'wrench', t: 'Logbook', d: 'Reminders and visits', end: S.needsYou(s) ? `${S.needsYou(s)} due` : 'All good', act: 'go', arg: 'logbook' })}
     ${li({ ic: 'fuel', t: 'Fuel', d: 'Fill-ups and petrol price', end: `${s.fuel.length} fills`, act: 'go', arg: 'fuel' })}
     ${li({ ic: 'folder', t: 'Digital glovebox', d: 'RC, insurance, PUC, licence', end: `${live.gloveHere.length}`, act: 'sheet', arg: 'glovebox' })}
-    ${li({ ic: 'sos', t: 'Emergency SOS', d: `${co.amb} ambulance · ${co.sos} emergency`, act: 'sheet', arg: 'sos' })}
-    ${li({ ic: 'heart', t: 'Medical ID', d: s.profile.blood ? `Blood group ${esc(s.profile.blood)} · shown on SOS` : 'Blood group, allergies, who to call', act: 'go', arg: 'profile' })}
     ${li({ ic: 'pin', t: 'Parked bike', d: 'Find your way back to it', end: s.parking ? ago(s.parking.ts) : 'Not saved', act: 'sheet', arg: 'parking' })}
   </div></div>
   <div class="section">${sh('Riding', '', 'riding')}<div class="list">
@@ -728,8 +726,7 @@ export function settings(c) {
   </div>
   <div class="vc-rows">
     ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
-    ${li({ ic: 'sparkles', t: 'Logo', end: `<span class="pick-val">${BRANDS.find(([k]) => k === brandOf(s))[1]}</span>`, act: 'sheet', arg: 'pick-brand' })}
-    ${li({ ic: 'grid', t: 'Icon style', end: `<span class="pick-val">${st.icons === 'duo' ? 'Duotone' : 'Line'}</span>`, act: 'sheet', arg: 'pick-icons' })}
+    ${li({ ic: 'sparkles', t: 'Logo & icons', end: `<span class="pick-val">${BRANDS.find(([k]) => k === brandOf(s))[1]} · ${st.icons === 'duo' ? 'Duotone' : 'Line'}</span>`, act: 'sheet', arg: 'pick-brand' })}
     ${li({ ic: 'font', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
     ${li({ ic: 'progress', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
   </div></div></div>
@@ -764,17 +761,16 @@ export function settings(c) {
 }
 
 export const FONTS = [
+  ['system', 'System', "-apple-system, system-ui", 700, 'sans'],
   ['onest', 'Onest', "'Onest'", 600, 'sans'],
   ['geist', 'Geist', "'Geist'", 600, 'sans'],
-  ['spectral', 'Spectral', "'Spectral'", 500, 'serif'],
   ['garamond', 'EB Garamond', "'EB Garamond'", 500, 'serif'],
   ['crimson', 'Crimson', "'Crimson Pro'", 500, 'serif'],
-  ['vollkorn', 'Vollkorn', "'Vollkorn'", 500, 'serif'],
   ['fraunces', 'Fraunces', "'Fraunces'", 600, 'serif'],
 ];
 export const APP_NAME = 'Waylink';
 // Wordmark-only logos: a slot that cycles through turn signs, and a w drawn as one looping road with the rest typed in.
-const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnLeft', '#3E8EF7'], ['turnU', '#2BB673'], ['curvy', '#7C5CFF'], ['signpost', '#E5484D'], ['compass', '#0EA5A5']];
+const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnLeft', '#3E8EF7'], ['straight', '#2BB673'], ['turnU', '#7C5CFF'], ['bearRight', '#E5484D'], ['pinSimple', '#0EA5A5']];
 export const TURNS = `<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true">${TURN_SIGNS.map(([k, col, f], i) => `<svg class="tg tg${i} ${f || ''}" viewBox="0 0 24 24" fill="none" style="color:${col}">${HUGE_ICONS[k]}</svg>`).join('')}</span><span aria-hidden="true">link</span></span>`;
 export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8.5 26L8.5 30C10 56 16 80 28 80C40 80 45 58 50 42C54 28 62 14 55 9C48 4 41 16 47 36C52 56 60 80 72 80C84 80 90 56 91.5 30L91.5 26"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
 export const BRANDS = [['loop', 'Loop'], ['turns', 'Turns']];
@@ -1039,9 +1035,16 @@ function sheetInner(c, key) {
         <div class="icoopts mt16">${card('line', 'Line', 'Clean single strokes')}${card('duo', 'Duotone', 'A soft second tone under each line')}</div>`;
       ICON_STYLE = was; return out;
     }
-    case 'pick-brand':
-      return `<div class="eyebrow">Appearance</div><h2>Logo</h2><p class="lead">Shown on the loading screen and as the app icon. Re-add Waylink to your Home Screen to change an installed icon.</p>
-        <div class="brands mt16">${BRANDS.map(([k, nm]) => `<button class="brandopt anim b-${k} ${brandOf(s) === k ? 'on' : ''}" data-act="brand" data-arg="${k}"><span class="bo-art">${{ turns: TURNS, loop: LOOP }[k]}</span><span class="nm">${nm}</span></button>`).join('')}</div>`;
+    case 'pick-brand': {
+      const was = ICON_STYLE, cur = s.settings.icons === 'duo' ? 'duo' : 'line';
+      const card = (k, nm, d) => { ICON_STYLE = k; const h = ['today', 'fuel', 'wrench', 'pin', 'bell', 'bike'].map((n) => icon(n)).join(''); return `<button class="icoopt ${cur === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}"><span class="io-row">${h}</span><span class="nm">${nm}</span><span class="d">${d}</span></button>`; };
+      const icoHTML = card('line', 'Line', 'Clean single strokes') + card('duo', 'Duotone', 'A soft second tone under each line'); ICON_STYLE = was;
+      return `<div class="eyebrow">Appearance</div><h2>Logo & icons</h2>
+        <div class="ms-t mt12">Logo</div><p class="small muted mt8">Loading screen and app icon. Re-add Waylink to your Home Screen to change an installed icon.</p>
+        <div class="brands mt12">${BRANDS.map(([k, nm]) => `<button class="brandopt anim b-${k} ${brandOf(s) === k ? 'on' : ''}" data-act="brand" data-arg="${k}"><span class="bo-art">${{ turns: TURNS, loop: LOOP }[k]}</span><span class="nm">${nm}</span></button>`).join('')}</div>
+        <div class="ms-t mt32">Icons</div>
+        <div class="icoopts mt12">${icoHTML}</div>`;
+    }
     case 'pick-progress': {
       const cur = s.settings.progress || 'gauge', was = PROGRESS;
       const ok = { status: 'ok', frac: 0.35, dueDate: Date.now() + 40 * 86400000 }, soon = { status: 'soon', frac: 0.86, dueDate: Date.now() + 6 * 86400000 };

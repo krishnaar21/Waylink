@@ -30,14 +30,12 @@ const mqDark = matchMedia('(prefers-color-scheme: dark)');
 const FONT_CSS = {
   onest: 'Onest:wght@400;500;600',
   geist: 'Geist:wght@400;500;600',
-  spectral: 'Spectral:wght@400;500;600',
   garamond: 'EB+Garamond:wght@400;500;600',
   crimson: 'Crimson+Pro:wght@400;500;600',
-  vollkorn: 'Vollkorn:wght@400;500;600',
   fraunces: 'Fraunces:opsz,wght@9..144,500;9..144,600',
 };
 const fontHref = (keys) => 'https://fonts.googleapis.com/css2?' + keys.map((k) => 'family=' + FONT_CSS[k]).join('&') + '&display=swap';
-const BODY_CSS = { inter: 'Inter:wght@400..700', plex: 'IBM+Plex+Sans:wght@400;500;600;700', atkinson: 'Atkinson+Hyperlegible+Next:wght@400..700', public: 'Public+Sans:wght@400..700' };
+const BODY_CSS = { atkinson: 'Atkinson+Hyperlegible+Next:wght@400..700', public: 'Public+Sans:wght@400..700' };
 function applyBody() {
   const k = BODY_CSS[s.settings.bodyFont] ? s.settings.bodyFont : 'system';
   document.documentElement.dataset.body = k;
@@ -47,9 +45,10 @@ function applyBody() {
 }
 function applyFont() {
   applyBody();
-  if (!FONT_CSS[s.settings.font]) s.settings.font = 'spectral';
+  if (s.settings.font !== 'system' && !FONT_CSS[s.settings.font]) s.settings.font = 'system';
   const k = s.settings.font;
   document.documentElement.dataset.font = k;
+  if (k === 'system') { $('#font-serif')?.remove(); return; }
   let el = $('#font-serif'); const href = fontHref([k]);
   if (!el) { el = Object.assign(document.createElement('link'), { rel: 'stylesheet', id: 'font-serif' }); document.head.appendChild(el); }
   if (el.getAttribute('href') !== href) el.setAttribute('href', href);
@@ -1081,7 +1080,7 @@ const firstTap = () => { SND.unlock(); };
 const within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
 function hideSplash() {
   const sp = $('#splash'); if (!sp || location.hash === '#loading') return;
-  setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 380); }, Math.max(300, (document.documentElement.dataset.brand === 'turns' ? 2250 : 3350) - performance.now()));
+  setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 380); }, Math.max(300, (document.documentElement.dataset.brand === 'turns' ? 2250 : 2050) - performance.now()));
 }
 (async function boot() {
   splashTpl = $('#splash')?.outerHTML || '';
