@@ -688,6 +688,7 @@ link.addEventListener('state', () => {
     S.save(s);
     if (!wasConnected) { buzz(15); toast(link.simulated ? 'Simulated cluster linked.' : `Linked to ${link.deviceName}.`); }
     if (s.settings.autoRecord && !live.rec) startRecording(true);
+    if (!wasConnected && !s.settings.autoAsked && !navigator.webdriver) { s.settings.autoAsked = true; S.save(s); setTimeout(() => { if (!sheetKey) A.sheet('auto-ask'); }, 900); }
     if (live.nav) link.setNav(live.nav);
     link.setMissedCount(s.alerts.missed.length);
   } else if (wasConnected) {

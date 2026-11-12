@@ -1709,3 +1709,7 @@ html[data-theme="obsidian"] .art img.model, html[data-theme="amoled"] .art img.m
 .upnext.two-up { gap: 10px; }
 .upnext.two-up .upcard { width: calc(100% - 2 * var(--pad)); flex: 0 0 calc(100% - 2 * var(--pad)); scroll-snap-align: center; }
 .upnext.two-up:has(> .upcard:only-child) .upcard { width: 100%; }
+/* A note under a section heading lines up with the heading */
+.sec-note { margin: -6px var(--sh-in, 20px) 12px; font-size: 14px; line-height: 1.45; color: var(--ink-3); }
+/* Sheet action that stays in reach while the sheet scrolls */
+.sheet-cta { position: sticky; bottom: calc((var(--bottom) + 24px) * -1); z-index: 3; margin: 16px -24px calc((var(--bottom) + 24px) * -1); padding: 14px 24px calc(var(--bottom) + 18px); background: linear-gradient(to bottom, color-mix(in srgb, var(--sheet) 0%, transparent), var(--sheet) 32%); }

@@ -629,7 +629,7 @@ export function route(c) {
   const totalKm = REHEARSAL.steps.reduce((a, x) => a + x.m, 0) / 1000;
   return `<div class="stagger">
   <div class="head pagehead"><div><h1 class="title">Route</h1><div class="subtitle">Turns on your bike</div></div></div>
-  <div class="section">${sh('Where to?')}<p class="hint" style="margin:-4px 4px 10px">Plan the ride in Google Maps. Its turns show on your bike.</p><form class="card pad" data-form="maps">
+  <div class="section">${sh('Where to?')}<p class="sec-note">Plan the ride in Google Maps. Its turns show on your bike.</p><form class="card pad" data-form="maps">
     <label class="field" style="margin-top:0"><span class="eyebrow">Destination</span><input class="input" name="dest" placeholder="Nandi Hills" value="${esc(live.dest || '')}" autocomplete="off"></label>
     <button class="btn ink block mt12" type="submit">${icon('map')} Open in Google Maps</button>
   </form></div>
@@ -804,7 +804,7 @@ const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnLeft', '#3E8EF7'], ['straigh
 export const TURNS = `<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true">${TURN_SIGNS.map(([k, col, f], i) => `<svg class="tg tg${i} ${f || ''}" viewBox="0 0 24 24" fill="none" style="color:${col}">${HUGE_ICONS[k]}</svg>`).join('')}</span><span aria-hidden="true">link</span></span>`;
 // In-app loading screen: the turn signs take turns in a circle, with a line of text below.
 export const loader = (text = 'Loading') => `<div class="wl-loader" role="status" aria-live="polite"><span class="ld-ring">${TURN_SIGNS.map(([k], i) => `<svg class="ld-i ld${i}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${HUGE_ICONS[k]}</svg>`).join('')}</span><div class="ld-t">${esc(text)}<span class="ld-dots"><i>.</i><i>.</i><i>.</i></span></div></div>`;
-export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><defs><mask id="wl-taper" maskUnits="userSpaceOnUse" x="-20" y="-20" width="140" height="140"><rect x="-20" y="-20" width="140" height="140" fill="#fff"/><polygon points="-20,-20 12.6,-20 12.6,33 5.2,64 -20,64" fill="#000"/></mask></defs><path class="lw" mask="url(#wl-taper)" pathLength="100" d="M9 34C10 58 16 80 28 80C40 80 44 60 48.5 46C52 35 62 27 61.5 15.5C61 5 42.5 4.5 42 15.5C41.5 26 46.5 36 51.5 46C55 60 60 80 72 80C84 80 90 56 91.5 26L91.5 14"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
+export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><defs><mask id="wl-taper" maskUnits="userSpaceOnUse" x="-20" y="-20" width="140" height="140"><rect x="-20" y="-20" width="140" height="140" fill="#fff"/><polygon points="-20,-20 6,-20 6,44 3.8,48.5 2.1,52.5 0.9,56 0.2,59 -0.1,61.5 -20,61.5" fill="#000"/></mask></defs><path class="lw" mask="url(#wl-taper)" pathLength="100" d="M2.5 44C3 64 12 80 25 80C37 80 42 64 46 50C48.8 40.5 54.5 31 54 22C53.6 13.5 39 12.5 38.6 22C38.2 31 43.4 40.5 46.8 50C51 64 58 80 71 80C84 80 90 56 91.5 26L91.5 14"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
 export const BRANDS = [['loop', 'Loop']];
 export const brandOf = () => 'loop';
 export const APP_VERSION = '1.0';
@@ -1284,7 +1284,7 @@ function sheetInner(c, key) {
           ${isRb ? `<div class="eyebrow mt16">Roundabout exit</div><div class="chips mt8">${[1, 2, 3, 4, 5, 6, 7].map((e) => `<button class="chip ${live.turn.exit === e ? 'on' : ''}" data-act="turn-exit" data-arg="${e}">${e}</button>`).join('')}</div>` : ''}
           <label class="field"><span class="eyebrow flex between">Street <span data-live="turn-count">${(live.turn.street || '').length}/31</span></span><input class="input" maxlength="31" placeholder="Outer Ring Road" value="${esc(live.turn.street)}" data-input="turn-street" autocomplete="off"></label>
         </div>
-        <button class="btn accent block mt16" data-act="nav-single">Send to bike</button>`;
+        <div class="sheet-cta"><button class="btn accent block" data-act="nav-single">Send to bike</button></div>`;
     }
     case 'pair-intro':
       return `<div class="eyebrow">Your bike</div><h2>No bike linked</h2><p class="lead">Pair once and Waylink reconnects by itself whenever the ignition is on. Turns, callers and the time then show on your display.</p>
@@ -1292,6 +1292,10 @@ function sheetInner(c, key) {
         : isIOS() ? `<button class="btn ink block mt20" data-act="sheet" data-arg="ios-pair">${icon('bt')} Pair on iPhone</button><button class="btn line block mt8" data-act="sim-on">${icon('bolt')} Try the simulated bike</button><p class="hint">iPhone browsers need one extra app for Bluetooth. It takes a minute.</p>`
         : `<button class="btn ink block mt20" data-act="sim-on">${icon('bolt')} Try the simulated bike</button><p class="hint">To pair a real bike, open this in Chrome on Android.</p>`}
         <button class="btn ghost block mt8" data-act="close">Not now</button>`;
+    case 'auto-ask':
+      return `<div class="eyebrow">Linked</div><h2>Start rides by themselves?</h2><p class="lead">Waylink can record a ride as soon as the bike links, and open ride mode once you're moving. Both are off unless you turn them on.</p>
+        <div class="list mt16">${li({ ic: 'route', t: 'Record rides by themselves', d: 'When the bike links', end: sw(s.settings.autoRecord, 'toggle', 'autoRecord'), chev: false, tag: 'div' })}${li({ ic: 'speed', t: 'Open ride mode by itself', d: 'Above 15 km/h', end: sw(s.settings.autoRide, 'toggle', 'autoRide'), chev: false, tag: 'div' })}</div>
+        <button class="btn ink block mt20" data-act="close">Done</button><p class="hint" style="text-align:center">You can change these later in Settings, under Riding.</p>`;
     case 'erase':
       return `<div class="eyebrow">Backup</div><h2>${s.sample ? 'Erase sample data?' : 'Erase everything?'}</h2><p class="lead">Bikes, rides, fuel, service, alerts and papers on this phone will go. Export a backup first if you want to keep them.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="erase">Erase</button><button class="btn line block mt8" data-act="close">Keep my data</button>`;
     case 'paste':

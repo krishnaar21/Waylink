@@ -167,6 +167,11 @@ async def main():
 
         # Simulated bike: states and animations
         await pg.evaluate("location.hash='today'"); await pg.wait_for_timeout(500)
+        st0 = await pg.evaluate("JSON.parse(localStorage.getItem('pulsarnav-web-v2')).settings")
+        check('rides do not start by themselves by default', not st0.get('autoRide') and not st0.get('autoRecord'))
+        for k in ('autoRide', 'autoRecord'):
+            await pg.evaluate(f"(()=>{{const b=document.createElement('button');b.dataset.act='toggle';b.dataset.arg='{k}';document.body.appendChild(b);b.click();b.remove()}})()")
+        await pg.wait_for_timeout(300)
         await pg.click('.conn-compact [data-arg="pair-intro"]'); await pg.wait_for_timeout(500)
         await pg.click('.sheet [data-act="sim-on"]'); await pg.wait_for_timeout(150)
         check('connecting state shows first', await pg.query_selector('.conn-compact .cc-ic.connecting'))
