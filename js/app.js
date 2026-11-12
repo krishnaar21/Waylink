@@ -743,7 +743,7 @@ const A = {
     if (path === 'streetNames') link.sendStreetNames = s.settings.streetNames;
     buzz(6); commit();
   },
-  'progress-style': (k) => { s.settings.progress = k === 'ruler' ? 'ruler' : 'gauge'; SND.click(true); commit(); refreshSheet(); },
+  'progress-style': (k) => { s.settings.progress = V.PROGRESS_STYLES.some(([x]) => x === k) ? k : 'gauge'; SND.click(true); commit(); refreshSheet(); },
   theme: (k) => { s.settings.theme = k; commit(); },
   accent: (k) => { s.settings.accent = k; commit(); },
   'switch-vehicle': (id) => {

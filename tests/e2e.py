@@ -127,7 +127,7 @@ async def main():
         check('route icon is the default', True)
         check('no Carbon theme any more', not await pg.query_selector('[data-act="theme"][data-arg="carbon"]'))
         await pg.click('[data-arg="pick-font"]'); await pg.wait_for_timeout(500)
-        check('selected font has a border, no tick', await pg.query_selector('.fontopt.on') and not await pg.query_selector('.fontopt .selmark'))
+        check('selected font is marked, no tick', await pg.query_selector('.ftile.on') and not await pg.query_selector('.ftile .selmark'))
         check('serif fonts offered', await pg.query_selector('[data-act="font"][data-arg="garamond"]') and await pg.query_selector('[data-act="font"][data-arg="fraunces"]'))
         await pg.evaluate("document.querySelector('.backdrop')?.click()"); await pg.wait_for_timeout(500)
         await pg.click('[data-arg="models"]'); await pg.wait_for_timeout(500)

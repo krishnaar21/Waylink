@@ -1008,3 +1008,52 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .progopt { text-align: left; padding: 14px 16px 16px; border-radius: var(--r-sm); background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); }
 .progopt.on { box-shadow: inset 0 0 0 1.5px var(--ink); }
 .progopt .nm { font-weight: 600; font-size: 15px; }
+
+/* Support: one big amount, quick chips, one button. */
+.give { padding: 18px; border-radius: var(--r-md); background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
+.give-hero { display: flex; align-items: center; gap: 14px; }
+.give-hero .gi { width: 52px; height: 52px; border-radius: 16px; flex: none; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink); }
+.give-hero .gi svg { width: 26px; height: 26px; }
+.give-hero .gv { font-family: var(--serif); font-weight: var(--dw); font-size: 34px; letter-spacing: var(--dls); line-height: 1.05; }
+.give-hero .gl { font-size: 14px; color: var(--ink-3); margin-top: 3px; }
+.give-chips { display: flex; gap: 6px; margin-top: 18px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.give-chips button { flex: 1; height: 38px; border-radius: 999px; font-weight: 600; font-size: 14.5px; color: var(--ink-2); transition: background .2s, color .2s; }
+.give-chips button.on { background: var(--raised); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.1), 0 4px 10px -6px rgba(0,0,0,.25); }
+.give .btn[disabled] { opacity: .35; pointer-events: none; }
+.give-note { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 12px; font-size: 13px; color: var(--ink-3); }
+.give-note svg { width: 15px; height: 15px; flex: none; }
+.give-copy { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px; font-size: 13.5px; color: var(--ink-3); font-family: var(--mono); }
+.give-copy svg { width: 15px; height: 15px; }
+
+/* Fonts: square tiles with a big sample. */
+.ftiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ftile { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 10px; height: 92px; padding: 12px 12px 11px; border-radius: 16px; background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); text-align: left; transition: transform .18s var(--spring); }
+.ftile:active { transform: scale(.97); }
+.ftile .ag { font-size: 34px; line-height: 1; color: var(--ink); }
+.ftile .nm { font-size: 12.5px; font-weight: 600; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.ftile.on { background: var(--ink); box-shadow: none; }
+.ftile.on .ag { color: var(--bg); } .ftile.on .nm { color: color-mix(in srgb, var(--bg) 70%, transparent); }
+
+/* Progress: battery */
+.pbat { display: flex; align-items: center; gap: 2px; margin-top: 12px; }
+.pbat .cell { position: relative; flex: 1; height: 12px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 30%, transparent); padding: 2.5px; }
+.pbat .cell i { display: block; height: 100%; border-radius: 2px; background: color-mix(in srgb, var(--ink) 70%, transparent); }
+.pbat .cap { width: 3px; height: 6px; border-radius: 0 2px 2px 0; background: color-mix(in srgb, var(--ink) 30%, transparent); }
+.pbat .pl { margin-left: 10px; font: 600 12px/1 var(--sans); color: var(--ink-3); min-width: 58px; text-align: right; }
+.pbat.a .cell i { background: var(--amber); } .pbat.r .cell { box-shadow: inset 0 0 0 1.5px var(--red); } .pbat.r .pl { color: var(--red); }
+.pbat.sm .cell { height: 10px; } .pbat.sm .pl { font-size: 11px; min-width: 0; margin-left: 6px; }
+/* Progress: line */
+.pline { margin-top: 12px; }
+.pline .tr { height: 4px; border-radius: 2px; background: var(--seg-off); overflow: hidden; }
+.pline .tr i { display: block; height: 100%; border-radius: 2px; background: var(--ink); }
+.pline.a .tr i { background: var(--amber); } .pline.r .tr i { background: var(--red); }
+.pline .lb { display: flex; justify-content: space-between; margin-top: 7px; font-size: 12px; color: var(--ink-3); }
+.pline.r .lb { color: var(--red); }
+.pline.sm .lb { font-size: 11px; }
+/* Progress: dots */
+.pdots { display: flex; justify-content: space-between; gap: 4px; margin-top: 12px; }
+.pdots i { width: 9px; height: 9px; border-radius: 50%; background: var(--seg-off); }
+.pdots.k i.on { background: color-mix(in srgb, var(--ink) 70%, transparent); } .pdots.a i.on { background: var(--amber); }
+.pdots.r i { background: transparent; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--red) 55%, transparent); }
+.pdots.sm i { width: 7px; height: 7px; }
+.progopt .d { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
