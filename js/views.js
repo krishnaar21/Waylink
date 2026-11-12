@@ -282,7 +282,7 @@ export function today(c) {
   let line = v.line;
   if (fs.onReserve) line = `On reserve, about ${num(fs.range)} km left.` + (v.over || v.soon ? ' ' + line : '');
   const missed = s.alerts.missed;
-  const urgent = list.filter((x) => x.st.status !== 'ok').slice(0, 3);
+  const urgent = list.filter((x) => x.st.status !== 'ok').slice(0, 4);
   const good = !v.over && !v.soon && !fs.onReserve;
   const cc = connCard(c, good), ccIn = cc.startsWith('<div class="bc-conn');
   return `<div class="stagger">
@@ -301,7 +301,7 @@ export function today(c) {
     ${v.over || v.soon ? heroBar(v.bar) + caption(v) : `<div class="eyebrow caption">All ${v.ok} jobs on track</div>`}
   </button>`}
   <div class="section" style="margin-top:22px">${sh(urgent.length ? 'Do these first' : 'Coming up', '<button class="link" data-act="go" data-arg="logbook">See all</button>')}
-    <div class="upnext two-up">${(urgent.length ? urgent : list).slice(0, 2).map(({ it, st }) => upCard(it, st)).join('')}</div></div>
+    <div class="upnext two-up">${(urgent.length ? urgent : list).slice(0, 4).map(({ it, st }) => upCard(it, st)).join('')}</div></div>
   ${missed.length ? `<button class="banner" data-act="go" data-arg="alerts">${icon('missed')}<span class="t"><span class="big" style="font-size:20px">${missed.length}</span> missed ${missed.length === 1 ? 'call' : 'calls'} · ${esc(missed[missed.length - 1].name)}</span>${icon('chev', 'faint')}</button>` : ''}
   ${s.parking && !link.connected ? `<button class="banner plain" data-act="sheet" data-arg="parking">${icon('pin')}<span class="t">Parked ${ago(s.parking.ts)} <span class="faint small">· walk back</span></span>${icon('chev', 'faint')}</button>` : ''}
   ${ccIn ? '' : cc}
@@ -771,6 +771,7 @@ export function settings(c) {
     ${li({ ic: 'refresh', t: 'Refresh the app', d: 'Gets the latest version. Your data stays.', act: 'hard-refresh' })}
   </div></div>
   <div class="section">${sh('Developer', '', 'developer')}<div class="list">
+    ${li({ ic: 'flag', t: 'Show onboarding', d: 'Walk through first launch again. Your data stays', act: 'onb-test' })}
     ${li({ ic: 'sparkles', t: 'Show the splash screen', d: 'The logo animation. Tap to close.', act: 'show-loader' })}
     ${li({ ic: 'refresh', t: 'Show the loading screen', d: 'Turn signs while something loads', act: 'show-loading' })}
     ${li({ ic: 'bolt', t: 'Simulated bike', d: 'Try it all without a bike', end: sw(link.simulated && link.state !== 'idle', 'sim-toggle'), chev: false, tag: 'div' })}
@@ -821,7 +822,7 @@ const UPI_AMOUNTS = [49, 99, 199, 499];
 const AMT_ICON = { 49: ['Chai', 'tea', 'A cutting chai for the developer'], 99: ['Coffee', 'coffee', 'A coffee for a late-night fix'], 199: ['Fuel', 'fuel', 'Two litres of petrol for test rides'], 499: ['Service', 'wrench', 'Towards a month of upkeep'], 0: ['Any', 'love', 'You choose the amount in your UPI app'] };
 const amtIcon = (a) => { const g = AMT_ICON[a][1]; return g.startsWith('<svg') ? g : icon(g); };
 // The app icon: one route mark, tinted to match the accent colour.
-export const ICON_STYLES = [['classic', 'Classic'], ['paper', 'Paper'], ['midnight', 'Midnight'], ['sunset', 'Sunset'], ['road', 'Road'], ['tank', 'Tank'], ['carbon', 'Carbon'], ['dev', 'Dev'], ['mono', 'Mono']];
+export const ICON_STYLES = [['classic', 'Classic'], ['chrome', 'Chrome'], ['retro', 'Retro'], ['future', 'Future'], ['leather', 'Leather'], ['material', 'Material'], ['asphalt', 'Asphalt'], ['oil', 'Oil slick'], ['gauge', 'Gauge']];
 export const appIcon = (s, png = false) => {
   const st = ICON_STYLES.some(([k]) => k === s.settings.iconStyle) ? s.settings.iconStyle : 'classic', a = s.settings.accent || 'rust';
   if (st !== 'classic') return png ? `img/logos/png/wl-icon-${st}-180.png` : `img/logos/wl-icon-${st}.svg`;
@@ -898,7 +899,15 @@ function rideBits(c) {
 }
 function layoutA(b) {
   return `<section class="rm-page lay-a" aria-label="Speed first">
-    <div class="speed"><span class="big" data-live="speed">${b.speed}</span><span class="u">km/h</span>${b.tags ? `<div class="rm-tags">${b.tags}</div>` : ''}</div>
+    <div class="speed"><div class="rm-dial" id="rm-dial"><svg viewBox="0 0 200 200" aria-hidden="true"><defs><radialGradient id="rmd-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="var(--accent)" stop-opacity=".38"/><stop offset=".55" stop-color="var(--accent)" stop-opacity=".12"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></radialGradient><radialGradient id="rmd-band" cx="50%" cy="50%" r="50%"><stop offset=".66" stop-color="var(--accent)" stop-opacity=".05"/><stop offset="1" stop-color="var(--accent)" stop-opacity=".55"/></radialGradient></defs>
+      <circle cx="100" cy="100" r="66" fill="url(#rmd-glow)"/>
+      <path class="d-base" d="M41.3 158.7A83 83 0 1 1 158.7 158.7" pathLength="100"/>
+      <path class="d-fill" id="rm-dfill" d="M41.3 158.7A83 83 0 1 1 158.7 158.7" pathLength="100" stroke-dasharray="0 100"/>
+      <path class="d-rim" id="rm-drim" d="M31.4 168.6A97 97 0 1 1 168.6 168.6" pathLength="100" stroke-dasharray="0 100"/>
+      <path class="d-sep" d="M41.1 134.0L14.3 149.5M34.3 117.6L4.4 125.6M32.0 100.0L1.0 100.0M34.3 82.4L4.4 74.4M41.1 66.0L14.3 50.5M51.9 51.9L30.0 30.0M66.0 41.1L50.5 14.3M82.4 34.3L74.4 4.4M100.0 32.0L100.0 1.0M117.6 34.3L125.6 4.4M134.0 41.1L149.5 14.3M148.1 51.9L170.0 30.0M158.9 66.0L185.7 50.5M165.7 82.4L195.6 74.4M168.0 100.0L199.0 100.0M165.7 117.6L195.6 125.6M158.9 134.0L185.7 149.5"/>
+      <g id="rm-dneedle" style="transform-origin:100px 100px;transform:rotate(0deg)"><path class="d-needle" d="M41.3 158.7L31.4 168.6" transform="rotate(0 100 100)"/></g>
+      <text class="d-lab" x="52" y="150">0</text><text class="d-lab" x="148" y="150" text-anchor="end">${MAX_KMH}</text>
+    </svg><div class="d-mid"><span class="d-u">km/h</span><span class="big" data-live="speed">${b.speed}</span><span class="d-sub">${b.trip.v}</span></div></div>${b.tags ? `<div class="rm-tags">${b.tags}</div>` : ''}</div>
     ${b.nav ? b.nav + '<div style="height:10px"></div>' : ''}
     <div class="rm-grid">
       <div class="rm-box"><div class="rm-lab">${b.date}</div><div class="rm-val" data-live="clock">${b.time}</div></div>
@@ -1073,14 +1082,14 @@ function sheetInner(c, key) {
         </div>`;
     case 'pick-icons': {
       const was = ICON_STYLE, cur = ['duo', 'fill'].includes(s.settings.icons) ? s.settings.icons : 'line';
-      const card = (k, nm, d) => { ICON_STYLE = k; const h = ['today', 'fuel', 'wrench', 'pin', 'bell', 'bike'].map((n) => icon(n)).join(''); return `<button class="icoopt ${cur === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}"><span class="io-row">${h}</span><span class="nm">${nm}</span><span class="d">${d}</span></button>`; };
+      const card = (k, nm, d) => { ICON_STYLE = k; const h = ['fuel', 'wrench', 'bell', 'bike'].map((n) => icon(n)).join(''); return `<button class="icoopt ${cur === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}"><span class="io-row">${h}</span><span class="nm">${nm}</span></button>`; };
       const out = `<div class="eyebrow">Appearance</div><h2>Icon style</h2><p class="lead">How icons are drawn across the app.</p>
         <div class="icoopts mt16">${card('line', 'Line', 'Clean single strokes')}${card('duo', 'Glow', 'A soft glow under each line')}${card('fill', 'Duotone', 'Shapes filled with a second tone')}</div>`;
       ICON_STYLE = was; return out;
     }
     case 'pick-brand': {
       const was = ICON_STYLE, cur = ['duo', 'fill'].includes(s.settings.icons) ? s.settings.icons : 'line';
-      const card = (k, nm, d) => { ICON_STYLE = k; const h = ['today', 'fuel', 'wrench', 'pin', 'bell', 'bike'].map((n) => icon(n)).join(''); return `<button class="icoopt ${cur === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}"><span class="io-row">${h}</span><span class="nm">${nm}</span><span class="d">${d}</span></button>`; };
+      const card = (k, nm, d) => { ICON_STYLE = k; const h = ['fuel', 'wrench', 'bell', 'bike'].map((n) => icon(n)).join(''); return `<button class="icoopt ${cur === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}"><span class="io-row">${h}</span><span class="nm">${nm}</span></button>`; };
       const icoHTML = card('line', 'Line', 'Clean single strokes') + card('duo', 'Glow', 'A soft glow under each line') + card('fill', 'Duotone', 'Shapes filled with a second tone'); ICON_STYLE = was;
       return `<div class="eyebrow">Appearance</div><h2>Icons</h2>
         <div class="brand-final mt12 anim">${LOOP}</div>

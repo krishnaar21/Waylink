@@ -216,7 +216,7 @@ function render(anim = '') {
   live.gloveHere = live.glove.filter((d) => d.slot.startsWith(vid + ':') || d.slot.startsWith('rider:'));
   V.setLocale(S.country(s).locale); V.setProgress(s.settings.progress); V.setIconStyle(s.settings.icons);
   const views = $('#views');
-  if (!s.onboarded) {
+  if (!s.onboarded || live.onbTest) {
     views.innerHTML = V.onboarding(s, live.onbStep || 0, link);
     for (const id of ['#tabbar', '#fab', '#pill']) { const el = $(id); el.innerHTML = ''; el._h = ''; }
     return;
@@ -312,6 +312,10 @@ function updateRideGauges() {
   const arc = $('#rm-arc'); if (arc) arc.setAttribute('stroke-dasharray', `${(arc.dataset.len * f).toFixed(1)} ${arc.dataset.len}`);
   const nd = $('#rm-needle'); if (nd) nd.style.transform = `rotate(${(f * 180).toFixed(1)}deg)`;
   const hb = $('#rm-hud'); if (hb) hb.style.width = (f * 100).toFixed(1) + '%';
+  const df = $('#rm-dfill'), dr = $('#rm-drim'), dn = $('#rm-dneedle');
+  if (df) df.setAttribute('stroke-dasharray', `${(f * 100).toFixed(2)} 100`);
+  if (dr) dr.setAttribute('stroke-dasharray', `${(f * 100).toFixed(2)} 100`);
+  if (dn) dn.style.transform = `rotate(${(f * 270).toFixed(1)}deg)`;
 }
 function tickLive() {
   updateRideGauges();
@@ -941,6 +945,7 @@ const A = {
   'doc-del': async (slot) => { await S.gloveDelete(slot); await loadGlove(); openSheet('glovebox'); render(); },
   'quick-chain': () => { const it = s.service.find((x) => x.kind === 'chain'); closeSheet(); if (it) { S.markServiceDone(s, it); commit(); toast(`Chain lubed at ${V.num(s.odo)} km.`); } },
   'app-icon': (k) => { s.settings.iconStyle = k; SND.click(true); commit(); refreshSheet(); },
+  'onb-test': () => { live.onbTest = true; live.onbStep = 0; render('fade-in'); },
   'onb-step': (k) => { live.onbStep = +k; SND.click(true); render('fade-in'); },
   'onb-next': () => {
     const el = $('[data-onb-slides]'); if (!el) return;
@@ -949,21 +954,24 @@ const A = {
     SND.swipe(1); el.scrollTo({ left: (i + 1) * el.clientWidth, behavior: 'smooth' });
   },
   'onb-skip-reg': () => {
+    if (live.onbTest) { live.onbStep = 2; render('fade-in'); return; }
     if (!s.vehicles.length) { const v = S.newVehicle({}); s.vehicles = [v]; s.active = v.id; }
     s.profile.since = s.profile.since || Date.now(); S.saveNow(s); live.onbStep = 2; render('fade-in');
   },
   'onb-finish': (how) => {
+    if (live.onbTest) { live.onbTest = false; live.onbStep = 0; screen = 'settings'; render('fade-in'); toast('Onboarding preview closed.'); return; }
     if (!s.vehicles.length) { const v = S.newVehicle({}); s.vehicles = [v]; s.active = v.id; }
     s.profile.since = s.profile.since || Date.now();
     s.onboarded = true; live.onbStep = 0; S.saveNow(s); screen = 'today'; render('fade-in');
     if (how === 'pair') A.pair?.(); else if (how === 'sim') A['sim-on'](); else if (how === 'ios') A.sheet('ios-pair');
     else { try { localStorage.setItem('wl-pair-nudge', new Date().toDateString()); } catch {} }
   },
-  'onboard-sample': () => { S.seedSample(s); s.onboarded = true; S.saveNow(s); screen = 'today'; render('fade-in'); toast('Sample data loaded. Erase it any time in Settings.', 3600); },
+  'onboard-sample': () => { if (live.onbTest) return A['onb-finish']('later'); S.seedSample(s); s.onboarded = true; S.saveNow(s); screen = 'today'; render('fade-in'); toast('Sample data loaded. Erase it any time in Settings.', 3600); },
 };
 
 const FORMS = {
   onboard: (f) => {
+    if (live.onbTest) { live.onbStep = 2; SND.click(true); render('fade-in'); return; }
     s.profile.name = f.name.value.trim(); s.profile.country = f.country.value; s.profile.since = Date.now();
     const v = S.newVehicle({ model: f.model.value, plate: f.plate.value.trim().toUpperCase(), odo: Math.max(0, +f.odo.value || 0) });
     s.vehicles = [v]; s.active = v.id; S.saveNow(s);
