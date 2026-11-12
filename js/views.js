@@ -172,7 +172,7 @@ function rowValue(st) {
 // Progress style for service jobs. Each reads "how much is left" a different way.
 export const PROGRESS_STYLES = [
   ['gauge', 'Fuel gauge', 'Bars from E to F, like the bike'],
-  ['road', 'On the road', 'Your bike riding towards the next service'],
+  ['road', 'On the road', 'The road travelled since the last service'],
   ['tread', 'Tyre tread', 'Tall blocks are tread left; they wear flat'],
   ['dipstick', 'Dipstick', 'Oil level between MIN and MAX'],
 ];
@@ -185,7 +185,7 @@ function progressBar(st, extra = '') {
   if (PROGRESS === 'road') {
     // The bike has covered `frac` of the way since the last service; the flag is the next one.
     const at = over ? 100 : Math.min(96, Math.max(4, st.frac * 100));
-    return wrap('p-road', `<div class="rd"><i class="done" style="width:${at}%"></i><span class="bk" style="left:${at}%">${icon('bike')}</span><span class="fl">${icon('flag')}</span><i class="lane"></i></div><div class="pl"><span>Last service</span><span>${over ? 'Overdue' : 'Next'}</span></div>`);
+    return wrap('p-road', `<div class="rd"><i class="done" style="width:${at}%"></i></div><div class="pl"><span>Last service</span><span>${over ? 'Overdue' : 'Next'}</span></div>`);
   }
   if (PROGRESS === 'tread') {
     const n = 16, f = over ? 0 : Math.max(1, Math.round(left * n)); let t = '';
@@ -728,7 +728,7 @@ export function settings(c) {
   <div class="vc-rows">
     ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
     ${li({ ic: 'sparkles', t: 'Logo', end: `<img class="pick-logo" src="${appIcon(s)}" alt=""><span class="pick-val">${BRANDS.find(([k]) => k === brandOf(s))[1]}</span>`, act: 'sheet', arg: 'pick-brand' })}
-    ${li({ ic: 'grid', t: 'Icon style', end: `<div class="seg mini">${[['line', 'Line'], ['duo', 'Duotone']].map(([k, l]) => `<button class="${(st.icons || 'line') === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}">${l}</button>`).join('')}</div>`, chev: false, tag: 'div' })}
+    ${li({ ic: 'grid', t: 'Icon style', end: `<span class="pick-val">${st.icons === 'duo' ? 'Duotone' : 'Line'}</span>`, act: 'sheet', arg: 'pick-icons' })}
     ${li({ ic: 'font', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
     ${li({ ic: 'progress', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
   </div></div></div>
@@ -779,7 +779,7 @@ export const BIRD = '<svg class="wl-bird" viewBox="0 0 120 120" aria-hidden="tru
 // Wordmark-only logos: a slot that cycles through turn signs, and a w drawn as one looping road with the rest typed in.
 const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnRight', '#3E8EF7', 'flip'], ['turnU', '#2BB673'], ['navArrow', '#7C5CFF'], ['pin', '#E5484D'], ['routeIc', '#0EA5A5']];
 export const TURNS = `<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true">${TURN_SIGNS.map(([k, col, f], i) => `<svg class="tg tg${i} ${f || ''}" viewBox="0 0 24 24" fill="none" style="color:${col}">${HUGE_ICONS[k]}</svg>`).join('')}</span><span aria-hidden="true">link</span></span>`;
-export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8 28C10 56 16 80 28 80C40 80 45 58 50 42C54 28 62 14 55 9C48 4 41 16 47 36C52 56 60 80 72 80C84 80 90 56 92 28"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span><span class="caret" aria-hidden="true"></span></span>';
+export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8 28C10 56 16 80 28 80C40 80 45 58 50 42C54 28 62 14 55 9C48 4 41 16 47 36C52 56 60 80 72 80C84 80 90 56 92 28"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
 export const BRANDS = [['route', 'Route'], ['bird', 'Bird'], ['turns', 'Turns'], ['loop', 'Loop']];
 export const brandOf = (s) => BRANDS.some(([k]) => k === s.settings.brand) ? s.settings.brand : 'route';
 export const WORDMARK = '<span class="wl-word" aria-label="waylink"><span aria-hidden="true">wayl</span><svg class="wl-i" viewBox="0 0 30 100" aria-hidden="true"><rect class="i-stem" x="8.5" y="31" width="13" height="49" rx="1.5"/><g class="i-pin"><path d="M15 27C9 21 5.5 17 5.5 12a9.5 9.5 0 0 1 19 0c0 5-3.5 9-9.5 15z"/><circle cx="15" cy="12" r="3.4"/></g></svg><span aria-hidden="true">nk</span></span>';
@@ -1036,6 +1036,13 @@ function sheetInner(c, key) {
           ${li({ ic: 'up', t: 'Restore a backup', d: 'From an exported file', act: 'import' })}
           ${li({ ic: 'copy', t: 'Copy as text', d: 'Paste it on your new phone', act: 'copy-backup' })}
         </div>`;
+    case 'pick-icons': {
+      const was = ICON_STYLE, cur = s.settings.icons === 'duo' ? 'duo' : 'line';
+      const card = (k, nm, d) => { ICON_STYLE = k; const h = ['today', 'fuel', 'wrench', 'pin', 'bell', 'bike'].map((n) => icon(n)).join(''); return `<button class="icoopt ${cur === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}"><span class="io-row">${h}</span><span class="nm">${nm}</span><span class="d">${d}</span></button>`; };
+      const out = `<div class="eyebrow">Appearance</div><h2>Icon style</h2><p class="lead">How icons are drawn across the app.</p>
+        <div class="icoopts mt16">${card('line', 'Line', 'Clean single strokes')}${card('duo', 'Duotone', 'A soft second tone under each line')}</div>`;
+      ICON_STYLE = was; return out;
+    }
     case 'pick-brand':
       return `<div class="eyebrow">Appearance</div><h2>Logo</h2><p class="lead">Shown on the loading screen and as the app icon. Re-add Waylink to your Home Screen to change an installed icon.</p>
         <div class="brands mt16">${BRANDS.map(([k, nm]) => `<button class="brandopt anim b-${k} ${brandOf(s) === k ? 'on' : ''}" data-act="brand" data-arg="${k}"><span class="bo-art">${{ route: MARK, bird: BIRD, turns: TURNS, loop: LOOP }[k]}</span><span class="nm">${nm}</span></button>`).join('')}</div>`;

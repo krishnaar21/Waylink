@@ -963,11 +963,19 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .tab.on { color: var(--ink); }
 
 /* Pull to refresh: a bike wheel. The tyre draws and the wheel rolls as you pull, then it spins. */
-#ptr { position: absolute; left: 50%; top: var(--top); z-index: 4; width: 34px; height: 34px; opacity: 0; transform: translate(-50%, -34px); pointer-events: none; color: var(--ink); --draw: 100; --roll: 0deg; }
-#ptr .wh { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: var(--raised); box-shadow: var(--shadow-btn); transform: rotate(var(--roll)) scale(calc(.55 + (100 - var(--draw)) / 220)); }
-#ptr .wh svg { width: 24px; height: 24px; }
-#ptr.spin .wh { animation: ptrSpin .6s linear infinite; }
+#ptr { position: absolute; left: 50%; top: var(--top); z-index: 4; width: 46px; height: 46px; opacity: 0; transform: translate(-50%, -34px); pointer-events: none; color: var(--ink); --draw: 100; --roll: 0deg; }
+#ptr svg { width: 100%; height: 100%; fill: none; stroke: currentColor; overflow: visible; }
+#ptr .wh { transform-origin: 50px 50px; transform: rotate(var(--roll)); }
+#ptr .tyre { stroke-width: 11; stroke-dasharray: 100 100; stroke-dashoffset: var(--draw); }
+#ptr .tread { stroke-width: 3.5; stroke-dasharray: 3.2 4.1; opacity: calc(1 - var(--draw) / 100); }
+#ptr .rim { stroke-width: 3; }
+#ptr .spk { stroke-width: 3.2; stroke-linecap: round; }
+#ptr .disc { stroke-width: 2; stroke-dasharray: 2.5 3.2; opacity: .55; }
+#ptr .hub { fill: currentColor; stroke: none; }
+#ptr.spin .wh { animation: ptrSpin .7s linear infinite; }
+#ptr.spin .tyre, #ptr.done .tyre { stroke-dashoffset: 0; }
 @keyframes ptrSpin { from { transform: rotate(var(--roll)); } to { transform: rotate(calc(var(--roll) + 360deg)); } }
+#ptr.spin .tread, #ptr.done .tread { opacity: 1; }
 .view { will-change: auto; }
 
 .mt32 { margin-top: 32px; } .mt8 { margin-top: 8px; }
@@ -1274,8 +1282,8 @@ svg.i .duo { opacity: .14; }
 .anim .wl-loop .lw { animation: lwDraw .9s cubic-bezier(.6,0,.3,1) .15s both; }
 .anim .wl-loop .rest { animation: none; }
 .anim .wl-loop .rest i { animation: tyIn .01s linear both; }
-.anim .wl-loop .ty0 { animation-delay: 1.05s; } .anim .wl-loop .ty1 { animation-delay: 1.17s; } .anim .wl-loop .ty2 { animation-delay: 1.29s; }
-.anim .wl-loop .ty3 { animation-delay: 1.41s; } .anim .wl-loop .ty4 { animation-delay: 1.53s; } .anim .wl-loop .ty5 { animation-delay: 1.65s; }
+.anim .wl-loop .ty0 { animation-delay: 1s; } .anim .wl-loop .ty1 { animation-delay: 1.16s; } .anim .wl-loop .ty2 { animation-delay: 1.32s; }
+.anim .wl-loop .ty3 { animation-delay: 1.48s; } .anim .wl-loop .ty4 { animation-delay: 1.64s; } .anim .wl-loop .ty5 { animation-delay: 1.8s; }
 .anim .wl-loop .caret { display: inline-block; animation: caretBlink .5s steps(1) 1s 4 both, caretOut .2s ease 3s both; }
 @keyframes lwDraw { from { stroke-dashoffset: 100; } }
 @keyframes tyIn { from { opacity: 0; } to { opacity: 1; } }
@@ -1286,3 +1294,21 @@ svg.i .duo { opacity: .14; }
 .view[data-screen="settings"] .li .ic, .view[data-screen="alerts"] .li .ic { width: 44px; height: 44px; border-radius: 13px; }
 .view[data-screen="settings"] .li .ic svg, .view[data-screen="alerts"] .li .ic svg { width: 24px; height: 24px; }
 .view[data-screen="alerts"] .row-ic svg { width: 24px; height: 24px; }
+
+/* Round 2 tweaks */
+.p-road .rd { height: 10px; }
+.p-tread .tb { height: 7px; } .p-tread .tb i { height: 2px; } .p-tread .tb i.on { height: 7px; }
+.p-dip .ds { height: 14px; } .p-dip .ds::before, .p-dip .oil { height: 4px; } .p-dip .ds::after { top: 3px; height: 8px; }
+.p-dip .mk { top: 1px; height: 12px; width: 2px; } .p-dip .hd { width: 14px; height: 14px; box-shadow: inset 0 0 0 2.5px var(--ink-3); } .p-dip .hd::before { top: 5px; height: 4px; }
+.wl-turns .slot { width: .78em; height: .78em; margin: 0 .06em; transform: translateY(.02em); }
+/* Loop: letters fade in one after another */
+.anim .wl-loop .rest i { opacity: 0; animation: tyFade .45s ease both; }
+@keyframes tyFade { from { opacity: 0; transform: translateY(.12em); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+.anim .wl-loop .caret { display: none; }
+/* Icon style picker */
+.icoopts { display: grid; gap: 10px; }
+.icoopt { display: grid; gap: 4px; text-align: left; padding: 16px; border-radius: var(--r-sm); background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); }
+.icoopt.on { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.icoopt .io-row { display: flex; gap: 18px; margin-bottom: 8px; color: var(--ink); }
+.icoopt .io-row svg { width: 26px; height: 26px; }
+.icoopt .nm { font-weight: 600; font-size: 15px; } .icoopt .d { font-size: 13px; color: var(--ink-3); }

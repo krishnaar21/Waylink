@@ -124,8 +124,8 @@ function refreshWeather() {
 }
 
 // ---------- Pull to refresh ----------
-// Pull down at the top of any tab: a tyre (Hugeicons) grows and rolls as you pull, then spins while it refreshes.
-const PTR_MARK = () => `<span class="wh">${V.icon('tire')}</span>`;
+// Pull down at the top of any tab: a motorcycle wheel (knobby tyre, alloy spokes) draws and rolls as you pull, then spins.
+const PTR_MARK = () => '<svg viewBox="0 0 100 100" aria-hidden="true"><g class="wh"><circle class="tyre" cx="50" cy="50" r="41" pathLength="100" transform="rotate(-90 50 50)"/><circle class="tread" cx="50" cy="50" r="46.5"/><circle class="rim" cx="50" cy="50" r="32"/><path class="spk" d="M50.0 40.0L45.2 20.4M50.0 40.0L54.8 20.4M59.5 46.9L76.7 36.3M59.5 46.9L79.6 45.4M55.9 58.1L71.3 71.2M55.9 58.1L63.5 76.8M44.1 58.1L36.5 76.8M44.1 58.1L28.7 71.2M40.5 46.9L20.4 45.4M40.5 46.9L23.3 36.3"/><circle class="disc" cx="50" cy="50" r="17"/><circle class="hub" cx="50" cy="50" r="7"/></g></svg>';
 (function pullToRefresh() {
   const host = $('#views'); if (!host) return;
   const ind = Object.assign(document.createElement('div'), { id: 'ptr', innerHTML: PTR_MARK() });
@@ -744,7 +744,7 @@ const A = {
   },
   'progress-style': (k) => { s.settings.progress = V.PROGRESS_STYLES.some(([x]) => x === k) ? k : 'gauge'; SND.click(true); commit(); refreshSheet(); },
   brand: (k) => { s.settings.brand = V.BRANDS.some(([x]) => x === k) ? k : 'route'; document.documentElement.dataset.brand = s.settings.brand; buzz(6); commit(); refreshSheet(); },
-  'icon-style': (k) => { s.settings.icons = k === 'duo' ? 'duo' : 'line'; SND.click(true); commit(); },
+  'icon-style': (k) => { s.settings.icons = k === 'duo' ? 'duo' : 'line'; SND.click(true); commit(); refreshSheet(); },
   theme: (k) => { s.settings.theme = k; commit(); },
   accent: (k) => { s.settings.accent = k; commit(); },
   'switch-vehicle': (id) => {
