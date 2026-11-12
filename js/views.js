@@ -69,7 +69,8 @@ export const ART_V = '75';
 export function vehicleArt(s, v, size = 'thumb') {
   const cls = size === 'hero' ? 'art hero-art' : size === 'model' ? 'art model-art' : size === 'card' ? 'art card-art' : size === 'lg' ? 'art thumb lg' : 'art thumb';
   // Bikes without a photo: a soft tile tinted with the bike's colour, so it sits with the theme instead of shouting.
-  const tile = () => `<div class="${cls} icon-mode" style="--bc:${v.colour}">${icon('bike')}</div>`;
+  // No photo and no model art: the Waylink street bike stands in.
+  const tile = () => `<div class="${cls}"><img class="model" src="img/onb/rider-street.webp" alt="" decoding="async" onload="this.classList.add('ld')"></div>`;
   if (v.photo) return `<div class="${cls}"><img class="photo" src="${v.photo}" alt=""></div>`;
   const img = S.MODEL_IMAGES[v.model];
   if (img) return `<div class="${cls}"><img class="${img.fit === 'cover' ? 'photo' : 'model'}" src="${img.src}${img.src.includes('?') ? '&' : '?'}v=${ART_V}" onload="this.classList.add('ld')" alt="${esc(S.MODELS.find((m) => m.id === v.model)?.name || '')}" decoding="async"></div>`;
