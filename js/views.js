@@ -901,13 +901,15 @@ function layoutA(b) {
   return `<section class="rm-page lay-a" aria-label="Speed first">
     <div class="speed"><div class="rm-dial" id="rm-dial"><svg viewBox="0 0 200 200" aria-hidden="true"><defs><radialGradient id="rmd-glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="var(--accent)" stop-opacity=".38"/><stop offset=".55" stop-color="var(--accent)" stop-opacity=".12"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></radialGradient><radialGradient id="rmd-band" cx="50%" cy="50%" r="50%"><stop offset=".66" stop-color="var(--accent)" stop-opacity=".05"/><stop offset="1" stop-color="var(--accent)" stop-opacity=".55"/></radialGradient></defs>
       <circle cx="100" cy="100" r="66" fill="url(#rmd-glow)"/>
-      <path class="d-base" d="M41.3 158.7A83 83 0 1 1 158.7 158.7" pathLength="100"/>
-      <path class="d-fill" id="rm-dfill" d="M41.3 158.7A83 83 0 1 1 158.7 158.7" pathLength="100" stroke-dasharray="0 100"/>
-      <path class="d-rim" id="rm-drim" d="M31.4 168.6A97 97 0 1 1 168.6 168.6" pathLength="100" stroke-dasharray="0 100"/>
-      <path class="d-sep" d="M41.1 134.0L14.3 149.5M34.3 117.6L4.4 125.6M32.0 100.0L1.0 100.0M34.3 82.4L4.4 74.4M41.1 66.0L14.3 50.5M51.9 51.9L30.0 30.0M66.0 41.1L50.5 14.3M82.4 34.3L74.4 4.4M100.0 32.0L100.0 1.0M117.6 34.3L125.6 4.4M134.0 41.1L149.5 14.3M148.1 51.9L170.0 30.0M158.9 66.0L185.7 50.5M165.7 82.4L195.6 74.4M168.0 100.0L199.0 100.0M165.7 117.6L195.6 125.6M158.9 134.0L185.7 149.5"/>
-      <g id="rm-dneedle" style="transform-origin:100px 100px;transform:rotate(0deg)"><path class="d-needle" d="M41.3 158.7L31.4 168.6" transform="rotate(0 100 100)"/></g>
-      <text class="d-lab" x="52" y="150">0</text><text class="d-lab" x="148" y="150" text-anchor="end">${MAX_KMH}</text>
-    </svg><div class="d-mid"><span class="d-u">km/h</span><span class="big" data-live="speed">${b.speed}</span><span class="d-sub">${b.trip.v}</span></div></div>${b.tags ? `<div class="rm-tags">${b.tags}</div>` : ''}</div>
+      <path class="d-base" d="M28.1 141.5A83 83 0 1 1 171.9 141.5" pathLength="100"/>
+      <path class="d-fill" id="rm-dfill" d="M28.1 141.5A83 83 0 1 1 171.9 141.5" pathLength="100" stroke-dasharray="0 100"/>
+      <path class="d-rim" id="rm-drim" d="M16.0 148.5A97 97 0 1 1 184.0 148.5" pathLength="100" stroke-dasharray="0 100"/>
+      <path class="d-sep" d="M34.3 117.6L4.4 125.6M32.0 100.0L1.0 100.0M34.3 82.4L4.4 74.4M41.1 66.0L14.3 50.5M51.9 51.9L30.0 30.0M66.0 41.1L50.5 14.3M82.4 34.3L74.4 4.4M100.0 32.0L100.0 1.0M117.6 34.3L125.6 4.4M134.0 41.1L149.5 14.3M148.1 51.9L170.0 30.0M158.9 66.0L185.7 50.5M165.7 82.4L195.6 74.4M168.0 100.0L199.0 100.0M165.7 117.6L195.6 125.6"/>
+      <g id="rm-dneedle" style="transform-origin:100px 100px;transform:rotate(0deg)"><path class="d-needle" d="M28.1 141.5L16.0 148.5"/></g>
+      <text class="d-u" x="100" y="62" text-anchor="middle">km/h</text>
+      <text class="d-lab" x="44" y="146">0</text><text class="d-lab" x="156" y="146" text-anchor="end">${MAX_KMH}</text>
+      <text class="d-sub" x="100" y="146" text-anchor="middle">${b.trip.v.replace(/<[^>]+>/g, ' ')}</text>
+    </svg><div class="d-mid"><span class="big" data-live="speed">${b.speed}</span></div></div>${b.tags ? `<div class="rm-tags">${b.tags}</div>` : ''}</div>
     ${b.nav ? b.nav + '<div style="height:10px"></div>' : ''}
     <div class="rm-grid">
       <div class="rm-box"><div class="rm-lab">${b.date}</div><div class="rm-val" data-live="clock">${b.time}</div></div>
@@ -921,7 +923,7 @@ export function rideMode(c) {
   const b = rideBits(c);
   return `<div class="ride-mode" id="ride-mode" data-page="0">
     <div class="rm-pages">${layoutA({ ...b, tags: `${live.rec ? '<span class="tag x"><span class="dot x pulse"></span>Recording</span>' : ''}${link.connected ? '' : '<span class="tag k">Bike not linked</span>'}${live.gpsErr ? '<span class="tag a">No GPS</span>' : ''}` })}</div>
-    ${s.settings.autoRide ? '<p class="rm-note">Ride mode opens by itself once you’re moving. Turn this off in Settings › Riding.</p>' : ''}
+    <p class="rm-note">${s.settings.autoRide ? 'Ride mode opens by itself once you’re moving. Turn this off in Settings › Riding.' : 'Ride mode can open by itself once you’re moving. Turn it on in Settings › Riding.'}</p>
     <div class="rm-foot2">
       <div class="hold"><svg viewBox="0 0 26 26"><circle cx="13" cy="13" r="11" fill="none" stroke="var(--seg-off)" stroke-width="2"/><circle class="p" cx="13" cy="13" r="11" fill="none" stroke="var(--ink)" stroke-width="2" stroke-dasharray="69.1" stroke-dashoffset="69.1" transform="rotate(-90 13 13)"/><circle cx="13" cy="13" r="4" fill="var(--ink-3)"/></svg><span class="eyebrow" data-live="rm-hint">Hold to leave</span></div>
     </div></div>`;
@@ -1092,7 +1094,7 @@ function sheetInner(c, key) {
       const card = (k, nm, d) => { ICON_STYLE = k; const h = ['fuel', 'wrench', 'bell', 'bike'].map((n) => icon(n)).join(''); return `<button class="icoopt ${cur === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}"><span class="io-row">${h}</span><span class="nm">${nm}</span></button>`; };
       const icoHTML = card('line', 'Line', 'Clean single strokes') + card('duo', 'Glow', 'A soft glow under each line') + card('fill', 'Duotone', 'Shapes filled with a second tone'); ICON_STYLE = was;
       return `<div class="eyebrow">Appearance</div><h2>Icons</h2>
-        <div class="brand-final mt12 anim">${LOOP}</div>
+        <button class="brand-final mt12 anim" data-act="replay-logo" aria-label="Play the logo animation">${LOOP}</button>
         <div class="ms-t mt24">App icon</div><p class="small muted mt8">On your Home Screen. Remove Waylink and add it again to change an installed icon.</p>
         <div class="appicons mt12">${ICON_STYLES.map(([k, nm]) => `<button class="appicon ${(s.settings.iconStyle || 'classic') === k ? 'on' : ''}" data-act="app-icon" data-arg="${k}"><img src="${appIcon({ settings: { ...s.settings, iconStyle: k } })}" alt="" width="56" height="56"><span>${nm}</span></button>`).join('')}</div>
         <div class="ms-t mt24">Icon style</div>
@@ -1331,15 +1333,21 @@ function fieldForm(key, eb, label, val, type, suffix, hint = '') {
 // ---------- Onboarding ----------
 // Onboarding: a short intro, then the rider and bike, then linking the bike. Every step can be skipped.
 const ONB_SLIDES = [
-  ['turnRight', 'Turns on your display', 'Plan in Google Maps. Each turn shows on your Bajaj cluster with the distance, so your phone stays in your pocket.'],
-  ['phone', 'Know who’s calling', 'Caller names, missed calls and WhatsApp counts reach the bike. Never the message itself.'],
-  ['wrench', 'Your bike’s care, sorted', 'Fuel, rides, service and papers in one place, with reminders before anything is due.'],
+  ['turns', 'Turns on your display', 'Plan in Google Maps. Every turn reaches your Bajaj cluster with the distance counting down.', ['Turn arrows', 'Distance to turn', 'Roundabout exits', 'Street names']],
+  ['calls', 'Calls, without your phone', 'See who’s calling right on the cluster. Answer or decline with the handlebar button.', ['Caller names', 'Missed calls', 'WhatsApp counts', 'Handlebar control']],
+  ['care', 'Your bike’s care, sorted', 'Service, fuel, rides and papers in one place, with a nudge before anything is due.', ['Service reminders', 'Fuel & mileage', 'Ride log', 'Papers & expiry']],
 ];
+// Small, honest pictures of what each feature looks like.
+const onbArt = (k) => {
+  if (k === 'turns') return `<div class="oa-cluster"><div class="oc-top"><span>12:41</span><span>${icon('bt')}</span><span>48°</span></div><div class="oc-turn">${arrow('right', 0, .3, 7.5)}<div><b>400<small>m</small></b><span>MG Road</span></div></div><div class="oc-bar"><i style="width:62%"></i></div></div>`;
+  if (k === 'calls') return `<div class="oa-cluster"><div class="oc-top"><span>12:41</span><span>${icon('bt')}</span><span>48°</span></div><div class="oc-call"><span class="oc-ic">${icon('phone')}</span><div><b>Priya</b><span>Incoming call</span></div></div><div class="oc-chips"><span>${icon('missed')} 2</span><span>${icon('chat')} 5</span></div></div>`;
+  return `<div class="oa-cards"><div class="oa-c">${icon('drop')}<div><b>Engine oil</b><span>320 km left</span></div><i class="oa-pill a">Soon</i></div><div class="oa-c">${icon('fuel')}<div><b>Fuel</b><span>≈270 km range</span></div><i class="oa-pill">OK</i></div><div class="oa-c">${icon('doc')}<div><b>Insurance</b><span>Renews in 12 days</span></div><i class="oa-pill">OK</i></div></div>`;
+};
 export function onboarding(s, step = 0, link = {}) {
   const sample = '<button class="link onb-sample" type="button" data-act="onboard-sample">Explore with sample data</button>';
   if (step === 0) return `<div class="onb onb-intro">
     <div class="onb-top"><span class="onb-mark">${LOOP}</span><button class="link" data-act="onb-step" data-arg="1">Skip</button></div>
-    <div class="onb-slides" data-onb-slides>${ONB_SLIDES.map(([ic, t, d], i) => `<section class="onb-slide"><div class="onb-art a${i}"><span class="oa-ring"></span><span class="oa-ic">${icon(ic)}</span></div><h1 class="title">${t}</h1><p class="onb-p">${d}</p></section>`).join('')}</div>
+    <div class="onb-slides" data-onb-slides>${ONB_SLIDES.map(([k, t, d, f]) => `<section class="onb-slide"><div class="onb-art">${onbArt(k)}</div><h1 class="title">${t}</h1><p class="onb-p">${d}</p><div class="onb-feats">${f.map((x) => `<span>${icon('check')}${x}</span>`).join('')}</div></section>`).join('')}</div>
     <div class="onb-dots">${ONB_SLIDES.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('')}</div>
     <div class="onb-foot"><button class="btn ink block" data-act="onb-next">Next</button>${sample}</div>
   </div>`;
@@ -1348,8 +1356,9 @@ export function onboarding(s, step = 0, link = {}) {
       : isIOS() ? `<button class="btn ink block" data-act="onb-finish" data-arg="ios">${icon('bt')} Pair on iPhone</button>` : '';
     return `<div class="onb onb-link">
       <div class="onb-top"><button class="circle" data-act="onb-step" data-arg="1" aria-label="Back">${icon('back')}</button><button class="link" data-act="onb-finish" data-arg="later">Skip</button></div>
-      <div class="onb-body"><div class="onb-pair"><span class="op-end">${icon('phoneDev')}</span><span class="op-line"><i></i><i></i><i></i></span><span class="op-end">${icon('bike')}</span></div>
-      <div class="eyebrow mt24">Step 2 of 2</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once with the ignition on. After that Waylink reconnects by itself every time you ride.</p></div>
+      <div class="onb-body"><div class="onb-pair"><span class="op-phone"><span class="opp-scr">${icon('turnRight')}</span></span><span class="op-line"><i></i><i></i><i></i><i></i></span><span class="op-clu"><span class="opc-scr">${arrow('right', 0, .3, 7.5)}<b>400<small>m</small></b></span></span></div>
+      <div class="eyebrow mt24">Step 2 of 2</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once with the ignition on. After that Waylink reconnects by itself every time you ride.</p>
+      <div class="onb-gets">${[['turnRight', 'Turn arrows', 'from Google Maps'], ['phone', 'Caller names', 'calls and WhatsApp'], ['clock', 'Time & trips', 'kept in sync'], ['fuel', 'Fuel & range', 'from the cluster']].map(([ic, t, d]) => `<div class="og">${icon(ic)}<b>${t}</b><span>${d}</span></div>`).join('')}</div></div>
       <div class="onb-foot">${pair}<button class="btn ${pair ? 'line' : 'ink'} block mt8" data-act="onb-finish" data-arg="sim">${icon('bolt')} Try the simulated bike</button><button class="link onb-sample" data-act="onb-finish" data-arg="later">I’ll do this later</button></div>
     </div>`;
   }

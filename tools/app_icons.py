@@ -18,6 +18,9 @@ def grad(id, stops, x1=0, y1=0, x2=100, y2=60):
     return f'<linearGradient id="{id}" gradientUnits="userSpaceOnUse" x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}">{s}</linearGradient>'
 def svg(*parts): return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">' + ''.join(parts) + '</svg>'
 gloss = '<rect width="512" height="512" rx="114" fill="url(#gl)"/><defs><linearGradient id="gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>'
+
+def tonal(dark, pale, motif=''):
+    return svg(bg(dark), motif, mark([(pale, 11, '')]))
 STYLES = {
   # Metallic: brushed steel plate, chrome w with an engraved edge
   'chrome': svg('<defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E7EAEE"/><stop offset=".5" stop-color="#9AA1AB"/><stop offset=".52" stop-color="#B8BEC6"/><stop offset="1" stop-color="#6D737C"/></linearGradient><filter id="br"><feTurbulence type="fractalNoise" baseFrequency=".9 .012" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .18 0"/><feComposite in2="SourceGraphic" operator="in"/></filter></defs>',
@@ -29,32 +32,23 @@ STYLES = {
                '<rect y="330" width="512" height="34" fill="#E8A13A"/><rect y="372" width="512" height="34" fill="#D9672B"/><rect y="414" width="512" height="34" fill="#A8322A"/></g>',
                mark([('#3A2A1E', 16, ''), ('#F3E6C8', 6, '')])),
   # Future: dark glass, cyan HUD rings, light trail
-  'future': svg('<defs><radialGradient id="b" cx="50%" cy="45%" r="70%"><stop offset="0" stop-color="#10233A"/><stop offset="1" stop-color="#05080F"/></radialGradient><filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3"/></filter></defs>',
-                bg('url(#b)'), '<circle cx="256" cy="262" r="190" fill="none" stroke="#2BD9FF" stroke-opacity=".18" stroke-width="2" stroke-dasharray="4 10"/><path d="M110 150A190 190 0 0 1 256 72" fill="none" stroke="#2BD9FF" stroke-width="5" stroke-linecap="round" opacity=".7"/><path d="M402 374A190 190 0 0 1 300 446" fill="none" stroke="#FF3D7F" stroke-width="5" stroke-linecap="round" opacity=".7"/>',
-                mark([('#2BD9FF', 13, 'filter="url(#glow)"'), ('url(#g)', 8, '')], grad('g', [(0, '#7FF3FF'), (1, '#FF5FA2')]))),
-  # Rustic: stitched leather seat
+  # Future (toolkit): deep indigo plate, pale w, a faint HUD ring
+  'future': tonal('#1B1F4A', '#B9C2FF', '<circle cx="256" cy="262" r="196" fill="none" stroke="#B9C2FF" stroke-opacity=".16" stroke-width="3" stroke-dasharray="3 9"/><path d="M96 170A196 196 0 0 1 200 74" fill="none" stroke="#B9C2FF" stroke-opacity=".4" stroke-width="5" stroke-linecap="round"/>'),
   'leather': svg('<defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8A4B26"/><stop offset="1" stop-color="#5A2C14"/></linearGradient><filter id="lt"><feTurbulence type="fractalNoise" baseFrequency=".55" numOctaves="3" seed="7"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .35 0"/><feComposite in2="SourceGraphic" operator="in"/></filter></defs>',
                  bg('url(#b)'), '<rect width="512" height="512" rx="114" fill="#000" filter="url(#lt)"/>',
                  '<rect x="40" y="40" width="432" height="432" rx="88" fill="none" stroke="#E7C79A" stroke-width="4" stroke-dasharray="14 10" opacity=".85"/>',
                  mark([('#2E1609', 14, 'transform="translate(0 1.2)" opacity=".7"'), ('#E7C79A', 10, '')])),
   # Material: flat colour, stacked paper shadows
-  'material': svg(bg('#1E88E5'), '<defs><clipPath id="c"><rect width="512" height="512" rx="114"/></clipPath><linearGradient id="sl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient></defs>',
-                  '<g clip-path="url(#c)"><path d="M300 100 L620 420 L620 620 L200 620 L120 540Z" fill="url(#sl)"/></g>',
-                  mark([('#0D47A1', 12, 'transform="translate(2 3)" opacity=".55"'), ('#FFFFFF', 12, '')])),
-  # Rough: asphalt grain with a worn yellow road paint w
-  'asphalt': svg('<defs><filter id="gr"><feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="2"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .5 -.12"/><feComposite in2="SourceGraphic" operator="in"/></filter>'
-                 '<filter id="worn"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="9" result="n"/><feColorMatrix in="n" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.1 1.55" result="m"/><feComposite in="SourceGraphic" in2="m" operator="in"/></filter></defs>',
-                 bg('#2B2C2F'), '<rect width="512" height="512" rx="114" fill="#fff" filter="url(#gr)"/>',
-                 mark([('#F2C230', 12, 'filter="url(#worn)"')])),
-  # Oiled: black with an oil-slick sheen on the w
+  # Material (toolkit): deep teal plate, pale w, a soft long shadow
+  'material': svg(bg('#0F3B3A'), '<defs><clipPath id="c"><rect width="512" height="512" rx="114"/></clipPath><linearGradient id="sl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".25"/><stop offset="1" stop-color="#000" stop-opacity="0"/></linearGradient></defs><g clip-path="url(#c)"><path d="M300 100 L620 420 L620 620 L200 620 L120 540Z" fill="url(#sl)"/></g>', mark([('#A8E3D9', 11, '')])),
+  # Asphalt (toolkit): charcoal plate, pale w, a dashed lane line under it
+  'asphalt': tonal('#26282C', '#E4E1D6', '<path d="M256 452 L256 404" stroke="#E8C35A" stroke-opacity=".7" stroke-width="9" stroke-linecap="round"/><path d="M256 392 L256 366" stroke="#E8C35A" stroke-opacity=".45" stroke-width="7" stroke-linecap="round"/>'),
   'oil': svg('<defs><radialGradient id="b" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#22252B"/><stop offset="1" stop-color="#07080A"/></radialGradient><radialGradient id="pool" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#3A2A6A" stop-opacity=".55"/><stop offset=".6" stop-color="#14424A" stop-opacity=".3"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>',
              bg('url(#b)'), '<ellipse cx="256" cy="300" rx="210" ry="150" fill="url(#pool)"/>',
              mark([('#000', 15, 'filter="url(#sh)"'), ('url(#g)', 11, ''), ('#fff', 2.4, 'opacity=".55" transform="translate(-.8 -1.2)"')], SH + grad('g', [(0, '#7B4BFF'), (.3, '#2BD3C4'), (.55, '#E7D44A'), (.8, '#FF4F9A'), (1, '#5B3BFF')]))),
   # Gauge: brass bezel, dial face, needle red w
-  'gauge': svg('<defs><radialGradient id="face" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#FBF7EC"/><stop offset="1" stop-color="#E4DCC6"/></radialGradient><linearGradient id="brass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F3D27A"/><stop offset=".5" stop-color="#A97A2C"/><stop offset="1" stop-color="#E9C46A"/></linearGradient></defs>',
-               bg('#1B1C1F'), '<circle cx="256" cy="256" r="210" fill="url(#brass)"/><circle cx="256" cy="256" r="192" fill="url(#face)"/>',
-               ''.join(f'<line x1="256" y1="76" x2="256" y2="{96 if k % 3 else 106}" stroke="#3A3326" stroke-width="{3 if k % 3 else 5}" transform="rotate({-135 + k * 22.5} 256 256)"/>' for k in range(13)),
-               '<g transform="translate(256 262) scale(.74) translate(-256 -262)">' + mark([('#C8261C', 12, 'filter="url(#sh)"')], SH) + '</g>', '<circle cx="256" cy="256" r="9" fill="#3A3326"/>'),
+  # Gauge (toolkit): amber-brown plate, pale w, a ring of dial ticks
+  'gauge': tonal('#4A2E0E', '#F2D29B', ''.join(f'<line x1="256" y1="58" x2="256" y2="{74 if k % 3 else 84}" stroke="#F2D29B" stroke-opacity="{.35 if k % 3 else .6}" stroke-width="{3 if k % 3 else 5}" stroke-linecap="round" transform="rotate({-120 + k * 20} 256 262)"/>' for k in range(13))),
 }
 if __name__ == '__main__':
     import glob, os

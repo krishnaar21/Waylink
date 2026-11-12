@@ -315,7 +315,7 @@ function updateRideGauges() {
   const df = $('#rm-dfill'), dr = $('#rm-drim'), dn = $('#rm-dneedle');
   if (df) df.setAttribute('stroke-dasharray', `${(f * 100).toFixed(2)} 100`);
   if (dr) dr.setAttribute('stroke-dasharray', `${(f * 100).toFixed(2)} 100`);
-  if (dn) dn.style.transform = `rotate(${(f * 270).toFixed(1)}deg)`;
+  if (dn) dn.style.transform = `rotate(${(f * 240).toFixed(1)}deg)`;
 }
 function tickLive() {
   updateRideGauges();
@@ -411,7 +411,8 @@ function refreshSheet() {
   const html = V.sheetHTML(ctx(), sheetKey);
   const body = $('#sheets .sheet-body');
   if (html == null) return closeSheet();
-  if (body) { const st = body.scrollTop; body.innerHTML = html; body.scrollTop = st; liftTitle($('#sheets .sheet')); }
+  // Patch in place so images and animations aren't rebuilt (no height jump, no replay).
+  if (body) { const st = body.scrollTop, tmp = document.createElement('div'); tmp.innerHTML = html; morphChildren(body, tmp); body.scrollTop = st; liftTitle($('#sheets .sheet')); }
   fitArch();
 }
 function closeSheet() {
@@ -944,6 +945,7 @@ const A = {
   'park-clear': () => { s.parking = null; closeSheet(); commit(); },
   'doc-del': async (slot) => { await S.gloveDelete(slot); await loadGlove(); openSheet('glovebox'); render(); },
   'quick-chain': () => { const it = s.service.find((x) => x.kind === 'chain'); closeSheet(); if (it) { S.markServiceDone(s, it); commit(); toast(`Chain lubed at ${V.num(s.odo)} km.`); } },
+  'replay-logo': (_, el) => { const b = el || $('.brand-final'); if (!b) return; b.classList.remove('anim'); void b.offsetWidth; b.classList.add('anim'); },
   'app-icon': (k) => { s.settings.iconStyle = k; SND.click(true); commit(); refreshSheet(); },
   'onb-test': () => { live.onbTest = true; live.onbStep = 0; render('fade-in'); },
   'onb-step': (k) => { live.onbStep = +k; SND.click(true); render('fade-in'); },
