@@ -399,8 +399,9 @@ export function serviceRow(it, st) {
   const v = rowValue(st);
   const tone = st.status === 'overdue' ? 'r' : st.status === 'soon' ? 'a' : 's';
   return `<button class="row has-ic" data-act="sheet" data-arg="svc:${it.id}" data-flip="${it.id}">
-    <div class="row-top"><div class="row-main"><span class="row-ic ${tone}">${icon(it.icon || 'wrench')}</span><div style="min-width:0"><div class="row-title">${esc(it.name)}</div><div class="row-sub">${everyText(it)}</div>${st.status === 'overdue' ? '<div class="row-pill"><span class="opill">Overdue</span></div>' : ''}</div></div>
-    <div class="row-val"><span class="big">${v.v}</span><span class="unit">${v.u.replace(' overdue', '')}</span></div></div>
+    <div class="svc-grid"><span class="row-ic ${tone}">${icon(it.icon || 'wrench')}</span><div class="row-title">${esc(it.name)}</div>
+    <div class="row-val"><span class="big">${v.v}</span><span class="unit">${v.u.replace(' overdue', '')}</span></div>
+    <div class="row-sub">${st.status === 'overdue' ? '<span class="opill">Overdue</span>' : ''}${everyText(it)}</div></div>
     ${st.status === 'soon' || st.status === 'overdue' ? serviceSegs(st) : ''}</button>`;
 }
 
@@ -647,6 +648,10 @@ export const hexHtml = (b) => toHex(b).split(' ').map((h, i) => (i === 1 && b.le
 
 // ---------- ALERTS ----------
 // iOS Safari can't open the Phone app without a number, so the button only shows where it works.
+function alertsTabs(c, needs) {
+  const { s, live } = c, tab = live.alertsTab === 'recent' ? 'recent' : 'needs', n = s.alerts.missed.length + s.alerts.wa.length;
+  return `<div class="ltabs" role="tablist"><button role="tab" class="${tab === 'needs' ? 'on' : ''}" aria-selected="${tab === 'needs'}" data-act="alerts-tab" data-arg="needs">Alerts${needs.length ? `<span class="lt-n">${needs.length}</span>` : ''}</button><button role="tab" class="${tab === 'recent' ? 'on' : ''}" aria-selected="${tab === 'recent'}" data-act="alerts-tab" data-arg="recent">Notifications${n ? `<span class="lt-n">${n}</span>` : ''}</button><span class="grow"></span><span class="eyebrow lt-aside">${short(s.alerts.sent)} sent</span></div>`;
+}
 const IS_IOS = typeof navigator !== 'undefined' && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 export function alerts(c) {
   const { s, link, live } = c;
@@ -655,7 +660,7 @@ export function alerts(c) {
   const card = (ic, lab, n, sub, act, open) => /* calls & chats */ `<div class="card pad"><div class="eyebrow flex gap8">${icon(ic).replace('<svg', '<svg style="width:14px;height:14px"')}${lab}</div><div class="big mt12" style="font-size:56px">${short(n)}</div><div class="small muted mt8 clamp1">${sub}</div><div class="push"></div><div class="ac-btns mt16">${open}<button class="btn line sm" data-act="sheet" data-arg="clear:${act}" ${n ? '' : 'disabled'}>Clear</button></div></div>`;
   const needs = inbox(c).filter((x) => x.ic !== 'missed' && x.ic !== 'chat');
   return `<div class="stagger">
-  <div class="head pagehead"><div><h1 class="title">Alerts</h1><div class="subtitle">${needs.length ? `${plural(needs.length, 'thing needs', 'things need')} you` : 'Nothing needs you right now'}</div></div></div>
+  <div class="head pagehead"><div><h1 class="title">Alerts</h1><div class="subtitle">${needs.length ? `${plural(needs.length, 'thing needs', 'things need')} you` : 'Nothing needs you right now'}</div></div>${alertsTabs(c, needs)}</div>
   ${(() => { const tab = live.alertsTab === 'recent' ? 'recent' : 'needs';
     const needsHTML = needs.length ? `<div class="list">${needs.map((x) => li({ lead: `<span class="ic">${icon(x.ic)}</span>`, t: x.t, d: x.d, act: x.act, arg: x.arg })).join('')}</div>` : '<div class="card empty">Nothing needs you right now. Service, papers and fuel reminders show up here.</div>';
     // Recent: a notification feed, grouped by day. What reached the bike, when.
@@ -665,9 +670,9 @@ export function alerts(c) {
     const recentHTML = s.alerts.log.length ? s.alerts.log.slice(0, 30).map((x) => { const [ic, what, sub] = NT[x.kind] || NT.call, dd = day(x.ts), head = dd !== lastDay ? `<div class="nf-day">${dd}</div>` : ''; lastDay = dd;
       return `${head}<div class="nf"><span class="nf-ic">${icon(ic)}</span><div class="nf-tx"><div class="nf-t"><b>${esc(x.kind === 'button' ? 'Handlebar' : shortName(x.name))}</b><span class="nf-time">${new Date(x.ts).toLocaleTimeString(DL(), { hour: "numeric", minute: "2-digit" })}</span></div><div class="nf-d">${what} · ${sub}</div></div></div>`; }).join('') : '<div class="card empty">No notifications yet.</div>';
     const callsHTML = `<div class="two">${card('missed', 'Missed calls', m.length, m.length ? 'On your bike' : 'None waiting', 'clear-missed', IS_IOS ? '' : `<a class="btn line sm" href="tel:" aria-label="Open the Phone app">${icon('phone')}Phone</a>`)}${card('chat', 'WhatsApp', w.length, w.length ? 'On your bike' : 'None waiting', 'clear-wa', `<a class="btn line sm" href="whatsapp://" aria-label="Open WhatsApp">${icon('chat')}Chats</a>`)}</div>`;
-    const tabs = `<div class="ltabs" role="tablist"><button role="tab" class="${tab === 'needs' ? 'on' : ''}" aria-selected="${tab === 'needs'}" data-act="alerts-tab" data-arg="needs">Alerts${needs.length ? `<span class="lt-n">${needs.length}</span>` : ''}</button><button role="tab" class="${tab === 'recent' ? 'on' : ''}" aria-selected="${tab === 'recent'}" data-act="alerts-tab" data-arg="recent">Notifications${m.length + w.length ? `<span class="lt-n">${m.length + w.length}</span>` : ''}</button><span class="grow"></span><span class="eyebrow lt-aside">${short(s.alerts.sent)} sent</span></div>`;
     const body = tab === 'needs' ? needsHTML : `${callsHTML}<div class="nf-list mt20">${recentHTML}</div>`;
-    return `<div class="section" style="margin-top:20px">${tabs}<div class="lt-body" data-swipe-tabs="alerts-tab" data-tabs="needs,recent" data-cur="${tab}">${body}</div></div>`; })()}
+    return `<div class="section" style="margin-top:14px"><div class="lt-body" data-swipe-tabs="alerts-tab" data-tabs="needs,recent" data-cur="${tab}">${body}</div></div>`; })()}
+  ${live.alertsTab !== 'recent' ? '' : `
   <div class="section"><div class="dashed">${icon('lock')}<span>Only <b>names and counts</b> reach your bike. Message text never leaves this phone.</span></div></div>
   <div class="section">${sh('Show on the bike', '', 'showbike')}<div class="list">
     ${li({ ic: 'phone', t: 'Phone calls', d: 'Caller name and missed calls', end: sw(a.calls, 'toggle', 'alerts.calls'), chev: false, tag: 'div' })}
@@ -689,6 +694,7 @@ export function alerts(c) {
       </div>
       <p class="hint" style="margin-top:12px">Browsers can’t see your calls or chats. Send them here by hand to test.</p>
     </div></div>
+  `}
   </div>`;
 }
 

@@ -1584,3 +1584,29 @@ svg.i.ifill circle, svg.i.ifill rect, svg.i.ifill ellipse, svg.i.ifill path[d$="
 .pc-v { color: var(--ink); text-align: right; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row .row-sub { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: clip; }
 .profile-card .pc-name { font-size: 21px; }
+/* Live pill: on the right of the page title, vertically centred with it */
+.app.has-pill .view { --vtop: calc(var(--top) - 16px); }
+.pagehead.head { align-items: center; }
+.ph-pill { margin-left: auto; display: flex; align-items: center; flex: none; }
+.ph-pill:empty { display: none; }
+.ph-pill .live-pill { position: static; transform: none; animation: phPill .35s var(--spring) both; height: 32px; padding: 0 12px 0 9px; font-size: 13.5px; box-shadow: 0 6px 16px -8px rgba(0,0,0,.45); }
+.topbar .ph-pill { margin-left: auto; margin-right: 10px; }
+.head > .ph-pill + * { margin-left: 10px; }
+@keyframes phPill { from { opacity: 0; transform: scale(.8); } }
+/* Logbook rows: the interval runs under both the name and the number, using the full width */
+.row .svc-grid { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; column-gap: 12px; row-gap: 3px; align-items: center; text-align: left; }
+.svc-grid .row-ic { grid-row: 1 / 3; margin: 0; align-self: center; }
+.svc-grid .row-title { grid-column: 2; grid-row: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.svc-grid .row-val { grid-column: 3; grid-row: 1; white-space: nowrap; }
+.svc-grid .row-sub { grid-column: 2 / 4; grid-row: 2; white-space: normal !important; display: block !important; -webkit-line-clamp: unset !important; overflow: visible !important; }
+.svc-grid .row-sub .opill { margin-right: 6px; vertical-align: 1px; }
+/* Profile card details: label above value, value wraps instead of being cut */
+.pc-row { grid-template-columns: 18px 1fr; align-items: start; row-gap: 1px; }
+.pc-row svg { margin-top: 2px; grid-row: 1 / 3; }
+.pc-k { font-size: 12.5px; }
+.pc-v { grid-column: 2; text-align: left; white-space: normal; overflow: visible; font-size: 14.5px; line-height: 1.35; }
+/* Alerts: tabs live in the sticky header */
+.pagehead.head { flex-wrap: wrap; }
+.pagehead > .ltabs { flex: 0 0 100%; margin-top: 14px; }
+.pagehead.stuck > .ltabs { margin-top: 8px; }
+.pagehead.head > div:first-child { flex: 1 1 0; min-width: 0; }

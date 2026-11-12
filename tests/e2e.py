@@ -217,6 +217,7 @@ async def main():
 
         # Calls
         await pg.evaluate("location.hash='alerts'"); await pg.wait_for_timeout(500)
+        await pg.click('[data-act="alerts-tab"][data-arg="recent"]'); await pg.wait_for_timeout(400)
         await pg.click('[data-act="relay"][data-arg="ring"]'); await pg.wait_for_timeout(400)
         check('incoming call overlay shows Rohan', 'Rohan' in await text(pg, '.call'))
         await pg.click('[data-act="call-decline"]'); await pg.wait_for_timeout(300)

@@ -257,7 +257,17 @@ function renderPill() {
   const n = live.nav, r = live.rec;
   const show = (n || r) && !live.ride.open && s.onboarded && !(n ? screen === 'route' : screen === 'trips' || screen === 'today');
   $('#app').classList.toggle('has-pill', !!show);
-  if (!show) { $('#pill').innerHTML = ''; return; }
+  // The pill lives in the page header, on the right of the title block.
+  const head = $('.view .pagehead');
+  let slot = head && $('.ph-pill', head);
+  if (head && !slot) {
+    slot = Object.assign(document.createElement('div'), { className: 'ph-pill' });
+    const bar = $('.topbar', head);
+    if (bar) bar.insertBefore(slot, bar.lastElementChild); else head.insertBefore(slot, head.children[1] || null);
+  }
+  const host = slot || $('#pill');
+  if (!show) { $('#pill').innerHTML = ''; if (slot) slot.innerHTML = ''; return; }
+  if (slot) $('#pill').innerHTML = '';
   let html;
   if (n) {
     const d = V.dist(n.stepMeters);
@@ -265,8 +275,8 @@ function renderPill() {
   } else {
     html = `<button class="live-pill rec" data-act="tab" data-arg="trips"><span class="dot x pulse"></span><span data-live="pill-rec">${V.num(r.km, 1)} km · ${V.clock((Date.now() - r.start) / 1000)}</span></button>`;
   }
-  const cur = $('#pill .live-pill');
-  if (!cur) $('#pill').innerHTML = html;
+  const cur = $('.live-pill', host);
+  if (!cur) host.innerHTML = html;
   else cur.outerHTML = html.replace('class="live-pill', 'style="animation:none" class="live-pill');
 }
 function renderOverlay() {
@@ -1147,10 +1157,11 @@ function registerUpdates() {
 // Swipe sideways on a tabbed list (Alerts: Needs you / Recent) to switch tabs.
 {
   let sx = 0, sy = 0, el = null;
-  document.addEventListener('touchstart', (e) => { el = e.target.closest('[data-swipe-tabs]'); if (!el) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchstart', (e) => { const v = e.target.closest('.view'); el = v && !e.target.closest('input, textarea, .switch, .seg') ? v.querySelector('[data-swipe-tabs]') : null; if (!el) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchcancel', () => { el = null; }, { passive: true });
   document.addEventListener('touchend', (e) => {
     if (!el) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; const box = el; el = null;
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.3) return;
     const tabs = box.dataset.tabs.split(','), i = tabs.indexOf(box.dataset.cur), n = tabs[i + (dx < 0 ? 1 : -1)];
     if (n) { A[box.dataset.swipeTabs](n); requestAnimationFrame(() => $('[data-swipe-tabs]')?.classList.add(dx < 0 ? 'in-l' : 'in-r')); }
   }, { passive: true });
