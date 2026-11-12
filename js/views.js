@@ -695,10 +695,8 @@ export function settings(c) {
     <div class="accents mt12">${ACCENTS.map(([k, col, l]) => `<button class="accentopt ${st.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${st.accent === k}" aria-label="${l}" title="${l}"><span class="dot" style="background-color:${col};--c:${col}"></span></button>`).join('')}</div>
   </div>
   <div class="list mt12">
-    ${li({ ic: 'palette', t: 'Title font', end: `<span class="pick-val" style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
-    ${li({ ic: 'doc', t: 'Body font', end: `<span class="pick-val">${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-body' })}
+    ${li({ ic: 'palette', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
     ${li({ ic: 'sparkles', t: 'App icon', end: `<img class="pick-logo" src="img/logos/${st.logo || 'wl-turn'}.svg" alt=""><span class="pick-val">${(LOGOS.find(([k]) => k === st.logo) || LOGOS[0])[1]}</span>`, act: 'sheet', arg: 'pick-logo' })}
-    ${li({ ic: 'bike', t: 'Vehicle pictures', end: `<span class="pick-val">${st.art === 'icon' ? 'Icons' : 'Photos'}</span>`, act: 'sheet', arg: 'pick-art' })}
   </div></div>
   <div class="section">${sh('Data & region', '', 'backup')}<div class="list">
     ${li({ ic: 'map', t: 'Country', d: 'Currency, fuel and SOS numbers', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
@@ -712,6 +710,7 @@ export function settings(c) {
     ${li({ ic: 'info', t: 'Questions and answers', d: 'Pairing, fuel, weather, privacy', act: 'sheet', arg: 'faq' })}
     ${li({ ic: 'flag', t: 'Report a problem', d: 'Copy your app details and tell us', act: 'sheet', arg: 'report' })}
     ${li({ ic: 'heart', t: 'About Waylink', d: `Version ${APP_VERSION}, credits and licences`, act: 'sheet', arg: 'about' })}
+    ${li({ ic: 'refresh', t: 'Refresh the app', d: 'Gets the latest version. Your data stays.', act: 'hard-refresh' })}
   </div></div>
   <div class="section">${sh('Developer', '', 'developer')}<div class="list">
     ${li({ ic: 'sparkles', t: 'Show the loading screen', d: 'Plays it once. Tap to close.', act: 'show-loader' })}
@@ -980,16 +979,16 @@ function sheetInner(c, key) {
         </div>
         <p class="hint">Switch on the bike’s ignition and keep it within a few metres while pairing. After the first time, Bluefy reconnects by itself.</p>`;
     }
-    case 'pick-font': {
-      const st = s.settings, opt = ([k, nm, fam, w]) => `<button class="fontopt ${st.font === k ? 'on' : ''}" data-act="font" data-arg="${k}"><div class="sample" style="font-family:${fam}, Georgia, system-ui, sans-serif;font-weight:${w}">Today</div><div class="nm">${nm}</div></button>`;
-      return `<div class="eyebrow">Appearance</div><h2>Title font</h2><p class="lead">Used for page titles, big numbers and card headings.</p>
-        <div class="eyebrow mt20">Sans serif</div><div class="fonts two mt12">${FONTS.filter((f) => f[4] === 'sans').map(opt).join('')}</div>
-        <div class="eyebrow mt24">Serif</div><div class="fonts two mt12">${FONTS.filter((f) => f[4] === 'serif').map(opt).join('')}</div>`;
-    }
+    case 'pick-font':
     case 'pick-body': {
-      const cur = s.settings.bodyFont || 'system';
-      return `<div class="eyebrow">Appearance</div><h2>Body font</h2><p class="lead">Used for everything you read: lists, notes and buttons.</p>
-        <div class="bodylist mt16">${BODY_FONTS.map(([k, nm, fam, w]) => `<button class="bodyrow ${cur === k ? 'on' : ''}" data-act="body-font" data-arg="${k}" style="font-family:${fam}, system-ui, sans-serif;font-weight:${w || 400}"><span class="aa">Aa</span><span class="grow"><span class="nm">${nm}</span><span class="sample">Chain clean due in 120 km. Petrol ₹110.82 a litre.</span></span></button>`).join('')}</div>`;
+      const st = s.settings, cur = st.bodyFont || 'system';
+      const opt = ([k, nm, fam, w]) => `<button class="fontopt ${st.font === k ? 'on' : ''}" data-act="font" data-arg="${k}"><div class="sample" style="font-family:${fam}, Georgia, system-ui, sans-serif;font-weight:${w}">Today</div><div class="nm">${nm}</div></button>`;
+      return `<div class="eyebrow">Appearance</div><h2>Fonts</h2><p class="lead">One for titles and big numbers, one for everything you read.</p>
+        <div class="ms-t mt24">Titles</div>
+        <div class="eyebrow mt12">Sans serif</div><div class="fonts two mt8">${FONTS.filter((f) => f[4] === 'sans').map(opt).join('')}</div>
+        <div class="eyebrow mt16">Serif</div><div class="fonts two mt8">${FONTS.filter((f) => f[4] === 'serif').map(opt).join('')}</div>
+        <div class="ms-t mt32">Body text</div>
+        <div class="bodylist mt12">${BODY_FONTS.map(([k, nm, fam, w]) => `<button class="bodyrow ${cur === k ? 'on' : ''}" data-act="body-font" data-arg="${k}" style="font-family:${fam}, system-ui, sans-serif;font-weight:${w || 400}"><span class="aa">Aa</span><span class="grow"><span class="nm">${nm}</span><span class="sample">Chain clean due in 120 km. Petrol ₹110.82 a litre.</span></span></button>`).join('')}</div>`;
     }
     case 'pick-logo':
       return `<div class="eyebrow">Appearance</div><h2>App icon</h2><p class="lead">Shown on your Home Screen. Re-add Waylink there after changing it.</p>

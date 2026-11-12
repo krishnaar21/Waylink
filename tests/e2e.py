@@ -121,11 +121,8 @@ async def main():
 
         # Picture modes
         await pg.evaluate("location.hash='settings'"); await pg.wait_for_timeout(500)
-        await pg.click('[data-arg="pick-art"]'); await pg.wait_for_timeout(500)
-        await pg.click('[data-act="art-mode"][data-arg="icon"]'); await pg.wait_for_timeout(400)
-        check('icon mode renders vehicle icons', await pg.query_selector('.view .art.icon-mode'))
-        await pg.click('[data-act="art-mode"][data-arg="photo"]'); await pg.wait_for_timeout(400)
-        await pg.evaluate("document.querySelector('.backdrop')?.click()"); await pg.wait_for_timeout(500)
+        check('no vehicle pictures row any more', not await pg.query_selector('[data-arg="pick-art"]'))
+        check('no add-vehicle FAB on settings', not await pg.query_selector('#fab .fab'))
         check('garage card has its own edit button', await pg.query_selector('.vcard .edit'))
         check('route icon is the default', True)
         check('no Carbon theme any more', not await pg.query_selector('[data-act="theme"][data-arg="carbon"]'))
@@ -157,8 +154,6 @@ async def main():
         check('title font switches', await pg.evaluate("document.documentElement.dataset.font") == "onest")
         check('six title fonts offered', len(await pg.query_selector_all('.sheet .fontopt')) == 6)
         await pg.click('[data-act="font"][data-arg="garamond"]'); await pg.wait_for_timeout(300)
-        await pg.evaluate("document.querySelector('.backdrop')?.click()"); await pg.wait_for_timeout(500)
-        await pg.click('[data-arg="pick-body"]'); await pg.wait_for_timeout(500)
         await pg.click('[data-act="body-font"][data-arg="inter"]'); await pg.wait_for_timeout(300)
         check('body font switches', await pg.evaluate("document.documentElement.dataset.body") == 'inter')
         await pg.evaluate("document.querySelector('.backdrop')?.click()"); await pg.wait_for_timeout(500)

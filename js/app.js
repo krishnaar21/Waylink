@@ -227,7 +227,6 @@ function render(anim = '') {
   const setHTML = (el, h) => { if (el && el._h !== h) { el.innerHTML = h; el._h = h; } };
   setHTML($('#tabbar'), V.tabbar(ctx(), screen));
   setHTML($('#fab'), screen === 'today' ? `<button class="fab" data-act="sheet" data-arg="quick" aria-label="Quick actions">${V.icon('plus')}</button>`
-    : screen === 'settings' ? `<button class="fab fab-bike" data-act="sheet" data-arg="vehicle:new" aria-label="Add a vehicle">${V.ADD_BIKE}</button>`
     : '');
   renderPill();
   renderOverlay();
@@ -701,6 +700,14 @@ const A = {
   font: (k) => { s.settings.font = k; buzz(6); commit(); refreshSheet(); },
   'support-amt': (a) => { live.supportAmt = +a; buzz(6); refreshSheet(); },
   'copy-upi': async () => { try { await navigator.clipboard.writeText(V.SUPPORT.upi); toast('UPI ID copied.'); } catch { toast(`UPI ID: ${V.SUPPORT.upi}`); } },
+  'hard-refresh': async () => {
+    // Fresh copy of the app's own files; saved rides, fuel and settings are untouched.
+    toast('Refreshing…');
+    try { const ks = await caches.keys(); await Promise.all(ks.map((k) => caches.delete(k))); } catch {}
+    try { const rs = await navigator.serviceWorker?.getRegistrations?.(); await Promise.all((rs || []).map((r) => r.unregister())); } catch {}
+    try { sessionStorage.setItem('waylink-updated', '1'); } catch {}
+    location.replace(location.pathname + '?r=' + Date.now() + location.hash);
+  },
   'copy-app-link': async () => { const u = location.origin + location.pathname; try { await navigator.clipboard.writeText(u); toast('Link copied. Thanks for sharing!'); } catch { toast(u); } },
   'body-font': (k) => { s.settings.bodyFont = k; buzz(6); commit(); refreshSheet(); },
   logo: (k) => { s.settings.logo = k; buzz(6); commit(); refreshSheet(); toast('Icon updated. Re-add to Home Screen to change an installed icon.'); },
