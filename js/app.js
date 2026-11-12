@@ -149,7 +149,12 @@ const PTR_MARK = () => '<svg viewBox="0 0 100 100" aria-hidden="true"><g class="
     ind.style.opacity = px ? Math.min(1, p * 1.4) : 0;
     if (!busy) { ind.style.setProperty('--draw', String(100 - p * 100)); ind.style.setProperty('--roll', `${px * 3}deg`); }
   };
+  // If the page re-renders mid-pull, the finger's touchend goes to a detached node and never reaches us.
+  // A watchdog lets the pull go if the finger has been still for a moment, and a new touch always starts clean.
+  let dog = 0;
+  const watch = () => { clearTimeout(dog); dog = setTimeout(() => { if (pulling) end(); }, 700); };
   host.addEventListener('touchstart', (e) => {
+    if (pulling && !busy) { pulling = false; set(0, true); }
     view = host.firstElementChild;
     if (busy || !view || view.scrollTop > 0 || sheetKey || e.touches.length > 1 || !s.onboarded) { y0 = null; return; }
     y0 = e.touches[0].clientY; x0 = e.touches[0].clientX; pulling = false; armed = false;
@@ -162,9 +167,10 @@ const PTR_MARK = () => '<svg viewBox="0 0 100 100" aria-hidden="true"><g class="
     d = Math.max(0, 120 * (1 - Math.exp(-Math.max(0, dy) / 190)));
     if (d >= TRIGGER && !armed) { armed = true; buzz(6); }
     else if (d < TRIGGER) armed = false;
-    set(d, false);
+    set(d, false); watch();
   }, { passive: false });
   const end = async () => {
+    clearTimeout(dog);
     if (!pulling) { y0 = null; return; }
     pulling = false; y0 = null;
     if (d < TRIGGER) { set(0, true); return; }
@@ -180,6 +186,7 @@ const PTR_MARK = () => '<svg viewBox="0 0 100 100" aria-hidden="true"><g class="
     setTimeout(() => { ind.classList.remove('done'); busy = false; render(); }, 380);
   };
   host.addEventListener('touchend', end); host.addEventListener('touchcancel', end);
+  window.addEventListener('touchend', () => { if (pulling) end(); }, true);
 })();
 
 // FAQ: one answer open at a time (the name attribute does this in new browsers; this covers the rest).
@@ -235,7 +242,7 @@ function render(anim = '') {
   setHTML($('#tabbar'), V.tabbar(ctx(), screen));
   setHTML($('#fab'), screen === 'today' ? `<button class="fab" data-act="sheet" data-arg="quick" aria-label="Quick actions">${V.icon('plus')}</button>`
     : '');
-  renderPill();
+  renderPill(); fitArch();
   renderOverlay();
   if (screen === 'fuel') wireChart();
   if (screen === 'today' && s.onboarded) loadWeather();
@@ -325,12 +332,32 @@ function tickLive() {
 // ---------- Sheets ----------
 let splashTpl = '';
 let realState = null;
+// In-app loading screen: the turn signs take turns, with a line of text under them.
+function showLoading(text = 'Loading', ms = 0) {
+  $('#loading')?.remove();
+  const el = Object.assign(document.createElement('div'), { id: 'loading', className: 'loading-screen', innerHTML: V.loader(text) });
+  $('#app').appendChild(el);
+  const hide = () => { if (!el.isConnected) return; el.classList.add('out'); setTimeout(() => el.remove(), 320); };
+  el.addEventListener('click', hide);
+  if (ms) setTimeout(hide, ms);
+  return hide;
+}
+// The Loop wordmark: the arch from the w lands on the y, wherever the font puts it.
+function fitArch(root = document) {
+  for (const w of root.querySelectorAll('.wl-arch')) {
+    const p = w.querySelector('.lw'), y = w.querySelector('.ty1'), rest = w.querySelector('.rest');
+    const em = parseFloat(getComputedStyle(w).fontSize); if (!p || !y || !rest || !em) continue;
+    const yx = rest.offsetLeft + y.offsetLeft + y.offsetWidth * 0.2; if (!yx) continue;
+    const u = 100 / (0.98 * em), X = Math.round(yx * u * 10) / 10;
+    p.setAttribute('d', p.getAttribute('d').replace(/C91\.5 -?[\d.]+ [\d.]+ -?[\d.]+ [\d.]+ [\d.]+$/, `C91.5 -44 ${X} -44 ${X} 24`));
+  }
+}
 function showLoader() {
   if (!splashTpl) return;
   SND.engineStart();
   $('#splash')?.remove();
   $('#app').insertAdjacentHTML('beforeend', splashTpl);
-  const sp = $('#splash');
+  const sp = $('#splash'); fitArch(sp);
   const hide = () => { if (!sp.isConnected) return; sp.classList.add('out'); setTimeout(() => sp.remove(), 600); };
   sp.addEventListener('click', hide);
   setTimeout(hide, 6000);
@@ -365,6 +392,7 @@ function openSheet(key, rawHTML, { push = true } = {}) {
     wireDrag(sheet);
   }
   const af = $('[autofocus]', sheet); if (af) setTimeout(() => af.focus(), 350);
+  fitArch();
 }
 function sheetBack() {
   const prev = sheetStack.pop();
@@ -378,6 +406,7 @@ function refreshSheet() {
   const body = $('#sheets .sheet-body');
   if (html == null) return closeSheet();
   if (body) { const st = body.scrollTop; body.innerHTML = html; body.scrollTop = st; liftTitle($('#sheets .sheet')); }
+  fitArch();
 }
 function closeSheet() {
   sheetKey = null; sheetStack = [];
@@ -733,7 +762,7 @@ const A = {
   'copy-upi': async () => { try { await navigator.clipboard.writeText(V.SUPPORT.upi); toast('UPI ID copied.'); } catch { toast(`UPI ID: ${V.SUPPORT.upi}`); } },
   'hard-refresh': async () => {
     // Fresh copy of the app's own files; saved rides, fuel and settings are untouched.
-    toast('Refreshing…');
+    showLoading('Getting the latest version');
     try { const ks = await caches.keys(); await Promise.all(ks.map((k) => caches.delete(k))); } catch {}
     try { const rs = await navigator.serviceWorker?.getRegistrations?.(); await Promise.all((rs || []).map((r) => r.unregister())); } catch {}
     try { sessionStorage.setItem('waylink-updated', '1'); } catch {}
@@ -857,7 +886,9 @@ const A = {
   },
   'clear-missed': () => { s.alerts.missed = []; link.setMissedCount(0); closeSheet(); commit(); toast('Missed calls cleared.'); },
   'clear-wa': () => { s.alerts.wa = []; closeSheet(); commit(); toast('WhatsApp alerts cleared.'); },
-  'alerts-tab': (k) => { if (live.alertsTab === k) return; live.alertsTab = k === 'recent' ? 'recent' : 'needs'; SND.click(true); render(); },
+  'alerts-tab': (k) => { if (live.alertsTab === k) return; live.alertsTab = k === 'recent' ? 'recent' : 'needs'; if (!A._swiped) SND.click(true); render(); },
+  'pc-toggle': () => { live.pcOpen = !live.pcOpen; SND.click(live.pcOpen); render(); },
+  'show-loading': () => showLoading('Loading your garage', 3200),
   'report-send': async (k) => {
     const subj = ($('#rp-subj')?.value || '').trim() || 'Problem report', body = ($('#rp-body')?.value || '').trim(), log = $('#backup-text')?.value || '';
     const title = `Waylink: ${subj}`, text = `${body || '(Describe what happened)'}\n\n--- App log ---\n${log}`;
@@ -1110,6 +1141,7 @@ function hideSplash() {
   setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 380); }, Math.max(300, (document.documentElement.dataset.brand === 'turns' ? 2250 : 2050) - performance.now()));
 }
 (async function boot() {
+  fitArch(); document.fonts?.ready.then(() => fitArch());
   splashTpl = $('#splash')?.outerHTML || '';
   try {
     applyTheme();
@@ -1119,7 +1151,7 @@ function hideSplash() {
     window.__waylinkReady = true; // the page is up; the safety net in index.html stands down
     // Neither of these may hold the loader: each gets a short time limit and fails quietly.
     await within(loadGlove().catch(() => {}), 2500);
-    await within(fetch('img/bikes/manifest.json', { cache: 'no-cache' }).then((r) => r.json()).then(S.setModelImages).catch(() => {}), 2500);
+    await within(fetch(`img/bikes/manifest.json?v=${V.ART_V}`, { cache: 'no-cache' }).then((r) => r.json()).then(S.setModelImages).catch(() => {}), 2500);
     if (s.onboarded) render();
     if (s.settings.simulated) link.startSimulated();
     else if (s.bike.id) link.restore(s.bike.id);
@@ -1163,7 +1195,7 @@ function registerUpdates() {
     if (!el) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; const box = el; el = null;
     if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.3) return;
     const tabs = box.dataset.tabs.split(','), i = tabs.indexOf(box.dataset.cur), n = tabs[i + (dx < 0 ? 1 : -1)];
-    if (n) { A[box.dataset.swipeTabs](n); requestAnimationFrame(() => $('[data-swipe-tabs]')?.classList.add(dx < 0 ? 'in-l' : 'in-r')); }
+    if (n) { A._swiped = true; SND.swipe(dx < 0 ? 1 : -1); A[box.dataset.swipeTabs](n); A._swiped = false; requestAnimationFrame(() => $('[data-swipe-tabs]')?.classList.add(dx < 0 ? 'in-l' : 'in-r')); }
   }, { passive: true });
 }
 // Swipe on the tab bar to page between tabs, like swiping between pages:
@@ -1178,6 +1210,6 @@ function registerUpdates() {
     const order = $$('#tabbar .tab').map((b) => b.dataset.arg), i = order.indexOf($('#tabbar .tab.on')?.dataset.arg || screen);
     const next = order[(i < 0 ? 0 : i) + (dx < 0 ? 1 : -1)];
     A._skipTap = Date.now();
-    if (next) { A._lastToday = 0; buzz(6); go(next); }
+    if (next) { A._lastToday = 0; buzz(4); SND.swipe(dx < 0 ? 1 : -1); go(next); }
   }, { passive: true });
 }

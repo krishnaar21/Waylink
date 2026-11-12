@@ -64,6 +64,8 @@ export const icon = (n, cls = '') => { const b = HUGE_ICONS[n] || ''; return `<s
 
 // ---------- Vehicle pictures ----------
 const lum = (h) => { const n = [1, 3, 5].map((i) => parseInt(String(h || '#888888').slice(i, i + 2), 16)); return (n[0] * 299 + n[1] * 587 + n[2] * 114) / 255000; };
+// Bump when bike pictures change, so phones fetch the new ones instead of a saved copy.
+export const ART_V = '73';
 export function vehicleArt(s, v, size = 'thumb') {
   const cls = size === 'hero' ? 'art hero-art' : size === 'model' ? 'art model-art' : size === 'card' ? 'art card-art' : size === 'lg' ? 'art thumb lg' : 'art thumb';
   // Bikes without a photo: a soft tile tinted with the bike's colour, so it sits with the theme instead of shouting.
@@ -71,7 +73,7 @@ export function vehicleArt(s, v, size = 'thumb') {
   if (s.settings.art === 'icon') return tile();
   if (v.photo) return `<div class="${cls}"><img class="photo" src="${v.photo}" alt=""></div>`;
   const img = S.MODEL_IMAGES[v.model];
-  if (img) return `<div class="${cls}"><img class="${img.fit === 'cover' ? 'photo' : 'model'}" src="${img.src}" alt="${esc(S.MODELS.find((m) => m.id === v.model)?.name || '')}" decoding="async"></div>`;
+  if (img) return `<div class="${cls}"><img class="${img.fit === 'cover' ? 'photo' : 'model'}" src="${img.src}${img.src.includes('?') ? '&' : '?'}v=${ART_V}" alt="${esc(S.MODELS.find((m) => m.id === v.model)?.name || '')}" decoding="async"></div>`;
   return tile();
 }
 export function avatar(p, xl = false) {
@@ -707,8 +709,9 @@ export function settings(c) {
   return `<div class="stagger">
   <div class="head pagehead"><div><h1 class="title">You & your bikes</h1><div class="subtitle">Profile, garage and how the app looks</div></div></div>
   ${live.scenario ? previewBar(live) : ''}
-  ${(() => { const P = s.profile, rows = [P.blood ? ['drop', 'Blood group', esc(P.blood)] : null, P.iceName ? ['phone', 'Emergency contact', esc(P.iceName)] : null, P.medical ? ['hospital', 'Medical notes', esc(P.medical)] : null].filter(Boolean);
-    return `<div class="card profile-card mt20"><button class="pc-top flex gap12" data-act="go" data-arg="profile">${avatar(P)}<div class="grow" style="min-width:0"><div class="serif pc-name">${esc(shortName(P.name) || 'Add your name')}</div><div class="small faint">${rows.length ? 'Rider profile' : 'Licence, blood group, emergency contact'}</div></div>${icon('chev', 'faint')}</button>${rows.length ? `<div class="pc-info">${rows.map(([ic, k, v]) => `<div class="pc-row">${icon(ic)}<span class="pc-k">${k}</span><span class="pc-v">${v}</span></div>`).join('')}</div>` : ''}</div>`; })()}
+  ${(() => { const P = s.profile, rows = [P.blood ? ['drop', 'Blood', esc(P.blood)] : null, P.iceName ? ['phone', 'Emergency contact', esc(P.iceName)] : null, P.medical ? ['hospital', 'Medical notes', esc(P.medical)] : null].filter(Boolean);
+    const sum = [P.blood ? `Blood ${esc(P.blood)}` : '', P.iceName ? 'ICE' : '', P.medical ? 'Medical' : ''].filter(Boolean).join(' · ');
+    return `<div class="card profile-card mt20"><button class="pc-top flex gap12" data-act="go" data-arg="profile">${avatar(P)}<div class="grow" style="min-width:0"><div class="serif pc-name">${esc(shortName(P.name) || 'Add your name')}</div><div class="small faint">${rows.length ? 'Rider profile' : 'Licence, blood group, emergency contact'}</div></div>${icon('chev', 'faint')}</button>${rows.length ? `<details class="pc-more"${live.pcOpen ? ' open' : ''}><summary data-act="pc-toggle">${icon('shield')}<span class="pcm-t">Emergency info</span><span class="pcm-s">${sum}</span>${icon('chev')}</summary><div class="pc-grid">${rows.map(([ic, k, v]) => `<div class="pc-cell${k === 'Medical notes' ? ' wide' : ''}"><span class="pc-k">${icon(ic)}${k}</span><span class="pc-v">${v}</span></div>`).join('')}</div></details>` : ''}</div>`; })()}
   <div class="section">${sh('Garage', s.vehicles.length > 1 ? '<button class="link" data-act="sheet" data-arg="garage">Switch</button>' : '')}
     <div class="card vcard"><button class="flex gap12" style="width:100%;text-align:left;padding:12px 16px 12px 12px" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">
       ${vehicleArt(s, v, 'card')}
@@ -742,7 +745,7 @@ export function settings(c) {
   </div>
   <div class="vc-rows">
     ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
-    ${li({ ic: 'sparkles', t: 'Logo & icons', end: `<span class="pick-val">${BRANDS.find(([k]) => k === brandOf(s))[1]} · ${st.icons === 'duo' ? 'Duotone' : 'Line'}</span>`, act: 'sheet', arg: 'pick-brand' })}
+    ${li({ ic: 'sparkles', t: 'Icons', end: `<span class="pick-val">${{ duo: 'Glow', fill: 'Duotone' }[st.icons] || 'Line'}</span>`, act: 'sheet', arg: 'pick-brand' })}
     ${li({ ic: 'font', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
     ${li({ ic: 'progress', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
   </div></div></div>
@@ -758,7 +761,8 @@ export function settings(c) {
     ${li({ ic: 'refresh', t: 'Refresh the app', d: 'Gets the latest version. Your data stays.', act: 'hard-refresh' })}
   </div></div>
   <div class="section">${sh('Developer', '', 'developer')}<div class="list">
-    ${li({ ic: 'sparkles', t: 'Show the loading screen', d: 'Plays it once. Tap to close.', act: 'show-loader' })}
+    ${li({ ic: 'sparkles', t: 'Show the splash screen', d: 'The logo animation. Tap to close.', act: 'show-loader' })}
+    ${li({ ic: 'refresh', t: 'Show the loading screen', d: 'Turn signs while something loads', act: 'show-loading' })}
     ${li({ ic: 'bolt', t: 'Simulated bike', d: 'Try it all without a bike', end: sw(link.simulated && link.state !== 'idle', 'sim-toggle'), chev: false, tag: 'div' })}
     ${li({ ic: 'btMsgs', t: 'Show Bluetooth messages', d: 'Raw bytes on the Route tab', end: sw(!!st.devFrames, 'toggle', 'devFrames'), chev: false, tag: 'div' })}
     ${li({ ic: 'bt', t: 'Pair from all devices', d: 'If your bike isn’t listed', act: 'pair-all', cls: link.supported ? '' : 'disabled' })}
@@ -788,9 +792,11 @@ export const APP_NAME = 'Waylink';
 // Wordmark-only logos: a slot that cycles through turn signs, and a w drawn as one looping road with the rest typed in.
 const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnLeft', '#3E8EF7'], ['straight', '#2BB673'], ['turnU', '#7C5CFF'], ['bearRight', '#E5484D'], ['pinSimple', '#0EA5A5']];
 export const TURNS = `<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true">${TURN_SIGNS.map(([k, col, f], i) => `<svg class="tg tg${i} ${f || ''}" viewBox="0 0 24 24" fill="none" style="color:${col}">${HUGE_ICONS[k]}</svg>`).join('')}</span><span aria-hidden="true">link</span></span>`;
-export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8.5 26L8.5 30C10 56 16 80 28 80C40 80 45 58 50 42C54 28 62 14 55 9C48 4 41 16 47 36C52 56 60 80 72 80C84 80 90 56 91.5 30L91.5 26"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
-export const BRANDS = [['loop', 'Loop'], ['turns', 'Turns']];
-export const brandOf = (s) => BRANDS.some(([k]) => k === s.settings.brand) ? s.settings.brand : 'loop';
+// In-app loading screen: the turn signs take turns in a circle, with a line of text below.
+export const loader = (text = 'Loading') => `<div class="wl-loader" role="status" aria-live="polite"><span class="ld-ring">${TURN_SIGNS.map(([k], i) => `<svg class="ld-i ld${i}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${HUGE_ICONS[k]}</svg>`).join('')}</span><div class="ld-t">${esc(text)}<span class="ld-dots"><i>.</i><i>.</i><i>.</i></span></div></div>`;
+export const LOOP = '<span class="wl-loop wl-arch" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8.5 26L8.5 30C10 56 16 80 28 80C40 80 45 58 50 42C54 28 62 14 55 9C48 4 41 16 47 36C52 56 60 80 72 80C84 80 90 56 91.5 30L91.5 26C91.5 -44 158 -44 158 24"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
+export const BRANDS = [['loop', 'Loop']];
+export const brandOf = () => 'loop';
 export const APP_VERSION = '1.0';
 // Add-a-bike glyph: a motorbike whose front wheel is a plus.
 export const ADD_BIKE = '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="17" r="3"/><circle cx="17.5" cy="17" r="3"/><path d="M5 17l3.6-5.2h4.6l1.6 2.2"/><path d="M8.6 11.8l2.2 4.6h3.6"/><path d="M17.5 17l-2.6-7.4h-1.8"/><path d="M7.2 9.4h3.4"/><path d="M19.5 2.5v5.5M16.75 5.25h5.5"/></svg>';
@@ -1060,10 +1066,9 @@ function sheetInner(c, key) {
       const was = ICON_STYLE, cur = ['duo', 'fill'].includes(s.settings.icons) ? s.settings.icons : 'line';
       const card = (k, nm, d) => { ICON_STYLE = k; const h = ['today', 'fuel', 'wrench', 'pin', 'bell', 'bike'].map((n) => icon(n)).join(''); return `<button class="icoopt ${cur === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}"><span class="io-row">${h}</span><span class="nm">${nm}</span><span class="d">${d}</span></button>`; };
       const icoHTML = card('line', 'Line', 'Clean single strokes') + card('duo', 'Glow', 'A soft glow under each line') + card('fill', 'Duotone', 'Shapes filled with a second tone'); ICON_STYLE = was;
-      return `<div class="eyebrow">Appearance</div><h2>Logo & icons</h2>
-        <div class="ms-t mt12">Logo</div><p class="small muted mt8">Loading screen and app icon. Re-add Waylink to your Home Screen to change an installed icon.</p>
-        <div class="brands mt12">${BRANDS.map(([k, nm]) => `<button class="brandopt anim b-${k} ${brandOf(s) === k ? 'on' : ''}" data-act="brand" data-arg="${k}"><span class="bo-art">${{ turns: TURNS, loop: LOOP }[k]}</span><span class="nm">${nm}</span></button>`).join('')}</div>
-        <div class="ms-t mt32">Icons</div>
+      return `<div class="eyebrow">Appearance</div><h2>Icons</h2>
+        <div class="brand-final mt12 anim">${LOOP}</div>
+        <div class="ms-t mt24">Icon style</div>
         <div class="icoopts mt12">${icoHTML}</div>`;
     }
     case 'pick-progress': {

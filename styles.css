@@ -1610,3 +1610,36 @@ svg.i.ifill circle, svg.i.ifill rect, svg.i.ifill ellipse, svg.i.ifill path[d$="
 .pagehead > .ltabs { flex: 0 0 100%; margin-top: 14px; }
 .pagehead.stuck > .ltabs { margin-top: 8px; }
 .pagehead.head > div:first-child { flex: 1 1 0; min-width: 0; }
+/* ---------- Final Loop wordmark: the w's right arm rises into an arch that lands on the y ---------- */
+.wl-arch { position: relative; padding-top: .36em; }
+.wl-arch svg.lw-w { overflow: visible; }
+.wl-arch .lw { stroke: var(--accent); }
+.wl-arch .rest { position: relative; }
+.brand-final { display: grid; place-items: center; padding: 30px 0 22px; border-radius: var(--r-md); background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+.brand-final .wl-loop { display: inline-flex; font-size: 40px; }
+/* ---------- In-app loading screen: turn signs take turns ---------- */
+.loading-screen { position: absolute; inset: 0; z-index: 180; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 92%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); animation: fadeIn .25s ease both; }
+.loading-screen.out { opacity: 0; transition: opacity .3s ease; }
+.wl-loader { display: flex; flex-direction: column; align-items: center; gap: 16px; color: var(--ink-2); }
+.ld-ring { position: relative; width: 64px; height: 64px; border-radius: 50%; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+.ld-i { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; color: var(--ink); opacity: 0; animation: ldSwap 3s cubic-bezier(.4,0,.2,1) infinite; }
+.ld-i.ld1 { animation-delay: .5s; } .ld-i.ld2 { animation-delay: 1s; } .ld-i.ld3 { animation-delay: 1.5s; } .ld-i.ld4 { animation-delay: 2s; } .ld-i.ld5 { animation-delay: 2.5s; }
+@keyframes ldSwap { 0% { opacity: 0; transform: translateY(10px) scale(.85); } 6% { opacity: 1; transform: none; } 15% { opacity: 1; transform: none; } 21%, 100% { opacity: 0; transform: translateY(-10px) scale(.85); } }
+.ld-t { font-size: 15px; font-weight: 500; letter-spacing: -.005em; }
+.ld-dots i { font-style: normal; animation: ldDot 1.2s ease-in-out infinite; opacity: .2; } .ld-dots i:nth-child(2) { animation-delay: .2s; } .ld-dots i:nth-child(3) { animation-delay: .4s; }
+@keyframes ldDot { 40% { opacity: 1; } }
+/* ---------- Profile card: emergency info folds away ---------- */
+.pc-more { border-top: 1px solid var(--line); }
+.pc-more summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; }
+.pc-more summary::-webkit-details-marker { display: none; }
+.pc-more summary > svg { width: 17px; height: 17px; color: var(--ink-3); flex: none; }
+.pc-more summary > svg:last-child { margin-left: auto; transform: rotate(90deg); transition: transform .2s; }
+.pc-more[open] summary > svg:last-child { transform: rotate(-90deg); }
+.pcm-t { font-size: 14.5px; font-weight: 600; color: var(--ink); flex: none; }
+.pcm-s { font-size: 13px; color: var(--ink-3); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 12px 12px; }
+.pc-cell { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--ink) 4%, transparent); min-width: 0; }
+.pc-cell.wide { grid-column: 1 / -1; }
+.pc-cell .pc-k { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-3); }
+.pc-cell .pc-k svg { width: 14px; height: 14px; }
+.pc-cell .pc-v { font-size: 14.5px; color: var(--ink); line-height: 1.35; overflow-wrap: anywhere; }

@@ -11,7 +11,7 @@ function ac() {
     try {
       ctx = new C({ latencyHint: 'interactive' });
       comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.2;
-      master = ctx.createGain(); master.gain.value = 0.34; master.connect(comp); comp.connect(ctx.destination);
+      master = ctx.createGain(); master.gain.value = 0.25; const soft = ctx.createBiquadFilter(); soft.type = 'lowpass'; soft.frequency.value = 6200; soft.Q.value = 0.5; master.connect(soft); soft.connect(comp); comp.connect(ctx.destination);
       // A small, dark room around everything, so sounds don't feel dry.
       const verb = ctx.createConvolver(), wet = ctx.createGain(); wet.gain.value = 0.08;
       const len = Math.floor(ctx.sampleRate * 0.9), ir = ctx.createBuffer(2, len, ctx.sampleRate);
@@ -121,7 +121,7 @@ function engine(c, t0, curve, dur, vol = 0.7) {
 function burst(c, t0, dur, freq, vol, type = 'bandpass', q = 1.2) {
   const n = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
   n.buffer = noise(c); fl.type = type; fl.frequency.value = freq; fl.Q.value = q;
-  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   n.connect(fl); fl.connect(g); g.connect(master); n.start(t0, Math.random()); n.stop(t0 + dur + 0.01);
 }
 function thud(c, t0, f0, f1, dur, vol) {
@@ -167,9 +167,9 @@ function _engineOff() {
 // Switch: a relay. Two contacts close a few milliseconds apart; brighter when switching on.
 function _click(on = true) {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.004;
-  burst(c, t, 0.02, on ? 3600 : 2600, on ? 0.72 : 0.5, 'bandpass', 2.2);
-  burst(c, t + 0.009, 0.024, on ? 1800 : 1300, 0.50, 'bandpass', 1.8);
-  thud(c, t, on ? 220 : 170, 90, 0.04, 0.14);
+  burst(c, t, 0.018, on ? 3000 : 2300, on ? 0.34 : 0.26, 'bandpass', 2);
+  burst(c, t + 0.009, 0.022, on ? 1600 : 1200, 0.22, 'bandpass', 1.6);
+  thud(c, t, on ? 200 : 160, 90, 0.035, 0.08);
 }
 // Horn: the two-tone electric horn of an Indian commuter bike, two short beeps.
 function _horn(beeps = 2) {
@@ -184,6 +184,17 @@ function _horn(beeps = 2) {
     sh.connect(bp); bp.connect(g); g.connect(master);
     t += len + 0.09;
   }
+}
+// Swipe: a short, quiet breath of air that follows the finger's direction.
+function _swipe(dir = 1) {
+  const c = ac(); if (!c) return; const t = c.currentTime + 0.005, d = 0.16;
+  const n = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain(), pan = c.createStereoPanner ? c.createStereoPanner() : null;
+  n.buffer = noise(c); bp.type = 'bandpass'; bp.Q.value = 0.9;
+  bp.frequency.setValueAtTime(dir > 0 ? 700 : 1500, t); bp.frequency.exponentialRampToValueAtTime(dir > 0 ? 1600 : 650, t + d);
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.11, t + 0.05); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  n.connect(bp); bp.connect(g);
+  if (pan) { pan.pan.setValueAtTime(-0.3 * dir, t); pan.pan.linearRampToValueAtTime(0.3 * dir, t + d); g.connect(pan); pan.connect(master); } else g.connect(master);
+  n.start(t, Math.random()); n.stop(t + d + 0.02);
 }
 // A single throttle blip at idle.
 function _blip() {
@@ -230,5 +241,5 @@ function crackles(c, t0, n = 6) {
 // Each sound waits for the audio to resume before it plays.
 // A sound that can't start within 150 ms is dropped, so nothing ever plays late or out of step with the tap.
 const whenAwake = (fn) => (...a) => { const c = ac(); if (!c) return; if (c.state === 'running') return fn(...a); const t0 = performance.now(); c.resume().then(() => { if (performance.now() - t0 < 150) fn(...a); }).catch(() => {}); };
-export const revUp = whenAwake(_revUp), engineOff = whenAwake(_engineOff), click = whenAwake(_click), horn = whenAwake(_horn), blip = whenAwake(_blip), revTo = whenAwake(_revTo);
+export const revUp = whenAwake(_revUp), engineOff = whenAwake(_engineOff), click = whenAwake(_click), horn = whenAwake(_horn), blip = whenAwake(_blip), revTo = whenAwake(_revTo), swipe = whenAwake(_swipe);
 export const tick = revTo;
