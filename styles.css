@@ -2232,3 +2232,20 @@ html[data-theme="obsidian"] .onb-link .onb-img, html[data-theme="amoled"] .onb-l
 @keyframes rideLine { from { transform: translateX(30%); opacity: 0; } 30% { opacity: 1; } to { transform: translateX(-70%); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .ride-anim, .ride-anim img, .ride-anim .sl { animation: none; } }
 .ride-anim { bottom: 16%; left: calc(40% + 11.5%); }
+/* Ride slide: bike centred on its screen */
+.ride-anim { left: calc(40% + 10% - 3.3%) !important; }
+/* Link your bike: the street bike rides in, stops, and its headlight comes on */
+.lk-street { width: 270px; height: 255px; }
+.lk-street .lk-img { animation: lkRide 1.4s cubic-bezier(.2,.75,.25,1) both, lkIdle 2.6s ease-in-out 1.5s infinite; }
+@keyframes lkRide { 0% { opacity: 0; transform: translateX(-190px) rotate(-1.5deg); } 20% { opacity: 1; } 82% { transform: translateX(6px) rotate(.6deg); } 100% { opacity: 1; transform: none; } }
+.lk-street .lk-glow { animation: lkRideShadow 1.4s cubic-bezier(.2,.75,.25,1) both; }
+@keyframes lkRideShadow { from { opacity: 0; transform: translateX(-190px); } to { opacity: 1; transform: none; } }
+.lk-street .lk-lamp { left: 80%; top: 43%; width: 40px; height: 40px; margin: -20px 0 0 -20px; background: radial-gradient(closest-side, #fff, rgba(255,240,200,.75) 40%, rgba(255,220,150,.2) 70%, transparent); mix-blend-mode: normal; animation: lkLamp2 2.8s ease-in-out 1.6s infinite; }
+@keyframes lkLamp2 { 0% { opacity: 0; transform: scale(.5); } 15% { opacity: 1; transform: scale(1.1); } 30%, 70% { opacity: .95; transform: none; } 100% { opacity: .55; } }
+.lk-beam { position: absolute; left: 82%; top: 31%; width: 120px; height: 70px; background: radial-gradient(ellipse at 0% 50%, rgba(255,236,190,.55), rgba(255,236,190,.12) 55%, transparent 75%); clip-path: polygon(0 42%, 100% 0, 100% 100%, 0 58%); opacity: 0; animation: lkBeam 2.8s ease-in-out 1.6s infinite; pointer-events: none; }
+@keyframes lkBeam { 0% { opacity: 0; } 15%, 70% { opacity: 1; } 100% { opacity: .4; } }
+.lk-street .lk-wave { left: 70%; top: 2%; }
+.lk-street .lk-bt { left: 96% !important; top: -8% !important; }
+.lk-street .lk-flare { display: none; }
+@media (prefers-reduced-motion: reduce) { .lk-street .lk-img, .lk-beam, .lk-street .lk-lamp { animation: none; opacity: 1; } }
+.ride-anim { width: 5.8% !important; left: calc(50% - 2.9%) !important; bottom: 11% !important; }

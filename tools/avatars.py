@@ -3,10 +3,11 @@
 K = '#111'
 L = f'stroke="{K}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"'
 F = f'fill="#fff" {L}'
-def head():
-    return (f'<path d="M44 76v8h12v-8" {F}/>'                                          # neck
-            f'<path d="M28 48c0-14 9-24 22-24s22 10 22 24v6c0 13-9 25-22 25s-22-12-22-25z" {F}/>'  # face: soft jaw
-            f'<path d="M28 52c-5-1-7 3-6 6s3 6 7 5M72 52c5-1 7 3 6 6s-3 6-7 5" {F}/>')       # ears
+def head(sk='#fff'):
+    FS = f'fill="{sk}" {L}'
+    return (f'<path d="M44 76v8h12v-8" {FS}/>'                                          # neck
+            f'<path d="M28 48c0-14 9-24 22-24s22 10 22 24v6c0 13-9 25-22 25s-22-12-22-25z" {FS}/>'  # face: soft jaw
+            f'<path d="M28 52c-5-1-7 3-6 6s3 6 7 5M72 52c5-1 7 3 6 6s-3 6-7 5" {FS}/>')       # ears
 def eyes(kind='dot'):
     if kind == 'smile': e = f'<path d="M37 51q3.5-3 7 0M56 51q3.5-3 7 0" fill="none" {L}/>'
     else: e = f'<ellipse cx="40.5" cy="51" rx="2.2" ry="2.6" fill="{K}"/><ellipse cx="59.5" cy="51" rx="2.2" ry="2.6" fill="{K}"/>'
@@ -15,10 +16,11 @@ NOSE = f'<path d="M50 55q-2.5 5-.5 7.5h3" fill="none" {L}/>'
 def mouth(kind='smile'):
     return {'smile': f'<path d="M44 68q6 4.5 12 0" fill="none" {L}/>', 'flat': f'<path d="M46 69h8" {L}/>',
             'grin': f'<path d="M43 67q7 7 14 0z" fill="#fff" {L}/>'}[kind]
-BLUSH = f'<path d="M33 61l2-2.6M36 62l2-2.6M62 61l2-2.6M65 62l2-2.6" stroke="{K}" stroke-width="1.4" stroke-linecap="round"/>'
+BLUSH = f'<path d="M33 61l2-2.6M36 62l2-2.6M62 61l2-2.6M65 62l2-2.6" stroke="#7A3B2A" stroke-width="1.4" stroke-linecap="round"/>'
 SHIRT = {
  'tee': f'<path d="M18 100c3-11 14-17 32-17s29 6 32 17" {F}/><path d="M42 83q8 6 16 0" fill="none" {L}/>',
  'jacket': f'<path d="M18 100c3-11 14-17 32-17s29 6 32 17" fill="{K}"/><path d="M44 84l6 9 6-9" fill="#fff" {L}/><path d="M50 93v7" stroke="#fff" stroke-width="1.6"/>',
+ 'kurta': f'<path d="M18 100c3-11 14-17 32-17s29 6 32 17" {F}/><path d="M42 84h16v4c-2 2-5 3-8 3s-6-1-8-3z" fill="#fff" {L}/><path d="M50 91v9" {L}/><circle cx="50" cy="94" r="1" fill="{K}"/><circle cx="50" cy="98" r="1" fill="{K}"/>',
  'hoodie': f'<path d="M18 100c3-11 14-17 32-17s29 6 32 17" {F}/><path d="M34 86q16 10 32 0" fill="none" {L}/><path d="M45 90v6M55 90v6" {L}/>',
 }
 HAIR_BACK = {
@@ -57,23 +59,24 @@ ACC = {
  'phones': f'<path d="M30 86q20 10 40 0" fill="none" stroke="{K}" stroke-width="3.4"/><rect x="24" y="80" width="9" height="11" rx="4" fill="{K}"/><rect x="67" y="80" width="9" height="11" rx="4" fill="{K}"/>',
  'nosering': f'<circle cx="53" cy="62" r="2" fill="none" stroke="{K}" stroke-width="1.5"/>',
 }
-A = [  # (disc, shirt, back hair, front hair, top, accessories, eyes, mouth)
- ('#F6D9C7', 'tee',    None,    'quiff',  None,     ['specs'],              'dot',   'smile'),
- ('#D8E8D2', 'jacket', None,    None,     'turban', ['beard'],              'smile', 'smile'),
- ('#D3E3F2', 'hoodie', None,    'short',  'cap',    ['phones'],             'dot',   'grin'),
- ('#F3E1B9', 'tee',    None,    'messy',  'band',   ['stud'],               'smile', 'grin'),
- ('#E4DCF2', 'jacket', 'longm', 'side',   None,     ['stubble'],            'dot',   'flat'),
- ('#EFE3CF', 'tee',    None,    'curly',  None,     ['round'],              'smile', 'smile'),
- ('#EADFD6', 'hoodie', None,    None,     'beanie', ['shades'],             'dot',   'smile'),
- ('#F6D3DC', 'tee',    'long',  'fringe', None,     ['bindi', 'earrings'],  'smile', 'smile'),
- ('#DCEBDF', 'hoodie', 'hijab', None,     None,     [],                     'smile', 'grin'),
- ('#F7E7B4', 'jacket', 'bun',   'fringeb',None,     ['specs', 'nosering'],  'dot',   'smile'),
- ('#F9DCC4', 'tee',    'bob',   'pony',   'band',   ['earrings'],           'smile', 'grin'),
+SK = ['#E3B48C', '#CF9A6E', '#B9825A', '#9C6A46']
+A = [  # (disc, shirt, back hair, front hair, top, accessories, eyes, mouth, skin)
+ ('#F6D9C7', 'kurta',  None,    'quiff',  None,     ['specs'],              'dot',   'smile', 1),
+ ('#D8E8D2', 'jacket', None,    None,     'turban', ['beard'],              'smile', 'smile', 2),
+ ('#D3E3F2', 'hoodie', None,    'short',  'cap',    ['phones'],             'dot',   'grin',  3),
+ ('#F3E1B9', 'tee',    None,    'messy',  'band',   ['stud'],               'smile', 'grin',  1),
+ ('#E4DCF2', 'jacket', 'longm', 'side',   None,     ['stubble'],            'dot',   'flat',  2),
+ ('#EFE3CF', 'kurta',  None,    'curly',  None,     ['round'],              'smile', 'smile', 3),
+ ('#EADFD6', 'hoodie', None,    None,     'beanie', ['shades'],             'dot',   'smile', 0),
+ ('#F6D3DC', 'kurta',  'long',  'fringe', None,     ['bindi', 'earrings'],  'smile', 'smile', 1),
+ ('#DCEBDF', 'hoodie', 'hijab', None,     None,     [],                     'smile', 'grin',  2),
+ ('#F7E7B4', 'jacket', 'bun',   'fringeb',None,     ['specs', 'nosering', 'bindi'], 'dot', 'smile', 0),
+ ('#F9DCC4', 'tee',    'bob',   'pony',   'band',   ['earrings'],           'smile', 'grin',  3),
 ]
-for i, (bg, shirt, back, front, top, acc, ey, mo) in enumerate(A):
+for i, (bg, shirt, back, front, top, acc, ey, mo, sk) in enumerate(A):
     b = (HAIR_BACK[back] if back and back != 'hijab' else '') + SHIRT[shirt]
     if back == 'hijab': b = SHIRT[shirt] + HAIR_BACK['hijab']
-    b += head() + eyes(ey) + NOSE + mouth(mo) + BLUSH
+    b += head(SK[sk]) + eyes(ey) + NOSE + mouth(mo) + BLUSH
     for a in acc:
         if a in ('beard', 'stubble'): b += ACC[a]
     if front: b += HAIR[front]
