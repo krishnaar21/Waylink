@@ -743,7 +743,7 @@ const A = {
     buzz(6); commit();
   },
   'progress-style': (k) => { s.settings.progress = V.PROGRESS_STYLES.some(([x]) => x === k) ? k : 'gauge'; SND.click(true); commit(); refreshSheet(); },
-  brand: (k) => { s.settings.brand = V.BRANDS.some(([x]) => x === k) ? k : 'route'; document.documentElement.dataset.brand = s.settings.brand; buzz(6); commit(); refreshSheet(); },
+  brand: (k) => { s.settings.brand = V.BRANDS.some(([x]) => x === k) ? k : 'loop'; document.documentElement.dataset.brand = s.settings.brand; buzz(6); commit(); refreshSheet(); },
   'icon-style': (k) => { s.settings.icons = k === 'duo' ? 'duo' : 'line'; SND.click(true); commit(); refreshSheet(); },
   theme: (k) => { s.settings.theme = k; commit(); },
   accent: (k) => { s.settings.accent = k; commit(); },

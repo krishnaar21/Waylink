@@ -33,7 +33,7 @@ async def main():
         pg.on('pageerror', lambda e: errors.append(str(e)))
         pg.on('console', lambda m: errors.append(m.text) if m.type == 'error' and 'fonts.g' not in m.text and 'TUNNEL' not in m.text and 'Failed to load resource' not in m.text else None)
         await pg.goto(URL); await pg.wait_for_timeout(600)
-        check('loading screen shows the animated mark', await pg.query_selector('#splash .wl-mark'))
+        check('loading screen shows the animated mark', await pg.query_selector('#splash .wl-loop'))
         await shot(pg, '00-loading')
         await pg.wait_for_timeout(2400)
         check('loading screen fades away', not await pg.query_selector('#splash'))
@@ -158,10 +158,10 @@ async def main():
         check('body font switches', await pg.evaluate("document.documentElement.dataset.body") == 'inter')
         await pg.evaluate("document.querySelector('.backdrop')?.click()"); await pg.wait_for_timeout(500)
         await pg.click('[data-act="accent"][data-arg="blue"]'); await pg.wait_for_timeout(300)
-        check('app icon follows the accent, name stays', 'wl-route-blue' in await pg.evaluate("document.querySelector('link[rel=icon]').getAttribute('href')") and await pg.title() == 'Waylink')
+        check('app icon follows the accent, name stays', 'wl-loop-blue' in await pg.evaluate("document.querySelector('link[rel=icon]').getAttribute('href')") and await pg.title() == 'Waylink')
         await pg.click('[data-act="accent"][data-arg="rust"]'); await pg.wait_for_timeout(300)
         await pg.click('[data-act="show-loader"]'); await pg.wait_for_timeout(400)
-        check('loading screen can be replayed', await pg.query_selector('#splash .wl-mark'))
+        check('loading screen can be replayed', await pg.query_selector('#splash .wl-loop'))
         await pg.evaluate("document.querySelector('#splash').click()"); await pg.wait_for_timeout(800)
         check('tapping closes the replayed loader', not await pg.query_selector('#splash'))
 
@@ -265,7 +265,7 @@ async def main():
         # Loader word is centred; dots hang outside it
         await pg.evaluate("location.hash='settings'"); await pg.wait_for_timeout(500)
         await pg.click('[data-act="show-loader"]'); await pg.wait_for_timeout(300)
-        off = await pg.evaluate("""() => { const t = document.querySelector('.wl-word').getBoundingClientRect(), a = document.querySelector('.app').getBoundingClientRect(); return Math.abs((t.left + t.right) / 2 - (a.left + a.right) / 2) }""")
+        off = await pg.evaluate("""() => { const t = document.querySelector('#splash .wl-loop').getBoundingClientRect(), a = document.querySelector('.app').getBoundingClientRect(); return Math.abs((t.left + t.right) / 2 - (a.left + a.right) / 2) }""")
         check('loading word is optically centred', off < 2, str(off))
         await pg.wait_for_timeout(3200)
         # Edge preview: lengths stay inside their boxes
