@@ -102,7 +102,7 @@ test('Edge preview: odometer never rounds up, badges cap at 99+, header has no n
   const h = V.today({ s, link: fakeLink, live: liveOf() });
   assert.ok(h.includes('1,99,999'), 'odometer floors');
   assert.ok(!h.includes('2,00,000'));
-  assert.ok(V.tabbar({ s, live: liveOf() }, 'today').includes('99+'));
+  assert.ok(V.tabbar({ s, live: liveOf() }, 'today').includes('class="pip"'));
   const head = h.slice(h.indexOf('pagehead'), h.indexOf('</h1>')); assert.ok(!head.includes('Venkatarag'), 'header has no name'); assert.ok(h.includes('bc-wx'), 'bike card carries weather');
 });
 

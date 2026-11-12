@@ -14,6 +14,11 @@ const inFrame = (() => { try { return window.self !== window.top; } catch { retu
 
 let s = S.load();
 const link = new BikeLink();
+// A short log of runtime errors, added to problem reports.
+window.__wlLog = [];
+const logErr = (m) => { try { window.__wlLog.push(`${new Date().toISOString().slice(0, 19)} ${String(m).slice(0, 240)}`); if (window.__wlLog.length > 30) window.__wlLog.shift(); } catch {} };
+window.addEventListener('error', (e) => logErr(e.message + (e.filename ? ` @ ${e.filename.split('/').pop()}:${e.lineno}` : '')));
+window.addEventListener('unhandledrejection', (e) => logErr('Promise: ' + (e.reason?.message || e.reason)));
 const live = {
   speed: 0, pos: null, gpsErr: false, battery: null, engine: null,
   rec: null, nav: null, navSpeed: 1, ride: { open: false, auto: false, dismissedAt: 0 },
@@ -127,7 +132,7 @@ function refreshWeather() {
 
 // ---------- Pull to refresh ----------
 // Pull down at the top of any tab: a motorcycle wheel (knobby tyre, alloy spokes) draws and rolls as you pull, then spins.
-const PTR_MARK = () => '<svg viewBox="0 0 100 100" aria-hidden="true"><g class="wh"><circle class="tyre" cx="50" cy="50" r="41" pathLength="100" transform="rotate(-90 50 50)"/><circle class="tread" cx="50" cy="50" r="46.5"/><circle class="rim" cx="50" cy="50" r="32"/><path class="spk" d="M50.0 40.0L45.2 20.4M50.0 40.0L54.8 20.4M59.5 46.9L76.7 36.3M59.5 46.9L79.6 45.4M55.9 58.1L71.3 71.2M55.9 58.1L63.5 76.8M44.1 58.1L36.5 76.8M44.1 58.1L28.7 71.2M40.5 46.9L20.4 45.4M40.5 46.9L23.3 36.3"/><circle class="disc" cx="50" cy="50" r="17"/><circle class="hub" cx="50" cy="50" r="7"/></g></svg>';
+const PTR_MARK = () => '<svg viewBox="0 0 100 100" aria-hidden="true"><g class="wh"><circle class="band" cx="50" cy="50" r="38"/><circle class="tyre" cx="50" cy="50" r="44.5" pathLength="100" transform="rotate(-90 50 50)"/><circle class="rim" cx="50" cy="50" r="31.5"/><path class="tread" d="M83.5 50.0L91.9 57.2M82.1 59.4L88.2 68.7M78.2 68.1L81.4 78.7M71.9 75.3L72.0 86.4M63.9 80.5L60.9 91.1M54.8 83.2L48.8 92.5M45.2 83.2L36.9 90.4M36.1 80.5L26.1 85.1M28.1 75.3L17.1 76.9M21.8 68.1L10.9 66.6M17.9 59.4L7.8 54.9M16.5 50.0L8.1 42.8M17.9 40.6L11.8 31.3M21.8 31.9L18.6 21.3M28.1 24.7L28.0 13.6M36.1 19.5L39.1 8.9M45.2 16.8L51.2 7.5M54.8 16.8L63.1 9.6M63.9 19.5L73.9 14.9M71.9 24.7L82.9 23.1M78.2 31.9L89.1 33.4M82.1 40.6L92.2 45.1"/></g></svg>';
 (function pullToRefresh() {
   const host = $('#views'); if (!host) return;
   const ind = Object.assign(document.createElement('div'), { id: 'ptr', innerHTML: PTR_MARK() });
@@ -840,8 +845,19 @@ const A = {
       toast(link.connected ? `${name} on the cluster for 6 s.` : 'Saved. Link the bike to send it.');
     }
   },
-  'clear-missed': () => { s.alerts.missed = []; link.setMissedCount(0); commit(); },
-  'clear-wa': () => { s.alerts.wa = []; commit(); },
+  'clear-missed': () => { s.alerts.missed = []; link.setMissedCount(0); closeSheet(); commit(); toast('Missed calls cleared.'); },
+  'clear-wa': () => { s.alerts.wa = []; closeSheet(); commit(); toast('WhatsApp alerts cleared.'); },
+  'alerts-tab': (k) => { if (live.alertsTab === k) return; live.alertsTab = k === 'recent' ? 'recent' : 'needs'; SND.click(true); render(); },
+  'report-send': async (k) => {
+    const subj = ($('#rp-subj')?.value || '').trim() || 'Problem report', body = ($('#rp-body')?.value || '').trim(), log = $('#backup-text')?.value || '';
+    const title = `Waylink: ${subj}`, text = `${body || '(Describe what happened)'}\n\n--- App log ---\n${log}`;
+    const enc = encodeURIComponent;
+    if (k === 'email') { location.href = `mailto:${V.SUPPORT_EMAIL}?subject=${enc(title)}&body=${enc(text)}`; return; }
+    if (k === 'github') { window.open(`${V.REPO_URL}/issues/new?title=${enc(title)}&body=${enc(text)}`, '_blank', 'noopener'); return; }
+    const file = new File([`${title}\n\n${text}\n`], 'waylink-log.txt', { type: 'text/plain' });
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title }); return; } } catch (e) { if (e?.name === 'AbortError') return; }
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(file), download: file.name }); a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast('Log saved.');
+  },
   press: (k) => link.pressed(k),
   'call-answer': () => answer(),
   'call-decline': () => decline(),

@@ -1499,3 +1499,46 @@ svg.i.ifill circle, svg.i.ifill rect, svg.i.ifill ellipse, svg.i.ifill path[d$="
 .fab::after { content: ""; position: absolute; inset: 2px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--bg) 28%, transparent); pointer-events: none; }
 .fab.rec { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent), 0 8px 24px -6px color-mix(in srgb, var(--accent) 55%, transparent) !important; }
 .segs i.k, .hero .segs i.k { background: color-mix(in srgb, var(--ink) 24%, transparent) !important; }
+/* Pull-to-refresh: a motorcycle tyre with slanted tread blocks */
+#ptr .band { stroke-width: 12; opacity: calc(.22 * (1 - var(--draw) / 100)); }
+#ptr .tyre { stroke-width: 4.5; }
+#ptr .rim { stroke-width: 3.5; }
+#ptr .tread { stroke-width: 3.6; stroke-linecap: round; stroke-dasharray: none; opacity: calc(1 - var(--draw) / 100); }
+#ptr.spin .band, #ptr.done .band { opacity: .22; }
+/* Coming-up cards: one quiet colour scheme. Only the Overdue pill is red. */
+.upcard .row-ic, .upcard.r .row-ic, .upcard.a .row-ic, .upcard.s .row-ic { background: color-mix(in srgb, var(--ink) 6%, transparent) !important; color: var(--ink-2) !important; }
+.upcard.r .uc-v .big, .upcard.a .uc-v .big { color: var(--ink) !important; }
+.upcard.a .uc-tag { color: var(--ink-2) !important; background: color-mix(in srgb, var(--ink) 6%, transparent) !important; }
+.upcard .fgauge .fg i.a, .upcard .fgauge .fg i.r { background: color-mix(in srgb, var(--ink) 42%, transparent) !important; }
+.upcard .fgauge .fg i.ro { background: var(--seg-off) !important; }
+.upcard .pg.a, .upcard .pg.r { --c: color-mix(in srgb, var(--ink) 42%, transparent); }
+.upcard .pg.a .rd::before, .upcard .pg.r .rd::before { background: color-mix(in srgb, var(--ink) 42%, transparent) !important; }
+/* Alerts: Needs you / Recent as line tabs */
+.ltabs { display: flex; gap: 22px; box-shadow: inset 0 -1px 0 var(--line); }
+.ltabs button { position: relative; padding: 10px 0 12px; font: 600 15px/1 var(--sans); color: var(--ink-3); display: inline-flex; align-items: center; gap: 6px; }
+.ltabs button.on { color: var(--ink); }
+.ltabs button.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2.5px; border-radius: 2px; background: var(--ink); }
+.ltabs .lt-n { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--red); color: #fff; font-size: 11px; display: inline-grid; place-items: center; }
+.view[data-screen="alerts"] .li .ic { background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink-2); }
+/* Main pages sit a little higher */
+.view { --vtop: calc(var(--top) - 16px); }
+.app.has-pill .view { --vtop: calc(var(--top) + 28px); }
+/* Profile: photo on top, centred */
+.prof-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; margin-top: -40px; }
+.prof-hero .ph-tx { min-width: 0; max-width: 100%; }
+.prof-hero .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Report: collapsible log */
+.rp-log summary { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--ink-2); cursor: pointer; list-style: none; padding: 6px 0; }
+.rp-log summary::-webkit-details-marker { display: none; }
+.rp-log summary > svg { width: 17px; height: 17px; flex: none; } .rp-log summary > svg:last-child { margin-left: auto; transform: rotate(90deg); transition: transform .2s; }
+.rp-log[open] summary > svg:last-child { transform: rotate(-90deg); }
+/* Bike tiles: smaller checks, a larger bike */
+.art.icon-mode, html[data-theme="obsidian"] .art.icon-mode, html[data-theme="amoled"] .art.icon-mode { background-size: 100% 100%, 9px 9px !important; }
+.art.icon-mode > svg { left: 20%; right: 20%; top: 20%; bottom: 20%; width: 60%; height: 60%; }
+.art.thumb.icon-mode > svg { left: 22%; right: 22%; top: 16%; bottom: 16%; width: 56%; height: 68%; }
+.ltabs .lt-n { background: color-mix(in srgb, var(--ink) 9%, transparent); color: var(--ink-2); }
+.rp-save { display: block; width: 100%; text-align: center; }
+/* Bike pictures: same margin on every side, centred on the tile (nudged up a hair so the wheels don't feel heavy). No ground shadow. */
+.art > img.model { left: 10%; right: 10%; top: 10%; bottom: 10%; width: 80%; height: 80%; object-fit: contain; object-position: 50% 46%; filter: none; }
+.art.thumb > img.model, .art.card-art > img.model { left: 9%; right: 9%; top: 9%; bottom: 9%; width: 82%; height: 82%; }
+.art:has(img.model)::after, .art:has(img.model)::before { display: none; }

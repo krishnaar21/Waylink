@@ -644,21 +644,22 @@ function frameCard(link) {
 export const hexHtml = (b) => toHex(b).split(' ').map((h, i) => (i === 1 && b.length === 48) || i === b.length - 1 ? `<b>${h}</b>` : h).join(' ');
 
 // ---------- ALERTS ----------
+const PHONE_APP = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'mobilephone://' : 'tel:';
 export function alerts(c) {
   const { s, link, live } = c;
   const a = s.settings.alerts;
   const m = s.alerts.missed, w = s.alerts.wa;
-  const card = (ic, lab, n, sub, act, open) => `<div class="card pad"><div class="eyebrow flex gap8">${icon(ic).replace('<svg', '<svg style="width:14px;height:14px"')}${lab}</div><div class="big mt12" style="font-size:56px">${short(n)}</div><div class="small muted mt8 clamp1">${sub}</div><div class="push"></div><div class="ac-btns mt16">${open}<button class="btn line sm" data-act="${act}" ${n ? '' : 'disabled'}>Clear</button></div></div>`;
+  const card = (ic, lab, n, sub, act, open) => `<div class="card pad"><div class="eyebrow flex gap8">${icon(ic).replace('<svg', '<svg style="width:14px;height:14px"')}${lab}</div><div class="big mt12" style="font-size:56px">${short(n)}</div><div class="small muted mt8 clamp1">${sub}</div><div class="push"></div><div class="ac-btns mt16">${open}<button class="btn line sm" data-act="sheet" data-arg="clear:${act}" ${n ? '' : 'disabled'}>Clear</button></div></div>`;
   const needs = inbox(c).filter((x) => x.ic !== 'missed' && x.ic !== 'chat');
   return `<div class="stagger">
   <div class="head pagehead"><div><h1 class="title">Alerts</h1><div class="subtitle">${needs.length ? `${plural(needs.length, 'thing needs', 'things need')} you` : 'Nothing needs you right now'}</div></div></div>
-  ${needs.length ? `<div class="section" style="margin-top:20px">${sh('Needs you')}<div class="list">${needs.map((x) => li({ lead: `<span class="ic" style="background:var(--tint-${x.tone});color:var(--${x.tone === 'sage' ? 'sage-ink' : x.tone})">${icon(x.ic)}</span>`, t: x.t, d: x.d, act: x.act, arg: x.arg })).join('')}</div></div>` : ''}
+  ${(() => { const tab = live.alertsTab === 'recent' ? 'recent' : 'needs';
+    const needsHTML = needs.length ? `<div class="list">${needs.map((x) => li({ lead: `<span class="ic">${icon(x.ic)}</span>`, t: x.t, d: x.d, act: x.act, arg: x.arg })).join('')}</div>` : '<div class="card empty">Nothing needs you right now.</div>';
+    const recentHTML = s.alerts.log.length ? `<div class="list">${s.alerts.log.slice(0, 12).map((x) => li({ ic: x.kind === 'wa' ? 'chat' : x.kind === 'missed' ? 'missed' : x.kind === 'button' ? 'hand' : 'phone', t: esc(x.name), d: { wa: 'WhatsApp', missed: 'Missed call', call: 'Call', button: 'Handlebar' }[x.kind] + ' · ' + ago(x.ts), chev: false, tag: 'div' })).join('')}</div>` : '<div class="card empty">Nothing yet.</div>';
+    return `<div class="section" style="margin-top:20px"><div class="ltabs" role="tablist"><button role="tab" class="${tab === 'needs' ? 'on' : ''}" aria-selected="${tab === 'needs'}" data-act="alerts-tab" data-arg="needs">Needs you${needs.length ? `<span class="lt-n">${needs.length}</span>` : ''}</button><button role="tab" class="${tab === 'recent' ? 'on' : ''}" aria-selected="${tab === 'recent'}" data-act="alerts-tab" data-arg="recent">Recent</button></div><div class="mt12">${tab === 'needs' ? needsHTML : recentHTML}</div></div>`; })()}
   <div class="section">${sh('Calls & messages', `<span class="eyebrow">${short(s.alerts.sent)} sent</span>`)}
-  <div class="two">${card('missed', 'Missed', m.length, m.length ? `Last: ${esc(m[m.length - 1].name)}` : 'None waiting', 'clear-missed', `<a class="btn line sm" href="tel:" aria-label="Open Phone">${icon('phone')}Calls</a>`)}${card('chat', 'WhatsApp', w.length, w.length ? `Last: ${esc(w[w.length - 1].name)}` : 'None waiting', 'clear-wa', `<a class="btn line sm" href="whatsapp://" aria-label="Open WhatsApp">${icon('chat')}Chats</a>`)}</div>
+  <div class="two">${card('missed', 'Missed', m.length, m.length ? `Last: ${esc(m[m.length - 1].name)}` : 'None waiting', 'clear-missed', `<a class="btn line sm" href="${PHONE_APP}" aria-label="Open the Phone app">${icon('phone')}Phone</a>`)}${card('chat', 'WhatsApp', w.length, w.length ? `Last: ${esc(w[w.length - 1].name)}` : 'None waiting', 'clear-wa', `<a class="btn line sm" href="whatsapp://" aria-label="Open WhatsApp">${icon('chat')}Chats</a>`)}</div>
   <div class="dashed">${icon('lock')}<span>Only <b>names and counts</b> reach your bike. Message text never leaves this phone.</span></div>
-  </div>
-  <div class="section">${sh('Recent')}
-    ${s.alerts.log.length ? `<div class="list">${s.alerts.log.slice(0, 12).map((x) => li({ ic: x.kind === 'wa' ? 'chat' : x.kind === 'missed' ? 'missed' : x.kind === 'button' ? 'hand' : 'phone', t: esc(x.name), d: { wa: 'WhatsApp', missed: 'Missed call', call: 'Call', button: 'Handlebar' }[x.kind] + ' · ' + ago(x.ts), chev: false, tag: 'div' })).join('')}</div>` : '<div class="card empty">Nothing yet.</div>'}
   </div>
   <div class="section">${sh('Show on the bike', '', 'showbike')}<div class="list">
     ${li({ ic: 'phone', t: 'Phone calls', d: 'Caller name and missed calls', end: sw(a.calls, 'toggle', 'alerts.calls'), chev: false, tag: 'div' })}
@@ -781,6 +782,7 @@ export const ADD_BIKE = '<svg class="i" viewBox="0 0 24 24" fill="none" stroke="
 export const isIOS = () => typeof navigator !== 'undefined' && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 const BLUEFY_STORE = 'https://apps.apple.com/app/id1492822055';
 export const REPO_URL = 'https://github.com/krishnaar21/Waylink';
+export const SUPPORT_EMAIL = 'support@krishnaar.work';
 // Donations. Fill in to switch them on: a UPI ID (e.g. name@okicici) and any of Buy Me a Coffee, Ko-fi or GitHub Sponsors.
 export const SUPPORT = { upi: '', payee: 'Waylink', links: [/* ['Buy Me a Coffee', 'https://buymeacoffee.com/…'], ['Ko-fi', 'https://ko-fi.com/…'], ['GitHub Sponsors', 'https://github.com/sponsors/…'] */] };
 const UPI_AMOUNTS = [49, 99, 199, 499];
@@ -800,9 +802,9 @@ export function profile(c) {
   const f = (name, label, val, type = 'text', ph = '', extra = '') => `<label class="field"><span class="eyebrow">${label}</span><input class="input" name="${name}" type="${type}" value="${esc(val ?? '')}" placeholder="${ph}" autocomplete="off" ${extra}></label>`;
   return `<div class="stagger">
   <header class="pagehead">${topbar(backBtn('settings'), `<span class="saved" id="saved">${icon('check')} Saved</span>`)}</header>
-  <div class="flex gap12" style="align-items:center">
+  <div class="prof-hero">
     <label style="position:relative;cursor:pointer">${avatar(p, true)}<span class="circle" style="position:absolute;right:-4px;bottom:-4px;width:32px;height:32px">${icon('camera').replace('<svg', '<svg style="width:15px;height:15px"')}</span><input type="file" accept="image/*" hidden data-input="avatar"></label>
-    <div class="grow" style="min-width:0"><h1 class="title">${esc(p.name || 'Your profile')}</h1><div class="subtitle">Rider since ${new Date(p.since || Date.now()).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div></div>
+    <div class="ph-tx"><h1 class="title">${esc(p.name || 'Your profile')}</h1><div class="subtitle">Rider since ${new Date(p.since || Date.now()).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div></div>
   </div>
   <div class="card stat3 mt20"><div><span class="eyebrow">Bikes</span><span class="big">${s.vehicles.length}</span></div><div><span class="eyebrow">Ridden</span><span class="big">${num(totalKm)}</span><span class="unit" style="margin:0">km</span></div><div><span class="eyebrow">Rides</span><span class="big">${rides}</span></div></div>
   <form data-form="profile" data-autosave>
@@ -904,12 +906,16 @@ export function helpSheet(c, k) {
   const { s, link } = c;
   if (k === 'faq') return `<div class="eyebrow">Help</div><h2>Questions and answers</h2><div class="faq mt16">${FAQ.map(([q, a]) => `<details class="faq-i" name="faq"><summary>${q}${icon('chev')}</summary><p>${a}</p></details>`).join('')}</div>`;
   if (k === 'report') {
-    const info = [`Waylink ${APP_VERSION}`, `Bike: ${S.model(s).name || S.model(s).id}`, `Link: ${link.state}${link.simulated ? ' (simulated)' : ''}`, `Bluetooth in browser: ${link.supported ? 'yes' : 'no'}`, `Screen: ${typeof window !== 'undefined' ? `${window.innerWidth}×${window.innerHeight}` : 'n/a'}`, `Theme: ${s.settings.theme}, icons: ${s.settings.icons || 'lucide'}`, `Browser: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a'}`].join('\n');
-    return `<div class="eyebrow">Help</div><h2>Report a problem</h2><p class="lead">Say what you tapped, what you expected and what happened. Add these details so it can be fixed fast. Nothing personal is included.</p>
-      <textarea class="input mt16" id="backup-text" readonly style="height:150px;font-family:var(--mono);font-size:11.5px">${esc(info)}</textarea>
-      <button class="btn line block mt12" data-act="copy-text">${icon('copy')} Copy details</button>
-      <a class="btn ink block mt12" href="${REPO_URL}/issues/new" target="_blank" rel="noopener">${icon('flag')} Open a report on GitHub</a>
-      <p class="hint">${REPO_URL.replace('https://', '')}/issues</p>`;
+    const errs = (typeof window !== 'undefined' && window.__wlLog) || [];
+    const info = [`App: Waylink ${APP_VERSION}`, `Bike: ${S.model(s).name || S.model(s).id}`, `Link: ${link.state}${link.simulated ? ' (simulated)' : ''}`, `Bluetooth in browser: ${link.supported ? 'yes' : 'no'}`, `Screen: ${typeof window !== 'undefined' ? `${window.innerWidth}×${window.innerHeight}` : 'n/a'}`, `Theme: ${s.settings.theme}, icons: ${s.settings.icons || 'line'}`, `Browser: ${typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a'}`, '', `Recent errors (${errs.length}):`, ...(errs.length ? errs.slice(-15) : ['none'])].join('\n');
+    return `<div class="eyebrow">Help</div><h2>Report a problem</h2><p class="lead">Say what you tapped, what you expected and what happened. The app log is added for you. Nothing personal is included.</p>
+      <label class="field"><span class="eyebrow">Subject</span><input class="input" id="rp-subj" maxlength="80" placeholder="Turn arrows stop after a few minutes" autocomplete="off"></label>
+      <label class="field"><span class="eyebrow">What happened</span><textarea class="input" id="rp-body" style="height:110px" placeholder="Steps, what you expected, what you saw"></textarea></label>
+      <details class="rp-log mt12"><summary>${icon('doc')} App log <span class="faint">· added to your report</span>${icon('chev')}</summary><textarea class="input mt8" id="backup-text" readonly style="height:150px;font-family:var(--mono);font-size:11.5px">${esc(info)}</textarea></details>
+      <button class="btn ink block mt16" data-act="report-send" data-arg="email">${icon('mail')} Email support</button>
+      <button class="btn line block mt8" data-act="report-send" data-arg="github">${icon('code')} Open on GitHub</button>
+      <button class="link rp-save mt16" data-act="report-send" data-arg="file">Save log as a file</button>
+      <p class="hint" style="text-align:center">${SUPPORT_EMAIL} · ${REPO_URL.replace('https://', '')}</p>`;
   }
   if (k === 'about') return `<div class="about-sheet"><h2 class="sr-only">Waylink</h2><div class="splash-brand about-hero anim">${TURNS}${LOOP}</div><p class="lead">Turns, calls and your bike’s care, on one screen. Version ${APP_VERSION}.</p></div>
     <div class="list flat mt16">
@@ -1032,13 +1038,13 @@ function sheetInner(c, key) {
       const was = ICON_STYLE, cur = ['duo', 'fill'].includes(s.settings.icons) ? s.settings.icons : 'line';
       const card = (k, nm, d) => { ICON_STYLE = k; const h = ['today', 'fuel', 'wrench', 'pin', 'bell', 'bike'].map((n) => icon(n)).join(''); return `<button class="icoopt ${cur === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}"><span class="io-row">${h}</span><span class="nm">${nm}</span><span class="d">${d}</span></button>`; };
       const out = `<div class="eyebrow">Appearance</div><h2>Icon style</h2><p class="lead">How icons are drawn across the app.</p>
-        <div class="icoopts mt16">${card('line', 'Line', 'Clean single strokes')}${card('duo', 'Duotone', 'A soft second tone under each line')}${card('fill', 'Filled', 'Shapes filled with a soft tone')}</div>`;
+        <div class="icoopts mt16">${card('line', 'Line', 'Clean single strokes')}${card('duo', 'Glow', 'A soft glow under each line')}${card('fill', 'Duotone', 'Shapes filled with a second tone')}</div>`;
       ICON_STYLE = was; return out;
     }
     case 'pick-brand': {
       const was = ICON_STYLE, cur = ['duo', 'fill'].includes(s.settings.icons) ? s.settings.icons : 'line';
       const card = (k, nm, d) => { ICON_STYLE = k; const h = ['today', 'fuel', 'wrench', 'pin', 'bell', 'bike'].map((n) => icon(n)).join(''); return `<button class="icoopt ${cur === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}"><span class="io-row">${h}</span><span class="nm">${nm}</span><span class="d">${d}</span></button>`; };
-      const icoHTML = card('line', 'Line', 'Clean single strokes') + card('duo', 'Duotone', 'A soft second tone under each line') + card('fill', 'Filled', 'Shapes filled with a soft tone'); ICON_STYLE = was;
+      const icoHTML = card('line', 'Line', 'Clean single strokes') + card('duo', 'Glow', 'A soft glow under each line') + card('fill', 'Duotone', 'Shapes filled with a second tone'); ICON_STYLE = was;
       return `<div class="eyebrow">Appearance</div><h2>Logo & icons</h2>
         <div class="ms-t mt12">Logo</div><p class="small muted mt8">Loading screen and app icon. Re-add Waylink to your Home Screen to change an installed icon.</p>
         <div class="brands mt12">${BRANDS.map(([k, nm]) => `<button class="brandopt anim b-${k} ${brandOf(s) === k ? 'on' : ''}" data-act="brand" data-arg="${k}"><span class="bo-art">${{ turns: TURNS, loop: LOOP }[k]}</span><span class="nm">${nm}</span></button>`).join('')}</div>
@@ -1226,7 +1232,7 @@ function sheetInner(c, key) {
       ${items.length ? `<div class="list flat mt16">${items.map((x) => li({ lead: `<span class="ic" style="background:var(--tint-${x.tone});color:var(--${x.tone === 'sage' ? 'sage-ink' : x.tone})">${icon(x.ic)}</span>`, t: x.t, d: x.d, act: x.act, arg: x.arg })).join('')}</div>` : `<div class="empty"><div class="serif">All caught up</div>Nothing needs you right now.</div>`}`;
     }
     case 'models':
-      return `<div class="eyebrow">Garage</div><h2>Bike models</h2><p class="lead">Every model ${appName(s)} knows. Photos come from Wikimedia Commons with credit; the rest show a colour tile.</p>
+      return `<div class="eyebrow">Garage</div><h2>Bike models</h2><p class="lead">Every model ${appName(s)} knows. Models without a photo show a plain tile.</p>
       <div class="models mt16">${S.MODELS.map((m, i) => `<div class="m">${vehicleArt({ settings: { art: 'photo' } }, { model: m.id, colour: S.COLOURS[i % S.COLOURS.length][0] }, 'model')}<div class="t">${esc(S.nameOfModel(s, m))}</div><div class="d">${num(m.tank, m.tank % 1 ? 1 : 0)} L · ${esc(m.series)}${S.MODEL_IMAGES[m.id] ? ' · photo' : ''}</div></div>`).join('')}</div>
       <p class="hint">To add photos, run tools/fetch_bike_photos.py once. Credits appear in About Waylink, Photo credits.</p>`;
     case 'credits': {
@@ -1234,6 +1240,10 @@ function sheetInner(c, key) {
       return `<div class="eyebrow">About</div><h2>Photo credits</h2><p class="lead">Bike photos are used under their open licences. Tap one to see its source.</p>
       ${rows.length ? `<div class="list flat mt16">${rows.map(([k, m]) => li({ lead: vehicleArt({ settings: { art: 'photo' } }, { model: k, colour: '#888888' }), t: esc(S.MODELS.find((x) => x.id === k)?.name || k), d: esc(m.credit || 'No credit recorded'), href: m.source || '', tag: m.source ? 'a' : 'div', chev: !!m.source })).join('')}</div>` : '<div class="empty">No model photos yet.</div>'}
       <p class="hint">Add more with tools/fetch_bike_photos.py. It only uses CC0, public-domain, CC BY and CC BY-SA photos from Wikimedia Commons.</p>`;
+    }
+    case 'clear': {
+      const wa = arg === 'clear-wa', n = wa ? s.alerts.wa.length : s.alerts.missed.length;
+      return `<div class="eyebrow">Alerts</div><h2>${wa ? 'Clear WhatsApp alerts?' : 'Clear missed calls?'}</h2><p class="lead">${plural(n, wa ? 'chat' : 'call', wa ? 'chats' : 'calls')} will be removed here and the count on your bike goes to zero. Your phone keeps its own history.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="${arg}">Clear</button><button class="btn line block mt8" data-act="close">Keep them</button>`;
     }
     case 'erase':
       return `<div class="eyebrow">Backup</div><h2>${s.sample ? 'Erase sample data?' : 'Erase everything?'}</h2><p class="lead">Bikes, rides, fuel, service, alerts and papers on this phone will go. Export a backup first if you want to keep them.</p><button class="btn block mt24" style="background:var(--red);color:#fff" data-act="erase">Erase</button><button class="btn line block mt8" data-act="close">Keep my data</button>`;
