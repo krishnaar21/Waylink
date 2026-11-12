@@ -2138,3 +2138,7 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .av-opt:not(.on) { transform: scale(.99); }
 .themeopt .tp.t-auto em::after { width: 15%; right: 7%; bottom: 8%; box-shadow: inset -4px -2px 0 0 #EDE5D6; }
 .av-opt:not(.on) { transform: scale(.9); }
+/* Photo option: its own surface (not the white avatar disc), so the camera and label read in both themes */
+.av-opt.av-photo { background: var(--raised); border: 1.5px dashed color-mix(in srgb, var(--ink) 45%, transparent); }
+.av-photo > span { color: var(--ink); }
+.av-photo > span svg { width: 24px; height: 24px; } .av-photo b { font-size: 12.5px; font-weight: 650; }
