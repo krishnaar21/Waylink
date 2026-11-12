@@ -984,6 +984,7 @@ document.addEventListener('click', (e) => {
   if (di && !di.readOnly) { try { di.showPicker(); } catch {} }
   const el = e.target.closest('[data-act]');
   if (!el || el.disabled) return;
+  if (Date.now() - (A._skipTap || 0) < 450 && el.closest('#tabbar')) return;
   const fn = A[el.dataset.act];
   if (!fn) return;
   if (el.tagName === 'A') return;
@@ -1141,4 +1142,32 @@ function registerUpdates() {
     setInterval(check, 30 * 60e3);
   }).catch(() => {});
   try { if (sessionStorage.getItem('waylink-updated')) { sessionStorage.removeItem('waylink-updated'); setTimeout(() => toast('Updated to the latest version.'), 1200); } } catch {}
+}
+
+// Swipe sideways on a tabbed list (Alerts: Needs you / Recent) to switch tabs.
+{
+  let sx = 0, sy = 0, el = null;
+  document.addEventListener('touchstart', (e) => { el = e.target.closest('[data-swipe-tabs]'); if (!el) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener('touchend', (e) => {
+    if (!el) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; const box = el; el = null;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
+    const tabs = box.dataset.tabs.split(','), i = tabs.indexOf(box.dataset.cur), n = tabs[i + (dx < 0 ? 1 : -1)];
+    if (n) { A[box.dataset.swipeTabs](n); requestAnimationFrame(() => $('[data-swipe-tabs]')?.classList.add(dx < 0 ? 'in-l' : 'in-r')); }
+  }, { passive: true });
+}
+// Slide a finger along the tab bar to jump to the tab under it.
+{
+  let on = false, sx = 0, moved = false, hit = null;
+  const tabAt = (x, y) => document.elementFromPoint(x, y)?.closest?.('.tab');
+  document.addEventListener('touchstart', (e) => { on = !!e.target.closest('#tabbar'); sx = e.touches[0].clientX; moved = false; hit = null; }, { passive: true });
+  document.addEventListener('touchmove', (e) => {
+    if (!on) return; const t = e.touches[0]; if (Math.abs(t.clientX - sx) > 14) moved = true; if (!moved) return;
+    const tab = tabAt(t.clientX, Math.min(t.clientY, window.innerHeight - 30));
+    if (tab && tab !== hit) { hit = tab; $$('#tabbar .tab').forEach((b) => b.classList.toggle('scrub', b === tab)); buzz(4); }
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if (!on) return; on = false; $$('#tabbar .tab.scrub').forEach((b) => b.classList.remove('scrub'));
+    if (moved && hit && hit.dataset.arg !== screen) { A._lastToday = 0; go(hit.dataset.arg); }
+    if (moved) { A._skipTap = Date.now(); }
+  }, { passive: true });
 }

@@ -1542,3 +1542,28 @@ svg.i.ifill circle, svg.i.ifill rect, svg.i.ifill ellipse, svg.i.ifill path[d$="
 .art > img.model { left: 10%; right: 10%; top: 10%; bottom: 10%; width: 80%; height: 80%; object-fit: contain; object-position: 50% 46%; filter: none; }
 .art.thumb > img.model, .art.card-art > img.model { left: 9%; right: 9%; top: 9%; bottom: 9%; width: 82%; height: 82%; }
 .art:has(img.model)::after, .art:has(img.model)::before { display: none; }
+/* Sheets: nothing pokes past the rounded top corners */
+.sheet { overflow: hidden; }
+.sheet-head { border-radius: var(--r-xl) var(--r-xl) 0 0; }
+/* Logbook rows: neutral, with an Overdue pill in the sub line */
+.row .row-ic.s, .row .row-ic.a, .row .row-ic.r { background: color-mix(in srgb, var(--ink) 6%, transparent) !important; color: var(--ink-2) !important; }
+.row .row-val .big, .row .row-val .unit { color: var(--ink); } .row .row-val .unit { color: var(--ink-3); }
+.row .fgauge .fg i.a, .row .fgauge .fg i.r { background: color-mix(in srgb, var(--ink) 42%, transparent) !important; }
+.row .fgauge .fg i.ro { background: var(--seg-off) !important; }
+.row .pg.a, .row .pg.r { --c: color-mix(in srgb, var(--ink) 42%, transparent); }
+.opill { display: inline-block; vertical-align: 1px; margin-right: 6px; padding: 1px 7px; border-radius: 999px; background: var(--tint-red); color: var(--red); font-size: 11.5px; font-weight: 600; line-height: 17px; }
+/* Alerts tabs: room under the line, notification feed for Recent */
+.lt-body { margin-top: 18px; min-height: 120px; }
+.lt-body.in-l { animation: ltInL .28s ease both; } .lt-body.in-r { animation: ltInR .28s ease both; }
+@keyframes ltInL { from { opacity: 0; transform: translateX(24px); } } @keyframes ltInR { from { opacity: 0; transform: translateX(-24px); } }
+.nf-list { display: flex; flex-direction: column; gap: 8px; }
+.nf-day { font-size: 13px; font-weight: 600; color: var(--ink-3); margin: 8px 4px 0; } .nf-day:first-child { margin-top: 0; }
+.nf { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: var(--r-md); background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+.nf-ic { width: 36px; height: 36px; border-radius: 10px; flex: none; display: grid; place-items: center; background: color-mix(in srgb, var(--ink) 6%, transparent); color: var(--ink-2); }
+.nf-ic svg { width: 19px; height: 19px; }
+.nf-tx { flex: 1; min-width: 0; }
+.nf-t { display: flex; justify-content: space-between; gap: 8px; font-size: 15px; } .nf-t b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nf-time { flex: none; font-size: 12.5px; color: var(--ink-3); }
+.nf-d { font-size: 13.5px; color: var(--ink-3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Tab bar scrubbing */
+.tab.scrub { color: var(--ink) !important; } .tab.scrub svg { transform: scale(1.12); transition: transform .15s; }

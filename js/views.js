@@ -12,6 +12,8 @@ export const num = (n, d = 0) => (n == null || isNaN(n) ? '—' : Number(n).toLo
 // Compact, never rounds up: 1,99,999.9 → "1.99 L"; 45,280 → "45.2K"; 9,999.9 → "9,999".
 const trunc = (x, d) => Math.floor(x * 10 ** d + 1e-9) / 10 ** d;
 const sig3 = (x) => (x >= 100 ? trunc(x, 0) : x >= 10 ? trunc(x, 1) : trunc(x, 2)).toLocaleString('en-US', { maximumFractionDigits: 2 });
+// Names on cards: the full name when it fits in 14 letters, else the first name (cut at 14).
+export const shortName = (n) => { const t = (n || '').trim().replace(/\s+/g, ' '); if (t.length <= 14) return t; const f = t.split(' ')[0]; return f.length <= 14 ? f : f.slice(0, 13) + '…'; };
 export const short = (n) => {
   if (n == null || isNaN(n)) return '—';
   const a = Math.abs(n), sg = n < 0 ? '−' : '';
@@ -397,8 +399,8 @@ export function serviceRow(it, st) {
   const v = rowValue(st);
   const tone = st.status === 'overdue' ? 'r' : st.status === 'soon' ? 'a' : 's';
   return `<button class="row has-ic" data-act="sheet" data-arg="svc:${it.id}" data-flip="${it.id}">
-    <div class="row-top"><div class="row-main"><span class="row-ic ${tone}">${icon(it.icon || 'wrench')}</span><div style="min-width:0"><div class="row-title">${esc(it.name)}</div><div class="row-sub">${everyText(it)}</div></div></div>
-    <div class="row-val ${v.cls}"><span class="big">${v.v}</span><span class="unit ${v.cls}">${v.u}</span></div></div>
+    <div class="row-top"><div class="row-main"><span class="row-ic ${tone}">${icon(it.icon || 'wrench')}</span><div style="min-width:0"><div class="row-title">${esc(it.name)}</div><div class="row-sub">${st.status === 'overdue' ? '<span class="opill">Overdue</span>' : ''}${everyText(it)}</div></div></div>
+    <div class="row-val"><span class="big">${v.v}</span><span class="unit">${v.u.replace(' overdue', '')}</span></div></div>
     ${st.status === 'soon' || st.status === 'overdue' ? serviceSegs(st) : ''}</button>`;
 }
 
@@ -644,7 +646,8 @@ function frameCard(link) {
 export const hexHtml = (b) => toHex(b).split(' ').map((h, i) => (i === 1 && b.length === 48) || i === b.length - 1 ? `<b>${h}</b>` : h).join(' ');
 
 // ---------- ALERTS ----------
-const PHONE_APP = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'mobilephone://' : 'tel:';
+// iOS Safari can't open the Phone app without a number, so the button only shows where it works.
+const IS_IOS = typeof navigator !== 'undefined' && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 export function alerts(c) {
   const { s, link, live } = c;
   const a = s.settings.alerts;
@@ -655,10 +658,15 @@ export function alerts(c) {
   <div class="head pagehead"><div><h1 class="title">Alerts</h1><div class="subtitle">${needs.length ? `${plural(needs.length, 'thing needs', 'things need')} you` : 'Nothing needs you right now'}</div></div></div>
   ${(() => { const tab = live.alertsTab === 'recent' ? 'recent' : 'needs';
     const needsHTML = needs.length ? `<div class="list">${needs.map((x) => li({ lead: `<span class="ic">${icon(x.ic)}</span>`, t: x.t, d: x.d, act: x.act, arg: x.arg })).join('')}</div>` : '<div class="card empty">Nothing needs you right now.</div>';
-    const recentHTML = s.alerts.log.length ? `<div class="list">${s.alerts.log.slice(0, 12).map((x) => li({ ic: x.kind === 'wa' ? 'chat' : x.kind === 'missed' ? 'missed' : x.kind === 'button' ? 'hand' : 'phone', t: esc(x.name), d: { wa: 'WhatsApp', missed: 'Missed call', call: 'Call', button: 'Handlebar' }[x.kind] + ' · ' + ago(x.ts), chev: false, tag: 'div' })).join('')}</div>` : '<div class="card empty">Nothing yet.</div>';
-    return `<div class="section" style="margin-top:20px"><div class="ltabs" role="tablist"><button role="tab" class="${tab === 'needs' ? 'on' : ''}" aria-selected="${tab === 'needs'}" data-act="alerts-tab" data-arg="needs">Needs you${needs.length ? `<span class="lt-n">${needs.length}</span>` : ''}</button><button role="tab" class="${tab === 'recent' ? 'on' : ''}" aria-selected="${tab === 'recent'}" data-act="alerts-tab" data-arg="recent">Recent</button></div><div class="mt12">${tab === 'needs' ? needsHTML : recentHTML}</div></div>`; })()}
+    // Recent: a notification feed, grouped by day. What reached the bike, when.
+    const day = (ts) => { const d = new Date(ts), t = new Date(); t.setHours(0, 0, 0, 0); const y = t - 864e5; return ts >= +t ? 'Today' : ts >= y ? 'Yesterday' : d.toLocaleDateString(DL(), { day: 'numeric', month: 'short' }); };
+    const NT = { wa: ['chat', 'WhatsApp message', 'Shown on your bike'], missed: ['missed', 'Missed call', 'Count sent to your bike'], call: ['phone', 'Incoming call', 'Name shown on your bike'], button: ['hand', 'Handlebar button', 'Pressed on the bike'] };
+    let lastDay = '';
+    const recentHTML = s.alerts.log.length ? s.alerts.log.slice(0, 30).map((x) => { const [ic, what, sub] = NT[x.kind] || NT.call, dd = day(x.ts), head = dd !== lastDay ? `<div class="nf-day">${dd}</div>` : ''; lastDay = dd;
+      return `${head}<div class="nf"><span class="nf-ic">${icon(ic)}</span><div class="nf-tx"><div class="nf-t"><b>${esc(x.kind === 'button' ? 'Handlebar' : shortName(x.name))}</b><span class="nf-time">${new Date(x.ts).toLocaleTimeString(DL(), { hour: "numeric", minute: "2-digit" })}</span></div><div class="nf-d">${what} · ${sub}</div></div></div>`; }).join('') : '<div class="card empty">No notifications yet.</div>';
+    return `<div class="section" style="margin-top:20px"><div class="ltabs" role="tablist"><button role="tab" class="${tab === 'needs' ? 'on' : ''}" aria-selected="${tab === 'needs'}" data-act="alerts-tab" data-arg="needs">Needs you${needs.length ? `<span class="lt-n">${needs.length}</span>` : ''}</button><button role="tab" class="${tab === 'recent' ? 'on' : ''}" aria-selected="${tab === 'recent'}" data-act="alerts-tab" data-arg="recent">Recent</button></div><div class="lt-body" data-swipe-tabs="alerts-tab" data-tabs="needs,recent" data-cur="${tab}">${tab === 'needs' ? needsHTML : `<div class="nf-list">${recentHTML}</div>`}</div></div>`; })()}
   <div class="section">${sh('Calls & messages', `<span class="eyebrow">${short(s.alerts.sent)} sent</span>`)}
-  <div class="two">${card('missed', 'Missed', m.length, m.length ? `Last: ${esc(m[m.length - 1].name)}` : 'None waiting', 'clear-missed', `<a class="btn line sm" href="${PHONE_APP}" aria-label="Open the Phone app">${icon('phone')}Phone</a>`)}${card('chat', 'WhatsApp', w.length, w.length ? `Last: ${esc(w[w.length - 1].name)}` : 'None waiting', 'clear-wa', `<a class="btn line sm" href="whatsapp://" aria-label="Open WhatsApp">${icon('chat')}Chats</a>`)}</div>
+  <div class="two">${card('missed', 'Missed', m.length, m.length ? `Last: ${esc(shortName(m[m.length - 1].name))}` : 'None waiting', 'clear-missed', IS_IOS ? '' : `<a class="btn line sm" href="tel:" aria-label="Open the Phone app">${icon('phone')}Phone</a>`)}${card('chat', 'WhatsApp', w.length, w.length ? `Last: ${esc(shortName(w[w.length - 1].name))}` : 'None waiting', 'clear-wa', `<a class="btn line sm" href="whatsapp://" aria-label="Open WhatsApp">${icon('chat')}Chats</a>`)}</div>
   <div class="dashed">${icon('lock')}<span>Only <b>names and counts</b> reach your bike. Message text never leaves this phone.</span></div>
   </div>
   <div class="section">${sh('Show on the bike', '', 'showbike')}<div class="list">
@@ -693,7 +701,7 @@ export function settings(c) {
   return `<div class="stagger">
   <div class="head pagehead"><div><h1 class="title">You & your bikes</h1><div class="subtitle">Profile, garage and how the app looks</div></div></div>
   ${live.scenario ? previewBar(live) : ''}
-  <button class="card pad profile-card mt20 flex gap12" style="width:100%;text-align:left" data-act="go" data-arg="profile">${avatar(s.profile)}<div class="grow"><div class="serif pc-name">${esc(s.profile.name || 'Add your name')}</div><div class="small faint">${s.profile.blood || s.profile.iceName ? [s.profile.blood ? `Blood ${esc(s.profile.blood)}` : '', s.profile.iceName ? `ICE ${esc(clip(s.profile.iceName, 14))}` : ''].filter(Boolean).join(' · ') : 'Licence, blood group, emergency contact'}</div>${s.profile.medical ? `<div class="small faint pc-med">${esc(clip(s.profile.medical, 40))}</div>` : ''}</div>${icon('chev', 'faint')}</button>
+  <button class="card pad profile-card mt20 flex gap12" style="width:100%;text-align:left" data-act="go" data-arg="profile">${avatar(s.profile)}<div class="grow"><div class="serif pc-name">${esc(shortName(s.profile.name) || 'Add your name')}</div><div class="small faint">${s.profile.blood || s.profile.iceName ? [s.profile.blood ? `Blood ${esc(s.profile.blood)}` : '', s.profile.iceName ? `ICE ${esc(clip(s.profile.iceName, 14))}` : ''].filter(Boolean).join(' · ') : 'Licence, blood group, emergency contact'}</div>${s.profile.medical ? `<div class="small faint pc-med">${esc(clip(s.profile.medical, 40))}</div>` : ''}</div>${icon('chev', 'faint')}</button>
   <div class="section">${sh('Garage', s.vehicles.length > 1 ? '<button class="link" data-act="sheet" data-arg="garage">Switch</button>' : '')}
     <div class="card vcard"><button class="flex gap12" style="width:100%;text-align:left;padding:12px 16px 12px 12px" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">
       ${vehicleArt(s, v, 'card')}
@@ -804,9 +812,9 @@ export function profile(c) {
   <header class="pagehead">${topbar(backBtn('settings'), `<span class="saved" id="saved">${icon('check')} Saved</span>`)}</header>
   <div class="prof-hero">
     <label style="position:relative;cursor:pointer">${avatar(p, true)}<span class="circle" style="position:absolute;right:-4px;bottom:-4px;width:32px;height:32px">${icon('camera').replace('<svg', '<svg style="width:15px;height:15px"')}</span><input type="file" accept="image/*" hidden data-input="avatar"></label>
-    <div class="ph-tx"><h1 class="title">${esc(p.name || 'Your profile')}</h1><div class="subtitle">Rider since ${new Date(p.since || Date.now()).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div></div>
+    <div class="ph-tx"><h1 class="title">${esc(shortName(p.name) || 'Your profile')}</h1><div class="subtitle">Rider since ${new Date(p.since || Date.now()).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</div></div>
   </div>
-  <div class="card stat3 mt20"><div><span class="eyebrow">Bikes</span><span class="big">${s.vehicles.length}</span></div><div><span class="eyebrow">Ridden</span><span class="big">${num(totalKm)}</span><span class="unit" style="margin:0">km</span></div><div><span class="eyebrow">Rides</span><span class="big">${rides}</span></div></div>
+  <div class="card stat3 mt20"><div><span class="eyebrow">Bikes</span><span class="big">${s.vehicles.length}</span></div><div><span class="eyebrow">Ridden</span><span class="big">${short(totalKm)}</span><span class="unit" style="margin:0">km</span></div><div><span class="eyebrow">Rides</span><span class="big">${short(rides)}</span></div></div>
   <form data-form="profile" data-autosave>
   <div class="section">${sh('About you')}<div class="card pad" style="padding-top:2px">
     ${f('name', 'Full name', p.name, 'text', 'Arjun Rao', `maxlength="${LIMITS.person}"`)}
