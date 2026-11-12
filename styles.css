@@ -2037,3 +2037,6 @@ html[data-theme="obsidian"] .onb-scene .gf0, html[data-theme="amoled"] .onb-scen
 svg.i .duo { opacity: .22 !important; }
 svg.i.ifill circle, svg.i.ifill rect, svg.i.ifill ellipse, svg.i.ifill path[d$="Z"], svg.i.ifill path[d$="z"] { fill-opacity: .32 !important; }
 .icoopt .io-row svg { width: 26px !important; height: 26px !important; }
+/* the rider silhouette takes the scene's darkest grey */
+.sc-rider-img { filter: drop-shadow(0 4px 3px rgba(0,0,0,.18)); opacity: .82; }
+html[data-theme="obsidian"] .sc-rider-img, html[data-theme="amoled"] .sc-rider-img { filter: invert(1) drop-shadow(0 4px 3px rgba(0,0,0,.4)); opacity: .55; }
