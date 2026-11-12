@@ -2109,3 +2109,21 @@ html[data-theme="sketch"] .onb { background: var(--bg) !important; }
 html:not([data-accent="rust"]):not([data-accent="wine"]):not([data-accent="amber"]) .link-badge::after { background: var(--accent); }
 .link-badge::before { background: #3B6FE0; filter: url(#sc-wc); z-index: -2; }
 .link-badge svg { color: #fff; position: relative; }
+/* Onboarding performance: paint the painted scene once, then only slide it */
+.onb-stage .sc-l.far, .onb-stage .sc-l.mid, .onb-stage .sc-l.near { transform: none !important; }
+.onb-stage .onb-scene { will-change: transform; transform: translate3d(calc(var(--p) * -20%), 0, 0) !important; backface-visibility: hidden; }
+.onb-stage.still .onb-scene { transform: translate3d(-80%, 0, 0) !important; }
+.onb, .onb .stagger > * { animation: none !important; }
+.onb-slide { contain: layout paint; }
+/* Paper theme: crisp icons, stronger grain */
+html[data-theme="sketch"] svg.i, html[data-theme="sketch"] .art img, html[data-theme="sketch"] .avatar img { filter: none !important; }
+html[data-theme="sketch"] body::after { opacity: 1; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3  0 0 0 0 .25  0 0 0 0 .18  0 0 0 .55 -.05'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E"); background-size: 200px 200px; }
+html[data-theme="sketch"] body::after { mix-blend-mode: normal !important; opacity: .7 !important; transform: translateZ(0); }
+/* background life in the story scene */
+.sc-cloud ellipse { fill: color-mix(in srgb, var(--ink) 7%, var(--bg)); }
+.sc-town rect { fill: color-mix(in srgb, var(--ink) 14%, var(--bg)); }
+.sc-trees path { fill: color-mix(in srgb, var(--ink) 30%, var(--bg)); }
+.sc-poles rect { fill: color-mix(in srgb, var(--ink) 34%, var(--bg)); }
+.sc-wire { fill: none; stroke: color-mix(in srgb, var(--ink) 30%, var(--bg)); stroke-width: 1.2; }
+.sc-bird { fill: none; stroke: color-mix(in srgb, var(--ink) 40%, var(--bg)); stroke-width: 1.6; stroke-linecap: round; }
