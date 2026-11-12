@@ -1452,3 +1452,7 @@ html[data-theme="obsidian"] :is(.card, .list, .bikecard, .vcard, .support-card, 
 /* ...with a quiet diagonal pattern so the tile doesn't look empty */
 .art.icon-mode, html[data-theme="obsidian"] .art.icon-mode, html[data-theme="amoled"] .art.icon-mode {
   background-image: repeating-linear-gradient(135deg, color-mix(in srgb, var(--ink) 6%, transparent) 0 1px, transparent 1px 7px) !important; }
+/* Bike tiles: a faint chequered-flag pattern in the theme's greys */
+.art.icon-mode, html[data-theme="obsidian"] .art.icon-mode, html[data-theme="amoled"] .art.icon-mode {
+  background-image: conic-gradient(color-mix(in srgb, var(--ink) 6%, transparent) 25%, transparent 0 50%, color-mix(in srgb, var(--ink) 6%, transparent) 0 75%, transparent 0) !important;
+  background-size: 12px 12px !important; background-position: 0 0 !important; }
