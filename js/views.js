@@ -399,7 +399,7 @@ export function serviceRow(it, st) {
   return `<button class="row has-ic" data-act="sheet" data-arg="svc:${it.id}" data-flip="${it.id}">
     <div class="row-top"><div class="row-main"><span class="row-ic ${tone}">${icon(it.icon || 'wrench')}</span><div style="min-width:0"><div class="row-title">${esc(it.name)}</div><div class="row-sub">${everyText(it)}</div></div></div>
     <div class="row-val ${v.cls}"><span class="big">${v.v}</span><span class="unit ${v.cls}">${v.u}</span></div></div>
-    ${serviceSegs(st)}</button>`;
+    ${st.status === 'soon' || st.status === 'overdue' ? serviceSegs(st) : ''}</button>`;
 }
 
 // ---------- LOGBOOK ----------

@@ -64,7 +64,7 @@ async def main():
         check('FAB is 57px and sits above the tab bar', fab[0] == 57 and 70 < fab[1] < 110, str(fab))
         sw = await pg.evaluate("location.hash='settings'"); await pg.wait_for_timeout(600)
         size = await pg.evaluate("(()=>{const r=document.querySelector('.switch').getBoundingClientRect();return [r.width,r.height]})()")
-        check('toggles are 50×30', size == [50, 30], str(size))
+        check('toggles are 5% under 50×30', size == [47.5, 28.5], str(size))
 
         # Quick actions sheet
         await pg.evaluate("location.hash='today'"); await pg.wait_for_timeout(500)

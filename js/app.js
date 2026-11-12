@@ -674,7 +674,13 @@ link.addEventListener('frame', ({ detail }) => {
 // ---------- Actions ----------
 const A = {
   go: (a) => { closeSheet(); go(a); },
-  tab: (a) => { if (screen === a) $('.view')?.scrollTo({ top: 0, behavior: 'smooth' }); else go(a); },
+  tab: (a) => {
+    // Double-tap Today for a hard refresh (fresh app files, data kept).
+    const now = Date.now();
+    if (a === 'today' && now - (A._lastToday || 0) < 400) { A._lastToday = 0; return A['hard-refresh'](); }
+    if (a === 'today') A._lastToday = now;
+    if (screen === a) $('.view')?.scrollTo({ top: 0, behavior: 'smooth' }); else go(a);
+  },
   'wx-refresh': () => { buzz(6); loadWeather(true); },
   'wx-locate': () => {
     if (!navigator.geolocation) return toast('This browser can’t share your location. Add your city in Profile.');

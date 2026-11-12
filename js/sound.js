@@ -147,19 +147,19 @@ export function engineStart() {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.03;
   burst(c, t, 0.02, 2400, 0.06); // the starter button
   // Catch, a quick blip, then one clean rising pull before it settles.
-  revRise(c, t + 0.06, [[0, 1600], [0.12, 3400], [0.28, 2200], [0.95, 9800], [1.08, 9400], [1.5, 2600], [1.8, 1700]], 1.85, 0.42);
+  revRise(c, t + 0.06, [[0, 1600], [0.12, 3400], [0.28, 2200], [0.95, 9800], [1.08, 9400], [1.5, 2600], [1.8, 1700]], 1.85, 0.3);
 }
 // Ride starts: clutch in, into first, a clean pull away.
 function _revUp() {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.02;
   thud(c, t, 120, 55, 0.1, 0.28); burst(c, t, 0.04, 900, 0.08, 'lowpass', 0.8); // gear goes in
-  revRise(c, t + 0.08, [[0, 1700], [0.5, 7800], [0.62, 4300], [1.2, 8200], [1.6, 5200]], 1.6, 0.38);
+  revRise(c, t + 0.08, [[0, 1700], [0.5, 7800], [0.62, 4300], [1.2, 8200], [1.6, 5200]], 1.6, 0.26);
   thud(c, t + 1.3, 110, 50, 0.08, 0.2); // up into second
 }
 // Ride ends: off the throttle, down to idle, key off, the exhaust ticking as it cools.
 function _engineOff() {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.02;
-  revRise(c, t, [[0, 3600], [0.4, 1800], [0.8, 1500], [1.05, 700], [1.15, 400]], 1.15, 0.36);
+  revRise(c, t, [[0, 3600], [0.4, 1800], [0.8, 1500], [1.05, 700], [1.15, 400]], 1.15, 0.24);
   crackles(c, t + 0.12, 3);
   burst(c, t + 1.12, 0.02, 2600, 0.07); // key turns
   [1.5, 1.95, 2.55].forEach((d, i) => burst(c, t + d, 0.02, 4200 - i * 300, 0.07, 'bandpass', 6));
@@ -228,6 +228,7 @@ function crackles(c, t0, n = 6) {
 
 // iPhone pauses audio when the app goes to the background or sits silent; a sound asked for then would be lost.
 // Each sound waits for the audio to resume before it plays.
-const whenAwake = (fn) => (...a) => { const c = ac(); if (!c) return; if (c.state === 'running') fn(...a); else c.resume().then(() => fn(...a)).catch(() => {}); };
+// A sound that can't start within 150 ms is dropped, so nothing ever plays late or out of step with the tap.
+const whenAwake = (fn) => (...a) => { const c = ac(); if (!c) return; if (c.state === 'running') return fn(...a); const t0 = performance.now(); c.resume().then(() => { if (performance.now() - t0 < 150) fn(...a); }).catch(() => {}); };
 export const revUp = whenAwake(_revUp), engineOff = whenAwake(_engineOff), click = whenAwake(_click), horn = whenAwake(_horn), blip = whenAwake(_blip), revTo = whenAwake(_revTo);
 export const tick = revTo;

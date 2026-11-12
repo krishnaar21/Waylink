@@ -1409,3 +1409,16 @@ html[data-theme="obsidian"] .art.icon-mode, html[data-theme="amoled"] .art.icon-
 .tab svg { padding: 3px 14px; box-sizing: content-box; border-radius: 14px; transition: background .25s, color .25s; }
 .tab.on { color: var(--ink); }
 .tab.on svg { background: color-mix(in srgb, var(--ink) 10%, transparent); }
+/* Calmer rows: no E/F letters in lists, the bar only appears when a job needs attention */
+.row .fgauge > span, .upcard .fgauge > span { display: none; }
+.row .fgauge, .row .pg { margin-top: 12px; }
+/* Toggles 5% smaller */
+.switch { transform: scale(.95); transform-origin: right center; }
+/* Tabs: no pill. A short bar above the active icon, and the active label in bold. */
+.tab svg { padding: 0; background: none !important; }
+.tab::before { content: ''; position: absolute; top: -12px; left: 50%; width: 22px; height: 3px; margin-left: -11px; border-radius: 0 0 3px 3px; background: var(--ink); opacity: 0; transform: scaleX(.3); transition: opacity .25s, transform .3s var(--spring); }
+.tab.on::before { opacity: 1; transform: none; }
+.tab.on { font-weight: 700; }
+/* Loop letters: the build clip uses generous bounds, and no clip is left once a letter is complete (the y keeps its tail) */
+@keyframes tyBuild { 0% { clip-path: inset(-40% 100% -40% 0); } 25% { clip-path: inset(-40% 64% -40% 0); } 50% { clip-path: inset(-40% 30% 48% 0); } 75% { clip-path: inset(-40% 0 48% 0); } 100% { clip-path: none; } }
+.wl-loop .rest i { clip-path: none; }
