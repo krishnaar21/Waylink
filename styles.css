@@ -2254,3 +2254,6 @@ html[data-theme="obsidian"] .onb-link .onb-img, html[data-theme="amoled"] .onb-l
 .onb-link .onb-body { justify-content: center !important; padding-top: 6vh !important; }
 .lk-street .lk-bt { left: 98% !important; top: -14% !important; }
 .lk-street .lk-wave { left: 72%; top: -2%; }
+/* Bluetooth badge: painted, like the rest of the story */
+.link-badge::after { background: url(img/onb/bt-disc.webp) center / 130% 130% no-repeat !important; background-color: transparent !important; }
+.link-badge::before { background: url(img/onb/bt-disc.webp) center / 130% 130% no-repeat !important; opacity: .22 !important; filter: blur(2px) !important; }

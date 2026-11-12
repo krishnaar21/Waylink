@@ -1213,7 +1213,7 @@ function hideSplash() {
     window.__waylinkReady = true; // the page is up; the safety net in index.html stands down
     // Neither of these may hold the loader: each gets a short time limit and fails quietly.
     await within(loadGlove().catch(() => {}), 2500);
-    await within(fetch(`img/bikes/manifest.json?v=${V.ART_V}`, { cache: 'no-cache' }).then((r) => r.json()).then(S.setModelImages).catch(() => {}), 2500);
+
     if (s.onboarded) render();
     if (s.settings.simulated) link.startSimulated();
     else if (s.bike.id) link.restore(s.bike.id);

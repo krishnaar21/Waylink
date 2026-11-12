@@ -105,7 +105,7 @@ async def main():
         await pg.click('form[data-form=vehicle] button[type=submit]'); await pg.wait_for_timeout(800)
         check('new vehicle becomes active', 'Appa’s 150' in await text(pg, '.bc-main'))
         src = await pg.evaluate("document.querySelector('.bc-main .art img')?.getAttribute('src') || ''")
-        check('new Pulsar 150 shows its illustration', 'pulsar150' in src, src)
+        check('new vehicle shows the Waylink bike', 'rider-street' in src, src)
         count = await pg.evaluate("JSON.parse(localStorage.getItem('pulsarnav-web-v2')).vehicles.length")
         check('garage saved with 3 bikes', count == 3, str(count))
 
@@ -141,7 +141,7 @@ async def main():
         check('serif fonts offered', await pg.query_selector('[data-act="font"][data-arg="garamond"]') and await pg.query_selector('[data-act="font"][data-arg="fraunces"]'))
         await pg.evaluate("document.querySelector('.backdrop')?.click()"); await pg.wait_for_timeout(500)
         await pg.click('[data-arg="models"]'); await pg.wait_for_timeout(500)
-        check('model gallery lists all 11 models', len(await pg.query_selector_all('.models .m')) == 11)
+        check('model list shows all 11 models', len(await pg.query_selector_all('.sheet .list .li')) == 11)
         await shot(pg, '06b-models')
         await pg.keyboard.press('Escape'); await pg.wait_for_timeout(400)
         # Preview states: nothing is saved, every tab renders

@@ -68,13 +68,9 @@ const lum = (h) => { const n = [1, 3, 5].map((i) => parseInt(String(h || '#88888
 export const ART_V = '75';
 export function vehicleArt(s, v, size = 'thumb') {
   const cls = size === 'hero' ? 'art hero-art' : size === 'model' ? 'art model-art' : size === 'card' ? 'art card-art' : size === 'lg' ? 'art thumb lg' : 'art thumb';
-  // Bikes without a photo: a soft tile tinted with the bike's colour, so it sits with the theme instead of shouting.
-  // No photo and no model art: the Waylink street bike stands in.
-  const tile = () => `<div class="${cls}"><img class="model" src="img/onb/rider-street.webp" alt="" decoding="async" onload="this.classList.add('ld')"></div>`;
+  // One Waylink bike for every vehicle; a rider's own photo still wins.
   if (v.photo) return `<div class="${cls}"><img class="photo" src="${v.photo}" alt=""></div>`;
-  const img = S.MODEL_IMAGES[v.model];
-  if (img) return `<div class="${cls}"><img class="${img.fit === 'cover' ? 'photo' : 'model'}" src="${img.src}${img.src.includes('?') ? '&' : '?'}v=${ART_V}" onload="this.classList.add('ld')" alt="${esc(S.MODELS.find((m) => m.id === v.model)?.name || '')}" decoding="async"></div>`;
-  return tile();
+  return `<div class="${cls}"><img class="model" src="img/onb/rider-street.webp" alt="" decoding="async" onload="this.classList.add('ld')"></div>`;
 }
 export function avatar(p, xl = false) {
   const init = (p.name || '?').trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
@@ -730,7 +726,7 @@ export function settings(c) {
       <div class="vc-rows">
       ${li({ ic: 'spec', t: 'Spec sheet', d: 'Oil, tyres, chain, plugs', act: 'sheet', arg: 'specs' })}
       ${s.vehicles.length > 1 ? li({ ic: 'swap', t: 'Switch vehicle', end: `${s.vehicles.length} bikes`, act: 'sheet', arg: 'garage' }) : ''}
-      ${li({ ic: 'grid', t: 'All bike models', d: `${S.MODELS.length} models · ${Object.keys(S.MODEL_IMAGES).length} with photos`, act: 'sheet', arg: 'models' })}
+      ${li({ ic: 'grid', t: 'All bike models', d: `${S.MODELS.length} models`, act: 'sheet', arg: 'models' })}
       ${li({ ic: 'gauge', t: 'Odometer', d: 'Correct it if it drifts', end: num(Math.floor(s.odo)) + ' km', act: 'sheet', arg: 'odo' })}
       ${li({ ic: 'bt', t: 'Bluetooth', d: 'Pair and check the link', end: connText, act: 'sheet', arg: 'bike' })}
     </div></div></div>
@@ -964,7 +960,6 @@ export function helpSheet(c, k) {
       ${li({ ic: 'code', t: 'Source code', d: 'MIT licence', end: '', tag: 'a', href: REPO_URL })}
       ${li({ ic: 'bt', t: 'Bike protocol', d: 'PulsarNav on GitHub', tag: 'a', href: 'https://github.com/nikhilmaity00/pulsarnav' })}
       ${li({ ic: 'grid', t: 'Icons', d: 'Hugeicons', tag: 'a', href: 'https://hugeicons.com' })}
-      ${li({ ic: 'image', t: 'Photo credits', d: 'Authors and licences of bike photos', act: 'sheet', arg: 'credits' })}
       ${li({ ic: 'wxPart', t: 'Weather', d: 'Open-Meteo, free and open data', chev: false, tag: 'div' })}
       ${li({ ic: 'pin', t: 'Places', d: 'OpenStreetMap Nominatim', chev: false, tag: 'div' })}
       ${li({ ic: 'lock', t: 'Privacy', d: 'Your data stays on this phone', chev: false, tag: 'div' })}
@@ -1270,9 +1265,8 @@ function sheetInner(c, key) {
       ${items.length ? `<div class="list flat mt16">${items.map((x) => li({ lead: `<span class="ic" style="background:var(--tint-${x.tone});color:var(--${x.tone === 'sage' ? 'sage-ink' : x.tone})">${icon(x.ic)}</span>`, t: x.t, d: x.d, act: x.act, arg: x.arg })).join('')}</div>` : `<div class="empty"><div class="serif">All caught up</div>Nothing needs you right now.</div>`}`;
     }
     case 'models':
-      return `<div class="eyebrow">Garage</div><h2>Bike models</h2><p class="lead">Every model ${appName(s)} knows. Models without a photo show a plain tile.</p>
-      <div class="models mt16">${S.MODELS.map((m, i) => `<div class="m">${vehicleArt({ settings: { art: 'photo' } }, { model: m.id, colour: S.COLOURS[i % S.COLOURS.length][0] }, 'model')}<div class="t">${esc(S.nameOfModel(s, m))}</div><div class="d">${num(m.tank, m.tank % 1 ? 1 : 0)} L · ${esc(m.series)}${S.MODEL_IMAGES[m.id] ? ' · art' : ''}</div></div>`).join('')}</div>
-      <p class="hint">Artwork credits are in About Waylink, Photo credits.</p>`;
+      return `<div class="eyebrow">Garage</div><h2>Bike models</h2><p class="lead">Every model ${appName(s)} knows.</p>
+      <div class="list flat mt16">${S.MODELS.map((m) => li({ ic: 'bike', t: esc(S.nameOfModel(s, m)), d: `${esc(m.series)} · ${num(m.tank, m.tank % 1 ? 1 : 0)} L tank`, chev: false, tag: 'div' })).join('')}</div>`;
     case 'credits': {
       const rows = Object.entries(S.MODEL_IMAGES);
       return `<div class="eyebrow">About</div><h2>Photo credits</h2><p class="lead">Bike photos are used under their open licences. Tap one to see its source.</p>
