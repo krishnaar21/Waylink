@@ -284,26 +284,29 @@ export function today(c) {
   if (fs.onReserve) line = `On reserve, about ${num(fs.range)} km left.` + (v.over || v.soon ? ' ' + line : '');
   const missed = s.alerts.missed;
   const urgent = list.filter((x) => x.st.status !== 'ok').slice(0, 3);
+  const good = !v.over && !v.soon && !fs.onReserve;
+  const cc = connCard(c, good), ccIn = cc.startsWith('<div class="bc-conn');
   return `<div class="stagger">
   <div class="pagehead today-head"><div class="th-row"><div style="min-width:0"><h1 class="title">${new Date().toLocaleDateString(DL(), { weekday: 'long' })}</h1><div class="subtitle">${new Date().toLocaleDateString(DL(), { day: 'numeric', month: 'long' })}</div></div>
     <div class="head-actions"><button class="circle" data-act="sheet" data-arg="sos" aria-label="Emergency SOS" style="color:var(--red)">${icon('sos')}</button></div></div></div>
   ${live.scenario ? previewBar(live) : ''}
   <div class="bikecard">
     <button class="bc-main" data-act="sheet" data-arg="garage" aria-label="Switch vehicle">${vehicleArt(s, v0, 'lg')}<div class="grow"><div class="t">${esc(S.vehicleTitle(s))}</div><div class="m">${esc(v0.nickname ? S.bikeName(s) : S.model(s).series)} · ${short(s.odo)} km</div><div class="d">${esc(v0.plate || 'No number plate')}</div></div><span class="bc-swap">${icon('updown')}</span></button>
+    ${ccIn ? cc : good ? `<div class="bc-conn conn-compact"><button class="cc-main" data-act="go" data-arg="logbook"><span class="cc-ic good">${icon('ok')}</span><span class="cc-tx"><span class="cc-t">Road ready</span><span class="cc-s">All ${v.ok} jobs on track</span></span></button></div>` : ''}
     <button class="bc-wx" data-act="sheet" data-arg="weather" aria-label="Weather details">${weatherHead(c)}</button>
   </div>
   ${live.rec ? recCard(live) : ''}
-  <button class="hero ${fs.onReserve && !v.over ? 'soon' : v.cls}" data-act="go" data-arg="logbook">
+  ${good ? '' : `<button class="hero ${fs.onReserve && !v.over ? 'soon' : v.cls}" data-act="go" data-arg="logbook">
     <div class="eyebrow">Verdict</div>
     <div class="verdict">${v.word}</div>
     <p>${line}</p>
     ${v.over || v.soon ? heroBar(v.bar) + caption(v) : `<div class="eyebrow caption">All ${v.ok} jobs on track</div>`}
-  </button>
+  </button>`}
   <div class="section" style="margin-top:22px">${sh(urgent.length ? 'Do these first' : 'Coming up', '<button class="link" data-act="go" data-arg="logbook">See all</button>')}
     <div class="upnext">${(urgent.length ? urgent : list.slice(0, 4)).map(({ it, st }) => upCard(it, st)).join('')}</div></div>
   ${missed.length ? `<button class="banner" data-act="go" data-arg="alerts">${icon('missed')}<span class="t"><span class="big" style="font-size:20px">${missed.length}</span> missed ${missed.length === 1 ? 'call' : 'calls'} · ${esc(missed[missed.length - 1].name)}</span>${icon('chev', 'faint')}</button>` : ''}
   ${s.parking && !link.connected ? `<button class="banner plain" data-act="sheet" data-arg="parking">${icon('pin')}<span class="t">Parked ${ago(s.parking.ts)} <span class="faint small">· walk back</span></span>${icon('chev', 'faint')}</button>` : ''}
-  ${connCard(c)}
+  ${ccIn ? '' : cc}
   <div class="section">${sh('Readings', `<span class="eyebrow">${esc(S.model(s).series)}</span>`, 'readings')}
     <div class="card readings">
       <div class="odo"><span class="eyebrow">Odometer</span><span><span class="big" data-live="odo">${num(Math.floor(s.odo))}</span><span class="unit">km</span></span></div>
@@ -354,7 +357,7 @@ export function fuelBars(fs, big = false) {
   for (let i = 0; i < 6; i++) h += `<i class="${n != null && i < n ? 'on' : ''}" style="height:${45 + i * 11}%"></i>`;
   return h + `<span class="faint small" style="margin-left:6px">${n != null ? n + '/6' : '—'}</span></div>`;
 }
-function connCard(c) {
+function connCard(c, good = false) {
   const { s, link } = c;
   const st = link.state;
   const name = esc(S.vehicleTitle(s));
@@ -385,7 +388,8 @@ function connCard(c) {
     const act = st === 'connected' ? `<button class="btn accent sm cc-act" data-act="ride">${icon('speed')}Ride</button>`
       : st === 'idle' || st === 'error' ? `<button class="btn ink sm cc-act" data-act="reconnect">${icon('bt')}Connect</button>`
       : `<button class="btn line sm cc-act" data-act="cancel-link">${st === 'connecting' ? 'Cancel' : 'Stop'}</button>`;
-    return `<div class="card conn conn-compact mt12"><button class="cc-main" data-act="sheet" data-arg="bike" aria-label="Bluetooth details"><span class="cc-ic ${mode}">${icon(st === 'connected' ? 'btOn' : mode === 'search' ? 'btSearch' : 'bt')}<span class="dot ${dot}"></span></span><span class="cc-tx"><span class="cc-t">${title}</span><span class="cc-s">${sub}</span></span></button>${act}</div>`;
+    const t = good ? 'Road ready' : title, sb = good ? `${title} · ${sub}` : sub;
+    return `<div class="bc-conn conn-compact"><button class="cc-main" data-act="sheet" data-arg="bike" aria-label="Bike link details"><span class="cc-ic ${mode}${good ? ' good' : ''}">${icon(good ? 'ok' : 'signal')}<span class="dot ${dot}"></span></span><span class="cc-tx"><span class="cc-t">${t}</span><span class="cc-s">${sb}</span></span></button>${act}</div>`;
   }
   return `<div class="card conn mt12">
     <div class="conn-head"><div><div class="serif">${title}</div><div class="status mt8"><span class="dot ${dot}"></span>${sub}</div></div>
@@ -801,7 +805,7 @@ const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnLeft', '#3E8EF7'], ['straigh
 export const TURNS = `<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true">${TURN_SIGNS.map(([k, col, f], i) => `<svg class="tg tg${i} ${f || ''}" viewBox="0 0 24 24" fill="none" style="color:${col}">${HUGE_ICONS[k]}</svg>`).join('')}</span><span aria-hidden="true">link</span></span>`;
 // In-app loading screen: the turn signs take turns in a circle, with a line of text below.
 export const loader = (text = 'Loading') => `<div class="wl-loader" role="status" aria-live="polite"><span class="ld-ring">${TURN_SIGNS.map(([k], i) => `<svg class="ld-i ld${i}" viewBox="0 0 24 24" fill="none" aria-hidden="true">${HUGE_ICONS[k]}</svg>`).join('')}</span><div class="ld-t">${esc(text)}<span class="ld-dots"><i>.</i><i>.</i><i>.</i></span></div></div>`;
-export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8.5 26L8.5 30C10 56 16 80 28 80C40 80 45 58 50 42C55 58 60 80 72 80C84 80 90 56 91.5 30L91.5 26"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
+export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8.5 26L8.5 30C10 56 16 80 28 80C40 80 44.5 62 46.6 49C47.6 43 52.4 43 53.4 49C55.5 62 60 80 72 80C84 80 90 56 91.5 30L91.5 26"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
 export const BRANDS = [['loop', 'Loop']];
 export const brandOf = () => 'loop';
 export const APP_VERSION = '1.0';

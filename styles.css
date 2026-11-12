@@ -1648,7 +1648,6 @@ svg.i.ifill circle, svg.i.ifill rect, svg.i.ifill ellipse, svg.i.ifill path[d$="
 .view .stagger > * + .section, .view .stagger > .section + * { margin-top: 30px !important; }
 .view .stagger > .pagehead + * { margin-top: 18px !important; }
 .view .stagger > .pagehead + .section { margin-top: 18px !important; }
-.section > .two, .section > .list, .section > .card { margin-top: 0; }
 .section .two + .nf-list, .section .card + .card { margin-top: 12px; }
 /* Wordmark w: flat ends and a sharp middle point, like the letters beside it */
 .wl-arch .lw { stroke-linecap: butt !important; stroke-linejoin: miter !important; stroke-miterlimit: 6; }
@@ -1671,3 +1670,15 @@ svg.i.ifill circle, svg.i.ifill rect, svg.i.ifill ellipse, svg.i.ifill path[d$="
 .li.is-over .ic, .li .ic.hot { background: var(--tint-red) !important; color: var(--red) !important; }
 .li .opill { margin-right: 6px; }
 .wl-arch .lw { stroke-width: 13 !important; }
+/* Today bike card: the link (and Road ready) as a row inside the card */
+.bikecard .bc-conn { display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 14px !important; margin: 0; border-top: 1px solid var(--line); box-shadow: none !important; background: none; border-radius: 0; }
+.bikecard .bc-conn .cc-ic { width: 36px; height: 36px; border-radius: 10px; }
+.bikecard .bc-conn .cc-ic svg { width: 19px; height: 19px; }
+.cc-ic.good { background: var(--tint-sage); color: var(--sage-ink); }
+.bikecard .bc-conn .cc-t { font-size: 15px; }
+.bikecard .bc-conn .cc-act { height: 34px; }
+/* Weather line: a quieter number */
+.bc-wx .wh-t { font-size: 16px !important; }
+.bc-wx .wh-ic svg { width: 14px; height: 14px; }
+/* Preview states card: room above it */
+.section > .list + .card { margin-top: 12px; }
