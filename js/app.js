@@ -319,7 +319,14 @@ function showLoader() {
   setTimeout(hide, 6000);
 }
 let sheetStack = [];
-const sheetHead = () => `${sheetStack.length ? `<button class="circle" data-act="sheet-back" aria-label="Back">${V.icon('back')}</button>` : '<span></span>'}<button class="circle" data-act="close" aria-label="Close">${V.icon('x')}</button>`;
+const sheetHead = () => `${sheetStack.length ? `<button class="circle" data-act="sheet-back" aria-label="Back">${V.icon('back')}</button>` : ''}<div class="sheet-title"></div><button class="circle" data-act="close" aria-label="Close">${V.icon('x')}</button>`;
+// The sheet's title lives in the head bar, beside back and close, so scrolled content passes under it cleanly.
+function liftTitle(sheet) {
+  const h = $('.sheet-body h2:not(.sr-only)', sheet), t = $('.sheet-title', sheet);
+  if (!t) return;
+  if (h && !h.closest('.card, .list, .about-hero')) { t.innerHTML = h.innerHTML; h.classList.add('lifted'); } else t.innerHTML = '';
+  sheet.classList.toggle('has-title', !!t.innerHTML);
+}
 function openSheet(key, rawHTML, { push = true } = {}) {
   const html = rawHTML ?? V.sheetHTML(ctx(), key);
   if (html == null) return;
@@ -332,11 +339,12 @@ function openSheet(key, rawHTML, { push = true } = {}) {
   if (open) {
     const body = $('.sheet-body', sheet);
     $('.sheet-head', sheet).innerHTML = sheetHead();
-    body.innerHTML = html; body.scrollTop = 0;
+    body.innerHTML = html; body.scrollTop = 0; liftTitle(sheet);
     body.animate([{ opacity: 0, transform: `translateX(${push ? 18 : -18}px)` }, { opacity: 1, transform: 'none' }], { duration: 280, easing: 'cubic-bezier(.32,.72,0,1)' });
   } else {
     host.innerHTML = `<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div class="sheet-head">${sheetHead()}</div><div class="sheet-body">${html}</div></div>`;
     sheet = $('.sheet', host);
+    liftTitle(sheet);
     wireDrag(sheet);
   }
   const af = $('[autofocus]', sheet); if (af) setTimeout(() => af.focus(), 350);
@@ -352,7 +360,7 @@ function refreshSheet() {
   const html = V.sheetHTML(ctx(), sheetKey);
   const body = $('#sheets .sheet-body');
   if (html == null) return closeSheet();
-  if (body) { const st = body.scrollTop; body.innerHTML = html; body.scrollTop = st; }
+  if (body) { const st = body.scrollTop; body.innerHTML = html; body.scrollTop = st; liftTitle($('#sheets .sheet')); }
 }
 function closeSheet() {
   sheetKey = null; sheetStack = [];
@@ -1055,10 +1063,8 @@ function launchSound() {
   SND.whenLive(() => { const sp = $('#splash'); if (sp && !sp.classList.contains('out')) SND.engineStart(); });
 }
 setTimeout(() => { SND.unlock(); launchSound(); }, 60);
-const firstTap = () => {
-  SND.unlock();
-  ['touchend', 'click', 'keydown'].forEach((t) => removeEventListener(t, firstTap, true));
-};
+// Every tap re-wakes audio (iPhone suspends it in the background); it's a no-op when already running.
+const firstTap = () => { SND.unlock(); };
 ['touchend', 'click', 'keydown'].forEach((t) => addEventListener(t, firstTap, true));
 const within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(r, ms))]);
 function hideSplash() {

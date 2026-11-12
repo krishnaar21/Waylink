@@ -32,7 +32,7 @@ export function whenLive(fn, wait = 160) {
 }
 // iOS starts audio only inside a finished tap: resume and play one silent sample right there.
 export function unlock() {
-  const c = ac(); if (!c || unlocked) return !!c;
+  const c = ac(); if (!c) return false; if (unlocked && c.state === 'running') return true;
   try { const b = c.createBuffer(1, 1, 22050), s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(0); } catch {}
   if (c.state === 'running') unlocked = true;
   return true;
@@ -150,14 +150,14 @@ export function engineStart() {
   revRise(c, t + 0.06, [[0, 1600], [0.12, 3400], [0.28, 2200], [0.95, 9800], [1.08, 9400], [1.5, 2600], [1.8, 1700]], 1.85, 0.42);
 }
 // Ride starts: clutch in, into first, a clean pull away.
-export function revUp() {
+function _revUp() {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.02;
   thud(c, t, 120, 55, 0.1, 0.28); burst(c, t, 0.04, 900, 0.08, 'lowpass', 0.8); // gear goes in
   revRise(c, t + 0.08, [[0, 1700], [0.5, 7800], [0.62, 4300], [1.2, 8200], [1.6, 5200]], 1.6, 0.38);
   thud(c, t + 1.3, 110, 50, 0.08, 0.2); // up into second
 }
 // Ride ends: off the throttle, down to idle, key off, the exhaust ticking as it cools.
-export function engineOff() {
+function _engineOff() {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.02;
   revRise(c, t, [[0, 3600], [0.4, 1800], [0.8, 1500], [1.05, 700], [1.15, 400]], 1.15, 0.36);
   crackles(c, t + 0.12, 3);
@@ -165,14 +165,14 @@ export function engineOff() {
   [1.5, 1.95, 2.55].forEach((d, i) => burst(c, t + d, 0.02, 4200 - i * 300, 0.07, 'bandpass', 6));
 }
 // Switch: a relay. Two contacts close a few milliseconds apart; brighter when switching on.
-export function click(on = true) {
+function _click(on = true) {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.004;
   burst(c, t, 0.02, on ? 3600 : 2600, on ? 0.72 : 0.5, 'bandpass', 2.2);
   burst(c, t + 0.009, 0.024, on ? 1800 : 1300, 0.50, 'bandpass', 1.8);
   thud(c, t, on ? 220 : 170, 90, 0.04, 0.14);
 }
 // Horn: the two-tone electric horn of an Indian commuter bike, two short beeps.
-export function horn(beeps = 2) {
+function _horn(beeps = 2) {
   const c = ac(); if (!c) return; let t = c.currentTime + 0.02;
   for (let b = 0; b < beeps; b++) {
     const len = b === beeps - 1 ? 0.42 : 0.16;
@@ -186,13 +186,13 @@ export function horn(beeps = 2) {
   }
 }
 // A single throttle blip at idle.
-export function blip() {
+function _blip() {
   const c = ac(); if (!c) return; const t = c.currentTime + 0.02;
   engine(c, t, [[0, 1350], [0.1, 4800], [0.34, 2100], [0.6, 1350]], 0.75, 0.38);
 }
 // Rising revs that follow a slider: one running engine, its revs set by the value (0..1), fading out when you stop.
 let live = null, liveStop = 0, lastP = null, lastAt = 0;
-export function revTo(p = 0) {
+function _revTo(p = 0) {
   const c = ac(); if (!c) return;
   p = Math.max(0, Math.min(1, p));
   const rpm = 1300 + p * 6200, f = rpm / 120, now = c.currentTime;
@@ -220,8 +220,14 @@ export function revTo(p = 0) {
   }, 260);
 }
 // Kept for older callers: a slider move now revs the engine.
-export const tick = revTo;
+
 // Exhaust crackles: a few pops as the throttle closes.
 function crackles(c, t0, n = 6) {
   for (let i = 0; i < n; i++) { const t = t0 + i * (0.05 + Math.random() * 0.07); burst(c, t, 0.03 + Math.random() * 0.03, 300 + Math.random() * 500, 0.18 + Math.random() * 0.14, 'lowpass', 0.9); thud(c, t, 160, 60, 0.04, 0.1); }
 }
+
+// iPhone pauses audio when the app goes to the background or sits silent; a sound asked for then would be lost.
+// Each sound waits for the audio to resume before it plays.
+const whenAwake = (fn) => (...a) => { const c = ac(); if (!c) return; if (c.state === 'running') fn(...a); else c.resume().then(() => fn(...a)).catch(() => {}); };
+export const revUp = whenAwake(_revUp), engineOff = whenAwake(_engineOff), click = whenAwake(_click), horn = whenAwake(_horn), blip = whenAwake(_blip), revTo = whenAwake(_revTo);
+export const tick = revTo;

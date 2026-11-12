@@ -1356,17 +1356,16 @@ html[data-brand="turns"] .splash-brand .wl-turns .slot .tg { inset: 26%; width: 
 .progopt .pv { gap: 14px; padding: 14px 12px; margin-bottom: 10px; min-height: 84px; align-content: center; }
 .progopt .pv .pl { display: none; }
 .progopt .nm { font-size: 14px; padding-left: 4px; }
-/* Sheets: back and close sit on the same line as the title */
-.sheet-head { height: 0; padding: 0 16px; position: relative; z-index: 2; align-items: flex-start; overflow: visible; }
-.sheet-head .circle { margin-top: 12px; }
-.sheet-body { padding-top: 14px; }
-.sheet-body > h2:first-child, .sheet-body > .about-sheet > h2:first-child + * { padding-right: 46px; }
-.sheet-body > h2:first-child { min-height: 36px; display: flex; align-items: center; margin-top: 0; }
-.sheet:has([data-act="sheet-back"]) .sheet-body > h2:first-child { padding-left: 46px; }
-.sheet-body > .support-hero:first-child h2 { min-height: 36px; display: flex; align-items: center; margin-top: 0; padding-right: 46px; }
-.sheet:has([data-act="sheet-back"]) .sheet-body > .support-hero:first-child h2 { padding-left: 46px; }
-.sheet-body > :first-child:not(h2):not(.support-hero):not(.about-sheet) { margin-top: 44px; }
-.about-sheet .about-hero { margin-top: 30px; }
+/* Sheets: a head bar holds back, the title and close on one line; content scrolls under it */
+.sheet-head { position: relative; z-index: 2; display: flex; align-items: center; gap: 10px; height: auto; min-height: 52px; padding: 2px 16px 8px 24px; background: var(--sheet); }
+.sheet:has([data-act="sheet-back"]) .sheet-head { padding-left: 16px; }
+.sheet-head .circle { margin: 0; flex: none; }
+.sheet-title { flex: 1; min-width: 0; font-family: var(--serif); font-weight: var(--dw); font-size: calc(24px * var(--dscale, 1)); letter-spacing: var(--dls); line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sheet:not(.has-title) .sheet-title { visibility: hidden; }
+.sheet-body h2.lifted { display: none; }
+.sheet-body { padding-top: 2px; }
+.sheet-body > .sheet-sub:first-child, .sheet-body .lifted + .sheet-sub { margin-top: 0; }
+.sheet .sheet-head::after { content: ''; position: absolute; left: 0; right: 0; bottom: -10px; height: 10px; background: linear-gradient(var(--sheet), transparent); pointer-events: none; }
 /* Optical kerning for the Loop wordmark: more room after the w's open arm and between straight stems,
    a touch less where round meets diagonal. */
 .wl-loop svg.lw-w { margin-right: .035em; }
@@ -1377,3 +1376,10 @@ html[data-brand="turns"] .splash-brand .wl-turns .slot .tg { inset: 26%; width: 
 .wl-loop .rest i.ty3 { margin-right: .024em; }  /* i|n */
 .wl-loop .rest i.ty4 { margin-right: .012em; }  /* n|k */
 .wl-loop { letter-spacing: 0; }
+/* Turns splash circle: flat, no shadow */
+html[data-brand="turns"] .splash-brand .wl-turns .slot { box-shadow: inset 0 0 0 1px var(--line); }
+/* Fuel gauge: lower cells */
+.fgauge .fg i { height: 5px; } .fgauge.thick .fg i { height: 6px; } .fgauge.sm .fg i { height: 4px; }
+/* Navy theme (was Black) */
+[data-theme="amoled"] { --bg: #0B1530; --card: #13203F; --sheet: #15234A; --raised: #1C2B55; --ink: #EAF0FF; --ink-2: #B9C4E2; --ink-3: #8794B8; --ink-4: #5B6890; --line: rgba(200,215,255,.1); --seg-off: #26365F; }
+.themeopt .tp.amoled { --tbg: #0B1530; }

@@ -50,7 +50,7 @@ export function segs(n, filled, cls = 's', extra = '') {
 // ---------- Icons ----------
 export const selmark = (inline = false) => `<span class="selmark ${inline ? 'inline' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
 export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400], ['inter', 'Inter', "'Inter'", 450], ['plex', 'IBM Plex Sans', "'IBM Plex Sans'", 450], ['atkinson', 'Atkinson', "'Atkinson Hyperlegible Next'", 450], ['public', 'Public Sans', "'Public Sans'", 450]];
-export const THEMES = [['auto', 'Auto', '#EDEFF2', '#F9FAFB', '#12151A'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Black', '#000000', '#101215', '#EDEFF3']];
+export const THEMES = [['auto', 'Auto', '#EDEFF2', '#F9FAFB', '#12151A'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Navy', '#0B1530', '#13203F', '#EAF0FF']];
 export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
 // Icons: Hugeicons (MIT), credited in About.
 export const ICON_CREDIT = '<a href="https://hugeicons.com" target="_blank" rel="noopener">Hugeicons</a>';
@@ -773,7 +773,7 @@ export const FONTS = [
 ];
 export const APP_NAME = 'Waylink';
 // Wordmark-only logos: a slot that cycles through turn signs, and a w drawn as one looping road with the rest typed in.
-const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnRight', '#3E8EF7', 'flip'], ['turnU', '#2BB673'], ['navArrow', '#7C5CFF'], ['pin', '#E5484D'], ['routeIc', '#0EA5A5']];
+const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnLeft', '#3E8EF7'], ['turnU', '#2BB673'], ['curvy', '#7C5CFF'], ['signpost', '#E5484D'], ['compass', '#0EA5A5']];
 export const TURNS = `<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true">${TURN_SIGNS.map(([k, col, f], i) => `<svg class="tg tg${i} ${f || ''}" viewBox="0 0 24 24" fill="none" style="color:${col}">${HUGE_ICONS[k]}</svg>`).join('')}</span><span aria-hidden="true">link</span></span>`;
 export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8 28C10 56 16 80 28 80C40 80 45 58 50 42C54 28 62 14 55 9C48 4 41 16 47 36C52 56 60 80 72 80C84 80 90 56 92 28"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span>';
 export const BRANDS = [['loop', 'Loop'], ['turns', 'Turns']];

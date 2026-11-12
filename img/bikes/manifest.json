@@ -1,4 +1,4 @@
 {
   "_about": "Model pictures. Run tools/fetch_bike_photos.py to fill this with openly licensed Wikimedia Commons photos (credits recorded automatically).",
-  "ns200": { "src": "img/bikes/ns200-art.webp", "fit": "contain", "credit": "Artwork supplied by the Kickstart team" }
+  "ns200": { "src": "img/bikes/ns200-art.webp", "fit": "contain", "credit": "Artwork by the Waylink team" }
 }
