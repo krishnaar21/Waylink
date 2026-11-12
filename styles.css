@@ -670,8 +670,8 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .themeopt .tp i { position: absolute; left: 14%; right: 14%; height: 18%; border-radius: 5px; background: var(--tcard); }
 .themeopt .tp i:first-child { top: 16%; } .themeopt .tp i:nth-child(2) { top: 40%; }
 .themeopt .tp b { position: absolute; left: 14%; bottom: 14%; width: 38%; height: 9%; border-radius: 4px; background: var(--accent); }
-.themeopt .tp.auto { background: linear-gradient(135deg, #EDEFF2 50%, #0E1013 50%); }
-.themeopt .tp.auto i { background: linear-gradient(135deg, #F9FAFB 50%, #23272D 50%); }
+.themeopt .tp.t-auto { background: linear-gradient(135deg, #EDEFF2 50%, #0E1013 50%); }
+.themeopt .tp.t-auto i { background: linear-gradient(135deg, #F9FAFB 50%, #23272D 50%); }
 .themeopt .nm { font-size: 13px; color: var(--ink-3); }
 .themeopt.on .tp { box-shadow: 0 0 0 2px var(--card), 0 0 0 3px var(--ink); }
 .themeopt.on .nm { color: var(--ink); font-weight: 600; }
@@ -1206,7 +1206,7 @@ html[data-brand="turns"] .splash-brand .wl-turns .slot { box-shadow: inset 0 0 0
 .fgauge .fg i { height: 5px; } .fgauge.thick .fg i { height: 6px; } .fgauge.sm .fg i { height: 4px; }
 /* Navy theme (was Black) */
 [data-theme="amoled"] { --bg: #0B1530; --card: #13203F; --sheet: #15234A; --raised: #1C2B55; --ink: #EAF0FF; --ink-2: #B9C4E2; --ink-3: #8794B8; --ink-4: #5B6890; --line: rgba(200,215,255,.1); --seg-off: #26365F; }
-.themeopt .tp.amoled { --tbg: #0B1530; }
+.themeopt .tp.t-amoled { --tbg: #0B1530; }
 /* Live pill adapts to the theme: ink-on-paper in light, paper-on-ink in dark/navy */
 .live-pill { background: var(--ink); color: var(--bg); box-shadow: 0 8px 20px -10px rgba(0,0,0,.45), 0 0 0 1px color-mix(in srgb, var(--bg) 12%, transparent); }
 .live-pill .dot.x { background: var(--accent); }
@@ -2092,3 +2092,28 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .av-opt.on img { border-radius: 50%; }
 .av-opt.on { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent); }
 .av-opt.on img { transform: scale(.95); }
+/* Theme cards: a mini screen each, name and a short line below; Auto is half Paper, half Paper dark */
+.themes { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)) !important; gap: 12px !important; }
+.themeopt { gap: 0; padding: 0; background: none; border: 0; color: inherit; font: inherit; cursor: pointer; }
+.themeopt .tp { aspect-ratio: .82; border-radius: 16px; box-shadow: 0 0 0 1px var(--line), 0 6px 14px -10px rgba(0,0,0,.35) !important; margin-bottom: 10px; }
+.themeopt .tp u { position: absolute; left: 14%; top: 11%; width: 34%; height: 6%; border-radius: 3px; background: var(--tink); opacity: .7; }
+.themeopt .tp i { left: 14%; right: 14%; height: 16%; border-radius: 6px; background: var(--tcard); box-shadow: 0 0 0 .5px rgba(0,0,0,.06); }
+.themeopt .tp i:first-child, .themeopt .tp i:nth-of-type(1) { top: 26%; } .themeopt .tp i:nth-of-type(2) { top: 47%; }
+.themeopt .tp b { left: 14%; bottom: 13%; width: 40%; height: 8%; border-radius: 99px; }
+.themeopt .tp.t-auto { background: #EEE7DA; }
+.themeopt .tp.t-auto em { position: absolute; inset: 0; background: #1E1B17; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+.themeopt .tp.t-auto em::after { content: ""; position: absolute; right: 12%; bottom: 12%; width: 22%; aspect-ratio: 1; border-radius: 50%; box-shadow: inset -5px -3px 0 0 #EDE5D6; transform: rotate(-20deg); }
+.themeopt .tp.t-auto i { background: #F7F1E6; z-index: 0; } .themeopt .tp.t-auto u { background: #2A2620; }
+.themeopt .tp.t-auto b { z-index: 1; }
+.themeopt .nm { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.themeopt .tsub { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+.themeopt.on .tp { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent) !important; }
+.themeopt.on .nm { color: var(--ink); }
+/* Avatar picker: selected ring a touch heavier */
+.av-opt.on { box-shadow: 0 0 0 1.75px color-mix(in srgb, var(--accent) 65%, transparent); }
+/* About: one logo, one line */
+.about-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+.themeopt .tp.t-auto em { z-index: 0; }
+.themeopt .tp.t-auto i, .themeopt .tp.t-auto u, .themeopt .tp.t-auto b { z-index: 1; }
+.themeopt .tp.t-auto i { background: rgba(255, 250, 240, .32); box-shadow: 0 0 0 .5px rgba(120, 105, 85, .25); }
+.themeopt .tp.t-auto u { background: #8C8273; }

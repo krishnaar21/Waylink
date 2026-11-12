@@ -51,7 +51,7 @@ export function segs(n, filled, cls = 's', extra = '') {
 // ---------- Icons ----------
 export const selmark = (inline = false) => `<span class="selmark ${inline ? 'inline' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
 export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400], ['atkinson', 'Atkinson', "'Atkinson Hyperlegible Next'", 450], ['public', 'Public Sans', "'Public Sans'", 450]];
-export const THEMES = [['auto', 'Auto', '#EEE7DA', '#2A2621', '#2A2620'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Navy', '#0B1530', '#13203F', '#EAF0FF'], ['sketch', 'Paper', '#EEE7DA', '#F7F1E6', '#2A2620'], ['sketchdark', 'Paper dark', '#1E1B17', '#2A2621', '#EDE5D6']];
+export const THEMES = [['auto', 'Auto', '#EEE7DA', '#F7F1E6', '#2A2620'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Navy', '#0B1530', '#13203F', '#EAF0FF'], ['sketch', 'Paper', '#EEE7DA', '#F7F1E6', '#2A2620'], ['sketchdark', 'Paper dark', '#1E1B17', '#2A2621', '#EDE5D6']];
 export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
 // Icons: Hugeicons (MIT), credited in About.
 // One icon family everywhere: Hugeicons (stroke). Unknown keys draw nothing rather than mixing styles.
@@ -777,7 +777,7 @@ export function settings(c) {
   </div></div>
   <div class="section">${sh('Look & sound')}<div class="card themecard"><div class="tc-top">
     <div class="themes">${THEMES.filter(([k]) => st.allThemes || ['auto', 'sketch', 'sketchdark'].includes(k)).map(([k, l, bg, card, ink]) => `<button class="themeopt ${st.theme === k ? 'on' : ''}" data-act="theme" data-arg="${k}" aria-pressed="${st.theme === k}">
-      <span class="tp ${k}" style="--tbg:${bg};--tcard:${card};--tink:${ink}"><i></i><i></i><b></b></span><span class="nm">${l}</span></button>`).join('')}</div>
+      <span class="tp t-${k}" style="--tbg:${bg};--tcard:${card};--tink:${ink}"><u></u><i></i><i></i><b></b>${k === 'auto' ? '<em></em>' : ''}</span><span class="nm">${l}</span><span class="tsub">${{ auto: 'Follows phone', sketch: 'Light', sketchdark: 'Dark', paper: 'Light', obsidian: 'Dark', amoled: 'Dark' }[k] || ''}</span></button>`).join('')}</div>
     <div class="eyebrow mt24">Accent</div>
     <div class="accents mt12">${ACCENTS.map(([k, col, l]) => `<button class="accentopt ${st.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${st.accent === k}" aria-label="${l}" title="${l}"><span class="dot" style="background-color:${col};--c:${col}"></span></button>`).join('')}</div>
   </div>
@@ -986,7 +986,7 @@ export function helpSheet(c, k) {
       <button class="link rp-save mt16" data-act="report-send" data-arg="file">Save log as a file</button>
       <p class="hint" style="text-align:center">${SUPPORT_EMAIL} · ${REPO_URL.replace('https://', '')}</p>`;
   }
-  if (k === 'about') return `<div class="about-sheet"><h2 class="sr-only">Waylink</h2><div class="splash-brand about-hero anim">${TURNS}${LOOP}</div><p class="lead">Turns, calls and your bike’s care, on one screen. Version ${APP_VERSION}.</p></div>
+  if (k === 'about') return `<div class="about-sheet" role="group" aria-label="About Waylink"><div class="splash-brand about-hero anim">${LOOP}</div><p class="lead about-sub">Turns, calls and bike care · v${APP_VERSION}</p></div>
     <div class="list flat mt16">
       ${li({ ic: 'love', t: 'Support Waylink', d: 'Chip in towards development', act: 'sheet', arg: 'support' })}
       ${li({ ic: 'bike', t: 'Bike models', d: `${S.MODELS.length} models work with Waylink`, act: 'sheet', arg: 'models' })}
