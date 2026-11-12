@@ -55,7 +55,10 @@ export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine']
 // Icons: Hugeicons (MIT), credited in About.
 export const ICON_CREDIT = '<a href="https://hugeicons.com" target="_blank" rel="noopener">Hugeicons</a>';
 // One icon family everywhere: Hugeicons (stroke). Unknown keys draw nothing rather than mixing styles.
-export const icon = (n, cls = '') => `<svg class="i ${cls}" viewBox="${HUGE_SET.vb}" ${HUGE_SET.attrs} aria-hidden="true">${HUGE_ICONS[n] || ''}</svg>`;
+// Duotone: the same drawing again underneath, thick and soft, so every icon gets an even second tone.
+let ICON_STYLE = 'line';
+export const setIconStyle = (v) => { ICON_STYLE = v === 'duo' ? 'duo' : 'line'; };
+export const icon = (n, cls = '') => { const b = HUGE_ICONS[n] || ''; return `<svg class="i ${cls}" viewBox="${HUGE_SET.vb}" ${HUGE_SET.attrs} aria-hidden="true">${ICON_STYLE === 'duo' && b ? `<g class="duo">${b}</g>` : ''}${b}</svg>`; };
 
 // ---------- Vehicle pictures ----------
 const lum = (h) => { const n = [1, 3, 5].map((i) => parseInt(String(h || '#888888').slice(i, i + 2), 16)); return (n[0] * 299 + n[1] * 587 + n[2] * 114) / 255000; };
@@ -172,7 +175,6 @@ export const PROGRESS_STYLES = [
   ['road', 'On the road', 'Your bike riding towards the next service'],
   ['tread', 'Tyre tread', 'Tall blocks are tread left; they wear flat'],
   ['dipstick', 'Dipstick', 'Oil level between MIN and MAX'],
-  ['chain', 'Chain', 'Dark links are what’s left before it’s due'],
 ];
 let PROGRESS = 'gauge';
 export const setProgress = (v) => { PROGRESS = PROGRESS_STYLES.some(([k]) => k === v) ? v : 'gauge'; };
@@ -183,7 +185,7 @@ function progressBar(st, extra = '') {
   if (PROGRESS === 'road') {
     // The bike has covered `frac` of the way since the last service; the flag is the next one.
     const at = over ? 100 : Math.min(96, Math.max(4, st.frac * 100));
-    return wrap('p-road', `<div class="rd"><i class="done" style="width:${at}%"></i><span class="bk" style="left:${at}%">${icon('bike')}</span><span class="fl">${icon('flag')}</span></div><div class="pl"><span>Last service</span><span>${over ? 'Overdue' : 'Next'}</span></div>`);
+    return wrap('p-road', `<div class="rd"><i class="done" style="width:${at}%"></i><span class="bk" style="left:${at}%">${icon('bike')}</span><span class="fl">${icon('flag')}</span><i class="lane"></i></div><div class="pl"><span>Last service</span><span>${over ? 'Overdue' : 'Next'}</span></div>`);
   }
   if (PROGRESS === 'tread') {
     const n = 16, f = over ? 0 : Math.max(1, Math.round(left * n)); let t = '';
@@ -193,11 +195,6 @@ function progressBar(st, extra = '') {
   if (PROGRESS === 'dipstick') {
     const lvl = over ? 4 : 8 + left * 78;
     return wrap('p-dip', `<div class="ds"><i class="oil" style="width:${lvl}%"></i><span class="mk mn"></span><span class="mk mx"></span><span class="hd"></span></div><div class="pl"><span style="margin-left:6%">MIN</span><span style="margin-right:12%">MAX</span></div>`);
-  }
-  if (PROGRESS === 'chain') {
-    const n = 12, f = over ? 0 : Math.max(1, Math.round(left * n)); let t = '';
-    for (let i = 0; i < n; i++) t += `<i class="${i < f ? 'on' : ''} ${i % 2 ? 'b' : ''}"></i>`;
-    return wrap('p-chain', `<div class="ch">${t}</div>`);
   }
   return null;
 }
@@ -701,7 +698,7 @@ export function settings(c) {
       <div class="grow vc-tx"><div class="serif vc-name">${esc(S.vehicleTitle(s))}</div><div class="small muted vc-line">${v.nickname ? esc(S.bikeName(s)) + ' · ' : ''}${esc(v.plate || 'No plate')}</div><div class="eyebrow vc-line" style="margin-top:8px">${short(s.odo)} km · ${connText}</div></div>
     </button><button class="circle edit" data-act="sheet" data-arg="vehicle:${v.id}" aria-label="Edit vehicle">${icon('edit')}</button>
       <div class="vc-rows">
-      ${li({ ic: 'list', t: 'Spec sheet', d: 'Oil, tyres, chain, plugs', act: 'sheet', arg: 'specs' })}
+      ${li({ ic: 'spec', t: 'Spec sheet', d: 'Oil, tyres, chain, plugs', act: 'sheet', arg: 'specs' })}
       ${s.vehicles.length > 1 ? li({ ic: 'swap', t: 'Switch vehicle', end: `${s.vehicles.length} bikes`, act: 'sheet', arg: 'garage' }) : ''}
       ${li({ ic: 'grid', t: 'All bike models', d: `${S.MODELS.length} models · ${Object.keys(S.MODEL_IMAGES).length} with photos`, act: 'sheet', arg: 'models' })}
       ${li({ ic: 'gauge', t: 'Odometer', d: 'Correct it if it drifts', end: num(Math.floor(s.odo)) + ' km', act: 'sheet', arg: 'odo' })}
@@ -732,11 +729,11 @@ export function settings(c) {
     ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
     ${li({ ic: 'sparkles', t: 'Logo', end: `<img class="pick-logo" src="${appIcon(s)}" alt=""><span class="pick-val">${BRANDS.find(([k]) => k === brandOf(s))[1]}</span>`, act: 'sheet', arg: 'pick-brand' })}
     ${li({ ic: 'grid', t: 'Icon style', end: `<div class="seg mini">${[['line', 'Line'], ['duo', 'Duotone']].map(([k, l]) => `<button class="${(st.icons || 'line') === k ? 'on' : ''}" data-act="icon-style" data-arg="${k}">${l}</button>`).join('')}</div>`, chev: false, tag: 'div' })}
-    ${li({ ic: 'palette', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
-    ${li({ ic: 'gauge', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
+    ${li({ ic: 'font', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
+    ${li({ ic: 'progress', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
   </div></div></div>
   <div class="section">${sh('Data & region', '', 'backup')}<div class="list">
-    ${li({ ic: 'map', t: 'Country', d: 'Currency, fuel and SOS numbers', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
+    ${li({ ic: 'globe', t: 'Country', d: 'Currency, fuel and SOS numbers', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
     ${li({ ic: 'down', t: 'Backup & restore', d: 'Save, move or bring back your data', act: 'sheet', arg: 'backup' })}
     ${li({ ic: 'trash', t: s.sample ? 'Erase sample data' : 'Erase everything', cls: 'danger', act: 'sheet', arg: 'erase' })}
   </div><input type="file" id="import-file" accept=".json,.pnav,application/json" hidden></div>
@@ -779,9 +776,10 @@ export const APP_NAME = 'Waylink';
 export const MARK = '<svg class="wl-mark" viewBox="0 0 120 120" aria-hidden="true"><circle class="m-start" cx="30" cy="92" r="9"/><path class="m-road" pathLength="100" d="M41 92H72A14 14 0 0 0 72 64H50A14 14 0 0 1 50 36H68"/><g class="m-pin"><path d="M88 50C79 41 75 35 75 29a13 13 0 0 1 26 0c0 6-4 12-13 21z"/><circle cx="88" cy="29" r="4.6"/></g></svg>';
 // Second logo: a bird in flight whose wings make a W, its head the same dot as the wordmark's pin.
 export const BIRD = '<svg class="wl-bird" viewBox="0 0 120 120" aria-hidden="true"><path class="b-trail" d="M-10 108C12 104 26 94 38 82"/><g class="b-fly"><path class="b-wing b-l" d="M52 72L44 60Q32 38 14 44"/><path class="b-wing b-r" d="M68 72L76 60Q88 38 106 44"/><path class="b-wing" d="M52 72L60 60L68 72"/><circle class="b-head" cx="60" cy="47" r="5.5"/></g></svg>';
-// Wordmark-only logos: a slot that cycles through turn signs (like the bike's display), and a w drawn as one looping road.
-export const TURNS = '<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true"><svg class="tg tg0" viewBox="0 0 40 40" style="color:#3E8EF7"><path d="M30 34V22a6 6 0 0 0-6-6H10"/><path d="M16 9l-7 7 7 7"/></svg><svg class="tg tg1" viewBox="0 0 40 40" style="color:#F28A1E"><path d="M10 34V22a6 6 0 0 1 6-6h14"/><path d="M24 9l7 7-7 7"/></svg><svg class="tg tg2" viewBox="0 0 40 40" style="color:#2BB673"><path d="M12 34V17a8 8 0 0 1 16 0v11"/><path d="M21 22l7 7 7-7"/></svg><svg class="tg tg3" viewBox="0 0 40 40" style="color:#E5484D"><circle cx="20" cy="17" r="7"/><path d="M20 34V24"/><path d="M26 12l4-5"/><path d="M24 6h6.5v6.5"/></svg><svg class="tg tg4" viewBox="0 0 40 40" style="color:#7C5CFF"><path d="M20 35s-10-9.5-10-17a10 10 0 0 1 20 0c0 7.5-10 17-10 17z"/><circle cx="20" cy="18" r="3.4"/></svg><svg class="tg tg5" viewBox="0 0 40 40" style="color:#0EA5A5"><path d="M12 34V8l16 16"/><path d="M28 14v10H18"/></svg></span><span aria-hidden="true">link</span></span>';
-export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8 28C10 56 16 80 28 80C40 80 45 58 50 42C54 28 62 14 55 9C48 4 41 16 47 36C52 56 60 80 72 80C84 80 90 56 92 28"/></svg><span class="rest" aria-hidden="true">aylink</span></span>';
+// Wordmark-only logos: a slot that cycles through turn signs, and a w drawn as one looping road with the rest typed in.
+const TURN_SIGNS = [['turnRight', '#F28A1E'], ['turnRight', '#3E8EF7', 'flip'], ['turnU', '#2BB673'], ['navArrow', '#7C5CFF'], ['pin', '#E5484D'], ['routeIc', '#0EA5A5']];
+export const TURNS = `<span class="wl-turns" aria-label="waylink"><span aria-hidden="true">way</span><span class="slot" aria-hidden="true">${TURN_SIGNS.map(([k, col, f], i) => `<svg class="tg tg${i} ${f || ''}" viewBox="0 0 24 24" fill="none" style="color:${col}">${HUGE_ICONS[k]}</svg>`).join('')}</span><span aria-hidden="true">link</span></span>`;
+export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><path class="lw" pathLength="100" d="M8 28C10 56 16 80 28 80C40 80 45 58 50 42C54 28 62 14 55 9C48 4 41 16 47 36C52 56 60 80 72 80C84 80 90 56 92 28"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span><span class="caret" aria-hidden="true"></span></span>';
 export const BRANDS = [['route', 'Route'], ['bird', 'Bird'], ['turns', 'Turns'], ['loop', 'Loop']];
 export const brandOf = (s) => BRANDS.some(([k]) => k === s.settings.brand) ? s.settings.brand : 'route';
 export const WORDMARK = '<span class="wl-word" aria-label="waylink"><span aria-hidden="true">wayl</span><svg class="wl-i" viewBox="0 0 30 100" aria-hidden="true"><rect class="i-stem" x="8.5" y="31" width="13" height="49" rx="1.5"/><g class="i-pin"><path d="M15 27C9 21 5.5 17 5.5 12a9.5 9.5 0 0 1 19 0c0 5-3.5 9-9.5 15z"/><circle cx="15" cy="12" r="3.4"/></g></svg><span aria-hidden="true">nk</span></span>';

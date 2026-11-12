@@ -3,15 +3,15 @@
 import json, os, re
 HUGE = json.load(open(os.environ.get('HUGE_JSON', '/tmp/hugeicons.json')))['icons']
 C = {  # key: (hugeicons, uicons)
- 'today': (['dashboard-speed-01', 'dashboard-speed-02'], ['dashboard', 'tachometer-fast']),
+ 'today': (['dashboard-speed-02', 'dashboard-speed-01'], ['dashboard', 'tachometer-fast']),
  'route': (['route-01', 'route-02'], ['route']),
  'trips': (['maps-location-01', 'maps'], ['map-marker', 'map']),
  'logbookIc': (['note-edit', 'notebook'], ['notebook', 'book-alt']),
  'alerts': (['notification-03', 'notification-01'], ['bell-ring', 'bell']),
- 'settings': (['settings-04', 'sliders-horizontal', 'settings-02'], ['settings-sliders']),
+ 'settings': (['settings-02', 'settings-04'], ['settings-sliders']),
  'back': (['arrow-left-01'], ['angle-small-left', 'angle-left']),
  'chev': (['arrow-right-01'], ['angle-small-right', 'angle-right']),
- 'edit': (['pencil-edit-02', 'pencil-edit-01'], ['pencil']),
+ 'edit': (['edit-02', 'pencil-edit-02'], ['pencil']),
  'plus': (['plus-sign'], ['plus']),
  'check': (['tick-02', 'tick-01'], ['check']),
  'x': (['cancel-01'], ['cross-small', 'cross']),
@@ -102,6 +102,15 @@ C = {  # key: (hugeicons, uicons)
  'refresh': (['refresh'], ['refresh']),
  'tea': (['tea'], []),
  'coffee': (['coffee-02', 'coffee-01'], []),
+ 'progress': (['progress-02'], []),
+ 'globe': (['globe-02', 'globe'], []),
+ 'font': (['text-font'], []),
+ 'spec': (['file-text', 'file-02'], []),
+ 'tire': (['tire'], []),
+ 'turnRight': (['arrow-move-up-right'], []),
+ 'turnU': (['arrow-turn-up'], []),
+ 'navArrow': (['navigation-03'], []),
+ 'routeIc': (['route-01'], []),
  'updown': (['unfold-more', 'arrow-up-down'], []),
 }
 

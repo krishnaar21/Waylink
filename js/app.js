@@ -124,11 +124,11 @@ function refreshWeather() {
 }
 
 // ---------- Pull to refresh ----------
-// Pull down at the top of any tab: a bike wheel's tyre draws and the wheel rolls as you pull, then spins while it refreshes.
-const PTR_MARK = '<svg viewBox="0 0 100 100" aria-hidden="true"><g class="wh"><circle class="tyre" cx="50" cy="50" r="41" pathLength="100" transform="rotate(-90 50 50)"/><circle class="tread" cx="50" cy="50" r="46.5"/><circle class="rim" cx="50" cy="50" r="32"/><path class="spk" d="M50.0 40.0L45.2 20.4M50.0 40.0L54.8 20.4M59.5 46.9L76.7 36.3M59.5 46.9L79.6 45.4M55.9 58.1L71.3 71.2M55.9 58.1L63.5 76.8M44.1 58.1L36.5 76.8M44.1 58.1L28.7 71.2M40.5 46.9L20.4 45.4M40.5 46.9L23.3 36.3"/><circle class="disc" cx="50" cy="50" r="17"/><circle class="hub" cx="50" cy="50" r="7"/></g></svg>';
+// Pull down at the top of any tab: a tyre (Hugeicons) grows and rolls as you pull, then spins while it refreshes.
+const PTR_MARK = () => `<span class="wh">${V.icon('tire')}</span>`;
 (function pullToRefresh() {
   const host = $('#views'); if (!host) return;
-  const ind = Object.assign(document.createElement('div'), { id: 'ptr', innerHTML: PTR_MARK });
+  const ind = Object.assign(document.createElement('div'), { id: 'ptr', innerHTML: PTR_MARK() });
   document.querySelector('.app')?.appendChild(ind);
   const TRIGGER = 72, HOLD = 58;
   let y0 = null, x0 = 0, d = 0, pulling = false, busy = false, armed = false, view = null;
@@ -200,7 +200,7 @@ function render(anim = '') {
   applyTheme();
   const vid = S.veh(s).id;
   live.gloveHere = live.glove.filter((d) => d.slot.startsWith(vid + ':') || d.slot.startsWith('rider:'));
-  V.setLocale(S.country(s).locale); V.setProgress(s.settings.progress);
+  V.setLocale(S.country(s).locale); V.setProgress(s.settings.progress); V.setIconStyle(s.settings.icons);
   const views = $('#views');
   if (!s.onboarded) {
     views.innerHTML = V.onboarding(s);
