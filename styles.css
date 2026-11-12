@@ -1383,3 +1383,14 @@ html[data-brand="turns"] .splash-brand .wl-turns .slot { box-shadow: inset 0 0 0
 /* Navy theme (was Black) */
 [data-theme="amoled"] { --bg: #0B1530; --card: #13203F; --sheet: #15234A; --raised: #1C2B55; --ink: #EAF0FF; --ink-2: #B9C4E2; --ink-3: #8794B8; --ink-4: #5B6890; --line: rgba(200,215,255,.1); --seg-off: #26365F; }
 .themeopt .tp.amoled { --tbg: #0B1530; }
+/* Live pill adapts to the theme: ink-on-paper in light, paper-on-ink in dark/navy */
+.live-pill { background: var(--ink); color: var(--bg); box-shadow: 0 8px 20px -10px rgba(0,0,0,.45), 0 0 0 1px color-mix(in srgb, var(--bg) 12%, transparent); }
+.live-pill .dot.x { background: var(--accent); }
+/* Tab bar: solid icon colours, no see-through */
+.tab { color: var(--ink-3); }
+html[data-theme="obsidian"] .tab, html[data-theme="amoled"] .tab { color: var(--ink-3); }
+.tab svg.i .duo { display: none; }
+.tab.on { color: var(--ink); }
+/* Turns wordmark: room for descenders (y) */
+.wl-turns { line-height: 1.25; padding-bottom: .06em; overflow: visible; }
+.splash-brand { overflow: visible; }

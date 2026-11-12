@@ -661,7 +661,7 @@ export function alerts(c) {
   </div>
   <div class="section">${sh('Show on the bike', '', 'showbike')}<div class="list">
     ${li({ ic: 'phone', t: 'Phone calls', d: 'Caller name and missed calls', end: sw(a.calls, 'toggle', 'alerts.calls'), chev: false, tag: 'div' })}
-    ${li({ ic: 'phone', t: 'WhatsApp calls', d: 'Caller name while ringing', end: sw(a.waCalls, 'toggle', 'alerts.waCalls'), chev: false, tag: 'div' })}
+    ${li({ ic: 'waCall', t: 'WhatsApp calls', d: 'Caller name while ringing', end: sw(a.waCalls, 'toggle', 'alerts.waCalls'), chev: false, tag: 'div' })}
     ${li({ ic: 'chat', t: 'WhatsApp messages', d: 'Sender name and count', end: sw(a.waMsgs, 'toggle', 'alerts.waMsgs'), chev: false, tag: 'div' })}
     ${li({ ic: 'mail', t: 'SMS', d: 'Coming soon', end: sw(false, 'noop', '', true), chev: false, cls: 'disabled', tag: 'div' })}
   </div></div>
@@ -727,7 +727,7 @@ export function settings(c) {
   </div>
   <div class="vc-rows">
     ${li({ ic: 'volume', t: 'Sound effects', d: st.sounds !== false ? 'Engine start, clicks, revs' : 'Off. The app stays silent', end: sw(st.sounds !== false, 'toggle', 'sounds'), chev: false, tag: 'div' })}
-    ${li({ ic: 'sparkles', t: 'Logo', end: `<img class="pick-logo" src="${appIcon(s)}" alt=""><span class="pick-val">${BRANDS.find(([k]) => k === brandOf(s))[1]}</span>`, act: 'sheet', arg: 'pick-brand' })}
+    ${li({ ic: 'sparkles', t: 'Logo', end: `<span class="pick-val">${BRANDS.find(([k]) => k === brandOf(s))[1]}</span>`, act: 'sheet', arg: 'pick-brand' })}
     ${li({ ic: 'grid', t: 'Icon style', end: `<span class="pick-val">${st.icons === 'duo' ? 'Duotone' : 'Line'}</span>`, act: 'sheet', arg: 'pick-icons' })}
     ${li({ ic: 'font', t: 'Fonts', end: `<span class="pick-val"><span style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span> · ${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
     ${li({ ic: 'progress', t: 'Progress style', end: `<span class="pick-val">${(PROGRESS_STYLES.find(([k]) => k === st.progress) || PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
@@ -746,10 +746,10 @@ export function settings(c) {
   <div class="section">${sh('Developer', '', 'developer')}<div class="list">
     ${li({ ic: 'sparkles', t: 'Show the loading screen', d: 'Plays it once. Tap to close.', act: 'show-loader' })}
     ${li({ ic: 'bolt', t: 'Simulated bike', d: 'Try it all without a bike', end: sw(link.simulated && link.state !== 'idle', 'sim-toggle'), chev: false, tag: 'div' })}
-    ${li({ ic: 'code', t: 'Show Bluetooth messages', d: 'Raw bytes on the Route tab', end: sw(!!st.devFrames, 'toggle', 'devFrames'), chev: false, tag: 'div' })}
+    ${li({ ic: 'btMsgs', t: 'Show Bluetooth messages', d: 'Raw bytes on the Route tab', end: sw(!!st.devFrames, 'toggle', 'devFrames'), chev: false, tag: 'div' })}
     ${li({ ic: 'bt', t: 'Pair from all devices', d: 'If your bike isn’t listed', act: 'pair-all', cls: link.supported ? '' : 'disabled' })}
     ${li({ ic: 'list', t: 'Connection log', d: 'Each step of the Bluetooth link', end: `${link.log.length}`, act: 'sheet', arg: 'log' })}
-    ${li({ ic: 'code', t: 'Protocol', d: 'Service, frames and timings', act: 'sheet', arg: 'protocol' })}
+    ${li({ ic: 'protocol', t: 'Protocol', d: 'Service, frames and timings', act: 'sheet', arg: 'protocol' })}
   </div>
     <div class="card pad mt12"><div class="flex between"><span class="ms-t">Preview states</span><span class="eyebrow">Your data is safe</span></div>
     <div class="mt12"><div class="seg">${[['real', 'My data'], ['empty', 'Empty'], ['edge', 'Edge cases']].map(([k, l]) => `<button class="${(live.scenario || 'real') === k ? 'on' : ''}" data-act="scenario" data-arg="${k}">${l}</button>`).join('')}</div></div>
