@@ -1,17 +1,18 @@
 # Rider avatars in a clean line style: white three-quarter faces, black hair, fine ink.
 # Faces turn slightly right; one ear shows on the left. Indian looks through hair and accessories.
 K = '#111'
-L = f'stroke="{K}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"'
+L = f'stroke="{K}" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"'
 F = f'fill="#fff" {L}'
-HEAD = (f'<path d="M45 76v10h12v-7" {F}/>'
-        f'<path d="M31 50c0-15 10-25 23-25s21 10 21 24c0 6-1 11-2 15-2 9-9 16-18 16-13 0-24-12-24-30z" {F}/>'
+HEAD = (        f'<path d="M31 50c0-15 10-25 23-25s21 10 21 24c0 6-1 11-2 15-2 9-9 16-18 16-13 0-24-12-24-30z" {F}/>'
         f'<path d="M33 52c-6-2-9 2-8 6s4 7 9 5" {F}/><path d="M29 56q2-1 3 1" fill="none" stroke="{K}" stroke-width="1.6"/>')
-def face(mouth='smile', eyes='dot'):
-    e = (f'<circle cx="51" cy="52" r="2" fill="{K}"/><circle cx="64" cy="52" r="2" fill="{K}"/>' if eyes == 'dot'
-         else f'<path d="M48.5 52q2.5-2.5 5 0M61.5 52q2.5-2.5 5 0" fill="none" {L}/>')
-    m = {'smile': f'<path d="M54 66q4 2.5 8 0" fill="none" {L}/>', 'open': f'<path d="M53 65q5 5 10 0z" fill="#fff" {L}/>',
-         'flat': f'<path d="M55 67h6" {L}/>'}[mouth]
-    return e + f'<path d="M66 54q3 4 0 6" fill="none" {L}/>' + m
+def face(mouth='smile', eyes='dot', blush=False):
+    e = (f'<ellipse cx="51" cy="53" rx="1.9" ry="2.6" fill="{K}"/><ellipse cx="64" cy="53" rx="1.9" ry="2.6" fill="{K}"/>' if eyes == 'dot'
+         else f'<path d="M48.5 53q2.5-2.8 5 0M61.5 53q2.5-2.8 5 0" fill="none" {L}/>')
+    br = f'<path d="M48 46.5q3-1.6 6-.4M62 46.1q3-1.2 6 .4" fill="none" stroke="{K}" stroke-width="2" stroke-linecap="round"/>'
+    m = {'smile': f'<path d="M55 69q4 2.6 8-.6" fill="none" {L}/>', 'open': f'<path d="M54 68q5 .8 10-1q-1 5.5-5.5 5.5q-4 0-4.5-4.5z" fill="{K}" stroke="{K}" stroke-width="1.6" stroke-linejoin="round"/>',
+         'flat': f'<path d="M56 69.5h6" {L}/>'}[mouth]
+    bl = '<circle cx="45" cy="63" r="3.6" fill="#F6C9C9"/><circle cx="68.5" cy="63" r="3" fill="#F6C9C9"/>' if blush else ''
+    return bl + e + br + f'<path d="M63.5 59.5q3.6 2.6.2 4.4" fill="none" {L}/>' + m
 SHIRT = {
  'tee': f'<path d="M20 100c3-10 13-15 30-15s28 5 31 15" {F}/><path d="M43 85q8 5 16 0" fill="none" {L}/>',
  'kurta': f'<path d="M20 100c3-10 13-15 30-15s28 5 31 15" {F}/><path d="M44 85h14v4q-7 4-14 0z" fill="#fff" {L}/><path d="M51 89v11" {L}/>',
@@ -58,9 +59,8 @@ A = [  # disc, shirt, hair (behind), top, accessories, mouth, eyes
 for i, (bg, shirt, hair, top, acc, mo, ey) in enumerate(A):
     b = ''
     if hair in ('bob', 'long'): b += HAIR[hair]
-    b += SHIRT[shirt]
     if top == 'hijab': b += TOP['hijab']
-    b += HEAD + face(mo, ey)
+    b += HEAD + face(mo, ey, i % 3 != 2)
     for a in acc:
         if a == 'beard': b += ACC[a]
     if hair and hair not in ('bob', 'long'): b += HAIR[hair]
@@ -70,6 +70,6 @@ for i, (bg, shirt, hair, top, acc, mo, ey) in enumerate(A):
     for a in acc:
         if a != 'beard': b += ACC[a]
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><clipPath id="c{i}"><circle cx="50" cy="50" r="50"/></clipPath></defs>'
-           f'<g clip-path="url(#c{i})"><rect width="100" height="100" fill="{bg}"/><g transform="translate(50 58) scale(1.06) translate(-52 -56)">{b}</g></g></svg>')
+           f'<g clip-path="url(#c{i})"><rect width="100" height="100" fill="#fff"/><g transform="translate(50 56) scale(1.32) translate(-52 -54)">{b}</g></g></svg>')
     open(f'img/avatars/a{i + 1}.svg', 'w').write(svg)
 print(len(A))

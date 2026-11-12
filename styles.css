@@ -2257,3 +2257,83 @@ html[data-theme="obsidian"] .onb-link .onb-img, html[data-theme="amoled"] .onb-l
 /* Bluetooth badge: painted, like the rest of the story */
 .link-badge::after { background: url(img/onb/bt-disc.webp) center / 130% 130% no-repeat !important; background-color: transparent !important; }
 .link-badge::before { background: url(img/onb/bt-disc.webp) center / 130% 130% no-repeat !important; opacity: .22 !important; filter: blur(2px) !important; }
+/* Link: the signal leaves the headlight and stops short of the badge */
+.lk-street .lk-wave { left: 197px; top: 54px; width: 28px; height: 32px; }
+.lk-street .lk-bt { left: 264px !important; top: 14px !important; }
+/* Ride charts: four styles side by side, swipe to switch */
+.rc { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; margin: 18px -20px 0; overscroll-behavior-x: contain; }
+.rc::-webkit-scrollbar { display: none; }
+.rc-p { flex: 0 0 100%; scroll-snap-align: start; padding: 0 20px; box-sizing: border-box; min-width: 0; }
+.rc-name { font-size: 13px; font-weight: 600; color: var(--ink-3); margin-bottom: 10px; }
+.rc .hm { margin-top: 0; }
+.rc-dots { display: flex; justify-content: center; gap: 6px; margin-top: 14px; }
+.rc-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line); transition: width .25s, background .25s; }
+.rc-dots i.on { width: 18px; background: var(--ink-3); }
+.hm-col i.l4 { background: var(--accent); border-radius: 4px; transform: none; }
+.hm-col i.now { box-shadow: 0 0 0 1.5px var(--ink); }
+.rc-leg { display: flex; align-items: center; gap: 4px; justify-content: flex-end; margin-top: 10px; font-size: 11.5px; color: var(--ink-3); }
+.rc-leg i { width: 11px; height: 11px; border-radius: 3px; background: var(--seg-off); }
+.rc-leg i.l1 { background: color-mix(in srgb, var(--accent) 35%, var(--seg-off)); } .rc-leg i.l2 { background: color-mix(in srgb, var(--accent) 60%, var(--seg-off)); }
+.rc-leg i.l3 { background: color-mix(in srgb, var(--accent) 82%, var(--seg-off)); } .rc-leg i.l4 { background: var(--accent); }
+.rc-leg span:first-child { margin-right: 2px; } .rc-leg span:last-child { margin-left: 4px; }
+.rc-bars { position: relative; height: 150px; display: flex; gap: 8px; }
+.rc-grid { display: flex; flex-direction: column; justify-content: space-between; font-size: 11px; color: var(--ink-3); width: 38px; text-align: right; padding-top: 14px; }
+.rc-grid span { line-height: 1; transform: translateY(-50%); } .rc-grid span:last-child { transform: translateY(50%); }
+.rc-cols { flex: 1; display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; align-items: end; border-bottom: 1px solid var(--line); padding-top: 14px; background: linear-gradient(var(--line), var(--line)) 0 14px / 100% 1px no-repeat, linear-gradient(var(--line), var(--line)) 0 calc(14px + 50% - 7px) / 100% 1px no-repeat; }
+.rc-b { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+.rc-b i { width: 72%; max-width: 16px; border-radius: 4px 4px 0 0; background: color-mix(in srgb, var(--accent) 45%, var(--seg-off)); }
+.rc-b.now i { background: var(--accent); }
+.rc-v { position: absolute; bottom: calc(100% + 2px); font-size: 11px; font-weight: 600; color: var(--ink-2, var(--ink)); white-space: nowrap; }
+.rc-b .rc-v { position: static; margin-bottom: 3px; }
+.rc-xl { display: grid; grid-template-columns: repeat(12, 1fr); margin: 6px 0 0 46px; font-size: 11px; color: var(--ink-3); white-space: nowrap; }
+.rc-xl3 { display: flex; justify-content: space-between; margin-left: 0; }
+.rc-mhead { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; margin-bottom: 8px; } .rc-mhead span { font-size: 12.5px; color: var(--ink-3); }
+.rc-wd, .rc-month { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+.rc-wd span { font-size: 11px; color: var(--ink-3); }
+.rc-month span { font-size: 13px; height: 30px; display: grid; place-items: center; border-radius: 50%; width: 30px; margin: 0 auto; font-variant-numeric: tabular-nums; }
+.rc-month span.f { color: var(--ink-3); opacity: .55; }
+.rc-month span.rd { background: color-mix(in srgb, var(--accent) 45%, var(--seg-off)); font-weight: 600; }
+.rc-month span.rd.l3, .rc-month span.rd.l4 { background: var(--accent); color: var(--on-accent, #fff); }
+.rc-month span.now { box-shadow: 0 0 0 1.5px var(--ink); }
+.rc-line { width: 100%; height: 150px; display: block; overflow: visible; }
+.rc-line line { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; } .rc-line line.g { stroke-dasharray: 3 4; }
+.rc-line path { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.rc-line path.a { fill: color-mix(in srgb, var(--accent) 14%, transparent); stroke: none; }
+.rc-line circle { fill: var(--accent); stroke: var(--card, var(--bg)); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.rc-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+.rc-nav .rc-dots { margin-top: 0; }
+.rc-arr { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--ink-2, var(--ink)); display: grid; place-items: center; padding: 0; cursor: pointer; }
+.rc-arr svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.rc-arr:active { transform: scale(.94); }
+.rc-grid { width: 28px; white-space: nowrap; } .rc-xl { margin-left: 36px; }
+.rc-tot { font-size: 13px; color: var(--ink-3); margin-bottom: 6px; } .rc-tot b { color: var(--ink); font-size: 15px; }
+.rc-line { height: 132px; }
+/* Paper dark: the Paper theme by lamplight */
+html[data-theme="sketch"][data-night] {
+  --bg: #1E1B17; --card: #2A2621; --sheet: #2C2823; --raised: #35302A;
+  --ink: #EDE5D6; --ink-2: #CBC1AF; --ink-3: #9C9282; --ink-4: #6F675B;
+  --line: rgba(240, 225, 200, .11); --seg-off: #3B352E;
+  --sage: #93A584; --sage-ink: #B8C9A8; --amber: #E3A452; --red: #EE8C72;
+  --tint-sage: #2C3327; --tint-amber: #3A2F1E; --tint-red: #3A2722;
+  --hero-ok: linear-gradient(180deg, #2E3529, #262520); --hero-soon: linear-gradient(180deg, #3B301F, #2A2620); --hero-bad: linear-gradient(180deg, #3D2823, #2A2421); --hero-off: linear-gradient(180deg, #2E2A24, #262320);
+  --shadow: 0 0 0 var(--hair) rgba(255,240,210,.06), 0 10px 28px -16px rgba(0,0,0,.7);
+  --backdrop: rgba(0,0,0,.55); color-scheme: dark; --on-accent: #fff;
+}
+html[data-theme="sketch"][data-night] body::after { filter: invert(1); opacity: .45 !important; }
+html[data-theme="sketch"][data-night] .card, html[data-theme="sketch"][data-night] .list, html[data-theme="sketch"][data-night] .bikecard, html[data-theme="sketch"][data-night] .upcard, html[data-theme="sketch"][data-night] .hero { box-shadow: 0 0 0 1px var(--line) !important; }
+html[data-theme="sketch"][data-night][data-accent="wine"] { --accent: #DA4B5C; } html[data-theme="sketch"][data-night][data-accent="blue"] { --accent: #6A97EE; }
+html[data-theme="sketch"][data-night][data-accent="slate"] { --accent: #A7B1C2; --on-accent: #1E1B17; } html[data-theme="sketch"][data-night][data-accent="amber"] { --accent: #E19A46; --on-accent: #1E1B17; }
+html[data-theme="sketch"][data-night][data-accent="mint"] { --accent: #4FB396; --on-accent: #1E1B17; }
+html[data-theme="sketch"][data-night][data-accent="rust"] { --accent: #E46A48; }
+/* Ride charts 3 and 4 */
+.rc-rad { display: flex; align-items: center; gap: 12px; }
+.rc-rad svg { width: 62%; max-width: 220px; flex: none; overflow: visible; }
+.rc-rad line { stroke-linecap: round; stroke-width: 12; }
+.rc-rad line.tr { stroke: var(--seg-off); } .rc-rad line.v { stroke: color-mix(in srgb, var(--accent) 50%, var(--seg-off)); } .rc-rad line.v.top { stroke: var(--accent); }
+.rc-rad text { font-size: 12px; fill: var(--ink-3); text-anchor: middle; dominant-baseline: central; }
+.rc-rad text.c1 { font-size: 20px; font-weight: 700; fill: var(--ink); } .rc-rad text.c2 { font-size: 11px; }
+.rc-radk { font-size: 13px; color: var(--ink-3); line-height: 1.5; } .rc-radk b { color: var(--ink); font-size: 17px; }
+.rc-bub { width: 100%; height: 132px; display: block; overflow: visible; }
+.rc-bub .ax { stroke: var(--line); stroke-width: 1.5; } .rc-bub .tk { stroke: var(--line); stroke-dasharray: 2 4; }
+.rc-bub circle { fill: color-mix(in srgb, var(--accent) 55%, transparent); stroke: var(--card); stroke-width: 1.5; }
+html[data-night] .onb-img { background-image: url(img/onb/scene-dark.webp); }

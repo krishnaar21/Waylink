@@ -52,7 +52,7 @@ export function segs(n, filled, cls = 's', extra = '') {
 // ---------- Icons ----------
 export const selmark = (inline = false) => `<span class="selmark ${inline ? 'inline' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
 export const BODY_FONTS = [['system', 'System', "-apple-system, system-ui", 400], ['atkinson', 'Atkinson', "'Atkinson Hyperlegible Next'", 450], ['public', 'Public Sans', "'Public Sans'", 450]];
-export const THEMES = [['auto', 'Auto', '#EDEFF2', '#F9FAFB', '#12151A'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Navy', '#0B1530', '#13203F', '#EAF0FF'], ['sketch', 'Paper', '#EEE7DA', '#F7F1E6', '#2A2620']];
+export const THEMES = [['auto', 'Auto', '#EDEFF2', '#F9FAFB', '#12151A'], ['paper', 'Light', '#EDEFF2', '#F9FAFB', '#12151A'], ['obsidian', 'Dark', '#0E1013', '#171A1F', '#EDEFF3'], ['amoled', 'Navy', '#0B1530', '#13203F', '#EAF0FF'], ['sketch', 'Paper', '#EEE7DA', '#F7F1E6', '#2A2620'], ['sketchdark', 'Paper dark', '#1E1B17', '#2A2621', '#EDE5D6']];
 export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
 // Icons: Hugeicons (MIT), credited in About.
 export const ICON_CREDIT = '<a href="https://hugeicons.com" target="_blank" rel="noopener">Hugeicons</a>';
@@ -543,26 +543,58 @@ export function mileageScale(fs) {
     <div class="ms-lab"><span>${num(lo, 1)} thirstiest</span><span>Usual</span><span>${num(hi, 1)} best</span></div></div>`;
 }
 // Riding days over the last 12 weeks, one square per day, darker for longer rides.
-export function rideHeatmap(trips) {
-  const DAYMS = 86400000, today = new Date(); today.setHours(0, 0, 0, 0);
-  const start = new Date(today.getTime() - (today.getDay() + 7 * 11) * DAYMS);
-  const kmByDay = {};
-  for (const t of trips || []) { const d = new Date(t.start || t.ts || 0); d.setHours(0, 0, 0, 0); kmByDay[d.getTime()] = (kmByDay[d.getTime()] || 0) + (t.km || 0); }
-  const max = Math.max(1, ...Object.values(kmByDay));
+// Rides, four ways: swipe between them. Each one reads the same rides by local calendar day.
+const dayKey = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+const addDays = (t, n) => { const d = new Date(t); d.setDate(d.getDate() + n); return d.getTime(); };
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const dayLab = (t) => new Date(t).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+// Fixed km bands, so one ride is shaded by its own distance rather than looking like a "best day".
+const band = (km) => (!km ? 0 : km < 15 ? 1 : km < 40 ? 2 : km < 80 ? 3 : 4);
+const navBtn = (dir) => `<button class="rc-arr" type="button" aria-label="${dir < 0 ? 'Previous' : 'Next'} chart" onclick="const r=this.parentNode.previousElementSibling;r.scrollBy({left:${dir}*r.clientWidth,behavior:'smooth'})"><svg viewBox="0 0 24 24"><path d="${dir < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'}"/></svg></button>`;
+export const RC_NAMES = ['Calendar', 'Km per week', 'By weekday', 'Each ride'];
+export function rideCharts(trips) {
+  const today = dayKey(Date.now()), start = addDays(today, -(new Date(today).getDay() + 7 * 11));
+  const kmBy = {}, nBy = {};
+  for (const t of trips || []) { const k = dayKey(t.start || t.ts || 0); kmBy[k] = (kmBy[k] || 0) + (t.km || 0); nBy[k] = (nBy[k] || 0) + 1; }
+  const tip = (k) => `${dayLab(k)}${kmBy[k] ? ` · ${num(kmBy[k], 1)} km${nBy[k] > 1 ? `, ${nBy[k]} rides` : ''}` : ' · no ride'}`;
+  // 1. Calendar heatmap: 12 weeks, Sunday on top, today ringed.
   let cols = '', months = '', lastM = -1;
   for (let w = 0; w < 12; w++) {
-    let cells = '';
-    const wkStart = new Date(start.getTime() + w * 7 * DAYMS);
-    if (wkStart.getMonth() !== lastM) { months += `<span style="grid-column:${w + 1}">${wkStart.toLocaleDateString('en-IN', { month: 'short' })}</span>`; lastM = wkStart.getMonth(); }
-    for (let d = 0; d < 7; d++) {
-      const ts = start.getTime() + (w * 7 + d) * DAYMS, km = kmByDay[ts] || 0, future = ts > today.getTime();
-      const lv = km ? Math.min(4, 1 + Math.floor((km / max) * 3.999)) : 0;
-      cells += `<i class="${future ? 'f' : `l${lv}`}" title="${new Date(ts).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}${km ? ` · ${num(km, 1)} km` : ''}"></i>`;
-    }
+    const wk = addDays(start, w * 7); let cells = '';
+    // A month is labelled on the first week that holds its 1st (or the opening week).
+    for (let d = 0; d < 7; d++) { const k = addDays(wk, d), m = new Date(k).getMonth(); if (m !== lastM && ((w === 0 && d === 0 && new Date(k).getDate() <= 18) || new Date(k).getDate() === 1)) { months += `<span style="grid-column:${w + 1}">${MON[m]}</span>`; lastM = m; }
+      cells += `<i class="${k > today ? 'f' : `l${band(kmBy[k])}`}${k === today ? ' now' : ''}" title="${tip(k)}"></i>`; }
     cols += `<div class="hm-col">${cells}</div>`;
   }
-  return `<div class="hm"><div class="hm-months">${months}</div><div class="hm-body"><div class="hm-days"><span>S</span><span></span><span>T</span><span></span><span>T</span><span></span><span>S</span></div><div class="hm-grid">${cols}</div></div></div>`;
+  const leg = `<div class="rc-leg"><span>0</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><span>80+ km a day</span></div>`;
+  const cal = `<div class="hm"><div class="hm-months">${months}</div><div class="hm-body"><div class="hm-days"><span>S</span><span></span><span>T</span><span></span><span>T</span><span></span><span>S</span></div><div class="hm-grid">${cols}</div></div>${leg}</div>`;
+  // 2. Weekly bars: km per week, this week in the accent.
+  const wks = Array.from({ length: 12 }, (_, w) => { const s0 = addDays(start, w * 7); let km = 0; for (let d = 0; d < 7; d++) km += kmBy[addDays(s0, d)] || 0; return { s0, km }; });
+  const wMax = Math.max(1, ...wks.map((x) => x.km)), nice = wMax <= 20 ? 20 : wMax <= 50 ? 50 : Math.ceil(wMax / 100) * 100;
+  const bars = wks.map((x, i) => `<div class="rc-b${i === 11 ? ' now' : ''}" title="Week of ${new Date(x.s0).getDate()} ${MON[new Date(x.s0).getMonth()]} · ${num(x.km, 1)} km"><span class="rc-v">${x.km && (x.km === wMax || i === 11) ? num(x.km, x.km < 100 ? 1 : 0) : ''}</span><i style="height:${x.km ? Math.max(3, (x.km / nice) * 100) : 0}%"></i></div>`).join('');
+  const wkLab = wks.map((x, i) => `<span>${i % 3 === 0 || i === 11 ? (i === 11 ? 'Now' : `${new Date(x.s0).getDate()} ${MON[new Date(x.s0).getMonth()]}`) : ''}</span>`).join('');
+  const weekly = `<div class="rc-bars"><div class="rc-grid"><span>${nice}</span><span>${nice / 2}</span><span>0</span></div><div class="rc-cols">${bars}</div></div><div class="rc-xl">${wkLab}</div>`;
+  // 3. By weekday: a radial bar per day, km over all rides.
+  const wd = [0, 0, 0, 0, 0, 0, 0], wn = [0, 0, 0, 0, 0, 0, 0];
+  for (const t of trips || []) { const g = new Date(t.start || t.ts || 0).getDay(); wd[g] += t.km || 0; wn[g]++; }
+  const wdMax = Math.max(1, ...wd), fav = wd.indexOf(Math.max(...wd)), WDN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const spoke = (i, r0, r1) => { const a = (i / 7) * Math.PI * 2 - Math.PI / 2; return [Math.cos(a) * r0, Math.sin(a) * r0, Math.cos(a) * r1, Math.sin(a) * r1].map((v) => (110 + v).toFixed(1)); };
+  const radial = `<div class="rc-rad"><svg viewBox="0 0 220 220">${wd.map((km, i) => { const [x0, y0, x1, y1] = spoke(i, 46, 90), [a0, b0, a1, b1] = spoke(i, 46, 46 + Math.max(km ? 6 : 0, (km / wdMax) * 44)), [lx, ly] = spoke(i, 106, 106);
+    return `<line class="tr" x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}"/>${km ? `<line class="v${i === fav ? ' top' : ''}" x1="${a0}" y1="${b0}" x2="${a1}" y2="${b1}"><title>${WDN[i]} · ${num(km, 1)} km, ${plural(wn[i], 'ride', 'rides')}</title></line>` : ''}<text x="${lx}" y="${ly}">${WDN[i][0]}</text>`; }).join('')}
+    <text class="c1" x="110" y="104">${trips?.length ? WDN[fav] : '–'}</text><text class="c2" x="110" y="122">${trips?.length ? 'your day' : 'no rides'}</text></svg>
+    <div class="rc-radk">${trips?.length ? `<b>${num(wd[fav], wd[fav] < 100 ? 1 : 0)} km</b> on ${['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'][fav]}<br>${plural(wn[fav], 'ride', 'rides')}` : ''}</div></div>`;
+  // 4. Each ride: one bubble per ride along the 12 weeks, sized by distance.
+  const span = today + 86400000 - start, rr = (trips || []).filter((t) => (t.start || t.ts || 0) >= start);
+  const kMax = Math.max(1, ...rr.map((t) => t.km || 0));
+  const bub = rr.map((t, i) => { const bx = (((t.start || t.ts) - start) / span) * 300, r = 3 + Math.sqrt((t.km || 0) / kMax) * 15, by = 60 + (i % 2 ? -1 : 1) * Math.min(14, r * .55);
+    return `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="${r.toFixed(1)}"><title>${dayLab(t.start || t.ts)} · ${num(t.km || 0, 1)} km</title></circle>`; }).join('');
+  const ticks = [0, 4, 8].map((w) => `<line class="tk" x1="${(w / 12) * 300}" x2="${(w / 12) * 300}" y1="20" y2="100"/>`).join('');
+  const each = `<div class="rc-tot"><b>${plural(rr.length, 'ride', 'rides')}</b> in 12 weeks · biggest ${num(kMax === 1 && !rr.length ? 0 : kMax, 1)} km</div><svg class="rc-bub" viewBox="-12 0 324 120">${ticks}<line class="ax" x1="0" x2="300" y1="60" y2="60"/>${bub}</svg><div class="rc-xl rc-xl3"><span>${new Date(start).getDate()} ${MON[new Date(start).getMonth()]}</span><span>${new Date(addDays(start, 28)).getDate()} ${MON[new Date(addDays(start, 28)).getMonth()]}</span><span>${new Date(addDays(start, 56)).getDate()} ${MON[new Date(addDays(start, 56)).getMonth()]}</span><span>Today</span></div>`;
+  let at = 0; try { at = Math.min(3, +localStorage.getItem('wl-rc') || 0); } catch {}
+  const pages = [cal, weekly, radial, each];
+  return `<div class="rc" data-rc>${pages.map((h, i) => `<section class="rc-p" aria-label="${RC_NAMES[i]}"><div class="rc-name">${RC_NAMES[i]}</div>${h}</section>`).join('')}</div><div class="rc-nav">${navBtn(-1)}<div class="rc-dots">${RC_NAMES.map((n, i) => `<i class="${i === at ? 'on' : ''}" title="${n}"></i>`).join('')}</div>${navBtn(1)}</div>`;
 }
+export const rideHeatmap = rideCharts;
 
 export function trips(c) {
   const { s, live } = c;
@@ -1356,7 +1388,7 @@ export function onboarding(s, step = 0, link = {}) {
       : isIOS() ? `<button class="btn ink block" data-act="onb-finish" data-arg="ios">${icon('bt')} Pair on iPhone</button>` : '';
     return `<div class="onb onb-link">
       <div class="onb-top"><button class="circle" data-act="onb-step" data-arg="1" aria-label="Back">${icon('back')}</button><button class="link" data-act="onb-finish" data-arg="later">Skip</button></div>
-      <div class="onb-body"><div class="lk-hero lk-street" aria-hidden="true"><span class="lk-glow"></span><span class="lk-beam"></span><img class="lk-img" src="img/onb/rider-street.webp" alt="" decoding="async"><span class="lk-lamp"></span><svg class="lk-wave" viewBox="0 0 80 40"><path d="M2 38C12 30 10 18 22 16S36 26 46 18S58 4 78 4"/></svg><span class="link-badge lk-bt">${icon('bt')}</span></div><div class="eyebrow mt24">Step 2 of 2</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once. It reconnects by itself.</p>
+      <div class="onb-body"><div class="lk-hero lk-street" aria-hidden="true"><span class="lk-glow"></span><span class="lk-beam"></span><img class="lk-img" src="img/onb/rider-street.webp" alt="" decoding="async"><span class="lk-lamp"></span><svg class="lk-wave" viewBox="0 0 80 40" preserveAspectRatio="none"><path d="M2 38C12 30 10 18 22 16S36 26 46 18S58 4 78 4"/></svg><span class="link-badge lk-bt">${icon('bt')}</span></div><div class="eyebrow mt24">Step 2 of 2</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once. It reconnects by itself.</p>
       <div class="onb-gets2">${[['turnRight', 'Turns'], ['phone', 'Callers'], ['clock', 'Time'], ['fuel', 'Fuel']].map(([ic, t]) => `<span>${icon(ic)}${t}</span>`).join('')}</div></div>
       <div class="onb-foot">${pair}<button class="btn ${pair ? 'line' : 'ink'} block mt8" data-act="onb-finish" data-arg="sim">${icon('bolt')} Try the simulated bike</button><button class="link onb-sample" data-act="onb-finish" data-arg="later">I’ll do this later</button></div>
     </div>`;

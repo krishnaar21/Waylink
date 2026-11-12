@@ -75,10 +75,13 @@ function applyLogo() {
 function applyTheme() {
   applyFont(); applyLogo();
   SND.setEnabled(s.settings.sounds !== false);
-  const t = s.settings.theme === 'auto' ? (mqDark.matches ? 'obsidian' : 'paper') : s.settings.theme;
+  let t = s.settings.theme === 'auto' ? (mqDark.matches ? 'obsidian' : 'paper') : s.settings.theme;
+  // Paper dark shares every Paper rule and swaps the inks.
+  const night = t === 'sketchdark'; if (night) t = 'sketch';
   document.documentElement.dataset.theme = t;
+  if (night) document.documentElement.dataset.night = ''; else delete document.documentElement.dataset.night;
   // Launch images follow the app's theme, not just the phone's, so a dark theme never opens on white.
-  const mode = t === 'paper' || t === 'sketch' ? 'light' : 'dark';
+  const mode = (t === 'paper' || t === 'sketch') && !night ? 'light' : 'dark';
   $$('link[rel=apple-touch-startup-image]').forEach((l) => { const h = l.getAttribute('href'), n = h.replace(/\/(light|dark)-/, `/${mode}-`); if (n !== h) l.setAttribute('href', n); });
   document.documentElement.dataset.accent = s.settings.accent; document.documentElement.dataset.brand = V.brandOf(s); document.documentElement.dataset.icons = s.settings.icons === 'duo' ? 'duo' : 'line';
   const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
@@ -242,6 +245,8 @@ function render(anim = '') {
   setHTML($('#tabbar'), V.tabbar(ctx(), screen));
   setHTML($('#fab'), screen === 'today' ? `<button class="fab" data-act="sheet" data-arg="quick" aria-label="Quick actions">${V.icon('plus')}</button>`
     : '');
+  // Ride charts reopen on the style you last swiped to.
+  if (!same) { const rc = $('[data-rc]'); if (rc) { let i = 0; try { i = +localStorage.getItem('wl-rc') || 0; } catch {} if (i) requestAnimationFrame(() => { rc.style.scrollBehavior = 'auto'; rc.scrollLeft = i * rc.clientWidth; rc.style.scrollBehavior = ''; }); } }
   renderPill(); fitArch();
   renderOverlay();
   if (screen === 'fuel') wireChart();
@@ -1254,7 +1259,9 @@ function registerUpdates() {
 }
 
 document.addEventListener('scroll', (e) => {
-  const el = e.target; if (!el?.matches?.('[data-onb-slides]')) return;
+  const el = e.target;
+  if (el?.matches?.('[data-rc]')) { const i = Math.round(el.scrollLeft / el.clientWidth); el.nextElementSibling?.querySelectorAll('.rc-dots i').forEach((d, k) => d.classList.toggle('on', k === i)); try { localStorage.setItem('wl-rc', i); } catch {} return; }
+  if (!el?.matches?.('[data-onb-slides]')) return;
   $('[data-onb-stage]')?.style.setProperty('--p', (el.scrollLeft / el.clientWidth).toFixed(3));
   const i = Math.round(el.scrollLeft / el.clientWidth), btn = $('[data-act="onb-next"]');
   $$('.onb-dots button').forEach((d, k) => d.classList.toggle('on', k === i));
