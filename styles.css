@@ -3,9 +3,9 @@
   --serif: 'Geist', -apple-system, system-ui, sans-serif; --dw: 600; --dls: -.04em; --dscale: 1;
   --sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
 }
-html[data-body="source"] { --sans: 'Source Sans 3', -apple-system, system-ui, sans-serif; }
-html[data-body="nunito"] { --sans: 'Nunito Sans', -apple-system, system-ui, sans-serif; }
-html[data-body="karla"] { --sans: 'Karla', -apple-system, system-ui, sans-serif; }
+html[data-body="inter"] { --sans: 'Inter', -apple-system, system-ui, sans-serif; --bw: 450; --bw-strong: 600; }
+html[data-body="rubik"] { --sans: 'Rubik', -apple-system, system-ui, sans-serif; --bw: 420; --bw-strong: 600; }
+html[data-body="lexend"] { --sans: 'Lexend', -apple-system, system-ui, sans-serif; --bw: 400; --bw-strong: 600; letter-spacing: -.005em; }
 :root {
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
@@ -36,6 +36,10 @@ html[data-font="geist"] { --serif: 'Geist', -apple-system, system-ui, sans-serif
 html[data-font="garamond"] { --serif: 'EB Garamond', Garamond, Georgia, serif; --dw: 500; --dls: -.01em; --dscale: 1.12; }
 html[data-font="vollkorn"] { --serif: 'Vollkorn', Georgia, serif; --dw: 500; --dls: -.01em; --dscale: 1.02; }
 html[data-font="lora"] { --serif: 'Lora', Georgia, serif; --dw: 500; --dls: -.015em; --dscale: 1; }
+html[data-font="sourceserif"] { --serif: 'Source Serif 4', Georgia, serif; --dw: 600; --dls: -.02em; --dscale: 1; }
+html[data-font="fraunces"] { --serif: 'Fraunces', Georgia, serif; --dw: 600; --dls: -.02em; --dscale: 1; }
+html[data-font="literata"] { --serif: 'Literata', Georgia, serif; --dw: 600; --dls: -.02em; --dscale: .98; }
+html[data-font="dmserif"] { --serif: 'DM Serif Display', Georgia, serif; --dw: 400; --dls: -.01em; --dscale: 1.02; }
 html[data-font="crimson"] { --serif: 'Crimson Pro', Georgia, serif; --dw: 500; --dls: -.01em; --dscale: 1.1; }
 .selmark { position: absolute; top: 7px; right: 7px; width: 20px; height: 20px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; box-shadow: 0 0 0 2px var(--raised); animation: pop .35s var(--spring) both; z-index: 2; }
 .selmark svg { width: 12px; height: 12px; stroke-width: 3 !important; }
@@ -95,7 +99,7 @@ input::-webkit-date-and-time-value { text-align: left; margin: 0; }
 input::-webkit-datetime-edit { padding: 0; }
 .app { height: 100vh; height: 100dvh; }
 @supports (-webkit-touch-callout: none) { .view, .sheet-body { -webkit-overflow-scrolling: touch; } }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-font-smoothing: antialiased; font-size: 16px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--sans); font-weight: var(--bw, 400); -webkit-font-smoothing: antialiased; font-size: 16px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
 body { overscroll-behavior: none; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; border: 0; background: none; padding: 0; }
@@ -837,3 +841,82 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .bc-swap { position: absolute; top: 12px; right: 12px; }
 .bc-main .t { padding-right: 40px; }
 .bc-main .grow { padding-right: 4px; }
+
+/* Appearance rows and pickers */
+.pick-val { color: var(--ink-3); font-size: 15px; white-space: nowrap; }
+.pick-logo { width: 26px; height: 26px; border-radius: 7px; margin-right: 8px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.li .end { display: flex; align-items: center; gap: 6px; }
+.bodylist { display: flex; flex-direction: column; gap: 8px; }
+.bodyrow { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: var(--r-sm); background: var(--raised); box-shadow: inset 0 0 0 1px var(--line); text-align: left; }
+.bodyrow .aa { font-size: 30px; font-weight: 500; width: 46px; text-align: center; flex: none; }
+.bodyrow .nm { display: block; font-weight: 600; font-size: 16px; }
+.bodyrow .sample { display: block; font-size: 14px; color: var(--ink-2); margin-top: 2px; }
+.bodyrow.on { box-shadow: inset 0 0 0 1px var(--ink); }
+
+/* ---------- Calm editorial pass: sentence-case labels, hairline cards, more air ---------- */
+.eyebrow { font-family: var(--sans); font-size: 13.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-3); }
+.section { margin-top: 34px; }
+.section-h { align-items: center; margin-bottom: 14px; }
+.section-h .sh-l .eyebrow { font-size: 18px; font-weight: 650; color: var(--ink); letter-spacing: -.01em; }
+.section-h > .eyebrow:last-child, .section-h > span.eyebrow { font-size: 14px; }
+.card { box-shadow: inset 0 0 0 1px var(--line), 0 1px 2px rgba(40,30,15,.03); }
+[data-theme="obsidian"] .card, [data-theme="amoled"] .card { box-shadow: inset 0 0 0 1px var(--line); }
+.row-sub { font-family: var(--sans); font-size: 14px; letter-spacing: 0; text-transform: none; }
+.hero .caption { font-size: 14px; }
+.upcard .uc-tag { font-family: var(--sans); font-size: 12px; letter-spacing: 0; text-transform: none; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--raised); }
+.upcard.r .uc-tag { background: var(--tint-red); } .upcard.a .uc-tag { background: var(--tint-amber); }
+.upcard { box-shadow: inset 0 0 0 1px var(--line); }
+.bc-main .d, .vchip .d { font-family: var(--mono); }
+/* Pill segments: outlined pills, the chosen one filled */
+.seg { background: none; padding: 0; gap: 8px; }
+.seg button { height: 38px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line); background: var(--raised); }
+.seg button.on { background: var(--ink); color: var(--bg); box-shadow: none; }
+/* Overdue segments get diagonal hatching, like unfinished work */
+.segs i.r, .hero .segs i.r { background: repeating-linear-gradient(135deg, var(--red) 0 3px, color-mix(in srgb, var(--red) 55%, transparent) 3px 6px); }
+.upcard.r .uc-bar i { background: repeating-linear-gradient(135deg, var(--red) 0 4px, color-mix(in srgb, var(--red) 55%, transparent) 4px 8px); }
+/* Mileage scale with a marker bubble */
+.ms-t { font-weight: 650; font-size: 17px; }
+.mscale .ms-v { font-size: 40px; }
+.ms-bar { position: relative; display: flex; gap: 3px; height: 12px; margin-top: 36px; }
+.ms-bar i { flex: 1; border-radius: 3px; background: color-mix(in srgb, var(--sage) calc(var(--k) * 100%), var(--seg-off)); }
+.ms-bar i:first-of-type { border-radius: 6px 3px 3px 6px; } .ms-bar i:last-of-type { border-radius: 3px 6px 6px 3px; }
+.ms-pin { position: absolute; bottom: calc(100% + 8px); transform: translateX(-50%); background: var(--ink); color: var(--bg); font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.ms-pin::after { content: ''; position: absolute; left: 50%; top: 100%; margin-left: -4px; border: 4px solid transparent; border-top-color: var(--ink); }
+.ms-lab { display: flex; justify-content: space-between; margin-top: 10px; font-size: 13px; color: var(--ink-3); }
+.ms-lab span:last-child { color: var(--sage-ink); font-weight: 600; }
+/* Rides: a big count, a sentence, and a heatmap of riding days */
+.rides-hero .rh-n { font-size: 64px; margin-top: 10px; }
+.rh-line { font-family: var(--serif); font-size: 21px; line-height: 1.35; margin: 12px 0 0; letter-spacing: -.01em; }
+.rh-line u { text-decoration-color: var(--accent); text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
+.hm { margin-top: 22px; }
+.hm-months { display: grid; grid-template-columns: repeat(12, 1fr); margin-left: 22px; font-size: 12px; color: var(--ink-3); height: 18px; }
+.hm-body { display: flex; gap: 8px; }
+.hm-days { display: grid; grid-template-rows: repeat(7, 1fr); width: 14px; font-size: 11px; color: var(--ink-3); text-align: center; gap: 4px; }
+.hm-days span { line-height: 1; display: grid; place-items: center; }
+.hm-grid { flex: 1; display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; }
+.hm-col { display: grid; grid-template-rows: repeat(7, 1fr); gap: 4px; }
+.hm-col i { aspect-ratio: 1; border-radius: 4px; background: var(--seg-off); }
+.hm-col i.l1 { background: color-mix(in srgb, var(--accent) 35%, var(--seg-off)); }
+.hm-col i.l2 { background: color-mix(in srgb, var(--accent) 60%, var(--seg-off)); }
+.hm-col i.l3 { background: color-mix(in srgb, var(--accent) 82%, var(--seg-off)); }
+.hm-col i.l4 { background: var(--accent); border-radius: 6px; transform: rotate(45deg) scale(.82); }
+.hm-col i.f { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.sheet-sub { font-size: 15px; color: var(--ink-3); margin-top: 4px; }
+/* Landscape (phones on their side): Route and ride mode get their own layout */
+@media (orientation: landscape) and (max-height: 520px) {
+  .ride-mode .rm-page.lay-a { flex-direction: row; align-items: center; gap: 28px; padding: 16px max(28px, env(safe-area-inset-right)) 70px max(28px, env(safe-area-inset-left)); }
+  .ride-mode .lay-a .speed { flex: 1.1; }
+  .ride-mode .lay-a .speed .big { font-size: min(150px, 34vh); }
+  .ride-mode .lay-a .rm-grid { flex: 1; align-self: center; }
+  .ride-mode .lay-a .rm-grid > div { padding: 12px 14px; }
+  .ride-mode .rm-foot2 { bottom: 12px; }
+  .ride-mode .hold svg { width: 40px; height: 40px; }
+  .view[data-screen="route"] { padding-left: max(24px, env(safe-area-inset-left)); padding-right: max(24px, env(safe-area-inset-right)); }
+  .view[data-screen="route"] > div { max-width: 620px; margin: 0 auto; }
+  .tabbar { padding-top: 6px; }
+}
+.tag { font-family: var(--sans); font-size: 13px; letter-spacing: 0; text-transform: none; font-weight: 600; }
+.rm-lab { font-family: var(--sans) !important; font-size: 14px !important; letter-spacing: 0 !important; text-transform: none !important; }
+.lay-a .speed .u { font-family: var(--sans); letter-spacing: 0; text-transform: none; font-size: 17px; }
+.hold .eyebrow { letter-spacing: 0; font-size: 13.5px; }
+.ride .when, .about-meta { font-family: var(--sans); letter-spacing: 0; text-transform: none; font-size: 13.5px; }

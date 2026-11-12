@@ -85,7 +85,7 @@ export function freshState() {
   return bindVehicle({
     v: 2, onboarded: false, sample: false,
     profile: { name: '', phone: '', email: '', city: '', country: 'IN', licenceNo: '', licenceExpiry: null, blood: '', medical: '', iceName: '', icePhone: '', photo: null, since: Date.now() },
-    settings: { theme: 'auto', accent: 'rust', font: 'geist', logo: 'wl-turn', devFrames: false, rideLayout: 0, art: 'photo', autoRide: true, autoRecord: true, wakeLock: true, streetNames: false, sounds: true, icons: 'lucide', bodyFont: 'system', simulated: false, alerts: { calls: true, waCalls: true, waMsgs: true } },
+    settings: { theme: 'auto', accent: 'rust', font: 'geist', logo: 'wl-turn', devFrames: false, rideLayout: 0, art: 'photo', autoRide: true, autoRecord: true, wakeLock: true, streetNames: false, sounds: true, bodyFont: 'system', simulated: false, alerts: { calls: true, waCalls: true, waMsgs: true } },
     alerts: { missed: [], wa: [], sent: 0, log: [] },
     vehicles: [v], active: v.id,
   });
@@ -113,10 +113,9 @@ export function migrate(raw) {
   s.settings.art = s.settings.art === 'icon' ? 'icon' : 'photo';
   if (s.settings.theme === 'carbon') s.settings.theme = 'obsidian';
   if (typeof s.settings.sounds !== 'boolean') s.settings.sounds = true;
-  if (!['system', 'source', 'nunito', 'karla'].includes(s.settings.bodyFont)) s.settings.bodyFont = 'system';
-  if (!['lucide', 'hugeicons', 'uicons', 'material'].includes(s.settings.icons)) s.settings.icons = 'lucide';
+  if (!['system', 'inter', 'rubik', 'lexend'].includes(s.settings.bodyFont)) s.settings.bodyFont = 'system';
   if (!['wl-turn', 'wl-link', 'wl-sign', 'wl-swift', 'wl-beacon'].includes(s.settings.logo)) s.settings.logo = 'wl-turn';
-  if (!s.settings.font || !['onest','geist','garamond','crimson','vollkorn','lora'].includes(s.settings.font)) s.settings.font = 'geist';
+  if (!s.settings.font || !['onest','geist','garamond','crimson','vollkorn','lora','sourceserif','fraunces','literata','dmserif'].includes(s.settings.font)) s.settings.font = 'geist';
   return bindVehicle(s);
 }
 

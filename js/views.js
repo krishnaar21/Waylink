@@ -1,6 +1,7 @@
 // Waylink — views. Pure functions: state in, HTML out.
 import { MANEUVERS, maneuverByKey, toHex, UUID } from './protocol.js';
-import { ICONS } from './icons.js';
+import { ICONS as LUCIDE_ICONS } from './icons.js';
+import { ICONS as UICONS, SET as UICONS_SET } from './icons-uicons.js';
 import * as S from './store.js';
 
 // ---------- Format helpers (Indian English by default) ----------
@@ -50,21 +51,14 @@ export function segs(n, filled, cls = 's', extra = '') {
 // ---------- Icons (Lucide) ----------
 export const selmark = (inline = false) => `<span class="selmark ${inline ? 'inline' : ''}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>`;
 // Icon libraries: Lucide is built in; the others load on demand and fall back to Lucide per icon.
-export const BODY_FONTS = [['system', 'System', '-apple-system, system-ui'], ['source', 'Source Sans', "'Source Sans 3'"], ['nunito', 'Nunito', "'Nunito Sans'"], ['karla', 'Karla', "'Karla'"]];
+export const BODY_FONTS = [['system', 'System', '-apple-system, system-ui', 400], ['inter', 'Inter', "'Inter'", 450], ['rubik', 'Rubik', "'Rubik'", 420], ['lexend', 'Lexend', "'Lexend'", 400]];
 export const THEMES = [['auto', 'Auto', '#ECE8E1', '#F7F5F1', '#161514'], ['paper', 'Light', '#ECE8E1', '#F7F5F1', '#161514'], ['obsidian', 'Dark', '#161514', '#22201E', '#F2EFE9'], ['amoled', 'Black', '#000000', '#141312', '#F2EFE9']];
 export const ACCENTS = [['rust', '#BF4128', 'Rust'], ['wine', '#B3172A', 'Wine'], ['blue', '#1D56CF', 'Blue'], ['slate', '#5D697D', 'Stealth'], ['amber', '#C98316', 'Amber'], ['mint', '#2A8570', 'Mint']];
-export const ICON_LIBS = [['lucide', 'Lucide', 'ISC'], ['hugeicons', 'Hugeicons', 'MIT'], ['uicons', 'UIcons', 'Flaticon licence'], ['material', 'Material', 'Apache 2.0']];
-// UIcons' free licence asks for this visible credit.
-export const iconCredit = (k) => (k === 'uicons' ? '<a href="https://www.flaticon.com/uicons" target="_blank" rel="noopener">Uicons by Flaticon</a>' : `Icons by ${(ICON_LIBS.find(([x]) => x === k) || ICON_LIBS[0])[1]}`);
-const LUCIDE = { SET: { vb: '0 0 24 24', attrs: 'fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"' }, ICONS };
-const SETS = { lucide: LUCIDE };
-let CUR = LUCIDE;
-export const iconSetLoaded = (name) => !!SETS[name];
-export const addIconSet = (name, mod) => { SETS[name] = mod; };
-export const useIconSet = (name) => { CUR = SETS[name] || LUCIDE; };
-const draw = (set, n, cls) => { const g = set.ICONS[n] ? set : LUCIDE; return `<svg class="i ${cls}" viewBox="${g.SET.vb}" ${g.SET.attrs} aria-hidden="true">${g.ICONS[n] || ''}</svg>`; };
-export const icon = (n, cls = '') => draw(CUR, n, cls);
-export const iconFrom = (lib, n, cls = '') => draw(SETS[lib] || LUCIDE, n, cls);
+// Icons: Uicons by Flaticon (regular rounded). Its free licence asks for a visible credit, shown in the footer and About.
+export const ICON_CREDIT = '<a href="https://www.flaticon.com/uicons" target="_blank" rel="noopener">Uicons by Flaticon</a>';
+const LUCIDE = { SET: { vb: '0 0 24 24', attrs: 'fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"' }, ICONS: LUCIDE_ICONS };
+const UI = { SET: UICONS_SET, ICONS: UICONS };
+export const icon = (n, cls = '') => { const g = UI.ICONS[n] ? UI : LUCIDE; return `<svg class="i ${cls}" viewBox="${g.SET.vb}" ${g.SET.attrs} aria-hidden="true">${g.ICONS[n] || ''}</svg>`; };
 
 // ---------- Vehicle pictures ----------
 const lum = (h) => { const n = [1, 3, 5].map((i) => parseInt(String(h || '#888888').slice(i, i + 2), 16)); return (n[0] * 299 + n[1] * 587 + n[2] * 114) / 255000; };
@@ -267,7 +261,7 @@ export function today(c) {
     <p>${line}</p>
     ${heroBar(v.bar)}${caption(v)}
   </button>
-  <div class="section" style="margin-top:22px">${sh(urgent.length ? 'Needs care' : 'Coming up', '<button class="link" data-act="go" data-arg="logbook">See all</button>')}
+  <div class="section" style="margin-top:22px">${sh(urgent.length ? 'Do these first' : 'Coming up', '<button class="link" data-act="go" data-arg="logbook">See all</button>')}
     <div class="upnext">${(urgent.length ? urgent : list.slice(0, 4)).map(({ it, st }) => upCard(it, st)).join('')}</div></div>
   ${missed.length ? `<button class="banner" data-act="go" data-arg="alerts">${icon('missed')}<span class="t"><span class="big" style="font-size:20px">${missed.length}</span> missed ${missed.length === 1 ? 'call' : 'calls'} · ${esc(missed[missed.length - 1].name)}</span>${icon('chev', 'faint')}</button>` : ''}
   ${s.parking && !link.connected ? `<button class="banner plain" data-act="sheet" data-arg="parking">${icon('pin')}<span class="t">Parked ${ago(s.parking.ts)} <span class="faint small">· walk back</span></span>${icon('chev', 'faint')}</button>` : ''}
@@ -421,7 +415,8 @@ export function fuel(c) {
   </div>
   <button class="btn ink block mt12" data-act="sheet" data-arg="fuel:new">${icon('fuel')} Log fuel</button>
   <div class="section">${sh('Mileage', '<span class="eyebrow">Full tank to full tank</span>', 'mileage')}
-    <div class="card stat3">
+    ${mileageScale(fs)}
+    <div class="card stat3 mt12">
       <div><span class="eyebrow">Average</span><span class="big">${num(fs.avg, 1)}</span><span class="unit" style="margin:0">km/L, last 3</span></div>
       <div><span class="eyebrow">Last tank</span><span class="big">${num(fs.lastTank, 1)}</span><span class="unit" style="margin:0">km/L</span></div>
       <div><span class="eyebrow">Lifetime</span><span class="big">${num(fs.lifetime, 1)}</span><span class="unit" style="margin:0">${plural(fs.tanks.length, 'tank', 'tanks')}</span></div>
@@ -484,6 +479,40 @@ export function sketch(pts, lg = false) {
 }
 
 // ---------- TRIPS ----------
+// Where this tank sits between your thirstiest and thriftiest: a segmented scale with a marker bubble.
+export function mileageScale(fs) {
+  if (!fs.tanks || fs.tanks.length < 2 || fs.lastTank == null) return '';
+  const vals = fs.tanks.map((t) => t.kmpl), lo = Math.min(...vals), hi = Math.max(...vals);
+  const span = Math.max(0.1, hi - lo), pos = Math.max(0, Math.min(1, (fs.lastTank - lo) / span));
+  const n = 10, segsHtml = Array.from({ length: n }, (_, i) => `<i style="--k:${(i / (n - 1)).toFixed(2)}"></i>`).join('');
+  const verdict = pos > 0.66 ? 'One of your best tanks.' : pos < 0.33 ? 'Thirstier than usual. Check tyre pressure and chain.' : 'About your usual.';
+  return `<div class="card pad mscale">
+    <div class="flex between" style="align-items:flex-start"><div><div class="ms-t">This tank</div><div class="small muted">${verdict}</div></div><div><span class="big ms-v">${num(fs.lastTank, 1)}</span><span class="unit">km/L</span></div></div>
+    <div class="ms-bar"><span class="ms-pin" style="left:${(pos * 100).toFixed(1)}%">${num(fs.lastTank, 1)}</span>${segsHtml}</div>
+    <div class="ms-lab"><span>${num(lo, 1)} thirstiest</span><span>Usual</span><span>${num(hi, 1)} best</span></div></div>`;
+}
+// Riding days over the last 12 weeks, one square per day, darker for longer rides.
+export function rideHeatmap(trips) {
+  const DAYMS = 86400000, today = new Date(); today.setHours(0, 0, 0, 0);
+  const start = new Date(today.getTime() - (today.getDay() + 7 * 11) * DAYMS);
+  const kmByDay = {};
+  for (const t of trips || []) { const d = new Date(t.start || t.ts || 0); d.setHours(0, 0, 0, 0); kmByDay[d.getTime()] = (kmByDay[d.getTime()] || 0) + (t.km || 0); }
+  const max = Math.max(1, ...Object.values(kmByDay));
+  let cols = '', months = '', lastM = -1;
+  for (let w = 0; w < 12; w++) {
+    let cells = '';
+    const wkStart = new Date(start.getTime() + w * 7 * DAYMS);
+    if (wkStart.getMonth() !== lastM) { months += `<span style="grid-column:${w + 1}">${wkStart.toLocaleDateString('en-IN', { month: 'short' })}</span>`; lastM = wkStart.getMonth(); }
+    for (let d = 0; d < 7; d++) {
+      const ts = start.getTime() + (w * 7 + d) * DAYMS, km = kmByDay[ts] || 0, future = ts > today.getTime();
+      const lv = km ? Math.min(4, 1 + Math.floor((km / max) * 3.999)) : 0;
+      cells += `<i class="${future ? 'f' : `l${lv}`}" title="${new Date(ts).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}${km ? ` · ${num(km, 1)} km` : ''}"></i>`;
+    }
+    cols += `<div class="hm-col">${cells}</div>`;
+  }
+  return `<div class="hm"><div class="hm-months">${months}</div><div class="hm-body"><div class="hm-days"><span>S</span><span></span><span>T</span><span></span><span>T</span><span></span><span>S</span></div><div class="hm-grid">${cols}</div></div></div>`;
+}
+
 export function trips(c) {
   const { s, live } = c;
   const wk = S.periodStats(s.trips, S.weekStart());
@@ -492,7 +521,8 @@ export function trips(c) {
   const stat = (lab, p) => `<div><span class="eyebrow">${lab}</span><span class="big">${num(p.km, p.km < 100 ? 1 : 0)}<span class="unit">km</span></span><div class="small muted">${plural(p.rides, 'ride', 'rides')} · ${dur(p.sec)}</div>${p.top ? `<div class="small faint">top ${num(p.top)} km/h</div>` : ''}</div>`;
   return `<div class="stagger">
   <div class="head pagehead"><div style="min-width:0"><h1 class="title">Rides</h1><div class="subtitle">${plural(s.trips.length, 'ride', 'rides')} on ${esc(clip(S.vehicleTitle(s), 20))}</div></div></div>
-  <div class="card stat2 mt20">${stat('This week', wk)}${stat('Last 30 days', mo)}</div>
+  ${(() => { const tot = s.trips.reduce((a, t) => a + (t.km || 0), 0); return `<div class="card pad rides-hero mt20"><div class="ms-t">All rides</div><div class="big rh-n">${s.trips.length}</div><p class="rh-line">${s.trips.length ? `You’ve ridden <u>${num(tot, tot < 100 ? 1 : 0)} km</u> on ${esc(clip(S.vehicleTitle(s), 20))}${s.trips.length > 1 ? `, about ${num(tot / s.trips.length, 0)} km a ride` : ''}.` : 'Your rides will fill this in, one square a day.'}</p>${rideHeatmap(s.trips)}</div>`; })()}
+  <div class="card stat2 mt12">${stat('This week', wk)}${stat('Last 30 days', mo)}</div>
   ${r ? `<div class="card rec-card mt12"><div class="flex between"><span class="tag x"><span class="dot x pulse"></span>Recording</span><span class="mono small faint" data-live="rec-time">${clock((Date.now() - r.start) / 1000)}</span></div>
       <div class="serif mt12" style="font-size:24px">Today’s ride, in progress.</div>
       <div class="flex gap12 mt12" style="align-items:baseline"><span class="big"><span data-live="rec-km">${num(r.km, 2)}</span><span class="unit">km</span></span><span class="small muted"><span data-live="speed">${num(live.speed)}</span> km/h now · top <span data-live="rec-top">${num(r.top)}</span></span></div>
@@ -663,21 +693,13 @@ export function settings(c) {
       <span class="tp ${k}" style="--tbg:${bg};--tcard:${card};--tink:${ink}"><i></i><i></i><b></b></span><span class="nm">${l}</span></button>`).join('')}</div>
     <div class="eyebrow mt24">Accent</div>
     <div class="accents mt12">${ACCENTS.map(([k, col, l]) => `<button class="accentopt ${st.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${st.accent === k}"><span class="dot" style="background-color:${col};--c:${col}"></span>${l}</button>`).join('')}</div>
+  </div>
+  <div class="list mt12">
+    ${li({ ic: 'palette', t: 'Title font', end: `<span class="pick-val" style="font-family:${(FONTS.find(([k]) => k === st.font) || FONTS[0])[2]}">${(FONTS.find(([k]) => k === st.font) || FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-font' })}
+    ${li({ ic: 'doc', t: 'Body font', end: `<span class="pick-val">${(BODY_FONTS.find(([k]) => k === (st.bodyFont || 'system')) || BODY_FONTS[0])[1]}</span>`, act: 'sheet', arg: 'pick-body' })}
+    ${li({ ic: 'sparkles', t: 'App icon', end: `<img class="pick-logo" src="img/logos/${st.logo || 'wl-turn'}.svg" alt=""><span class="pick-val">${(LOGOS.find(([k]) => k === st.logo) || LOGOS[0])[1]}</span>`, act: 'sheet', arg: 'pick-logo' })}
+    ${li({ ic: 'bike', t: 'Vehicle pictures', end: `<span class="pick-val">${st.art === 'icon' ? 'Icons' : 'Photos'}</span>`, act: 'sheet', arg: 'pick-art' })}
   </div></div>
-  <div class="section">${sh('Type & icons')}<div class="card pad">
-    <div class="eyebrow">Title font</div>
-    <div class="fonts two mt12">${FONTS.map(([k, nm, fam, w]) => `<button class="fontopt ${st.font === k ? 'on' : ''}" data-act="font" data-arg="${k}"><div class="sample" style="font-family:${fam}, Georgia, system-ui, sans-serif;font-weight:${w}">Today</div><div class="nm">${nm}</div></button>`).join('')}</div>
-    <div class="eyebrow mt24">Body font</div>
-    <div class="bodyfonts mt12">${BODY_FONTS.map(([k, nm, fam]) => `<button class="bodyopt ${(st.bodyFont || 'system') === k ? 'on' : ''}" data-act="body-font" data-arg="${k}" style="font-family:${fam}, system-ui, sans-serif"><span class="aa">Aa</span><span class="nm">${nm}</span></button>`).join('')}</div>
-    <div class="eyebrow mt24">Icon style</div>
-    <div class="iconlibs mt12">${ICON_LIBS.map(([k, nm]) => `<button class="iconlib ${(st.icons || 'lucide') === k ? 'on' : ''}" data-act="icon-lib" data-arg="${k}" aria-pressed="${(st.icons || 'lucide') === k}"><span class="ics">${['bike', 'fuel', 'bell'].map((n) => iconFrom(k, n)).join('')}</span><span class="nm">${nm}</span></button>`).join('')}</div>
-    <div class="eyebrow mt24">App icon</div>
-    <div class="logos mt12">${LOGOS.map(([k, nm]) => `<button class="logoopt ${st.logo === k ? 'on' : ''}" data-act="logo" data-arg="${k}" aria-label="${nm} icon" aria-pressed="${st.logo === k}"><img src="img/logos/${k}.svg" alt=""><span class="nm">${nm}</span></button>`).join('')}</div>
-    <div class="eyebrow mt24">Vehicle pictures</div>
-    <div class="seg mt12">${[['photo', 'Photos', 'camera'], ['icon', 'Icons', 'bike']].map(([k, l, ic]) => `<button class="${st.art === k ? 'on' : ''}" data-act="art-mode" data-arg="${k}">${icon(ic)}${l}</button>`).join('')}</div>
-    <p class="hint">Bikes without a photo show their colour tile. Add one in Edit vehicle.</p>
-  </div>
-  </div>
   <div class="section">${sh('Data & region', '', 'backup')}<div class="list">
     ${li({ ic: 'map', t: 'Country', d: 'Currency, fuel and SOS numbers', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
     ${li({ ic: 'down', t: 'Export backup', d: 'One .json file', act: 'export' })}
@@ -707,19 +729,23 @@ export function settings(c) {
     <img src="img/logos/${st.logo || 'wl-turn'}.svg" alt="" width="40" height="40">
     <div class="about-name">${appName(s)}</div>
     <div class="about-meta">Version ${APP_VERSION} · MIT licence</div>
-    <p class="about-credits">Bike protocol from PulsarNav · ${iconCredit(st.icons || 'lucide')}</p>
+    <p class="about-credits">Bike protocol from PulsarNav · ${ICON_CREDIT}</p>
     <p class="about-legal">Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.</p>
   </footer>
   </div>`;
 }
 
 export const FONTS = [
-  ['onest', 'Onest', "'Onest'", 600],
-  ['geist', 'Geist', "'Geist'", 600],
-  ['garamond', 'Garamond', "'EB Garamond'", 500],
-  ['crimson', 'Crimson', "'Crimson Pro'", 500],
-  ['vollkorn', 'Vollkorn', "'Vollkorn'", 500],
-  ['lora', 'Lora', "'Lora'", 500],
+  ['onest', 'Onest', "'Onest'", 600, 'sans'],
+  ['geist', 'Geist', "'Geist'", 600, 'sans'],
+  ['garamond', 'Garamond', "'EB Garamond'", 500, 'serif'],
+  ['crimson', 'Crimson', "'Crimson Pro'", 500, 'serif'],
+  ['vollkorn', 'Vollkorn', "'Vollkorn'", 500, 'serif'],
+  ['lora', 'Lora', "'Lora'", 500, 'serif'],
+  ['sourceserif', 'Source Serif', "'Source Serif 4'", 600, 'serif'],
+  ['fraunces', 'Fraunces', "'Fraunces'", 600, 'serif'],
+  ['literata', 'Literata', "'Literata'", 600, 'serif'],
+  ['dmserif', 'DM Serif', "'DM Serif Display'", 400, 'serif'],
 ];
 export const APP_NAME = 'Waylink';
 export const APP_VERSION = '1.0';
@@ -855,8 +881,7 @@ export function helpSheet(c, k) {
     <div class="list flat mt16">
       ${li({ ic: 'code', t: 'Source code', d: 'MIT licence', end: '', tag: 'a', href: REPO_URL })}
       ${li({ ic: 'bt', t: 'Bike protocol', d: 'From the PulsarNav project', chev: false, tag: 'div' })}
-      ${li({ ic: 'grid', t: 'Icons', d: ICON_LIBS.map(([, n, l]) => `${n} (${l})`).join(' · '), chev: false, tag: 'div' })}
-      ${li({ ic: 'grid', t: 'Uicons by Flaticon', d: 'flaticon.com/uicons', tag: 'a', href: 'https://www.flaticon.com/uicons' })}
+      ${li({ ic: 'grid', t: 'Icons', d: 'Uicons by Flaticon · Bluetooth from Lucide (ISC)', tag: 'a', href: 'https://www.flaticon.com/uicons' })}
       ${li({ ic: 'image', t: 'Photo credits', d: 'Authors and licences of bike photos', act: 'sheet', arg: 'credits' })}
       ${li({ ic: 'wxPart', t: 'Weather', d: 'Open-Meteo, free and open data', chev: false, tag: 'div' })}
       ${li({ ic: 'pin', t: 'Places', d: 'OpenStreetMap Nominatim', chev: false, tag: 'div' })}
@@ -868,6 +893,10 @@ export function helpSheet(c, k) {
 
 // ---------- Sheets ----------
 export function sheetHTML(c, key) {
+  const html = sheetInner(c, key);
+  return html == null ? html : html.replace(/<div class="eyebrow">((?:(?!<\/div>)[\s\S])*?)<\/div>\s*<h2>((?:(?!<\/h2>)[\s\S])*?)<\/h2>/, '<h2>$2</h2><div class="sheet-sub">$1</div>');
+}
+function sheetInner(c, key) {
   const { s, link, live } = c;
   const [k, arg] = key.split(/:(.*)/s);
   const co = S.country(s), md = S.model(s), cur = co.cur, v0 = S.veh(s);
@@ -946,6 +975,24 @@ export function sheetHTML(c, key) {
         </div>
         <p class="hint">Switch on the bike’s ignition and keep it within a few metres while pairing. After the first time, Bluefy reconnects by itself.</p>`;
     }
+    case 'pick-font': {
+      const st = s.settings, opt = ([k, nm, fam, w]) => `<button class="fontopt ${st.font === k ? 'on' : ''}" data-act="font" data-arg="${k}"><div class="sample" style="font-family:${fam}, Georgia, system-ui, sans-serif;font-weight:${w}">Today</div><div class="nm">${nm}</div></button>`;
+      return `<div class="eyebrow">Appearance</div><h2>Title font</h2><p class="lead">Used for page titles, big numbers and card headings.</p>
+        <div class="eyebrow mt20">Sans serif</div><div class="fonts two mt12">${FONTS.filter((f) => f[4] === 'sans').map(opt).join('')}</div>
+        <div class="eyebrow mt24">Serif</div><div class="fonts two mt12">${FONTS.filter((f) => f[4] === 'serif').map(opt).join('')}</div>`;
+    }
+    case 'pick-body': {
+      const cur = s.settings.bodyFont || 'system';
+      return `<div class="eyebrow">Appearance</div><h2>Body font</h2><p class="lead">Used for everything you read: lists, notes and buttons.</p>
+        <div class="bodylist mt16">${BODY_FONTS.map(([k, nm, fam, w]) => `<button class="bodyrow ${cur === k ? 'on' : ''}" data-act="body-font" data-arg="${k}" style="font-family:${fam}, system-ui, sans-serif;font-weight:${w || 400}"><span class="aa">Aa</span><span class="grow"><span class="nm">${nm}</span><span class="sample">Chain clean due in 120 km. Petrol ₹110.82 a litre.</span></span></button>`).join('')}</div>`;
+    }
+    case 'pick-logo':
+      return `<div class="eyebrow">Appearance</div><h2>App icon</h2><p class="lead">Shown on your Home Screen. Re-add Waylink there after changing it.</p>
+        <div class="logos mt16">${LOGOS.map(([k, nm]) => `<button class="logoopt ${s.settings.logo === k ? 'on' : ''}" data-act="logo" data-arg="${k}" aria-pressed="${s.settings.logo === k}"><img src="img/logos/${k}.svg" alt=""><span class="nm">${nm}</span></button>`).join('')}</div>`;
+    case 'pick-art':
+      return `<div class="eyebrow">Appearance</div><h2>Vehicle pictures</h2><p class="lead">How bikes look in the garage and on Today.</p>
+        <div class="seg mt16">${[['photo', 'Photos', 'camera'], ['icon', 'Icons', 'bike']].map(([k, l, ic]) => `<button class="${s.settings.art === k ? 'on' : ''}" data-act="art-mode" data-arg="${k}">${icon(ic)}${l}</button>`).join('')}</div>
+        <p class="hint">Bikes without a photo show their colour tile. Add one in Edit vehicle.</p>`;
     case 'weather': return weatherSheet(c);
     case 'faq': case 'report': case 'about': return helpSheet(c, k);
     case 'help': {

@@ -34,9 +34,13 @@ const FONT_CSS = {
   crimson: 'Crimson+Pro:wght@400;500;600',
   vollkorn: 'Vollkorn:wght@400;500;600',
   lora: 'Lora:wght@400;500;600',
+  sourceserif: 'Source+Serif+4:opsz,wght@8..60,500;8..60,600',
+  fraunces: 'Fraunces:opsz,wght@9..144,500;9..144,600',
+  literata: 'Literata:opsz,wght@7..72,500;7..72,600',
+  dmserif: 'DM+Serif+Display',
 };
 const fontHref = (keys) => 'https://fonts.googleapis.com/css2?' + keys.map((k) => 'family=' + FONT_CSS[k]).join('&') + '&display=swap';
-const BODY_CSS = { source: 'Source+Sans+3:wght@400;500;600', nunito: 'Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600', karla: 'Karla:wght@400;500;600' };
+const BODY_CSS = { inter: 'Inter:wght@400..700', rubik: 'Rubik:wght@400..700', lexend: 'Lexend:wght@400..700' };
 function applyBody() {
   const k = BODY_CSS[s.settings.bodyFont] ? s.settings.bodyFont : 'system';
   document.documentElement.dataset.body = k;
@@ -67,16 +71,8 @@ function applyLogo() {
   const icons = { 'link[rel=icon]': href, 'link[rel=apple-touch-icon]': `img/logos/png/${s.settings.logo}-180.png` };
   for (const [sel, h] of Object.entries(icons)) { const l = $(sel); if (l && l.getAttribute('href') !== h) l.setAttribute('href', h); }
 }
-let iconLib = 'lucide', libsReady = false;
-function applyIcons() {
-  const want = V.ICON_LIBS.some(([k]) => k === s.settings.icons) ? s.settings.icons : 'lucide';
-  if (want === iconLib) return;
-  if (V.iconSetLoaded(want)) { iconLib = want; V.useIconSet(want); return; }
-  loadIconSet(want).then(() => { if ((s.settings.icons || 'lucide') === want) { iconLib = want; V.useIconSet(want); render(); } });
-}
-const loadIconSet = (k) => (V.iconSetLoaded(k) ? Promise.resolve() : import(`./icons-${k}.js`).then((m) => V.addIconSet(k, m)).catch(() => {}));
 function applyTheme() {
-  applyFont(); applyLogo(); applyIcons();
+  applyFont(); applyLogo();
   SND.setEnabled(s.settings.sounds !== false);
   const t = s.settings.theme === 'auto' ? (mqDark.matches ? 'obsidian' : 'paper') : s.settings.theme;
   document.documentElement.dataset.theme = t;
@@ -165,7 +161,7 @@ function render(anim = '') {
   renderOverlay();
   if (screen === 'fuel') wireChart();
   if (screen === 'today' && s.onboarded) loadWeather();
-  if (screen === 'settings') { loadAllFonts(); if (!libsReady) Promise.all(V.ICON_LIBS.map(([k]) => loadIconSet(k))).then(() => { libsReady = true; if (screen === 'settings') render(); }); }
+  if (screen === 'settings') { loadAllFonts(); }
   sizeTracks();
   syncOrient();
 }
@@ -627,13 +623,12 @@ const A = {
       } catch { done('Couldn’t look up your area right now. Your profile city is used instead.'); }
     }, () => done('Location is off. Allow it, or add your city in Profile.'), { timeout: 12000, maximumAge: 600000 });
   },
-  sheet: (a) => { if (a.startsWith('vehicle:')) live.draftPhoto = undefined; openSheet(a); },
+  sheet: (a) => { if (a.startsWith('pick-')) loadAllFonts(); if (a.startsWith('vehicle:')) live.draftPhoto = undefined; openSheet(a); },
   close: () => closeSheet(),
   'sheet-back': () => sheetBack(),
-  font: (k) => { s.settings.font = k; buzz(6); commit(); },
-  'body-font': (k) => { s.settings.bodyFont = k; buzz(6); commit(); },
-  'icon-lib': (k) => { s.settings.icons = k; buzz(6); commit(); },
-  logo: (k) => { s.settings.logo = k; buzz(6); commit(); toast('Icon updated. Re-add to Home Screen to change an installed icon.'); },
+  font: (k) => { s.settings.font = k; buzz(6); commit(); refreshSheet(); },
+  'body-font': (k) => { s.settings.bodyFont = k; buzz(6); commit(); refreshSheet(); },
+  logo: (k) => { s.settings.logo = k; buzz(6); commit(); refreshSheet(); toast('Icon updated. Re-add to Home Screen to change an installed icon.'); },
   'show-loader': () => showLoader(),
   scenario: (k) => {
     if (live.rec) stopRecording(false);
@@ -687,7 +682,7 @@ const A = {
     if (s.active === id) s.active = s.vehicles[0].id;
     closeSheet(); commit(); toast(`${S.vehicleTitle(s, gone)} removed.`);
   },
-  'art-mode': (k) => { s.settings.art = k; commit(); },
+  'art-mode': (k) => { s.settings.art = k; commit(); refreshSheet(); },
   'set-country': (c) => { s.profile.country = c; s.fuelPrice = null; closeSheet(); commit(); },
   'svc-done': (id) => {
     const it = s.service.find((x) => x.id === id); if (!it) return;
