@@ -105,7 +105,7 @@ fun RideMode(s: AppState, live: Live, onSettings: () -> Unit = {}, onLeave: () -
     Box(Modifier.fillMaxSize().background(c.bg).clickable(remember { MutableInteractionSource() }, indication = null) {}) {
         Column(
             Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(start = 24.dp, end = 24.dp, top = 42.dp, bottom = 156.dp), // .rm-page: --top + 2, 24, --bottom + 168
+                .padding(start = 24.dp, end = 24.dp, top = 42.dp, bottom = 180.dp), // .rm-page: --top + 2, 24, --bottom + 168
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // .speed: the dial, centred in the room left above the boxes, tags 18 below it
@@ -157,7 +157,7 @@ fun RideMode(s: AppState, live: Live, onSettings: () -> Unit = {}, onLeave: () -
         val note = if (s.settings.autoRide) "Auto-opens · Settings › Riding" else "Auto-open · Settings › Riding"
         Txt(
             note, T.rowSub.copy(fontSize = 12.5.sp, textDecoration = TextDecoration.Underline), c.ink3,
-            Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(bottom = 128.dp)
+            Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(bottom = 140.dp)
                 .semantics { role = Role.Button }.clickable(remember { MutableInteractionSource() }, indication = null, onClick = onSettings)
                 .padding(horizontal = 8.dp, vertical = 6.dp),
         )
@@ -177,8 +177,9 @@ private fun SpeedDial(speed: Float, max: Int, sub: String, big: String) {
     val tm = androidx.compose.ui.text.rememberTextMeasurer()
     val sans = app.waylink.ui.theme.Body
     BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        val side = minOf(300.dp, maxWidth * 0.76f)
-        val bigPx = minOf(84.dp, maxWidth * 0.21f)
+        val vw = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp.dp // 76vw, of the screen, not the padded column
+        val side = minOf(300.dp, vw * 0.76f)
+        val bigPx = minOf(84.dp, vw * 0.21f)
         Box(Modifier.size(side), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {
                 val k = size.width / 200f

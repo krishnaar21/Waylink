@@ -157,9 +157,9 @@ fun RidesScreen(s: AppState, live: Live, act: RidesActions, bottom: Dp) {
         Column(Modifier.fillMaxWidth().padding(top = 12.dp).card(20.dp).padding(top = 18.dp, bottom = 18.dp)) {
             Column(Modifier.padding(horizontal = 20.dp)) {
                 Txt("All rides", T.body.copy(fontSize = 17.sp, fontWeight = FontWeight.SemiBold, lineHeight = 25.5.sp), c.ink)
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(2.dp))
                 Txt("${v.trips.size}", T.big(64f), c.ink)
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(2.dp))
                 // .rh-line u: the distance underlined in the accent colour, 1.5 dp thick, 4 dp below the text
                 var uStart = -1; var uEnd = -1
                 val line = buildAnnotatedString {

@@ -149,9 +149,10 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
             }
             CircleBtn("sos", "Emergency SOS", act::sos, Modifier.padding(top = 11.dp), tint = c.red)
         }
-        live.scenario?.let { Spacer(Modifier.height(12.dp)); app.waylink.ui.components.PreviewBar(it, act::exitPreview) }
+        // .preview-bar sits 26 under the header and 14 above the bike card
+        live.scenario?.let { Spacer(Modifier.height(26.dp)); app.waylink.ui.components.PreviewBar(it, act::exitPreview) }
 
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(if (live.scenario != null) 14.dp else 28.dp))
         BikeCard(s, live, f, good, verdict.ok, act)
 
         if (!good) {

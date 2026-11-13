@@ -229,7 +229,7 @@ private fun LTab(label: String, count: Int, on: Boolean, onClick: () -> Unit) {
 private fun NeedRow(x: InboxItem, onClick: () -> Unit) {
     val c = W.c
     val hot = x.tone == "red"
-    Row(Modifier.fillMaxWidth().rowPress(label = x.title, onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(Modifier.fillMaxWidth().rowPress(label = x.title, onClick = onClick).padding(horizontal = 16.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
         IconTile(x.icon, size = 44.dp, radius = 13.dp, iconSize = 24.dp, bg = if (hot) c.tintRed else c.inkA(0.06f), tint = if (hot) c.red else c.ink2)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
