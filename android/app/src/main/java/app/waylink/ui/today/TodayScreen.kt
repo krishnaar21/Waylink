@@ -1,0 +1,459 @@
+package app.waylink.ui.today
+
+import android.content.Context
+import android.os.BatteryManager
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import app.waylink.core.AppState
+import app.waylink.core.Due
+import app.waylink.core.Fmt
+import app.waylink.core.ServiceRow
+import app.waylink.core.fuelStats
+import app.waylink.core.modelName
+import app.waylink.core.periodStats
+import app.waylink.core.sortedService
+import app.waylink.core.vehicleTitle
+import app.waylink.core.verdictOf
+import app.waylink.core.weekStart
+import app.waylink.data.LinkState
+import app.waylink.data.Live
+import app.waylink.data.Weather
+import app.waylink.ui.components.BigValue
+import app.waylink.ui.components.BikeArt
+import app.waylink.ui.components.Btn
+import app.waylink.ui.components.BtnKind
+import app.waylink.ui.components.CircleBtn
+import app.waylink.ui.components.Dot
+import app.waylink.ui.components.FuelBars
+import app.waylink.ui.components.Ic
+import app.waylink.ui.components.IconTile
+import app.waylink.ui.components.LinkText
+import app.waylink.ui.components.SectionHead
+import app.waylink.ui.components.Segs
+import app.waylink.ui.components.ServiceGauge
+import app.waylink.ui.components.Tone
+import app.waylink.ui.components.Txt
+import app.waylink.ui.components.card
+import app.waylink.ui.components.pressable
+import app.waylink.ui.theme.T
+import app.waylink.ui.theme.W
+import java.time.LocalDate
+import java.time.format.TextStyle as JTextStyle
+import java.util.Locale
+import kotlin.math.max
+import kotlin.math.roundToInt
+
+/** Things Today can open. Screens not yet built on Android show a short note instead. */
+interface TodayActions {
+    fun garage()
+    fun sos()
+    fun pair()
+    fun ride()
+    fun logbook()
+    fun service(id: String)
+    fun alerts()
+    fun fuel()
+    fun trip(which: String)
+    fun rides()
+    fun glovebox()
+    fun weather()
+    fun readingsHelp()
+}
+
+/** The Today tab, a faithful port of today() in web-v0/js/views.js. */
+@Composable
+fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
+    val c = W.c
+    val f = remember(s.country.locale) { Fmt(s.country.locale) }
+    val v = s.vehicle
+    val list = remember(v) { sortedService(v) }
+    val verdict = remember(list) { verdictOf(list) }
+    val fs = remember(v) { fuelStats(v) }
+    val good = verdict.over == 0 && verdict.soon == 0 && !fs.onReserve
+    var line = verdict.line
+    if (fs.onReserve) line = "On reserve, about ${f.num(fs.range)} km left." + if (verdict.over + verdict.soon > 0) " $line" else ""
+    val urgent = list.filter { it.st.status != Due.OK }.take(4)
+    val missed = s.alerts.missed
+
+    Column(
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = bottomPadding + 24.dp),
+    ) {
+        // Header: weekday, demo pill or date, SOS.
+        Row(verticalAlignment = Alignment.Top) {
+            Column(Modifier.weight(1f).padding(top = 4.dp)) {
+                val today = LocalDate.now()
+                Txt(today.dayOfWeek.getDisplayName(JTextStyle.FULL, Locale.ENGLISH), T.title, c.ink, Modifier.semantics { heading() })
+                Spacer(Modifier.height(3.dp))
+                if (s.sample || live.simulated) DemoPill()
+                else Txt("${today.dayOfMonth} ${today.month.getDisplayName(JTextStyle.FULL, Locale.ENGLISH)}", T.subtitle, c.ink3)
+            }
+            CircleBtn("sos", "Emergency SOS", act::sos, Modifier.padding(top = 7.dp), tint = c.red)
+        }
+
+        Spacer(Modifier.height(18.dp))
+        BikeCard(s, live, f, good, verdict.ok, act)
+
+        if (!good) {
+            Spacer(Modifier.height(12.dp))
+            Hero(verdict, line, fs.onReserve, act::logbook)
+        }
+
+        // Do these first / Coming up
+        Spacer(Modifier.height(30.dp))
+        SectionHead(if (urgent.isNotEmpty()) "Do these first" else "Coming up") { LinkText("See all", act::logbook) }
+        Row(
+            Modifier.bleed(20).horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            (urgent.ifEmpty { list }).take(4).forEach { UpCard(it, f) { act.service(it.item.id) } }
+        }
+
+        if (missed.isNotEmpty()) {
+            Spacer(Modifier.height(22.dp))
+            MissedBanner(missed.size, missed.last().name, act::alerts)
+        }
+
+        // Readings
+        Spacer(Modifier.height(30.dp))
+        SectionHead("Readings") {
+            Txt(s.model.series, T.eyebrow, c.ink3)
+        }
+        Readings(s, live, f, fs, act)
+
+        // Shortcuts
+        Spacer(Modifier.height(30.dp))
+        SectionHead("Shortcuts")
+        Row(
+            Modifier.bleed(20).horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            val week = periodStats(v.trips, weekStart()).rides
+            Tile("fuel", "Fuel", if (fs.range != null) (if (fs.onReserve) Tone.BAD else Tone.OK) else null,
+                if (fs.range != null) "≈${f.num(fs.range)} km left" else "No tanks yet",
+                List(6) { if (it < (fs.bars ?: 0)) Tone.NEUTRAL else null }, act::fuel)
+            Tile("wrench", "Logbook", if (verdict.over > 0) Tone.BAD else if (verdict.soon > 0) Tone.SOON else Tone.OK,
+                if (verdict.over + verdict.soon > 0) "${verdict.over + verdict.soon} need care" else "All in order",
+                verdict.bar.map { when (it) { Due.OVERDUE -> Tone.BAD; Due.SOON -> Tone.SOON; Due.OK -> Tone.OK } }, act::logbook)
+            Tile("trips", "Rides", Tone.OK, "${v.trips.size} logged", List(6) { if (it < minOf(6, week)) Tone.NEUTRAL else null }, act::rides)
+            Tile("folder", "Glovebox", null, "Empty", List(4) { null }, act::glovebox)
+        }
+
+        Spacer(Modifier.height(30.dp))
+        Txt("Everything stays on this phone. No account, no cloud.", T.note.copy(textAlign = TextAlign.Center), c.ink3, Modifier.fillMaxWidth())
+    }
+}
+
+/** Lets a scrolling row run to the screen edges past the page's [dp] side padding, like the web's margin: 0 -20px. */
+private fun Modifier.bleed(dp: Int): Modifier = this.layout { measurable, constraints ->
+    val extra = (dp * 2).dp.roundToPx()
+    val w = constraints.maxWidth + extra
+    val p = measurable.measure(constraints.copy(minWidth = w, maxWidth = w))
+    layout(constraints.maxWidth, p.height) { p.place(-(extra / 2), 0) }
+}
+
+@Composable
+private fun DemoPill() {
+    val c = W.c
+    val t = rememberInfiniteTransition(label = "demo")
+    val a by t.animateFloat(1f, 0.25f, infiniteRepeatable(tween(700), RepeatMode.Reverse), label = "blink")
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        Txt("Demo mode", T.subtitle.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), c.ink3)
+        Dot(c.ink, Modifier.alpha(a), 8.dp)
+    }
+}
+
+@Composable
+private fun BikeCard(s: AppState, live: Live, f: Fmt, good: Boolean, okCount: Int, act: TodayActions) {
+    val c = W.c
+    val v = s.vehicle
+    Column(Modifier.fillMaxWidth().card(24.dp)) {
+        Row(
+            Modifier.fillMaxWidth().pressable(label = "Switch vehicle", onClick = act::garage).padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BikeArt(Modifier.size(96.dp), 16.dp)
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Txt(vehicleTitle(s), T.cardTitle, c.ink, Modifier.padding(end = 36.dp), maxLines = 1)
+                Spacer(Modifier.height(2.dp))
+                Txt("${if (v.nickname.isNotBlank()) modelName(s, s.model) else s.model.series} · ${f.short(v.odo)} km", T.row, c.ink2, maxLines = 1)
+                Spacer(Modifier.height(6.dp))
+                Txt(v.plate.ifBlank { "No number plate" }.uppercase(), T.plate, c.ink3, maxLines = 1)
+            }
+            Box(Modifier.align(Alignment.Top).size(30.dp).clip(CircleShape).background(c.inkA(0.06f)), contentAlignment = Alignment.Center) {
+                Ic("updown", size = 16.dp, tint = c.ink2)
+            }
+        }
+        Hairline()
+        ConnRow(s, live, good, okCount, act)
+        Hairline()
+        WeatherRow(live.weather, act::weather)
+    }
+}
+
+@Composable
+private fun Hairline() = Box(Modifier.fillMaxWidth().height(1.dp).background(W.c.line))
+
+/** The compact link row inside the bike card (connCard in the web app). */
+@Composable
+private fun ConnRow(s: AppState, live: Live, good: Boolean, okCount: Int, act: TodayActions) {
+    val c = W.c
+    val connected = live.link == LinkState.CONNECTED
+    val name = vehicleTitle(s)
+    val title = if (connected) "Connected" else "No bike linked"
+    val sub = if (connected) "$name · simulated" else "Pair once, then it’s automatic"
+    val t = if (good) "Road ready" else title
+    val sb = if (good) (if (!connected) title else "$title · $sub") else sub
+    Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.weight(1f).pressable(label = "Bike link details", onClick = act::pair), verticalAlignment = Alignment.CenterVertically) {
+            IconTile(
+                if (good) "ok" else "signal", size = 36.dp, radius = 10.dp, iconSize = 19.dp,
+                bg = if (good) c.tintSage else c.inkA(0.06f), tint = if (good) c.sageInk else c.ink2,
+            ) {
+                Box(Modifier.align(Alignment.BottomEnd).offset(4.dp, 4.dp).size(15.dp).clip(CircleShape).background(c.card), contentAlignment = Alignment.Center) {
+                    Dot(if (connected) c.sage else c.ink4, size = 11.dp)
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Txt(t, T.rowTitle, c.ink, maxLines = 1)
+                Txt(sb, T.rowSub, c.ink3, maxLines = 1)
+            }
+        }
+        Spacer(Modifier.width(10.dp))
+        if (connected) Btn("Ride", act::ride, kind = BtnKind.ACCENT, icon = "speed", small = true)
+        else Btn("Pair", act::pair, kind = BtnKind.INK, icon = "bt", small = true)
+    }
+}
+
+@Composable
+private fun WeatherRow(w: Weather.State, onClick: () -> Unit) {
+    val c = W.c
+    val d = when (w) { is Weather.State.Ready -> w.data; is Weather.State.Loading -> w.last; else -> null }
+    var ic = "wxPart"
+    var temp = ""
+    val sub: String
+    if (d != null) {
+        val rain = d.hours.maxOfOrNull { it.rain } ?: 0
+        val temps = d.hours.mapNotNull { it.temp }
+        ic = Weather.wmo(d.code, d.day).second
+        temp = "${d.temp.roundToInt()}°"
+        sub = "${d.place} · " + when {
+            rain >= 20 -> "$rain% rain"
+            temps.isNotEmpty() -> "${temps.min().roundToInt()}–${temps.max().roundToInt()}° today"
+            else -> "feels ${d.feels.roundToInt()}°"
+        }
+    } else sub = when (w) {
+        Weather.State.Need -> "Add weather for your rides"
+        is Weather.State.Error -> "Weather offline"
+        else -> "Checking the weather…"
+    }
+    Row(
+        Modifier.fillMaxWidth().pressable(label = "Weather details", onClick = onClick).padding(start = 16.dp, end = 16.dp, top = 11.dp, bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Ic(ic, size = 15.dp, tint = c.ink2)
+        if (temp.isNotEmpty()) Txt(temp, T.row.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), c.ink)
+        Txt(sub, T.row, c.ink3, Modifier.weight(1f), maxLines = 1)
+        Ic("chev", size = 17.dp, tint = c.ink4)
+    }
+}
+
+@Composable
+private fun Hero(v: app.waylink.core.Verdict, line: String, reserve: Boolean, onClick: () -> Unit) {
+    val c = W.c
+    val colors = when {
+        reserve && v.over == 0 -> c.heroSoon
+        v.tone == Due.OVERDUE -> c.heroBad
+        v.tone == Due.SOON -> c.heroSoon
+        else -> c.heroOk
+    }
+    Column(
+        Modifier.fillMaxWidth().card(24.dp, Color.Transparent).background(c.hero(colors))
+            .pressable(onClick = onClick).padding(start = 22.dp, end = 22.dp, top = 22.dp, bottom = 20.dp),
+    ) {
+        Txt("Verdict", T.eyebrow, c.ink3)
+        Spacer(Modifier.height(10.dp))
+        Txt(v.word, T.verdict, c.ink)
+        Spacer(Modifier.height(8.dp))
+        Txt(line, T.lead, c.ink2)
+        Spacer(Modifier.height(18.dp))
+        if (v.over + v.soon > 0) {
+            Segs(v.bar.map { when (it) { Due.OVERDUE -> Tone.BAD; Due.SOON -> Tone.SOON; Due.OK -> Tone.OK } }, height = 7.dp, gap = 4.dp)
+            Spacer(Modifier.height(10.dp))
+            Txt("${v.ok} on track · ${v.soon} due soon · ${v.over} overdue", T.eyebrow.copy(fontSize = 14.sp), c.ink3)
+        } else Txt("All ${v.ok} jobs on track", T.eyebrow.copy(fontSize = 14.sp), c.ink3)
+    }
+}
+
+@Composable
+private fun UpCard(r: ServiceRow, f: Fmt, onClick: () -> Unit) {
+    val c = W.c
+    val st = r.st
+    val over = st.status == Due.OVERDUE
+    val (value, unit) = when {
+        over && st.overdueKm > 0 -> f.short(st.overdueKm) to "km"
+        over -> f.short(st.overdueDays.toDouble()) to (if (st.overdueDays == 1) "day" else "days")
+        st.byTime || st.remKm == null -> f.short(st.remDays?.toDouble()) to (if (st.remDays == 1) "day" else "days")
+        else -> f.short(st.remKm) to "km"
+    }
+    val (tag, tagFg, tagBg) = when (st.status) {
+        Due.OVERDUE -> Triple("Overdue", c.red, c.tintRed)
+        Due.SOON -> Triple("Due soon", c.ink2, c.inkA(0.06f))
+        Due.OK -> Triple("On track", c.ink3, c.raised)
+    }
+    Column(
+        Modifier.width(310.dp).height(160.dp).card(20.dp).pressable(label = r.item.name, onClick = onClick)
+            .padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 16.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconTile(r.item.icon)
+            Spacer(Modifier.weight(1f))
+            Txt(tag, T.chip, tagFg, Modifier.clip(RoundedCornerShape(999.dp)).background(tagBg).padding(horizontal = 9.dp, vertical = 3.dp))
+        }
+        Spacer(Modifier.weight(1f))
+        BigValue(value, unit + if (over) " late" else " left", 30f)
+        Spacer(Modifier.height(6.dp))
+        Txt(r.item.name, T.row.copy(fontSize = 14.5.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), c.ink2, maxLines = 1)
+        if (st.status != Due.OK) {
+            Spacer(Modifier.height(10.dp))
+            ServiceGauge(if (over) 0 else max(1, ((1 - st.frac) * 8).roundToInt()))
+        }
+    }
+}
+
+@Composable
+private fun MissedBanner(count: Int, last: String, onClick: () -> Unit) {
+    val c = W.c
+    val text = buildAnnotatedString {
+        withStyle(SpanStyle(fontFamily = T.big(20f).fontFamily, fontSize = 20.sp, fontWeight = T.big(20f).fontWeight, letterSpacing = T.big(20f).letterSpacing)) {
+            append(if (count > 99) "99+" else count.toString())
+        }
+        append(" missed · $last")
+    }
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.tintRed).pressable(label = "$count missed calls", onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 15.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Ic("missed", size = 19.dp, tint = c.red)
+        Txt(text, T.lead.copy(lineHeight = 21.7.sp), c.ink, Modifier.weight(1f), maxLines = 1)
+        Ic("chev", size = 17.dp, tint = c.ink4)
+    }
+}
+
+@Composable
+private fun Readings(s: AppState, live: Live, f: Fmt, fs: app.waylink.core.FuelStats, act: TodayActions) {
+    val c = W.c
+    val v = s.vehicle
+    val ctx = LocalContext.current
+    val battery = remember { batteryPercent(ctx) }
+    Column(Modifier.fillMaxWidth().card(20.dp).padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 6.dp)) {
+        Row(Modifier.fillMaxWidth().padding(vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Txt("Odometer", T.eyebrow, c.ink3, Modifier.weight(1f))
+            BigValue(f.big(kotlin.math.floor(v.odo)), "km", 48f)
+        }
+        Hairline()
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            Cell("Trip A", Modifier.weight(1f), { act.trip("A") }) { BigValue(f.tripv(v.tripA.km), "km", 27f) }
+            VLine()
+            Cell("Trip B", Modifier.weight(1f), { act.trip("B") }) { BigValue(f.tripv(v.tripB.km), "km", 27f) }
+            VLine()
+            Cell("Speed", Modifier.weight(1f)) { BigValue(f.num(live.speed.toDouble()), "km/h", 27f) }
+        }
+        Hairline()
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+            Cell("Fuel", Modifier.weight(1f), act::fuel) { FuelBars(fs.bars, fs.onReserve, Modifier.padding(top = 2.dp)) }
+            VLine()
+            Cell("Range", Modifier.weight(1f), act::fuel) { BigValue(if (fs.range != null) "≈" + f.num(fs.range) else "—", "km", 27f) }
+            VLine()
+            if (live.engine != null) Cell("Engine", Modifier.weight(1f)) { BigValue(live.engine.toString(), "°C", 27f) }
+            else Cell("Phone", Modifier.weight(1f)) { BigValue(battery?.toString() ?: "—", "%", 27f) }
+        }
+    }
+}
+
+@Composable
+private fun VLine() = Box(Modifier.width(1.dp).fillMaxHeight().padding(vertical = 14.dp).background(W.c.line))
+
+@Composable
+private fun Cell(label: String, modifier: Modifier, onClick: (() -> Unit)? = null, value: @Composable () -> Unit) {
+    Column(
+        modifier.then(if (onClick != null) Modifier.pressable(label = label, onClick = onClick) else Modifier)
+            .padding(start = 12.dp, top = 15.dp, bottom = 14.dp),
+    ) {
+        Txt(label, T.eyebrow, W.c.ink3)
+        Spacer(Modifier.height(8.dp))
+        value()
+    }
+}
+
+@Composable
+private fun Tile(icon: String, name: String, dot: Tone?, status: String, bar: List<Tone?>, onClick: () -> Unit) {
+    val c = W.c
+    Column(Modifier.width(152.dp).height(160.dp).card(20.dp).pressable(label = name, onClick = onClick).padding(16.dp)) {
+        IconTile(icon, size = 32.dp, radius = 12.dp, iconSize = 17.dp, bg = c.inkA(0.07f))
+        Spacer(Modifier.height(10.dp))
+        Txt(name, T.tileTitle, c.ink)
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            Dot(when (dot) { Tone.BAD -> c.red; Tone.SOON -> c.amber; Tone.OK -> c.sage; else -> c.ink4 })
+            Txt(status, T.rowSub.copy(fontSize = 13.5.sp, lineHeight = 18.9.sp), c.ink2, maxLines = 1)
+        }
+        Spacer(Modifier.weight(1f))
+        Segs(bar, height = 4.dp, gap = 3.dp)
+    }
+}
+
+private fun batteryPercent(ctx: Context): Int? =
+    (ctx.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager)?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)?.takeIf { it in 0..100 }

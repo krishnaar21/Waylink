@@ -1,8 +1,9 @@
-# Publishes Waylink to GitHub Pages on every push to main.
-name: Deploy to GitHub Pages
+# Publishes the Waylink web app (v0) to GitHub Pages when web-v0/ changes on main.
+name: Deploy web v0 to GitHub Pages
 on:
   push:
     branches: [main]
+    paths: ['web-v0/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,10 +21,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Leave out tests and tools
-        run: rm -rf tests tools .github
+        run: rm -rf web-v0/tests web-v0/tools
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: web-v0
       - id: deployment
         uses: actions/deploy-pages@v4

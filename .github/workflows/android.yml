@@ -1,0 +1,35 @@
+# Builds the Android app, runs the shared-core tests, and attaches a debug APK you can install.
+name: Android
+on:
+  push:
+    paths: ['android/**', '.github/workflows/android.yml']
+  pull_request:
+    paths: ['android/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Test the shared core
+        run: ./gradlew :core:test --stacktrace
+      - name: Build the debug APK
+        run: ./gradlew :app:assembleDebug --stacktrace
+      - uses: actions/upload-artifact@v4
+        with:
+          name: waylink-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

@@ -1,0 +1,164 @@
+package app.waylink.core
+
+import kotlinx.serialization.Serializable
+
+/*
+ * The data model. Field names and shapes match the web app's saved state (web-v0/js/store.js, format v2),
+ * so a web backup restores on Android, and later the web dashboard and iOS can read the same JSON.
+ * Distances are km (Double); times are epoch milliseconds (Long).
+ */
+
+@Serializable
+data class AppState(
+    val v: Int = 2,
+    val onboarded: Boolean = false,
+    val sample: Boolean = false,
+    val profile: Profile = Profile(),
+    val settings: Settings = Settings(),
+    val alerts: Alerts = Alerts(),
+    val vehicles: List<Vehicle> = emptyList(),
+    val active: String = "",
+) {
+    /** The vehicle being ridden now. */
+    val vehicle: Vehicle get() = vehicles.firstOrNull { it.id == active } ?: vehicles.first()
+    val country: Country get() = Catalog.country(profile.country)
+    val model: BikeModel get() = Catalog.model(vehicle.model)
+
+    fun updateVehicle(id: String = vehicle.id, f: (Vehicle) -> Vehicle): AppState =
+        copy(vehicles = vehicles.map { if (it.id == id) f(it) else it })
+}
+
+@Serializable
+data class Profile(
+    val name: String = "",
+    val phone: String = "",
+    val email: String = "",
+    val city: String = "",
+    val country: String = "IN",
+    val licenceNo: String = "",
+    val licenceExpiry: Long? = null,
+    val blood: String = "",
+    val medical: String = "",
+    val iceName: String = "",
+    val icePhone: String = "",
+    /** A data: URL on the web; a file path on Android. */
+    val photo: String? = null,
+    /** a1 to a11. */
+    val avatar: String = "a1",
+    val since: Long = 0,
+)
+
+@Serializable
+data class Settings(
+    /** auto, sketch (Paper) or sketchdark (Paper dark). Other web themes map to auto. */
+    val theme: String = "auto",
+    val accent: String = "wine",
+    val sounds: Boolean = true,
+    val autoRide: Boolean = false,
+    val autoRecord: Boolean = false,
+    val wakeLock: Boolean = true,
+    val streetNames: Boolean = false,
+    val simulated: Boolean = false,
+    val rideChart: Int = 0,
+    val progress: String = "gauge",
+    val alerts: AlertSettings = AlertSettings(),
+)
+
+@Serializable
+data class AlertSettings(val calls: Boolean = true, val waCalls: Boolean = true, val waMsgs: Boolean = true)
+
+@Serializable
+data class Alerts(
+    val missed: List<NamedEvent> = emptyList(),
+    val wa: List<NamedEvent> = emptyList(),
+    val sent: Int = 0,
+    val log: List<LogEvent> = emptyList(),
+)
+
+@Serializable
+data class NamedEvent(val name: String, val ts: Long)
+
+@Serializable
+data class LogEvent(val kind: String, val name: String, val ts: Long)
+
+@Serializable
+data class Vehicle(
+    val id: String = uid(),
+    val model: String = "ns200",
+    val nickname: String = "",
+    val plate: String = "",
+    val colour: String = Catalog.COLOURS[0].first,
+    val photo: String? = null,
+    val addedAt: Long = 0,
+    val odo: Double = 0.0,
+    val tripA: TripMeter = TripMeter(),
+    val tripB: TripMeter = TripMeter(),
+    val fuel: List<FuelEntry> = emptyList(),
+    val fuelPrice: Double? = null,
+    val service: List<ServiceItem> = emptyList(),
+    val records: List<ServiceRecord> = emptyList(),
+    val checklist: List<ChecklistItem> = emptyList(),
+    val trips: List<Trip> = emptyList(),
+    val rideNo: Int = 0,
+    val parking: Parking? = null,
+    /** The paired Bluetooth cluster. Never exported in backups. */
+    val bike: PairedBike = PairedBike(),
+)
+
+@Serializable
+data class TripMeter(val km: Double = 0.0, val since: Long = 0)
+
+@Serializable
+data class FuelEntry(val id: String = uid(), val ts: Long, val odo: Double, val litres: Double, val cost: Double, val full: Boolean)
+
+@Serializable
+data class ServiceItem(
+    val id: String = uid(),
+    val kind: String,
+    val name: String,
+    val icon: String = "wrench",
+    val everyKm: Double = 0.0,
+    val everyDays: Int = 0,
+    val lastKm: Double = 0.0,
+    val lastDate: Long = 0,
+    /** Periodic service follows Bajaj's milestones (500, 5,000, 10,000 km, then every 5,000). */
+    val milestone: Boolean = false,
+    val targetKm: Double? = null,
+)
+
+@Serializable
+data class ServiceRecord(
+    val id: String = uid(),
+    val date: Long,
+    val odo: Double,
+    val title: String,
+    val workshop: String = "",
+    val cost: Double = 0.0,
+    val notes: String = "",
+)
+
+@Serializable
+data class ChecklistItem(val id: String = uid(), val text: String, val done: Boolean = false)
+
+@Serializable
+data class Trip(
+    val id: String = uid(),
+    val n: Int,
+    val start: Long,
+    val end: Long,
+    val km: Double,
+    val sec: Double,
+    val top: Double,
+    val avg: Double,
+    val title: String,
+    /** [lat, lng, epoch ms] per point. */
+    val pts: List<List<Double>> = emptyList(),
+)
+
+@Serializable
+data class Parking(val lat: Double, val lng: Double, val ts: Long)
+
+@Serializable
+data class PairedBike(val id: String? = null, val name: String? = null)
+
+fun uid(): String = java.util.UUID.randomUUID().toString()
