@@ -2165,3 +2165,8 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .cl-g ul { margin: 8px 0 0; padding-left: 18px; }
 .cl-g li { font-size: 15px; line-height: 1.45; color: var(--ink-2); margin: 6px 0; }
 .cl-g li::marker { color: var(--ink-4); }
+/* Form steps (Your bike, About you): text starts at the same left edge as the fields */
+.onb-reg .onb-p { margin-left: 0; margin-right: 0; max-width: none; text-align: left; }
+/* About you: every rider fits on screen, in a tidy grid aligned with the fields */
+.onb-avs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px 8px; overflow: visible; margin: 0 0 18px; padding: 2px 0; }
+.onb-av { width: 100%; height: auto; aspect-ratio: 1; }
