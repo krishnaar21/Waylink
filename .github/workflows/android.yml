@@ -52,9 +52,17 @@ jobs:
 
           Install: open this page on your Android phone, tap **waylink-debug.apk**, and allow installs from your browser when asked.
           New builds install over this one. It is a debug build signed with a shared test key, not a store release."
-          gh release delete android-preview --yes --cleanup-tag 2>/dev/null || true
+          gh release delete android-preview --yes 2>/dev/null || true
+          # Leftover drafts from an earlier run whose tag went missing ("untagged-…") are removed too.
+          gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            --jq '.[] | select(.draft and (.tag_name | startswith("untagged-"))) | .id' |
+            while read -r id; do gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${id}" || true; done
+          # Move the tag ourselves first, so the release never waits on GitHub to create it
+          # (when that raced with the delete, the release was left as an untagged draft).
+          git tag -f android-preview "$GITHUB_SHA"
+          git push -f origin refs/tags/android-preview
           files="waylink-debug.apk"
           if [ -f android/screens.zip ]; then files="$files android/screens.zip"; fi
           gh release create android-preview $files \
-            --prerelease --target "$GITHUB_SHA" \
+            --prerelease --verify-tag \
             --title "Android preview (${GITHUB_REF_NAME} · ${short})" --notes "$notes"
