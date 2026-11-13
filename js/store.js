@@ -81,7 +81,7 @@ export function freshState() {
   const v = newVehicle();
   return bindVehicle({
     v: 2, onboarded: false, sample: false,
-    profile: { name: '', phone: '', email: '', city: '', country: 'IN', licenceNo: '', licenceExpiry: null, blood: '', medical: '', iceName: '', icePhone: '', photo: null, since: Date.now() },
+    profile: { name: '', phone: '', email: '', city: '', country: 'IN', licenceNo: '', licenceExpiry: null, blood: '', medical: '', iceName: '', icePhone: '', photo: null, avatar: 'a' + (1 + Math.floor(Math.random() * 11)), since: Date.now() },
     settings: { theme: 'auto', accent: 'wine', font: 'system', devFrames: false, rideLayout: 0, art: 'photo', autoRide: false, autoRecord: false, wakeLock: true, streetNames: false, sounds: true, progress: 'gauge', brand: 'loop', bodyFont: 'system', simulated: false, alerts: { calls: true, waCalls: true, waMsgs: true } },
     alerts: { missed: [], wa: [], sent: 0, log: [] },
     vehicles: [v], active: v.id,
@@ -118,6 +118,8 @@ export function migrate(raw) {
   if (!s.settings.navyV1) { if (s.settings.theme === 'auto' || (s.settings.paperV1 && s.settings.theme === 'sketch')) s.settings.theme = 'amoled'; s.settings.navyV1 = true; }
   // Paper is the look now: Auto follows the phone between Paper and Paper dark. Other themes stay behind a developer switch.
   if (!s.settings.paperV2) { if (!['sketch', 'sketchdark'].includes(s.settings.theme)) s.settings.theme = 'auto'; s.settings.paperV2 = true; }
+  // Every rider gets a face: pick a default avatar for anyone without a photo or a chosen rider.
+  if (!s.profile.photo && !/^a([1-9]|1[01])$/.test(s.profile.avatar || '')) s.profile.avatar = 'a' + (1 + ([...(s.profile.name || 'rider')].reduce((h, c) => h * 31 + c.charCodeAt(0), 7) >>> 0) % 11);
   if (!s.settings.autoV2) { s.settings.autoRide = false; s.settings.autoRecord = false; s.settings.autoV2 = true; }
   if (!s.settings.typeV5) { s.settings.font = 'system'; s.settings.bodyFont = 'system'; s.settings.typeV5 = true; }
   if (!['system', 'atkinson', 'public'].includes(s.settings.bodyFont)) s.settings.bodyFont = 'system';

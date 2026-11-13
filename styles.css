@@ -2145,3 +2145,13 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .rc-wr div { height: 13px; }
 /* Settings footer: more room above it, so it sits apart at the very bottom */
 .about { margin-top: calc(36px + 15vh) !important; }
+/* Onboarding, About you: a strip of riders to pick from */
+.onb-avs { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; margin: 0 -24px 16px; padding: 4px 24px 6px; scroll-snap-type: x proximity; }
+.onb-avs::-webkit-scrollbar { display: none; }
+.onb-av { flex: none; width: 58px; height: 58px; border-radius: 50%; background: #fff; scroll-snap-align: start; position: relative; cursor: pointer; transition: transform .2s var(--spring); transform: scale(.9); }
+.onb-av input { position: absolute; opacity: 0; pointer-events: none; }
+.onb-av img { width: 100%; height: 100%; border-radius: 50%; display: block; transform: scale(.82); transition: transform .2s var(--spring); }
+.onb-av:has(input:checked) { transform: none; box-shadow: 0 0 0 1.75px color-mix(in srgb, var(--accent) 65%, transparent); }
+.onb-av:has(input:checked) img { transform: scale(.95); }
+.onb-av:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.avatar.pix { background: #fff; }

@@ -46,11 +46,15 @@ async def main():
         check('app is named Waylink', await pg.title() == 'Waylink')
 
         # Fresh start path
-        await pg.fill('[name=name]', 'Meera'); await pg.fill('[name=plate]', 'ka 01 ab 1234'); await pg.fill('[name=odo]', '2500')
+        await pg.fill('[name=plate]', 'ka 01 ab 1234'); await pg.fill('[name=odo]', '2500')
         await pg.select_option('[name=model]', 'n250'); await pg.click('[data-form=onboard] button[type=submit]'); await pg.wait_for_timeout(700)
+        check('then a step about the rider', await pg.query_selector('[data-form="onb-you"]') and await pg.query_selector('.onb-av input:checked'))
+        await pg.fill('[name=name]', 'Meera'); await pg.fill('[name=iceName]', 'Amma'); await pg.click('.onb-av:nth-child(3)')
+        await pg.click('[data-form="onb-you"] button[type=submit]'); await pg.wait_for_timeout(700)
         check('then a step to link the bike', await pg.query_selector('.onb-link'))
         await pg.click('.onb-top [data-act="onb-finish"]'); await pg.wait_for_timeout(700)
         check('fresh start saves the rider', await pg.evaluate("JSON.parse(localStorage.getItem('pulsarnav-web-v2')).profile.name") == 'Meera')
+        check('about-you saves the emergency contact and picture', await pg.evaluate("(()=>{const p=JSON.parse(localStorage.getItem('pulsarnav-web-v2')).profile;return p.iceName==='Amma'&&p.avatar==='a3'})()"))
         chip = await text(pg, '.bc-main')
         check('plate is upper-cased on the vehicle chip', 'KA 01 AB 1234' in chip, chip)
         check('fresh bike gets default reminders', len(await pg.query_selector_all('.upnext .upcard')) >= 1)

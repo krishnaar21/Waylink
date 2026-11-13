@@ -72,8 +72,9 @@ export function vehicleArt(s, v, size = 'thumb') {
   return `<div class="${cls}"><img class="model" src="img/onb/rider-street.webp" alt="" decoding="async" onload="this.classList.add('ld')"></div>`;
 }
 export function avatar(p, xl = false) {
-  const init = (p.name || '?').trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
-  return `<div class="avatar ${xl ? 'xl' : ''}${p.avatar && !p.photo ? ' pix' : ''}">${p.photo ? `<img src="${p.photo}" alt="">` : p.avatar ? `<img src="img/avatars/${p.avatar}.svg" alt="">` : esc(init)}</div>`;
+  // Everyone has a face: their photo, the rider they picked, or a default rider.
+  const pick = p.avatar || 'a1';
+  return `<div class="avatar ${xl ? 'xl' : ''}${!p.photo ? ' pix' : ''}">${p.photo ? `<img src="${p.photo}" alt="">` : `<img src="img/avatars/${pick}.svg" alt="">`}</div>`;
 }
 
 
@@ -1376,24 +1377,42 @@ export function onboarding(s, step = 0, link = {}) {
     <div class="onb-dots">${ONB_SLIDES.map((_, i) => `<button class="${i ? '' : 'on'}" data-act="onb-go" data-arg="${i}" aria-label="Slide ${i + 1}"><i></i></button>`).join('')}</div>
     <div class="onb-foot"><button class="btn ink block" data-act="onb-next">Next</button>${sample}</div>
   </div>`;
+  if (step === 3) {
+    const P = s.profile, cur = P.avatar || 'a1';
+    return `<div class="onb onb-reg onb-you">
+  <div class="onb-top"><button class="circle" data-act="onb-step" data-arg="1" aria-label="Back">${icon('back')}</button><button class="link" data-act="onb-you-skip">Skip</button></div>
+  <div class="eyebrow">Step 2 of 3</div>
+  <h1 class="title">About you</h1>
+  <p class="onb-p">For your profile and the SOS screen. All optional, and it stays on this phone.</p>
+  <form data-form="onb-you" class="mt16">
+    <div class="onb-avs" role="radiogroup" aria-label="Your picture">${Array.from({ length: 11 }, (_, i) => `a${i + 1}`).map((k) => `<label class="onb-av"><input type="radio" name="avatar" value="${k}" ${cur === k ? 'checked' : ''}><img src="img/avatars/${k}.svg" alt="Rider ${k.slice(1)}"></label>`).join('')}</div>
+    <div class="two"><label class="field"><span class="eyebrow">Your name</span><input class="input" name="name" value="${esc(P.name || '')}" placeholder="Arjun" maxlength="${LIMITS.person}" autocomplete="given-name"></label>
+    <label class="field"><span class="eyebrow">City</span><input class="input" name="city" value="${esc(P.city || '')}" placeholder="Bengaluru" autocomplete="address-level2"></label></div>
+    <label class="field"><span class="eyebrow">Blood group</span><select class="input" name="blood">${['', 'A+', 'A−', 'B+', 'B−', 'AB+', 'AB−', 'O+', 'O−'].map((b) => `<option value="${b}" ${P.blood === b ? 'selected' : ''}>${b || 'Not sure'}</option>`).join('')}</select></label>
+    <div class="eyebrow mt8">Emergency contact</div>
+    <div class="two"><label class="field"><span class="eyebrow">Name</span><input class="input" name="iceName" value="${esc(P.iceName || '')}" placeholder="Amma" maxlength="${LIMITS.person}"></label>
+    <label class="field"><span class="eyebrow">Phone</span><input class="input" name="icePhone" type="tel" inputmode="tel" value="${esc(P.icePhone || '')}" placeholder="98450 00000" autocomplete="tel"></label></div>
+    <button class="btn ink block mt24" type="submit">Continue</button>
+  </form>
+</div>`;
+  }
   if (step === 2) {
     const pair = link.supported ? `<button class="btn ink block" data-act="onb-finish" data-arg="pair">${icon('bt')} Pair your bike</button>`
       : isIOS() ? `<button class="btn ink block" data-act="onb-finish" data-arg="ios">${icon('bt')} Pair on iPhone</button>` : '';
     return `<div class="onb onb-link">
-      <div class="onb-top"><button class="circle" data-act="onb-step" data-arg="1" aria-label="Back">${icon('back')}</button><button class="link" data-act="onb-finish" data-arg="later">Skip</button></div>
-      <div class="onb-body"><div class="lk-hero lk-street" aria-hidden="true"><span class="lk-glow"></span><span class="lk-beam"></span><img class="lk-img" src="img/onb/rider-street.webp" alt="" decoding="async"><span class="lk-lamp"></span><svg class="lk-wave" viewBox="0 0 24 52"><path d="M3 49C3 38 15 36 13 26S8 10 21 3"/></svg><span class="link-badge lk-bt"><i class="lk-ring"></i><i class="lk-ring r2"></i>${icon('bt')}</span></div><div class="eyebrow mt24">Step 2 of 2</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once. It reconnects by itself.</p>
+      <div class="onb-top"><button class="circle" data-act="onb-step" data-arg="3" aria-label="Back">${icon('back')}</button><button class="link" data-act="onb-finish" data-arg="later">Skip</button></div>
+      <div class="onb-body"><div class="lk-hero lk-street" aria-hidden="true"><span class="lk-glow"></span><span class="lk-beam"></span><img class="lk-img" src="img/onb/rider-street.webp" alt="" decoding="async"><span class="lk-lamp"></span><svg class="lk-wave" viewBox="0 0 24 52"><path d="M3 49C3 38 15 36 13 26S8 10 21 3"/></svg><span class="link-badge lk-bt"><i class="lk-ring"></i><i class="lk-ring r2"></i>${icon('bt')}</span></div><div class="eyebrow mt24">Step 3 of 3</div><h1 class="title">Link your bike</h1><p class="onb-p">Pair once. It reconnects by itself.</p>
       <div class="onb-gets2">${[['turnRight', 'Turns'], ['phone', 'Callers'], ['clock', 'Time'], ['fuel', 'Fuel']].map(([ic, t]) => `<span>${icon(ic)}${t}</span>`).join('')}</div></div>
       <div class="onb-foot">${pair}<button class="btn ${pair ? 'line' : 'ink'} block mt8" data-act="onb-finish" data-arg="sim">${icon('bolt')} Try the simulated bike</button><button class="link onb-sample" data-act="onb-finish" data-arg="later">I’ll do this later</button></div>
     </div>`;
   }
   return `<div class="onb onb-reg">
   <div class="onb-top"><button class="circle" data-act="onb-step" data-arg="0" aria-label="Back">${icon('back')}</button><button class="link" data-act="onb-skip-reg">Skip</button></div>
-  <div class="eyebrow">Step 1 of 2</div>
-  <h1 class="title">About you and your bike</h1>
-  <p class="onb-p">So reminders and the display fit your bike.</p>
+  <div class="eyebrow">Step 1 of 3</div>
+  <h1 class="title">Your bike</h1>
+  <p class="onb-p">So reminders and the display fit it.</p>
   <form data-form="onboard" class="mt16">
-    <label class="field"><span class="eyebrow">Your name</span><input class="input" name="name" placeholder="Arjun" maxlength="${LIMITS.person}" autocomplete="given-name"></label>
-    <label class="field"><span class="eyebrow">Your bike</span><select class="input" name="model">${S.MODELS.map((m) => `<option value="${m.id}">${m.name}</option>`).join('')}</select></label>
+    <label class="field"><span class="eyebrow">Model</span><select class="input" name="model">${S.MODELS.map((m) => `<option value="${m.id}">${m.name}</option>`).join('')}</select></label>
     <div class="two"><label class="field"><span class="eyebrow">Number plate</span><input class="input" name="plate" placeholder="KA 05 MX 2481" maxlength="${LIMITS.plate}" style="text-transform:uppercase"></label>
     <label class="field"><span class="eyebrow">Odometer</span><div class="input-wrap"><input class="input" name="odo" type="number" inputmode="numeric" min="0" placeholder="0"><span class="suffix">km</span></div></label></div>
     <label class="field"><span class="eyebrow">Country</span><select class="input" name="country">${S.COUNTRIES.map((c) => `<option value="${c.code}">${c.name}</option>`).join('')}</select></label>

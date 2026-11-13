@@ -969,10 +969,11 @@ const A = {
     SND.swipe(1); el.scrollTo({ left: (i + 1) * el.clientWidth, behavior: 'smooth' });
   },
   'onb-skip-reg': () => {
-    if (live.onbTest) { live.onbStep = 2; render('fade-in'); return; }
+    if (live.onbTest) { live.onbStep = 3; render('fade-in'); return; }
     if (!s.vehicles.length) { const v = S.newVehicle({}); s.vehicles = [v]; s.active = v.id; }
-    s.profile.since = s.profile.since || Date.now(); S.saveNow(s); live.onbStep = 2; render('fade-in');
+    s.profile.since = s.profile.since || Date.now(); S.saveNow(s); live.onbStep = 3; render('fade-in');
   },
+  'onb-you-skip': () => { live.onbStep = 2; SND.click(true); render('fade-in'); },
   'onb-finish': (how) => {
     if (live.onbTest) { live.onbTest = false; live.onbStep = 0; screen = 'settings'; render('fade-in'); toast('Onboarding preview closed.'); return; }
     if (!s.vehicles.length) { const v = S.newVehicle({}); s.vehicles = [v]; s.active = v.id; }
@@ -986,10 +987,20 @@ const A = {
 
 const FORMS = {
   onboard: (f) => {
-    if (live.onbTest) { live.onbStep = 2; SND.click(true); render('fade-in'); return; }
-    s.profile.name = f.name.value.trim(); s.profile.country = f.country.value; s.profile.since = Date.now();
+    if (live.onbTest) { live.onbStep = 3; SND.click(true); render('fade-in'); return; }
+    s.profile.country = f.country.value; s.profile.since = Date.now();
     const v = S.newVehicle({ model: f.model.value, plate: f.plate.value.trim().toUpperCase(), odo: Math.max(0, +f.odo.value || 0) });
     s.vehicles = [v]; s.active = v.id; S.saveNow(s);
+    live.onbStep = 3; SND.click(true); render('fade-in');
+  },
+  // Onboarding, step 2: about you. Every field is optional; empty ones stay empty.
+  'onb-you': (f) => {
+    if (!live.onbTest) {
+      const P = s.profile, v = (k) => (f[k]?.value || '').trim();
+      P.avatar = f.avatar?.value || P.avatar || 'a1'; P.photo = null;
+      for (const k of ['name', 'city', 'blood', 'iceName', 'icePhone']) P[k] = v(k);
+      S.saveNow(s);
+    }
     live.onbStep = 2; SND.click(true); render('fade-in');
   },
   field: (f) => {
