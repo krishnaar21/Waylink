@@ -1,6 +1,11 @@
 package app.waylink.ui.shell
 
 import android.content.Intent
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.clickable
 import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -326,31 +331,67 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
 
 @Composable
 internal fun TabBar(current: Tab, s: AppState, live: Live, modifier: Modifier, onTab: (Tab) -> Unit) {
+    // .tabbar: bg 84 % + hairline, a soft fade above it, padding 12 22 10, tabs up to 76 dp wide, 4 dp apart.
     val c = W.c
     val v = s.vehicle
     val needs = app.waylink.core.needsYou(v) > 0 || app.waylink.core.fuelStats(v).onReserve
     val alerts = s.alerts.missed.size + s.alerts.wa.size > 0 || needs
-    Column(modifier.fillMaxWidth().background(c.bg.copy(alpha = 0.96f))) {
-        Box(Modifier.fillMaxWidth().height(1.dp).background(c.inkA(0.09f)))
-        Row(
-            Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars).padding(start = 22.dp, end = 22.dp, top = 8.dp, bottom = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Tab.entries.forEach { t ->
-                val on = t == current
-                val pip = when (t) { Tab.TODAY -> needs; Tab.ALERTS -> alerts; else -> false }
-                Column(
-                    Modifier.width(66.dp).semantics { selected = on }.pressable(label = t.label, role = Role.Tab) { onTab(t) }.padding(vertical = 4.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Box {
-                        Ic(t.icon, size = 26.dp, tint = if (on) c.ink else c.ink4)
-                        if (pip) Box(Modifier.align(Alignment.TopEnd).offset(3.dp, (-1).dp).size(10.dp).clip(CircleShape).background(c.bg).padding(1.5.dp).clip(CircleShape).background(c.red))
+    Column(modifier.fillMaxWidth()) {
+        // .tabbar::after: content fades out above the bar instead of running into the icons
+        Box(Modifier.fillMaxWidth().height(36.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(c.bg.copy(alpha = 0f), c.bg.copy(alpha = 0.8f)))))
+        Column(Modifier.fillMaxWidth().background(c.bg.copy(alpha = 0.94f))) {
+            Box(Modifier.fillMaxWidth().height(0.5.dp).background(c.inkA(0.09f)))
+            Row(
+                Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars).padding(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+            ) {
+                Tab.entries.forEach { t ->
+                    val on = t == current
+                    val pip: androidx.compose.ui.graphics.Color? = when (t) {
+                        Tab.TODAY -> if (needs) c.red else null
+                        Tab.ROUTE -> if (live.nav != null) c.sageInk else null
+                        Tab.RIDES -> if (live.rec != null) c.accent else null
+                        Tab.ALERTS -> if (alerts) c.red else null
+                        else -> null
                     }
-                    Spacer(Modifier.height(4.dp))
-                    Txt(t.label, T.tab, if (on) c.ink else c.ink4, maxLines = 1)
+                    TabItem(t, on, pip, Modifier.weight(1f).widthIn(max = 76.dp)) { onTab(t) }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TabItem(t: Tab, on: Boolean, pip: androidx.compose.ui.graphics.Color?, modifier: Modifier, onClick: () -> Unit) {
+    val c = W.c
+    val src = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val pressed by src.collectIsPressedAsState()
+    // .tab:active svg { scale(.88) } over .25s spring
+    val k by androidx.compose.animation.core.animateFloatAsState(if (pressed) 0.88f else 1f, tween(250, easing = app.waylink.ui.theme.Spring), label = "tabk")
+    // .tab::before: 22 × 3 bar at the bar's top edge, fading in and widening from 30 %
+    val bar by androidx.compose.animation.core.animateFloatAsState(if (on) 1f else 0f, tween(300, easing = app.waylink.ui.theme.Spring), label = "tabbar")
+    val tint by androidx.compose.animation.animateColorAsState(if (on) c.ink else c.ink4, tween(200), label = "tabc")
+    Box(
+        modifier.semantics { selected = on }
+            .clickable(src, indication = null, role = Role.Tab, onClickLabel = null, onClick = onClick)
+            .semantics { contentDescription = t.label },
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        Box(
+            Modifier.offset(y = (-12).dp).width(22.dp).height(3.dp)
+                .graphicsLayer { alpha = bar; scaleX = 0.3f + 0.7f * bar }
+                .clip(RoundedCornerShape(bottomStart = 3.dp, bottomEnd = 3.dp)).background(c.ink),
+        )
+        Column(Modifier.padding(vertical = 4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box {
+                Ic(t.icon, size = 29.dp, tint = tint, modifier = Modifier.graphicsLayer { scaleX = k; scaleY = k })
+                // .pip: 7 dp dot with a 2 dp ring of the page colour, top 1, left 50 % + 8
+                if (pip != null) Box(
+                    Modifier.offset(x = 22.5.dp, y = 1.dp).size(11.dp).clip(CircleShape).background(c.bg).padding(2.dp).clip(CircleShape).background(pip),
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Txt(t.label, T.tab.copy(fontWeight = if (on) androidx.compose.ui.text.font.FontWeight.Bold else androidx.compose.ui.text.font.FontWeight.Medium), tint, maxLines = 1)
         }
     }
 }

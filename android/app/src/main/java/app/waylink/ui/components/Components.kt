@@ -71,11 +71,20 @@ fun Txt(
     color: Color = W.c.ink,
     modifier: Modifier = Modifier,
     maxLines: Int = Int.MAX_VALUE,
-) = BasicText(text, modifier, style.copy(color = color), maxLines = maxLines, overflow = TextOverflow.Ellipsis)
+) = BasicText(text, modifier, style.css(color), maxLines = maxLines, overflow = TextOverflow.Ellipsis)
 
 @Composable
 fun Txt(text: AnnotatedString, style: TextStyle, color: Color = W.c.ink, modifier: Modifier = Modifier, maxLines: Int = Int.MAX_VALUE) =
-    BasicText(text, modifier, style.copy(color = color), maxLines = maxLines, overflow = TextOverflow.Ellipsis)
+    BasicText(text, modifier, style.css(color), maxLines = maxLines, overflow = TextOverflow.Ellipsis)
+
+/**
+ * CSS keeps half the line-height above and below every line; Compose trims it off the first and last line by
+ * default, which made every row a few dp shorter than the web app's. Keep it, unless a style says otherwise.
+ */
+private val CssLeading = androidx.compose.ui.text.style.LineHeightStyle(
+    androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center, androidx.compose.ui.text.style.LineHeightStyle.Trim.None,
+)
+private fun TextStyle.css(color: Color): TextStyle = copy(color = color, lineHeightStyle = lineHeightStyle ?: CssLeading)
 
 /** A big reading with its small unit: "41,520 km". */
 @Composable

@@ -138,10 +138,10 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
                 if (s.sample || live.simulated) DemoPill()
                 else Txt("${today.dayOfMonth} ${today.month.getDisplayName(JTextStyle.FULL, Locale.ENGLISH)}", T.subtitle, c.ink3)
             }
-            CircleBtn("sos", "Emergency SOS", act::sos, Modifier.padding(top = 7.dp), tint = c.red)
+            CircleBtn("sos", "Emergency SOS", act::sos, Modifier.padding(top = 11.dp), tint = c.red)
         }
 
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(32.dp))
         BikeCard(s, live, f, good, verdict.ok, act)
 
         if (!good) {
@@ -149,8 +149,8 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
             Hero(verdict, line, fs.onReserve, act::logbook)
         }
 
-        // Do these first / Coming up
-        Spacer(Modifier.height(30.dp))
+        // Do these first / Coming up (.section after the hero: 22; after the bike card alone: 34)
+        Spacer(Modifier.height(if (good) 34.dp else 22.dp))
         SectionHead(if (urgent.isNotEmpty()) "Do these first" else "Coming up") { LinkText("See all", act::logbook) }
         Row(
             Modifier.bleed(20).horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 8.dp),
@@ -160,22 +160,22 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
         }
 
         if (missed.isNotEmpty()) {
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(12.dp))
             MissedBanner(missed.size, missed.last().name, act::alerts)
         }
 
         // Readings
-        Spacer(Modifier.height(30.dp))
+        Spacer(Modifier.height(34.dp))
         SectionHead("Readings", help = act::readingsHelp) {
             Txt(s.model.series, T.eyebrow, c.ink3)
         }
         Readings(s, live, f, fs, act)
 
         // Shortcuts
-        Spacer(Modifier.height(30.dp))
+        Spacer(Modifier.height(34.dp))
         SectionHead("Shortcuts")
         Row(
-            Modifier.bleed(20).horizontalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 2.dp),
+            Modifier.bleed(20).horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             val week = periodStats(v.trips, weekStart()).rides
@@ -189,7 +189,7 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
             Tile("folder", "Glovebox", null, "Empty", List(4) { null }, act::glovebox)
         }
 
-        Spacer(Modifier.height(30.dp))
+        Spacer(Modifier.height(24.dp))
         Txt("Everything stays on this phone. No account, no cloud.", T.note.copy(textAlign = TextAlign.Center), c.ink3, Modifier.fillMaxWidth())
     }
 }
@@ -379,7 +379,7 @@ private fun Readings(s: AppState, live: Live, f: Fmt, fs: app.waylink.core.FuelS
         }
         Hairline()
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-            Cell("Trip A", Modifier.weight(1f), { act.trip("A") }) { BigValue(f.tripv(v.tripA.km), "km", 27f) }
+            Cell("Trip A", Modifier.weight(1f), { act.trip("A") }, first = true) { BigValue(f.tripv(v.tripA.km), "km", 27f) }
             VLine()
             Cell("Trip B", Modifier.weight(1f), { act.trip("B") }) { BigValue(f.tripv(v.tripB.km), "km", 27f) }
             VLine()
@@ -387,7 +387,7 @@ private fun Readings(s: AppState, live: Live, f: Fmt, fs: app.waylink.core.FuelS
         }
         Hairline()
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-            Cell("Fuel", Modifier.weight(1f), act::fuel) { FuelBars(fs.bars, fs.onReserve, Modifier.padding(top = 2.dp)) }
+            Cell("Fuel", Modifier.weight(1f), act::fuel, first = true) { FuelBars(fs.bars, fs.onReserve, Modifier.padding(top = 2.dp)) }
             VLine()
             Cell("Range", Modifier.weight(1f), act::fuel) { BigValue(if (fs.range != null) "≈" + f.num(fs.range) else "—", "km", 27f) }
             VLine()
@@ -401,10 +401,10 @@ private fun Readings(s: AppState, live: Live, f: Fmt, fs: app.waylink.core.FuelS
 private fun VLine() = Box(Modifier.width(1.dp).fillMaxHeight().padding(vertical = 14.dp).background(W.c.line))
 
 @Composable
-private fun Cell(label: String, modifier: Modifier, onClick: (() -> Unit)? = null, value: @Composable () -> Unit) {
+private fun Cell(label: String, modifier: Modifier, onClick: (() -> Unit)? = null, first: Boolean = false, value: @Composable () -> Unit) {
     Column(
         modifier.then(if (onClick != null) Modifier.pressable(label = label, onClick = onClick) else Modifier)
-            .padding(start = 12.dp, top = 15.dp, bottom = 14.dp),
+            .padding(start = if (first) 0.dp else 14.dp, top = 15.dp, bottom = 14.dp),
     ) {
         Txt(label, T.eyebrow, W.c.ink3)
         Spacer(Modifier.height(8.dp))
