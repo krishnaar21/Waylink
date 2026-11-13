@@ -24,6 +24,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +52,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
@@ -177,9 +179,12 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                 val push = targetState in PAGES && initialState !in PAGES
                 val pop = initialState in PAGES && targetState !in PAGES
                 when {
-                    push -> (slideInHorizontally(tween(320)) { it / 4 } + fadeIn(tween(220))) togetherWith fadeOut(tween(160))
-                    pop -> fadeIn(tween(220)) togetherWith (slideOutHorizontally(tween(260)) { it / 4 } + fadeOut(tween(200)))
-                    else -> fadeIn(tween(180)) togetherWith fadeOut(tween(180))
+                    // .view.push-in: pushIn .45s spring, from 26 % right and 20 % opacity
+                    push -> (slideInHorizontally(tween(450, easing = app.waylink.ui.theme.Spring)) { (it * 0.26f).toInt() } +
+                        fadeIn(tween(450, easing = app.waylink.ui.theme.Spring), initialAlpha = 0.2f)) togetherWith fadeOut(tween(90))
+                    // .view.fade-in: fadeIn .3s ease, up from 6 px (tabs, and back from a page)
+                    else -> (fadeIn(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(0.25f, 0.1f, 0.25f, 1f))) +
+                        slideInVertically(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(0.25f, 0.1f, 0.25f, 1f))) { it / 140 }) togetherWith fadeOut(tween(90))
                 }
             },
             label = "screen",
@@ -254,13 +259,22 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         // Quick actions on Today, like the web's + button.
         androidx.compose.animation.AnimatedVisibility(
             page == null && tab == Tab.TODAY, Modifier.align(Alignment.BottomEnd),
-            enter = fadeIn() + androidx.compose.animation.scaleIn(initialScale = 0.8f), exit = fadeOut(),
+            // fabIn: from scale .6 and transparent; #fab.away: down 24 and to .82 over .32s spring
+            enter = fadeIn(tween(220)) + androidx.compose.animation.scaleIn(tween(320, easing = app.waylink.ui.theme.Spring), initialScale = 0.6f),
+            exit = fadeOut(tween(220)) + androidx.compose.animation.scaleOut(tween(320, easing = app.waylink.ui.theme.Spring), targetScale = 0.82f) +
+                slideOutVertically(tween(320, easing = app.waylink.ui.theme.Spring)) { (it * 0.42f).toInt() },
         ) {
+            // .fab: 57 dp ink disc, 20 in and 26 above the tab bar, a soft ring of the page colour and a faint inner line
             Box(
-                Modifier.windowInsetsPadding(WindowInsets.navigationBars).padding(end = 20.dp, bottom = tabBarHeight + 16.dp)
-                    .size(56.dp).shadow(10.dp, CircleShape).clip(CircleShape).background(c.ink).pressable(label = "Quick actions") { openSheet("quick") },
+                Modifier.windowInsetsPadding(WindowInsets.navigationBars).padding(end = 16.dp, bottom = tabBarHeight + 22.dp)
+                    .size(57.dp + 8.dp).border(1.dp, c.inkA(0.07f), CircleShape).padding(1.dp).clip(CircleShape).background(c.bg.copy(alpha = 0.5f)).padding(3.dp)
+                    .shadow(8.dp, CircleShape, ambientColor = c.ink.copy(alpha = 0.3f), spotColor = c.ink.copy(alpha = 0.3f)).clip(CircleShape).background(c.ink)
+                    .pressable(label = "Quick actions", scale = 0.9f) { openSheet("quick") },
                 contentAlignment = Alignment.Center,
-            ) { Ic("plus", size = 24.dp, tint = c.bg) }
+            ) {
+                Box(Modifier.matchParentSize().padding(2.dp).border(1.dp, c.bg.copy(alpha = 0.18f), CircleShape))
+                Ic("plus", size = 25.5.dp, tint = c.bg)
+            }
         }
 
         // One sheet host. The top of the stack shows; the last one stays drawn while it slides away.
@@ -399,13 +413,21 @@ private fun TabItem(t: Tab, on: Boolean, pip: androidx.compose.ui.graphics.Color
 @Composable
 private fun ToastHost(live: Live, clear: () -> Unit) {
     val t = live.toast
+    val density = androidx.compose.ui.platform.LocalDensity.current.density
     LaunchedEffect(t?.id) { if (t != null) { delay(2600); clear() } }
-    Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 96.dp, start = 24.dp, end = 24.dp), contentAlignment = Alignment.BottomCenter) {
-        AnimatedVisibility(t != null, enter = fadeIn() + slideInVertically { it / 2 }, exit = fadeOut() + slideOutVertically { it / 2 }) {
+    Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 96.dp, start = 20.dp, end = 20.dp), contentAlignment = Alignment.BottomCenter) {
+        // toastIn .4s spring: up 14 px from 96 %; out: fadeOut .25s
+        AnimatedVisibility(
+            t != null,
+            enter = fadeIn(tween(400, easing = app.waylink.ui.theme.Spring)) + androidx.compose.animation.scaleIn(tween(400, easing = app.waylink.ui.theme.Spring), initialScale = 0.96f) +
+                slideInVertically(tween(400, easing = app.waylink.ui.theme.Spring)) { (14 * density).toInt() },
+            exit = fadeOut(tween(250)),
+        ) {
             val c = W.c
             Txt(
-                t?.text ?: "", T.row.copy(fontSize = 15.sp), c.bg,
-                Modifier.clip(RoundedCornerShape(16.dp)).background(c.ink.copy(alpha = 0.94f)).padding(horizontal = 18.dp, vertical = 12.dp),
+                t?.text ?: "", T.row.copy(fontSize = 15.sp, lineHeight = 21.75.sp), c.bg,
+                Modifier.shadow(10.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x80000000), spotColor = Color(0x80000000))
+                    .clip(RoundedCornerShape(16.dp)).background(c.ink).padding(horizontal = 18.dp, vertical = 12.dp),
             )
         }
     }
