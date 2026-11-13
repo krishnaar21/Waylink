@@ -2145,3 +2145,5 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .rc-wr div { height: 13px; }
 /* Onboarding: footer (Next and the sample link) sits lower, closer to the home bar */
 .onb { padding-bottom: calc(var(--bottom) * .6 + 6px) !important; }
+/* Settings footer: more room above it, so it sits apart at the very bottom */
+.about { margin-top: calc(36px + 15vh) !important; }
