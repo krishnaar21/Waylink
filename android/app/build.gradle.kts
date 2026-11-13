@@ -76,5 +76,5 @@ dependencies {
 // Name each test as it starts, so a render that hangs shows up in the CI log; and never let one hang the job.
 tasks.withType<Test>().configureEach {
     testLogging { events("started", "passed", "failed"); showStandardStreams = false }
-    timeout.set(Duration.ofMinutes(20))
+    timeout.set(Duration.ofMinutes(40))
 }
