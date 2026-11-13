@@ -385,7 +385,7 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
             GarageList(s, onPick = { vm.switchVehicle(it); nav.close() }, onAdd = { nav.open("vehicle:new") })
         }
         "pair" -> SheetSpec("Link your bike", "Bluetooth") {
-            PairSheet(live, onSim = { vm.simOn(); nav.close() }, onSimOff = { vm.simOff(); nav.close() })
+            PairSheet(live, onSim = { vm.simOn(); nav.close() }, onSimOff = { vm.simOff(); nav.close() }, onLog = { nav.open("log") })
         }
         "sos" -> SheetSpec("Emergency SOS", "Medical ID") { SosSheet(s) }
         "clear" -> {
@@ -527,7 +527,7 @@ private fun Placeholder(title: String, sub: String, what: String, bottom: androi
 }
 
 @Composable
-private fun PairSheet(live: Live, onSim: () -> Unit, onSimOff: () -> Unit) {
+private fun PairSheet(live: Live, onSim: () -> Unit, onSimOff: () -> Unit, onLog: () -> Unit = {}) {
     val c = W.c
     Spacer(Modifier.height(12.dp))
     if (live.link == LinkState.CONNECTED) {
@@ -538,6 +538,13 @@ private fun PairSheet(live: Live, onSim: () -> Unit, onSimOff: () -> Unit) {
         Txt("Real pairing with the Bluetooth cluster arrives in the next Android build. Until then, the simulated bike shows how everything works.", T.sheetLead, c.ink2)
         Spacer(Modifier.height(20.dp))
         Btn("Try the simulated bike", onSim, Modifier.fillMaxWidth(), icon = "bolt")
+    }
+    // .divider + .sheet-row: the connection log, one tap away
+    Spacer(Modifier.height(20.dp))
+    app.waylink.ui.components.Hairline()
+    Row(Modifier.fillMaxWidth().pressable(label = "Connection log", scale = 1f, onClick = onLog).padding(vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Txt("Connection log", T.body.copy(fontSize = 16.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), c.ink, Modifier.weight(1f))
+        Ic("chev", size = 16.dp, tint = c.ink3)
     }
 }
 
