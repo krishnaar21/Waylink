@@ -31,7 +31,7 @@ jobs:
       # Pictures of each screen at the web app's phone size, for side-by-side checks against web-v0.
       - name: Render screen pictures
         continue-on-error: true
-        run: ./gradlew :app:recordRoborazziDebug --stacktrace && (cd app/build/shots && zip -q ../../../screens.zip *.png)
+        run: ./gradlew :app:recordRoborazziDebug --stacktrace --continue || echo "::warning::Some screen pictures failed to render"; (cd app/build/shots && zip -q ../../../screens.zip *.png)
       - uses: actions/upload-artifact@v4
         with:
           name: waylink-debug-apk

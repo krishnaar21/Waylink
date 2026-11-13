@@ -66,5 +66,6 @@ class ScreenshotTest {
     @Test fun alerts() = shot("alerts", tab = Tab.ALERTS) { AlertsScreen(sample, live, noop(), 80.dp) }
     @Test fun settings() = shot("settings", tab = Tab.SETTINGS) { SettingsScreen(sample, live, noop(), 80.dp) }
     @Test fun settingsDark() = shot("settings-dark", "sketchdark", Tab.SETTINGS) { SettingsScreen(sample, live, noop(), 80.dp) }
+    @Test fun onboarding() = shot("onboarding") { app.waylink.ui.onboarding.Onboarding(freshState(), noop()) }
     @Test fun profile() = shot("profile", tab = Tab.SETTINGS) { ProfileScreen(sample, {}, {}, {}, 80.dp) }
 }
