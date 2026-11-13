@@ -300,7 +300,7 @@ private fun ProfileCard(s: AppState, onOpen: () -> Unit) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Txt(shortName(p.name).ifEmpty { "Add your name" }, T.cardTitle.copy(lineHeight = 24.15.sp), c.ink, maxLines = 1)
-                Txt(if (rows.isNotEmpty()) "Rider profile" else "Licence, blood group, emergency contact", T.row, c.ink3, maxLines = 1)
+                Txt(if (rows.isNotEmpty()) "Rider profile" else "Licence, blood group, emergency contact", T.row, c.ink3, maxLines = if (rows.isNotEmpty()) 1 else 2)
             }
             Spacer(Modifier.width(12.dp))
             Ic("chev", size = 16.dp, tint = c.ink3)

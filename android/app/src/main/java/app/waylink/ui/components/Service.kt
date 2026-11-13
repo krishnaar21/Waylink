@@ -100,7 +100,7 @@ fun ServiceRowItem(r: ServiceRow, f: Fmt, onClick: () -> Unit) {
     val c = W.c
     val st = r.st
     val v = rowValue(st, f)
-    Column(Modifier.fillMaxWidth().pressable(label = r.item.name, onClick = onClick).padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 20.dp)) {
+    Column(Modifier.fillMaxWidth().pressable(label = r.item.name, onClick = onClick).padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconTile(r.item.icon, size = 42.dp, iconSize = 21.dp)
             Spacer(Modifier.width(12.dp))

@@ -167,7 +167,10 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
             Modifier.bleed(20).horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            (urgent.ifEmpty { list }).take(4).forEach { UpCard(it, f) { act.service(it.item.id) } }
+            val shown = (urgent.ifEmpty { list }).take(4)
+            // cards in the row share a height: 160 when any shows its gauge, 140 when all are on track (web flex stretch)
+            val tall = shown.any { it.st.status != Due.OK }
+            shown.forEach { UpCard(it, f, tall) { act.service(it.item.id) } }
         }
 
         if (missed.isNotEmpty()) {
@@ -324,7 +327,7 @@ private fun WeatherRow(w: Weather.State, onClick: () -> Unit) {
 }
 
 @Composable
-private fun UpCard(r: ServiceRow, f: Fmt, onClick: () -> Unit) {
+private fun UpCard(r: ServiceRow, f: Fmt, tall: Boolean, onClick: () -> Unit) {
     val c = W.c
     val st = r.st
     val over = st.status == Due.OVERDUE
@@ -340,7 +343,7 @@ private fun UpCard(r: ServiceRow, f: Fmt, onClick: () -> Unit) {
         Due.OK -> Triple("On track", c.ink3, c.raised)
     }
     Column(
-        Modifier.width(310.dp).height(160.dp).card(20.dp).pressable(label = r.item.name, onClick = onClick)
+        Modifier.width(310.dp).height(if (tall) 160.dp else 140.dp).card(20.dp).pressable(label = r.item.name, onClick = onClick)
             .padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
