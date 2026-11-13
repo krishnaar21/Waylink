@@ -107,11 +107,13 @@ fun Modifier.card(radius: Dp = 20.dp, color: Color = W.c.card): Modifier = paper
 
 /** Press feedback used everywhere instead of ripples: a slight shrink, like the web app's :active scale. */
 @Composable
-fun Modifier.pressable(enabled: Boolean = true, label: String? = null, role: Role = Role.Button, onClick: () -> Unit): Modifier {
+fun Modifier.pressable(enabled: Boolean = true, label: String? = null, role: Role = Role.Button, scale: Float = 0.975f, onClick: () -> Unit): Modifier {
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
+    // :active { transform: scale(…) } with transition .18s var(--spring)
+    val k by androidx.compose.animation.core.animateFloatAsState(if (pressed) scale else 1f, androidx.compose.animation.core.tween(180, easing = app.waylink.ui.theme.Spring), label = "press")
     return this
-        .scale(if (pressed) 0.97f else 1f)
+        .scale(k)
         .clickable(src, indication = null, enabled = enabled, role = role, onClick = onClick)
         .then(if (label != null) Modifier.semantics { contentDescription = label } else Modifier)
 }
@@ -163,7 +165,7 @@ fun CircleBtn(icon: String, label: String, onClick: () -> Unit, modifier: Modifi
             .then(if (flat) Modifier else Modifier.shadow(4.dp, CircleShape, ambientColor = Color(0x380F1623), spotColor = Color(0x380F1623)))
             .clip(CircleShape)
             .background(if (flat) c.inkA(0.07f) else c.raised)
-            .pressable(label = label, onClick = onClick),
+            .pressable(label = label, scale = 0.92f, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) { Ic(icon, size = if (flat) 18.dp else 20.dp, tint = tint) }
 }

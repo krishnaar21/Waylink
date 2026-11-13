@@ -1,5 +1,10 @@
 package app.waylink.ui.components
 
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -136,7 +141,7 @@ fun Chip(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, icon:
     Row(
         modifier.height(38.dp).clip(shape).background(if (on) c.ink else c.raised)
             .then(if (on) Modifier else Modifier.border(1.dp, c.line, shape))
-            .pressable(label = text, onClick = onClick).padding(horizontal = 15.dp),
+            .pressable(label = text, scale = 0.95f, onClick = onClick).padding(horizontal = 15.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -167,14 +172,27 @@ fun CheckCircle(on: Boolean, label: String, onClick: () -> Unit) {
 /** .switch: 46 × 28 track with a sliding knob. */
 @Composable
 fun Switch(on: Boolean, label: String, onToggle: () -> Unit, enabled: Boolean = true) {
+    // .switch: 50 × 30 at 95 %, radius 10; a white 24 dp thumb with radius 8 slides 20 dp.
+    // Off, the thumb carries a small grey ring; on, a short accent bar.
     val c = W.c
-    val shape = RoundedCornerShape(999.dp)
+    val x by androidx.compose.animation.core.animateDpAsState(if (on) 20.dp else 0.dp, androidx.compose.animation.core.tween(320, easing = app.waylink.ui.theme.Spring), label = "sw")
+    val bg by androidx.compose.animation.animateColorAsState(if (on) c.accent else c.segOff, androidx.compose.animation.core.tween(250), label = "swbg")
+    val shape = RoundedCornerShape(10.dp)
     Box(
-        Modifier.width(46.dp).height(28.dp).clip(shape).background(if (on) c.accent else c.inkA(0.12f))
+        Modifier.scale(0.95f).width(50.dp).height(30.dp).clip(shape).background(bg)
             .semantics { stateDescription = if (on) "On" else "Off" }
-            .pressable(enabled = enabled, label = label, role = Role.Switch, onClick = onToggle).padding(3.dp),
-        contentAlignment = if (on) Alignment.CenterEnd else Alignment.CenterStart,
-    ) { Box(Modifier.size(22.dp).clip(CircleShape).background(if (on) Color.White else c.raised)) }
+            .pressable(enabled = enabled, label = label, role = Role.Switch, onClick = onToggle)
+            .then(if (enabled) Modifier else Modifier.alpha(0.4f)),
+    ) {
+        Box(
+            Modifier.offset(x = 3.dp + x, y = 3.dp).size(24.dp)
+                .shadow(1.5.dp, RoundedCornerShape(8.dp)).clip(RoundedCornerShape(8.dp)).background(Color.White),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (on) Box(Modifier.width(2.5.dp).height(9.dp).clip(RoundedCornerShape(2.dp)).background(c.accent))
+            else Box(Modifier.size(8.dp).border(2.dp, Color(0xFFA29C92), CircleShape))
+        }
+    }
 }
 
 /** Two fields side by side (.two). */

@@ -111,7 +111,7 @@ fun Sheet(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = W.c
-    AnimatedVisibility(visible, enter = fadeIn(tween(200)), exit = fadeOut(tween(200))) {
+    AnimatedVisibility(visible, enter = fadeIn(tween(300)), exit = fadeOut(tween(250))) {
         Box(
             Modifier.fillMaxSize().background(c.backdrop)
                 .clickable(remember { MutableInteractionSource() }, indication = null, onClick = onClose)
@@ -122,8 +122,9 @@ fun Sheet(
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars).imePadding(), contentAlignment = Alignment.BottomCenter) {
         AnimatedVisibility(
             visible,
-            enter = slideInVertically(spring(dampingRatio = 0.86f, stiffness = Spring.StiffnessMediumLow)) { it },
-            exit = slideOutVertically(tween(220)) { it },
+            // sheetUp .5s var(--spring); sheetDown .3s cubic-bezier(.4,0,1,1)
+            enter = slideInVertically(tween(500, easing = app.waylink.ui.theme.Spring)) { it },
+            exit = slideOutVertically(tween(300, easing = app.waylink.ui.theme.EaseIn)) { it },
         ) {
             var drag by remember { mutableFloatStateOf(0f) }
             val dragState = rememberDraggableState { d -> drag = (drag + d).coerceAtLeast(0f) }

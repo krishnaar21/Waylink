@@ -1,9 +1,9 @@
 # Builds the Android app, runs the shared-core tests, and attaches a debug APK you can install.
 name: Android
+# Pushes only: a pull request from this repo already shows the push run as its check,
+# so a second pull_request run would just double the work (and the emails).
 on:
   push:
-    paths: ['android/**', '.github/workflows/android.yml']
-  pull_request:
     paths: ['android/**', '.github/workflows/android.yml']
   workflow_dispatch:
 permissions:
