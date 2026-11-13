@@ -12,6 +12,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import app.waylink.ui.components.StickyBar
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -126,11 +128,16 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
     val urgent = list.filter { it.st.status != Due.OK }.take(4)
     val missed = s.alerts.missed
 
+    val scroll = rememberScrollState()
+    val head = remember { app.waylink.ui.components.StickyHead() }
+    val sos: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = { CircleBtn("sos", "Emergency SOS", act::sos, tint = c.red) }
+    androidx.compose.runtime.SideEffect { head.title = LocalDate.now().dayOfWeek.getDisplayName(JTextStyle.FULL, Locale.ENGLISH); head.end = sos }
+    Box(Modifier.fillMaxSize()) {
     Column(
-        Modifier.fillMaxWidth().rise().verticalScroll(rememberScrollState())
+        Modifier.fillMaxWidth().rise().verticalScroll(scroll)
             .windowInsetsPadding(WindowInsets.statusBars)
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = bottomPadding + 24.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = bottomPadding + 90.dp),
     ) {
         // Header: weekday, demo pill or date, SOS.
         Row(verticalAlignment = Alignment.Top) {
@@ -195,6 +202,8 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
 
         Spacer(Modifier.height(24.dp))
         Txt("Everything stays on this phone. No account, no cloud.", T.note.copy(textAlign = TextAlign.Center), c.ink3, Modifier.fillMaxWidth())
+    }
+    StickyBar(scroll, head)
     }
 }
 

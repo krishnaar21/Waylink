@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
@@ -163,6 +164,12 @@ private fun Intro(onSkip: () -> Unit, onDone: () -> Unit, onSample: () -> Unit) 
                 Modifier.align(Alignment.BottomStart).requiredWidth(w * 5).height(372.dp).offset(x = -(w * p) + w * 2),
                 contentScale = ContentScale.FillBounds,
             )
+            // .ride-anim: the rider on the Ride slide, 29 % wide, 11 % up the scene, drifting and buzzing with speed lines
+            val rw = w * 0.29f
+            Box(
+                Modifier.align(Alignment.BottomStart).offset(x = w * (2.5f - p) - w * 0.145f, y = -(372.dp * 0.11f))
+                    .width(rw).aspectRatio(350f / 330f),
+            ) { RideAnim() }
         }
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars).windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 24.dp)) {
             Top({ Logo(27f) }, "Skip", onSkip)
@@ -444,5 +451,41 @@ private fun LinkHero() {
                 Ic("bt", size = 17.dp, tint = Color.White)
             }
         }
+    }
+}
+
+/** web .ride-anim: drift ±9 px and a slight lean over 3.2 s, a .8 px engine buzz, three speed lines streaming back. */
+@Composable
+private fun RideAnim() {
+    val c = W.c
+    val still = app.waylink.ui.theme.Motion.still
+    val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "ride")
+    val drift by t.animateFloat(0f, 1f, androidx.compose.animation.core.infiniteRepeatable(tween(3200, easing = androidx.compose.animation.core.LinearEasing)), label = "drift")
+    val buzz by t.animateFloat(0f, 1f, androidx.compose.animation.core.infiniteRepeatable(tween(140, easing = androidx.compose.animation.core.LinearEasing)), label = "buzz")
+    val line by t.animateFloat(0f, 1f, androidx.compose.animation.core.infiniteRepeatable(tween(700, easing = androidx.compose.animation.core.LinearEasing)), label = "line")
+    // ease-in-out between -8 px / -.6° and +10 px / +.4°
+    val e = if (still) 0.5f else (1f - kotlin.math.cos(drift * 2f * Math.PI.toFloat())) / 2f
+    val ink = c.ink
+    Box(Modifier.fillMaxSize().graphicsLayer { translationX = (-8f + 18f * e).dp.toPx(); rotationZ = -0.6f + e; transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f) }) {
+        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+            if (still) return@Canvas
+            // .sl: left -40 %, 3 px, ink 45 % fading in from the left; tops 38/56/72 %, widths 46/64/40 %, staggered .25 s
+            listOf(Triple(0.38f, 0.46f, 0f), Triple(0.56f, 0.64f, 0.25f / 0.7f), Triple(0.72f, 0.40f, 0.5f / 0.7f)).forEach { (top, wf, d) ->
+                val k = (line + d) % 1f
+                val a = if (k < 0.3f) k / 0.3f else (1f - k) / 0.7f
+                val lw = size.width * wf
+                val x = -0.4f * size.width + lw * (0.3f - k)
+                drawRoundRect(
+                    androidx.compose.ui.graphics.Brush.horizontalGradient(listOf(ink.copy(alpha = 0f), ink.copy(alpha = 0.45f)), startX = x, endX = x + lw),
+                    androidx.compose.ui.geometry.Offset(x, size.height * top), androidx.compose.ui.geometry.Size(lw, 3.dp.toPx()),
+                    androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()), alpha = a.coerceIn(0f, 1f),
+                )
+            }
+        }
+        Image(
+            painterResource(R.drawable.rider_street), null,
+            Modifier.fillMaxSize().graphicsLayer { translationY = if (!still && buzz >= 0.5f) -0.8.dp.toPx() else 0f },
+            contentScale = ContentScale.Fit,
+        )
     }
 }

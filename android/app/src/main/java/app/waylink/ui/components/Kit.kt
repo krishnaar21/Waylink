@@ -1,6 +1,20 @@
 package app.waylink.ui.components
 
 import androidx.compose.runtime.getValue
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.alpha
@@ -54,15 +68,79 @@ import java.time.ZoneId
 
 /* Shared pieces for the inner pages and sheets: page scaffold, lists, chips, checks, date fields. */
 
-/** A scrolling page under the status bar with the tab bar's room at the bottom. */
+/** A scrolling page under the status bar with the tab bar's room at the bottom. Its [PageHead] sticks, small, once it scrolls. */
 @Composable
 fun Page(bottom: Dp, content: @Composable ColumnScope.() -> Unit) {
+    val scroll = rememberScrollState()
+    val head = remember { StickyHead() }
+    Box(Modifier.fillMaxSize()) {
+        CompositionLocalProvider(LocalSticky provides head) {
+            Column(
+                Modifier.fillMaxSize().imePadding().rise().verticalScroll(scroll)
+                    .windowInsetsPadding(WindowInsets.statusBars).windowInsetsPadding(WindowInsets.navigationBars)
+                    .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = bottom + 90.dp), // .view: 150 below, less the tab bar
+                content = content,
+            )
+        }
+        StickyBar(scroll, head)
+    }
+}
+
+/** What the stuck header shows: the page's title, its back button, its end action and anything pinned below (tabs). */
+class StickyHead {
+    var title by mutableStateOf<String?>(null)
+    var onBack by mutableStateOf<(() -> Unit)?>(null)
+    var end by mutableStateOf<(@Composable RowScope.() -> Unit)?>(null)
+    var below by mutableStateOf<(@Composable () -> Unit)?>(null)
+}
+
+val LocalSticky = staticCompositionLocalOf<StickyHead?> { null }
+
+/** Lets a page with its own header fill the stuck header (Today, Alerts). */
+@Composable
+fun StickyInfo(title: String?, onBack: (() -> Unit)? = null, end: (@Composable RowScope.() -> Unit)? = null, below: (@Composable () -> Unit)? = null) {
+    val h = LocalSticky.current ?: return
+    SideEffect { h.title = title; h.onBack = onBack; h.end = end; h.below = below }
+}
+
+/**
+ * .pagehead.stuck: once the page scrolls 6 px, the header sits over it with the page colour behind it, fading out
+ * over its last 30 px, the title down to 22 and the subtitle gone. The status bar stays readable over a scrolled page.
+ */
+@Composable
+fun BoxScope.StickyBar(scroll: ScrollState, head: StickyHead) {
+    val c = W.c
+    val density = LocalDensity.current
+    val stuck by remember { derivedStateOf { scroll.value > with(density) { 6.dp.toPx() } } }
+    val a by animateFloatAsState(if (stuck) 1f else 0f, tween(250), label = "stuck")
+    if (a <= 0f) return
+    val bg = c.bg
     Column(
-        Modifier.fillMaxSize().imePadding().rise().verticalScroll(rememberScrollState())
-            .windowInsetsPadding(WindowInsets.statusBars).windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = bottom + 24.dp),
-        content = content,
-    )
+        Modifier.align(Alignment.TopStart).fillMaxWidth().graphicsLayer { alpha = a }
+            .drawBehind {
+                val fade = 30.dp.toPx()
+                drawRect(Brush.verticalGradient(0f to bg, (size.height - fade) / size.height to bg, 1f to bg.copy(alpha = 0f)))
+            }
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 30.dp + 8.dp),
+    ) {
+        val back = head.onBack
+        val title = head.title
+        if (back != null) {
+            Row(Modifier.fillMaxWidth().height(44.dp), verticalAlignment = Alignment.CenterVertically) {
+                CircleBtn("back", "Back", back)
+                Spacer(Modifier.weight(1f))
+                head.end?.invoke(this)
+            }
+            if (title != null) { Spacer(Modifier.height(6.dp)); Txt(title, T.title.copy(fontSize = 22.sp, lineHeight = 26.sp), c.ink, maxLines = 1) }
+        } else if (title != null) {
+            Row(Modifier.fillMaxWidth().heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically) {
+                Txt(title, T.title.copy(fontSize = 22.sp, lineHeight = 26.sp), c.ink, Modifier.weight(1f), maxLines = 1)
+                head.end?.invoke(this)
+            }
+        }
+        head.below?.let { Spacer(Modifier.height(8.dp)); it() }
+    }
 }
 
 /**
@@ -80,6 +158,7 @@ fun Modifier.rise(): Modifier {
 @Composable
 fun PageHead(title: String, sub: String?, onBack: (() -> Unit)? = null, action: (@Composable RowScope.() -> Unit)? = null) {
     val c = W.c
+    StickyInfo(title, onBack, action)
     if (onBack != null || action != null) {
         // .topbar: 44 tall from the page top (24), 14 below it
         Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 14.dp).height(44.dp), verticalAlignment = Alignment.CenterVertically) {

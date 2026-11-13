@@ -70,6 +70,11 @@ import app.waylink.data.Live
 import app.waylink.ui.components.Btn
 import app.waylink.ui.components.BtnKind
 import app.waylink.ui.components.Ic
+import androidx.compose.ui.text.font.FontWeight
+import app.waylink.ui.components.ListRow
+import app.waylink.ui.components.ListCard
+import app.waylink.ui.components.Hairline
+import app.waylink.ui.components.rowPress
 import app.waylink.ui.components.swipeSides
 import app.waylink.ui.components.Sheet
 import app.waylink.ui.components.Txt
@@ -360,7 +365,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         }
 
         androidx.compose.animation.AnimatedVisibility(live.rideMode, enter = fadeIn(tween(220)), exit = fadeOut(tween(200))) {
-            RideMode(s, live) { vm.openRideMode(false) }
+            RideMode(s, live, onSettings = { vm.openRideMode(false); page = null; tab = Tab.SETTINGS }) { vm.openRideMode(false) }
         }
         androidx.compose.animation.AnimatedVisibility(live.call != null, enter = fadeIn(tween(200)), exit = fadeOut(tween(200))) {
             CallOverlay(live, vm::answerCall, vm::declineCall, vm::endCall)
@@ -387,7 +392,7 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
         "pair" -> SheetSpec("Link your bike", "Bluetooth") {
             PairSheet(live, onSim = { vm.simOn(); nav.close() }, onSimOff = { vm.simOff(); nav.close() }, onLog = { nav.open("log") })
         }
-        "sos" -> SheetSpec("Emergency SOS", "Medical ID") { SosSheet(s) }
+        "sos" -> SheetSpec("SOS", "Emergency · ${s.country.name}") { SosSheet(s, live) { nav.close(); host.page("profile") } }
         "clear" -> {
             val wa = arg == "clear-wa"
             val n = if (wa) s.alerts.wa.size else s.alerts.missed.size
@@ -417,15 +422,16 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
 
 @Composable
 internal fun TabBar(current: Tab, s: AppState, live: Live, modifier: Modifier, onSwipe: (Int) -> Unit = {}, onTab: (Tab) -> Unit) {
-    // .tabbar: bg 84 % + hairline, a soft fade above it, padding 12 22 10, tabs up to 76 dp wide, 4 dp apart.
+    // .tabbar: bg 84 % + a 20 px backdrop blur, hairline, a soft fade above it, padding 12 22 10, tabs up to 76 dp wide.
+    // Compose can't blur what's behind a view, so the bar is near-opaque instead: text never shows through sharp.
     val c = W.c
     val v = s.vehicle
     val needs = app.waylink.core.needsYou(v) > 0 || app.waylink.core.fuelStats(v).onReserve
     val alerts = s.alerts.missed.size + s.alerts.wa.size > 0 || needs
     Column(modifier.fillMaxWidth()) {
         // .tabbar::after: content fades out above the bar instead of running into the icons
-        Box(Modifier.fillMaxWidth().height(36.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(c.bg.copy(alpha = 0f), c.bg.copy(alpha = 0.8f)))))
-        Column(Modifier.fillMaxWidth().background(c.bg.copy(alpha = 0.94f))) {
+        Box(Modifier.fillMaxWidth().height(36.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(c.bg.copy(alpha = 0f), c.bg.copy(alpha = 0.85f)))))
+        Column(Modifier.fillMaxWidth().background(c.bg.copy(alpha = 0.985f))) {
             Box(Modifier.fillMaxWidth().height(0.5.dp).background(c.inkA(0.09f)))
             Row(
                 // Swipe along the bar to page between tabs, one step per swipe (web #tabbar touch handlers).
@@ -549,30 +555,45 @@ private fun PairSheet(live: Live, onSim: () -> Unit, onSimOff: () -> Unit, onLog
 }
 
 @Composable
-private fun SosSheet(s: AppState) {
+private fun SosSheet(s: AppState, @Suppress("UNUSED_PARAMETER") live: Live, profile: () -> Unit) {
+    // web sheet 'sos': a flat list of numbers to tap (the number big on the right), the emergency contact,
+    // nearest hospitals, then the blood-group card that opens the profile.
     val c = W.c
     val ctx = LocalContext.current
-    val country = s.country
+    val co = s.country
     val p = s.profile
-    fun dial(n: String) = ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + Uri.encode(n))))
-    Spacer(Modifier.height(16.dp))
-    Column(Modifier.fillMaxWidth().card(20.dp, c.raised).padding(horizontal = 18.dp, vertical = 6.dp)) {
-        listOf("Blood group" to p.blood.ifEmpty { "Not set" }, "Allergies and notes" to p.medical.ifEmpty { "None noted" }, "Emergency contact" to (p.iceName.ifEmpty { "Not set" } + if (p.icePhone.isNotEmpty()) " · ${p.icePhone}" else "")).forEachIndexed { i, (k, v) ->
-            if (i > 0) Box(Modifier.fillMaxWidth().height(1.dp).background(c.line))
-            Column(Modifier.padding(vertical = 12.dp)) {
-                Txt(k, T.eyebrow, c.ink3)
-                Txt(v, T.body, c.ink)
-            }
-        }
-    }
-    Spacer(Modifier.height(16.dp))
-    Btn("Call ${country.amb} · Ambulance", { dial(country.amb) }, Modifier.fillMaxWidth(), kind = BtnKind.ACCENT, icon = "ambulance")
+    fun open(i: Intent) = runCatching { ctx.startActivity(i) }
+    fun dial(n: String) = open(Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + Uri.encode(n.replace(" ", "")))))
     Spacer(Modifier.height(8.dp))
-    Btn("Call ${country.sos} · Emergency", { dial(country.sos) }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "siren")
-    if (p.icePhone.isNotEmpty()) {
-        Spacer(Modifier.height(8.dp))
-        Btn("Call ${p.iceName.ifEmpty { "emergency contact" }}", { dial(p.icePhone) }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "phone")
+    Txt("Tap to call. If it doesn’t dial, the number is right there.", T.sheetLead, c.ink2)
+    Spacer(Modifier.height(16.dp))
+    @Composable
+    fun tel(n: String, t: String, d: String, ic: String) = ListRow(t, d, ic, danger = true, chevron = false, onClick = { dial(n) }, trailing = {
+        Txt(n, T.big(24f), c.ink, Modifier.padding(start = 10.dp), maxLines = 1)
+    })
+    ListCard(flat = true) {
+        tel(co.amb, "Ambulance", "Medical emergency", "ambulance"); Hairline(start = 66.dp)
+        tel(co.sos, "Emergency", "All services", "siren"); Hairline(start = 66.dp)
+        tel(co.police, "Police", "Police help", "shield"); Hairline(start = 66.dp)
+        tel(co.rsa, "Highway help", "Roadside assistance", "wrench"); Hairline(start = 66.dp)
+        if (p.icePhone.isNotEmpty()) tel(p.icePhone, p.iceName.ifEmpty { "Emergency contact" }, "Your emergency contact", "heart")
+        else ListRow("Add an emergency contact", "Someone to call first", "heart", onClick = profile)
+        Hairline(start = 66.dp)
+        val near = "https://www.google.com/maps/search/hospitals+near+me"
+        ListRow("Nearest hospitals", "Opens Google Maps", "hospital", onClick = { open(Intent(Intent.ACTION_VIEW, Uri.parse(near))) })
     }
     Spacer(Modifier.height(12.dp))
-    Txt("Opens your phone’s dialler. Waylink never calls by itself.", T.note.copy(textAlign = TextAlign.Center), c.ink3, Modifier.fillMaxWidth())
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.raised).rowPress(label = "Medical ID", onClick = profile).padding(18.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Txt("Blood group ${p.blood.ifEmpty { "—" }}", T.rowSub.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold), c.red,
+                Modifier.clip(RoundedCornerShape(8.dp)).background(c.tintRed).padding(horizontal = 10.dp, vertical = 6.dp))
+            Spacer(Modifier.height(8.dp))
+            Txt(p.medical.ifEmpty { "No medical notes yet. Tap to add." }, T.rowSub.copy(fontSize = 14.sp, lineHeight = 20.sp), c.ink3)
+        }
+        Spacer(Modifier.width(12.dp))
+        Ic("chev", size = 16.dp, tint = c.ink4)
+    }
 }

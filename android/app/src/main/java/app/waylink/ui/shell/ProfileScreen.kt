@@ -57,13 +57,14 @@ fun ProfileScreen(s: AppState, back: () -> Unit, sheet: (String) -> Unit, help: 
     val totalKm = s.vehicles.sumOf { it.odo }
     val rides = s.vehicles.sumOf { it.trips.size }
     Page(bottom) {
+        app.waylink.ui.components.StickyInfo(null, back)
         // .topbar: 44 tall at the page top (24), then 14 + 14 + 18 down to the hero
         Row(Modifier.fillMaxWidth().padding(top = 4.dp).height(44.dp), verticalAlignment = Alignment.CenterVertically) { CircleBtn("back", "Back", back) }
         Spacer(Modifier.height(46.dp))
         // .prof-hero: a centred 96 dp avatar with its edit badge, then the name and "Rider since"
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(Modifier.pressable(label = "Change picture") { sheet("avatar") }) {
-                Avatar(p.avatar, size = 96.dp)
+                Avatar(p.avatar, size = 96.dp, photo = p.photo)
                 Box(
                     Modifier.align(Alignment.BottomEnd).offset(4.dp, 4.dp).size(32.dp)
                         .shadow(3.dp, CircleShape, ambientColor = Color(0x380F1623), spotColor = Color(0x380F1623)).clip(CircleShape).background(c.raised),

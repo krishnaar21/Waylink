@@ -1,5 +1,8 @@
 package app.waylink.ui.shell
 
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.draw.drawBehind
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -147,12 +150,14 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
         "pick-ridechart" -> SheetSpec("Ride chart", "Appearance") {
             val c = W.c
             Spacer(Modifier.height(8.dp))
-            Txt("How the Rides tab draws your riding. You can also swipe the chart there.", T.sheetLead, c.ink2)
+            val ch = remember(s.vehicle.trips) { app.waylink.core.rideCharts(s.vehicle.trips) }
+            val f = remember(s.country.locale) { app.waylink.core.Fmt(s.country.locale) }
+            Txt("How the Rides tab draws your riding. You can also swipe the chart there." + if (ch.demo) " Shown with example rides until you have your own." else "", T.sheetLead, c.ink2)
             Spacer(Modifier.height(16.dp))
-            ListCard(flat = true) {
-                RIDE_CHARTS.forEachIndexed { i, n ->
-                    if (i > 0) Hairline(16.dp)
-                    ListRow(n, chevron = false, onClick = { vm.setRideChart(i); nav.close() }, trailing = { Check(s.settings.rideChart == i) })
+            // .rcopts: each chart drawn in full as its own choice, the picked one ringed in ink
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                RIDE_CHARTS.indices.forEach { i ->
+                    app.waylink.ui.rides.RideChartOption(ch, i, s.settings.rideChart == i, f) { vm.setRideChart(i) }
                 }
             }
         }
@@ -199,19 +204,47 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
         }
         "support" -> SheetSpec("Support Waylink", null) { SupportBody(vm, nav) }
         "avatar" -> SheetSpec("Your picture", "Profile") {
+            // .av-grid: eleven riders and a Photo tile, four to a row. The picked one grows (1.12) with an accent ring,
+            // the rest sit at .9 with their face at .8.
             val c = W.c
+            val p = s.profile
+            val cur = if (p.photo != null) "photo" else p.avatar
+            val pick = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()) { uri ->
+                if (uri != null) { vm.setPhoto(uri); nav.close() }
+            }
             Spacer(Modifier.height(8.dp))
-            Txt("Pick a rider.", T.sheetLead, c.ink2)
+            Txt("Pick a rider, or add a photo.", T.sheetLead, c.ink2)
             Spacer(Modifier.height(16.dp))
-            (1..11).map { "a$it" }.chunked(4).forEach { row ->
+            ((1..11).map { "a$it" } + "photo").chunked(4).forEach { row ->
                 Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     row.forEach { k ->
-                        val on = s.profile.avatar == k
+                        val on = cur == k
+                        val sc by androidx.compose.animation.core.animateFloatAsState(if (on) 1.12f else 0.9f, androidx.compose.animation.core.tween(250, easing = app.waylink.ui.theme.Spring), label = "av")
+                        val tap = {
+                            if (k == "photo") pick.launch(androidx.activity.result.PickVisualMediaRequest(androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly))
+                            else { vm.setAvatar(k); nav.close() }
+                        }
                         Box(
-                            Modifier.weight(1f).aspectRatio(1f).semantics { selected = on }.pressable(label = "Rider ${k.drop(1)}", role = Role.RadioButton) { vm.setAvatar(k); nav.close() }
-                                .clip(CircleShape).background(Color.White).border(if (on) 2.5.dp else 1.dp, if (on) c.ink else c.line, CircleShape),
+                            Modifier.weight(1f).aspectRatio(1f).zIndex(if (on) 1f else 0f).graphicsLayer { scaleX = sc; scaleY = sc }
+                                .semantics { selected = on }.pressable(label = if (k == "photo") "Use a photo" else "Rider ${k.drop(1)}", role = Role.RadioButton, onClick = tap)
+                                .then(if (on) Modifier.border(1.75.dp, c.accent.copy(alpha = 0.65f), CircleShape) else Modifier)
+                                .clip(CircleShape)
+                                .then(
+                                    if (k == "photo" && p.photo == null) Modifier.background(c.raised).dashedCircle(c.inkA(0.45f))
+                                    else Modifier.background(Color.White),
+                                ),
                             contentAlignment = Alignment.Center,
-                        ) { Image(painterResource(avatarRes(k)), null, Modifier.fillMaxWidth(0.82f).aspectRatio(1f)) }
+                        ) {
+                            if (k == "photo") {
+                                val pic = app.waylink.ui.components.rememberPhoto(p.photo)
+                                if (pic != null) Image(pic, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                                else Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Ic("camera", size = 24.dp, tint = c.ink)
+                                    Spacer(Modifier.height(3.dp))
+                                    Txt("Photo", T.rowSub.copy(fontSize = 12.5.sp, lineHeight = 15.sp, fontWeight = FontWeight(650)), c.ink)
+                                }
+                            } else Image(painterResource(avatarRes(k)), null, Modifier.fillMaxWidth(if (on) 0.95f else 0.8f).aspectRatio(1f))
+                        }
                     }
                     repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
                 }
@@ -561,4 +594,10 @@ private fun ProfMedical(s: AppState, vm: AppViewModel, nav: SheetNav) {
     Hint("Shown on the SOS screen, so whoever helps you can see it.")
     Spacer(Modifier.height(24.dp))
     Btn("Done", { vm.saveMedical(blood, medical, iceName, icePhone); nav.close() }, Modifier.fillMaxWidth())
+}
+
+/** border: 1.5px dashed, round. */
+private fun Modifier.dashedCircle(color: Color): Modifier = this.drawBehind {
+    val w = 1.5.dp.toPx()
+    drawCircle(color, radius = size.minDimension / 2 - w / 2, style = androidx.compose.ui.graphics.drawscope.Stroke(w, pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()))))
 }

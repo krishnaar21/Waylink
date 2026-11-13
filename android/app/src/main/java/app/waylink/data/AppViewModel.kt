@@ -731,6 +731,37 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     }
 
     // ---------- Profile ----------
+    /**
+     * Profile photo (web av-photo): read the picked image, centre-crop it to a 320 px square JPEG in app storage and
+     * point the profile at it. A new file name each time, so the picture refreshes; the old file is removed.
+     */
+    fun setPhoto(uri: android.net.Uri) {
+        val ctx = getApplication<Application>()
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val out = runCatching {
+                val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                ctx.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, bounds) }
+                var sample = 1
+                while (minOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 320) sample *= 2
+                val src = ctx.contentResolver.openInputStream(uri)?.use {
+                    android.graphics.BitmapFactory.decodeStream(it, null, android.graphics.BitmapFactory.Options().apply { inSampleSize = sample })
+                } ?: return@runCatching null
+                val side = minOf(src.width, src.height)
+                val sq = android.graphics.Bitmap.createBitmap(src, (src.width - side) / 2, (src.height - side) / 2, side, side)
+                val small = android.graphics.Bitmap.createScaledBitmap(sq, 320, 320, true)
+                val f = File(ctx.filesDir, "profile-${System.currentTimeMillis()}.jpg")
+                f.outputStream().use { small.compress(android.graphics.Bitmap.CompressFormat.JPEG, 86, it) }
+                f.absolutePath
+            }.getOrNull()
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                if (out == null) { toast("Couldn’t open that picture"); return@withContext }
+                val old = _state.value.profile.photo
+                commit { it.copy(profile = it.profile.copy(photo = out)) }
+                if (old != null && old != out && old.startsWith(ctx.filesDir.absolutePath)) runCatching { File(old).delete() }
+            }
+        }
+    }
+
     fun setAvatar(key: String) { if (Regex("^a([1-9]|1[01])$").matches(key)) commit { it.copy(profile = it.profile.copy(avatar = key, photo = null)) } }
 
     fun saveProfileAbout(name: String, phone: String, email: String, city: String) {

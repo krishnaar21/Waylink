@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -304,6 +305,26 @@ private fun Charts(ch: RideCharts, at: Int, onPage: (Int) -> Unit, f: Fmt) {
     Row(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.Center) {
         repeat(3) { i ->
             Box(Modifier.padding(horizontal = 3.dp).size(if (i == pager.currentPage) 16.dp else 6.dp, 6.dp).clip(CircleShape).background(if (i == pager.currentPage) c.ink2 else c.inkA(0.18f)))
+        }
+    }
+}
+
+/** One chart as a choice in Settings > Ride chart (.rcopt): name and legend, then the chart, dimmed when it's an example. */
+@Composable
+fun RideChartOption(ch: RideCharts, i: Int, on: Boolean, f: Fmt, onClick: () -> Unit) {
+    val c = W.c
+    Column(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.card)
+            .border(if (on) 2.dp else 1.dp, if (on) c.ink else c.line, RoundedCornerShape(20.dp))
+            .semantics { selected = on }.pressable(label = RC_NAMES[i], role = androidx.compose.ui.semantics.Role.RadioButton, scale = 0.985f, onClick = onClick)
+            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp),
+    ) {
+        Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Txt(RC_NAMES[i], T.row.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold), c.ink, Modifier.weight(1f))
+            if (i == 0) Legend()
+        }
+        Box(Modifier.alpha(if (ch.demo) 0.38f else 1f)) {
+            when (i) { 0 -> Calendar(ch); 1 -> Weekly(ch, f); else -> Weekdays(ch, f) }
         }
     }
 }

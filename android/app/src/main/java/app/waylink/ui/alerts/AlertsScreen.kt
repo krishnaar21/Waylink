@@ -114,6 +114,8 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
         Txt(if (needs.isNotEmpty()) "${plural(needs.size, "thing needs", "things need")} you" else "Nothing needs you right now", T.subtitle, c.ink3)
         Spacer(Modifier.height(26.dp))
         // .ltabs: underlined tabs with counts and how many alerts reached the bike, set 10 dp in like the web app.
+        // They stay pinned under the small title when the page scrolls.
+        val tabs: @Composable () -> Unit = {
         Column(Modifier.offset(x = 10.dp)) {
             Row(verticalAlignment = Alignment.Bottom) {
                 LTab("Status", needs.size, tab == "needs") { pick("needs", 0) }
@@ -124,6 +126,9 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(c.line))
         }
+        }
+        app.waylink.ui.components.StickyInfo("Alerts", below = tabs)
+        tabs()
         Spacer(Modifier.height(32.dp))
 
         Column(Modifier.graphicsLayer { alpha = slide.value; translationX = (1f - slide.value) * 24.dp.toPx() * from }) {

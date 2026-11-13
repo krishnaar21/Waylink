@@ -269,17 +269,18 @@ private fun ProgressPicker(s: AppState, vm: AppViewModel) {
     // .progs: two-up tiles, each previewing an on-track and a due-soon job
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Looks.PROGRESS.chunked(2).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Both tiles in a row share one height, the previews filling it and the names lined up along the bottom.
+            Row(Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 row.forEach { (k, nm) ->
                     val on = cur == k
                     val shape = RoundedCornerShape(16.dp)
                     Column(
-                        Modifier.weight(1f).clip(shape).background(c.raised).border(if (on) 1.5.dp else 1.dp, if (on) c.ink else c.line, shape)
+                        Modifier.weight(1f).fillMaxHeight().clip(shape).background(c.raised).border(if (on) 1.5.dp else 1.dp, if (on) c.ink else c.line, shape)
                             .semantics { selected = on }.pressable(label = nm, role = Role.RadioButton, scale = 0.97f) { vm.setProgress(k) }.padding(14.dp),
                     ) {
                         Column(
-                            Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(c.card).border(1.dp, c.line, RoundedCornerShape(12.dp)).padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(12.dp)).background(c.card).border(1.dp, c.line, RoundedCornerShape(12.dp)).padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
                         ) {
                             StylePreview(ok, k)
                             StylePreview(soon, k)

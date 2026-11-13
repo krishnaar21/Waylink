@@ -204,10 +204,18 @@ private val AVATARS = listOf(
 fun avatarRes(key: String): Int = AVATARS[((key.removePrefix("a").toIntOrNull() ?: 1) - 1).coerceIn(0, AVATARS.lastIndex)]
 
 @Composable
-fun Avatar(key: String, modifier: Modifier = Modifier, size: androidx.compose.ui.unit.Dp = 52.dp) {
+fun Avatar(key: String, modifier: Modifier = Modifier, size: androidx.compose.ui.unit.Dp = 52.dp, photo: String? = null) {
+    val pic = rememberPhoto(photo)
     Box(modifier.size(size).clip(CircleShape).background(Color.White)) {
-        Image(painterResource(avatarRes(key)), null, Modifier.fillMaxSize())
+        if (pic != null) Image(pic, null, Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+        else Image(painterResource(avatarRes(key)), null, Modifier.fillMaxSize())
     }
+}
+
+/** The rider's photo from app storage, decoded once per path; null when there's none or it can't be read. */
+@Composable
+fun rememberPhoto(path: String?): androidx.compose.ui.graphics.ImageBitmap? = androidx.compose.runtime.remember(path) {
+    path?.let { runCatching { android.graphics.BitmapFactory.decodeFile(it)?.asImageBitmap() }.getOrNull() }
 }
 
 @Composable

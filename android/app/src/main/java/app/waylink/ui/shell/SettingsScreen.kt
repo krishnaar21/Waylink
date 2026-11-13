@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.em
+import androidx.compose.foundation.layout.widthIn
 import app.waylink.core.AppState
 import app.waylink.core.Catalog
 import app.waylink.core.Fmt
@@ -250,17 +251,15 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp) {
             app.waylink.ui.components.Hint("Empty shows a brand-new rider. Edge cases shows long names, huge numbers and everything overdue. Nothing is saved while previewing.")
         }
 
-        // footer.about: the two wordmarks, a mono version line, the legal line
-        Spacer(Modifier.height(36.dp))
+        // footer.about: 36 + 15vh down, the Loop wordmark (web brandOf() is always "loop"), version in the body face, legal line
+        val vh = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp
+        Spacer(Modifier.height(36.dp + (vh * 0.15f).dp))
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                app.waylink.ui.components.TurnsWordmark(24f)
-                app.waylink.ui.components.LoopWordmark(24f, animate = false)
-            }
-            Spacer(Modifier.height(10.dp))
-            Txt("VERSION $APP_VERSION · MIT LICENCE", T.rowSub.copy(fontFamily = app.waylink.ui.theme.Mono, fontSize = 10.5.sp, lineHeight = 15.75.sp, letterSpacing = 0.14.em), c.ink3)
+            app.waylink.ui.components.LoopWordmark(24f, animate = false)
+            Spacer(Modifier.height(4.dp))
+            Txt("Version $APP_VERSION · MIT licence", T.rowSub.copy(fontSize = 13.5.sp, lineHeight = 20.sp), c.ink3)
             Spacer(Modifier.height(8.dp))
-            Txt("Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.", T.rowSub.copy(fontSize = 12.5.sp, lineHeight = 18.75.sp, textAlign = TextAlign.Center), c.ink4)
+            Txt("Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.", T.rowSub.copy(fontSize = 12.5.sp, lineHeight = 18.75.sp, textAlign = TextAlign.Center), c.ink4, Modifier.widthIn(max = 250.dp))
         }
     } }
 }
@@ -297,7 +296,7 @@ private fun ProfileCard(s: AppState, onOpen: () -> Unit) {
     var open by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().card(20.dp)) {
         Row(Modifier.fillMaxWidth().pressable(label = "Your profile", onClick = onOpen).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Avatar(p.avatar)
+            Avatar(p.avatar, photo = p.photo)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Txt(shortName(p.name).ifEmpty { "Add your name" }, T.cardTitle.copy(lineHeight = 24.15.sp), c.ink, maxLines = 1)
