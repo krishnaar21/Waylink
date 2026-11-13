@@ -2196,3 +2196,15 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 /* Chosen avatar: a firmer ring */
 .av-opt.on { box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--accent) 80%, transparent) !important; }
 .onb-av:has(input:checked) { box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--accent) 80%, transparent) !important; }
+/* Emergency info tiles: roomy, left-aligned, nothing cut off */
+.pc-grid { gap: 10px; padding: 2px 14px 16px; }
+.pc-cell { padding: 14px 14px 15px; gap: 8px; border-radius: 14px; }
+.pc-cell .pc-k { font-size: 13px; }
+.pc-cell .pc-k svg { width: 15px; height: 15px; }
+.pc-cell .pc-v { text-align: left !important; white-space: normal !important; overflow: hidden !important; text-overflow: clip !important; font-size: 16px !important; line-height: 1.4; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.pc-cell .pc-v small { display: block; font-size: 14px; color: var(--ink-3); margin-top: 3px; }
+.pc-cell.blood .pc-v { font-size: 26px !important; font-weight: 700; line-height: 1.1; letter-spacing: -.01em; }
+.pc-grid { grid-template-columns: minmax(96px, auto) minmax(0, 1fr); }
+.pc-cell.blood { min-width: 96px; }
+.pc-cell:not(.wide):not(.blood) .pc-v { display: block; -webkit-line-clamp: unset; }
+.pc-cell.wide .pc-v { -webkit-line-clamp: 4; }
