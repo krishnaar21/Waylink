@@ -2193,3 +2193,6 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 /* Avatars not chosen are dimmed to half colour; the chosen one is full, and hover/press brings one back */
 .av-opt:not(.on):not(.av-photo) img, .onb-av:not(:has(input:checked)) img { filter: grayscale(1); opacity: .5; transition: opacity .2s, filter .2s, transform .2s var(--spring); }
 .av-opt:not(.on):not(.av-photo):hover img, .onb-av:not(:has(input:checked)):hover img { opacity: .8; filter: grayscale(.4); }
+/* Chosen avatar: a firmer ring */
+.av-opt.on { box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--accent) 80%, transparent) !important; }
+.onb-av:has(input:checked) { box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--accent) 80%, transparent) !important; }
