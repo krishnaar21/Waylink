@@ -2212,3 +2212,5 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 /* Ride mode: a bigger speedometer, close to the full screen width */
 .rm-dial { width: min(380px, 92vw, 52vh) !important; }
 .rm-dial .big { font-size: min(112px, 27vw, 15vh) !important; }
+.rm-dial { width: min(350px, 84vw, 50vh) !important; margin-top: 4vh !important; }
+.rm-dial .big { font-size: min(104px, 25vw, 14vh) !important; }
