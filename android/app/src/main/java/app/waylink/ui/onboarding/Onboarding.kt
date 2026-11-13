@@ -63,6 +63,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -143,7 +144,7 @@ private fun Intro(onSkip: () -> Unit, onDone: () -> Unit, onSample: () -> Unit) 
                 .drawWithContent {
                     drawContent()
                     drawRect(
-                        Brush.verticalGradient(0f to Color.Transparent, 0.2f to Color.Transparent, 0.42f to Color.Black, 0.72f to Color.Black, 0.98f to Color.Transparent),
+                        Brush.verticalGradient(0f to Color.Transparent, 0.3f to Color.Transparent, 0.5f to Color.Black, 0.72f to Color.Black, 0.98f to Color.Transparent),
                         blendMode = BlendMode.DstIn,
                     )
                 },
@@ -166,7 +167,7 @@ private fun Intro(onSkip: () -> Unit, onDone: () -> Unit, onSample: () -> Unit) 
                     Spacer(Modifier.height(8.dp))
                     Txt(t, T.slideTitle.copy(textAlign = TextAlign.Center), c.ink, Modifier.semantics { heading() })
                     Spacer(Modifier.height(8.dp))
-                    Txt(d, T.onbP.copy(textAlign = TextAlign.Center), c.ink2, Modifier.padding(horizontal = 11.dp))
+                    Txt(d, T.onbP.copy(textAlign = TextAlign.Center, lineBreak = LineBreak.Heading), c.ink2, Modifier.padding(horizontal = 11.dp)) // balanced, like text-wrap: pretty
                 }
             }
             Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -184,7 +185,7 @@ private fun Intro(onSkip: () -> Unit, onDone: () -> Unit, onSample: () -> Unit) 
             Btn(if (last) "Set up my bike" else "Next", { if (last) onDone() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } }, Modifier.fillMaxWidth())
             Spacer(Modifier.height(10.dp))
             LinkText("Explore with sample data", onSample, Modifier.align(Alignment.CenterHorizontally), style = T.body.copy(fontSize = 14.5.sp), color = c.ink3)
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(36.dp))
         }
     }
 }

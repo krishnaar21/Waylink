@@ -60,7 +60,7 @@ class SheetShotTest {
     @Test fun quick() = shot("quick") { vm, nav -> extraSheet("quick", sample, live, vm, nav, noop<ExtraHost>()) }
     @Test fun odo() = shot("odo") { vm, nav -> logbookSheet("odo", sample, vm, nav) }
     @Test fun service() = shot("svc") { vm, nav -> logbookSheet("svc:" + sample.vehicle.service.first().id, sample, vm, nav) }
-    @Test fun fuel() = shot("fuel") { vm, nav -> fuelSheet("fuel", sample, vm, nav) }
+    @Test fun fuel() = shot("fuel") { vm, nav -> fuelSheet("fuel:new", sample, vm, nav) }
     @Test fun trip() = shot("trip") { vm, nav -> rideSheet("trip-detail:" + sample.vehicle.trips.first().id, sample, live, vm, nav) }
     @Test fun specs() = shot("specs") { vm, nav -> settingsSheet("specs", sample, live, vm, nav) }
     @Test fun support() = shot("support") { vm, nav -> settingsSheet("support", sample, live, vm, nav) }
