@@ -2143,3 +2143,5 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .rc-bars { height: 200px; }
 .rc-wk { gap: 15px; }
 .rc-wr div { height: 13px; }
+/* Onboarding: footer (Next and the sample link) sits lower, closer to the home bar */
+.onb { padding-bottom: calc(var(--bottom) * .6 + 6px) !important; }
