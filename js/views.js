@@ -791,6 +791,7 @@ export function settings(c) {
     ${li({ ic: 'refresh', t: 'Reset the app', d: 'Like a fresh install', cls: 'danger', act: 'sheet', arg: 'reset' })}
   </div><input type="file" id="import-file" accept=".json,.pnav,application/json" hidden></div>
   <div class="section">${sh('Help & about')}<div class="list">
+    ${li({ ic: 'sparkles', t: 'What’s new', d: `Version ${APP_VERSION}`, act: 'sheet', arg: 'whatsnew' })}
     ${li({ ic: 'info', t: 'Questions and answers', d: 'Pairing, fuel, weather, privacy', act: 'sheet', arg: 'faq' })}
     ${li({ ic: 'flag', t: 'Report a problem', d: 'Copy your app details and tell us', act: 'sheet', arg: 'report' })}
     ${li({ ic: 'heart', t: 'About Waylink', d: `Version ${APP_VERSION}, credits and licences`, act: 'sheet', arg: 'about' })}
@@ -836,6 +837,31 @@ export const LOOP = '<span class="wl-loop" aria-label="waylink"><svg class="lw-w
 export const BRANDS = [['loop', 'Loop']];
 export const brandOf = () => 'loop';
 export const APP_VERSION = '1.0';
+// What's new: only what riders notice. Newest first.
+export const CHANGELOG = [
+  ['1.0', 'November 2026', [
+    ['New', [
+      'Paper and Paper dark themes. Auto switches between them with your phone.',
+      'Your rides in a chart: a 12-week calendar, km per week or km by weekday. Swipe to switch, or pick one in Settings.',
+      'An “About you” step when you start: your picture, name, blood group and an emergency contact. All optional.',
+      'Pick a rider avatar for your profile. Everyone gets one to start with.',
+      'Bike models you can use are listed under About.',
+    ]],
+    ['Improved', [
+      'One illustrated bike across the app, with a wine red helmet and tank.',
+      'Onboarding art follows your theme and fades into the page.',
+      'A clearer Link your bike screen, with a calmer Bluetooth badge.',
+      'Big numbers stay short, like 1.99L km on the odometer.',
+      'Faster first launch and less data used; pictures are kept for offline use.',
+    ]],
+    ['Fixed', [
+      'Onboarding pictures now show on every slide on iPhone.',
+      'Switches in pop-up sheets update as soon as you tap them.',
+      'Text no longer gets cut off on the bike card, missed-call banner and ride mode.',
+      'The chosen support amount and the Photo option are easy to see.',
+    ]],
+  ]],
+];
 // Add-a-bike glyph: a motorbike whose front wheel is a plus.
 export const isIOS = () => typeof navigator !== 'undefined' && (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 const BLUEFY_STORE = 'https://apps.apple.com/app/id1492822055';
@@ -1151,6 +1177,8 @@ function sheetInner(c, key) {
     }
     case 'weather': return weatherSheet(c);
     case 'faq': case 'report': case 'about': return helpSheet(c, k);
+    case 'whatsnew': return `<div class="eyebrow">About Waylink</div><h2>What’s new</h2>
+      ${CHANGELOG.map(([v, when, groups]) => `<section class="cl"><div class="cl-v"><b>${v}</b><span>${when}</span></div>${groups.map(([tag, items]) => `<div class="cl-g"><span class="cl-tag ${tag.toLowerCase()}">${tag}</span><ul>${items.map((t) => `<li>${t}</li>`).join('')}</ul></div>`).join('')}</section>`).join('')}`;
     case 'help': {
       const h = HELP[arg]; if (!h) return null;
       return `<div class="eyebrow">${h[0]}</div><h2>${h[1]}</h2>${h[2].map((t, i) => `<p class="${i ? 'help-p' : 'lead'}">${t}</p>`).join('')}<button class="btn ink block mt24" type="button" data-act="close">Got it</button>`;

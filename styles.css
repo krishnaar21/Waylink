@@ -2155,3 +2155,13 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .onb-av:has(input:checked) img { transform: scale(.95); }
 .onb-av:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 .avatar.pix { background: #fff; }
+/* What's new */
+.cl { margin-top: 18px; }
+.cl-v { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+.cl-v b { font-size: 17px; } .cl-v span { font-size: 13px; color: var(--ink-3); }
+.cl-g { margin-top: 14px; }
+.cl-tag { display: inline-block; font-size: 12px; font-weight: 650; padding: 3px 10px; border-radius: 999px; background: var(--raised); color: var(--ink-2); box-shadow: 0 0 0 1px var(--line); }
+.cl-tag.new { background: color-mix(in srgb, var(--accent) 14%, var(--card)); color: var(--accent); box-shadow: none; }
+.cl-g ul { margin: 8px 0 0; padding-left: 18px; }
+.cl-g li { font-size: 15px; line-height: 1.45; color: var(--ink-2); margin: 6px 0; }
+.cl-g li::marker { color: var(--ink-4); }
