@@ -79,6 +79,8 @@ interface ExtraHost {
     fun withLocation(then: () -> Unit)
     fun startRec()
     fun rideMode()
+    /** Opens an inner page ("profile"). */
+    fun page(key: String) {}
 }
 
 private val DOC_NAMES = mapOf("rc" to "Registration (RC)", "insurance" to "Insurance", "puc" to "Pollution (PUC)", "licence" to "Driving licence", "other" to "Other")

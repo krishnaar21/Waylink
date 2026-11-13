@@ -190,6 +190,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         override fun withLocation(then: () -> Unit) = needLocation(then)
         override fun startRec() = beginRec()
         override fun rideMode() = vm.openRideMode(true)
+        override fun page(key: String) { stack = ""; page = key }
     }
     // Ride mode opens by itself when you pass 15 km/h, if that's switched on.
     var wasSlow by remember { mutableStateOf(true) }
@@ -221,6 +222,8 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
     val awake = live.rec != null || (live.rideMode && s.settings.wakeLock)
     DisposableEffect(awake) { view.keepScreenOn = awake; onDispose { view.keepScreenOn = false } }
     Box(Modifier.fillMaxSize()) {
+        // Pull down at the top of any tab: the wheel rolls and spins; Today fetches fresh weather.
+        app.waylink.ui.components.PullToRefresh(stack.isEmpty() && !live.rideMode, onRefresh = { if (page == null && tab == Tab.TODAY) vm.refreshWeather() }) {
         AnimatedContent(
             page ?: tab.key,
             transitionSpec = {
@@ -264,7 +267,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun trip(which: String) = openSheet("trip:$which")
                     override fun rides() { tab = Tab.RIDES }
                     override fun glovebox() = openSheet("glovebox")
-                    override fun weather() = vm.refreshWeather()
+                    override fun weather() { if (live.weather !is app.waylink.data.Weather.State.Ready) vm.refreshWeather(); openSheet("weather") }
                     override fun readingsHelp() = openSheet("help:readings")
                 }, tabBarHeight)
                 "profile" -> ProfileScreen(s, back = { page = null }, sheet = openSheet, help = { openSheet("help:$it") }, bottom = tabBarHeight)
@@ -314,6 +317,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun press(kind: String) = vm.press(kind)
                 }, tabBarHeight)
             }
+        }
         }
         val shownTab = if (page == "logbook" || page == "fuel") Tab.TODAY else if (page == "profile") Tab.SETTINGS else tab
         var skipTap by remember { mutableStateOf(0L) }
@@ -372,7 +376,7 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
     fuelSheet(key, s, vm, nav)?.let { return it }
     rideSheet(key, s, live, vm, nav)?.let { return it }
     settingsSheet(key, s, live, vm, nav)?.let { return it }
-    devSheet(key, s, live, vm, nav)?.let { return it }
+    devSheet(key, s, live, vm, nav, host)?.let { return it }
     extraSheet(key, s, live, vm, nav, host)?.let { return it }
     app.waylink.ui.route.routeSheet(key, s, live, vm, nav)?.let { return it }
     val arg = key.substringAfter(':', "")

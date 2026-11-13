@@ -21,6 +21,7 @@ import app.waylink.ui.logbook.logbookSheet
 import app.waylink.ui.rides.rideSheet
 import app.waylink.ui.shell.ExtraHost
 import app.waylink.ui.shell.SettingsScreen
+import app.waylink.ui.shell.devSheet
 import app.waylink.ui.shell.extraSheet
 import app.waylink.ui.shell.settingsSheet
 import app.waylink.ui.theme.W
@@ -64,5 +65,18 @@ class SheetShotTest {
     @Test fun trip() = shot("trip") { vm, nav -> rideSheet("trip-detail:" + sample.vehicle.trips.first().id, sample, live, vm, nav) }
     @Test fun specs() = shot("specs") { vm, nav -> settingsSheet("specs", sample, live, vm, nav) }
     @Test fun support() = shot("support") { vm, nav -> settingsSheet("support", sample, live, vm, nav) }
+    @Test fun icons() = shot("pick-brand") { vm, nav -> devSheet("pick-brand", sample, live, vm, nav, noop()) }
+    @Test fun fonts() = shot("pick-font") { vm, nav -> devSheet("pick-font", sample, live, vm, nav, noop()) }
+    @Test fun progress() = shot("pick-progress") { vm, nav -> devSheet("pick-progress", sample, live, vm, nav, noop()) }
+    @Test fun protocol() = shot("protocol") { vm, nav -> devSheet("protocol", sample, live, vm, nav, noop()) }
+    @Test fun log() = shot("log") { vm, nav -> devSheet("log", sample, live.copy(linkLog = listOf(1_700_000_000_000L to "Simulated bike linked", 1_700_000_001_000L to "Status frame sent")), vm, nav, noop()) }
+    @Test fun pairIntro() = shot("pair-intro") { vm, nav -> devSheet("pair-intro", sample, live, vm, nav, noop()) }
+    @Test fun autoAsk() = shot("auto-ask") { vm, nav -> devSheet("auto-ask", sample, live, vm, nav, noop()) }
+    @Test fun weather() = shot("weather") { vm, nav ->
+        val now = 1_700_000_000_000L
+        val hours = (0 until 12).map { app.waylink.data.Weather.Hour(now + it * 3_600_000L, 27.0 + it % 4, if (it in 5..7) 60 else 10, if (it in 5..7) 61 else 2, true) }
+        val data = app.waylink.data.Weather.Data("Bengaluru", now, 28.4, 30.1, 2, 12.0, true, hours)
+        devSheet("weather", sample, live.copy(weather = app.waylink.data.Weather.State.Ready(data)), vm, nav, noop())
+    }
     @Test fun backup() = shot("backup") { vm, nav -> settingsSheet("backup", sample, live, vm, nav) }
 }

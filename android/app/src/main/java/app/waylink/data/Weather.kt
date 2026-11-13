@@ -82,4 +82,21 @@ object Weather {
             c.inputStream.bufferedReader().use { it.readText() }
         } finally { c.disconnect() }
     }
+
+    /** A line of riding advice for the next hours (web store.js rideHint). */
+    fun rideHint(w: Data): String {
+        if (w.hours.isEmpty()) return ""
+        val wetCodes = setOf(61, 63, 65, 80, 81, 82, 95, 96, 99)
+        val wet = w.hours.firstOrNull { it.rain >= 50 || it.code in wetCodes }
+        fun fmt(ts: Long) = java.text.SimpleDateFormat("h a", java.util.Locale.ENGLISH).format(java.util.Date(ts)).lowercase()
+        return when {
+            w.code in 95..99 -> "Thunderstorm now. Wait it out if you can."
+            w.code in 61..82 -> "Raining now. Roads are slippery; leave more gap."
+            wet != null -> if (wet === w.hours[0]) "Rain likely soon (${wet.rain}%). Pack a rain liner." else "Rain likely around ${fmt(wet.ts)} (${wet.rain}%). Pack a rain liner."
+            w.code == 45 || w.code == 48 -> "Fog about. Lights on, speed down."
+            w.wind >= 35 -> "Gusty at ${Math.round(w.wind)} km/h. Hold the line on open roads."
+            w.temp >= 36 -> "Hot out. Carry water and take breaks."
+            else -> { val max = w.hours.maxOf { it.rain }; if (max < 20) "Dry for the next 12 hours. Good riding weather." else "Low chance of rain ($max%) through the day." }
+        }
+    }
 }

@@ -1,6 +1,10 @@
 package app.waylink.ui.shell
 
 import androidx.compose.foundation.Image
+import androidx.compose.ui.unit.em
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -43,6 +47,7 @@ import app.waylink.core.ServiceStatus
 import app.waylink.data.AppIcon
 import app.waylink.data.AppViewModel
 import app.waylink.data.Live
+import app.waylink.data.Weather
 import app.waylink.ui.components.Btn
 import app.waylink.ui.components.BtnKind
 import app.waylink.ui.components.Hairline
@@ -72,7 +77,13 @@ import java.util.Locale
  * The appearance pickers and developer sheets from Settings (web views.js: pick-brand, pick-font, pick-progress,
  * log, protocol) and the two link prompts (pair-intro, auto-ask). Null if [key] isn't one of them.
  */
-fun devSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetNav): SheetSpec? = when (key) {
+fun devSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetNav, host: ExtraHost): SheetSpec? = when (key) {
+    "weather" -> {
+        val w = live.weather
+        val d = when (w) { is Weather.State.Ready -> w.data; is Weather.State.Loading -> w.last; else -> null }
+        val title = when { d != null -> null; w is Weather.State.Error -> "Weather offline"; w is Weather.State.Need -> "Weather for your ride"; else -> "Loading" }
+        SheetSpec(title ?: "Weather", if (d != null) d.place.ifBlank { "Near you" } else null) { WeatherBody(w, d, vm, host) }
+    }
     "pick-brand", "pick-icons" -> SheetSpec("Icons", "Appearance") { BrandPicker(s, vm) }
     "pick-font", "pick-body" -> SheetSpec("Fonts", "Appearance") { FontPicker(s, vm) }
     "pick-progress" -> SheetSpec("Progress style", "Appearance") { ProgressPicker(s, vm) }
@@ -358,5 +369,87 @@ private fun ProtocolBody() {
                 Txt(t, T.row.copy(fontSize = 13.5.sp, lineHeight = 24.3.sp), c.ink)
             }
         }
+    }
+}
+
+/** The weather sheet (web weatherSheet): now, a riding hint, three readings, the next 12 hours. */
+@Composable
+private fun WeatherBody(w: Weather.State, d: Weather.Data?, vm: AppViewModel, host: ExtraHost) {
+    val c = W.c
+    if (d == null) {
+        Spacer(Modifier.height(8.dp))
+        Txt(when (w) {
+            is Weather.State.Need -> "Add your city in Profile to see rain, heat and wind for your ride."
+            is Weather.State.Error -> w.msg.ifBlank { "Couldn’t reach the weather service." }
+            else -> "Checking the sky…"
+        }, T.sheetLead, c.ink2)
+        if (w is Weather.State.Error) { Spacer(Modifier.height(16.dp)); Btn("Try again", vm::refreshWeather, Modifier.fillMaxWidth(), icon = "refresh") }
+        if (w is Weather.State.Need || w is Weather.State.Error) { Spacer(Modifier.height(16.dp)); Btn("Set city", { host.page("profile") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, small = true, icon = "profile") }
+        return
+    }
+    val (cond, ic) = Weather.wmo(d.code, d.day)
+    val hint = Weather.rideHint(d)
+    val warn = d.code >= 61 || Regex("Rain likely|Thunder|Fog|Gusty|Hot").containsMatchIn(hint)
+    // .wx-big: a sage icon tile, the temperature at 52, the condition under it
+    Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(c.tintSage), contentAlignment = Alignment.Center) { Ic(ic, size = 22.dp, tint = c.sageInk) }
+        Spacer(Modifier.width(16.dp))
+        Column {
+            Txt("${Math.round(d.temp)}°", T.big(52f), c.ink)
+            Spacer(Modifier.height(4.dp))
+            Txt(cond, T.body.copy(fontSize = 17.sp, lineHeight = 25.5.sp, fontWeight = FontWeight.Medium), c.ink2)
+        }
+    }
+    // .wx-hint: amber when it matters, a soft ink tint when all is well
+    Row(
+        Modifier.padding(top = 16.dp).fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(if (warn) c.tintAmber else c.inkA(0.06f)).padding(horizontal = 13.dp, vertical = 11.dp),
+    ) {
+        val fg = if (warn) androidx.compose.ui.graphics.lerp(c.amber, c.ink, 0.2f) else c.ink2
+        Ic(if (warn) "drops" else "check", Modifier.padding(top = 2.dp), size = 16.dp, tint = fg)
+        Spacer(Modifier.width(8.dp))
+        Txt(hint, T.row.copy(fontSize = 14.5.sp, lineHeight = 20.3.sp), fg)
+    }
+    // .stat3: feels like, wind, rain chance
+    val rainMax = d.hours.maxOfOrNull { it.rain } ?: 0
+    Row(Modifier.padding(top = 16.dp).fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min).clip(RoundedCornerShape(20.dp)).background(c.card).border(1.dp, c.line, RoundedCornerShape(20.dp))) {
+        listOf(Triple("Feels like", "${Math.round(d.feels)}°", ""), Triple("Wind", "${Math.round(d.wind)}", "km/h"), Triple("Rain, 12 h", "$rainMax", "%")).forEachIndexed { i, (k, v, u) ->
+            if (i > 0) Box(Modifier.width(0.5.dp).fillMaxHeight().background(c.line))
+            Column(Modifier.weight(1f).padding(16.dp)) {
+                Txt(k, T.eyebrow, c.ink3, maxLines = 1)
+                Spacer(Modifier.height(10.dp))
+                app.waylink.ui.components.BigValue(v, u.ifEmpty { null }, 30f)
+            }
+        }
+    }
+    Spacer(Modifier.height(20.dp))
+    Txt("Next 12 hours", T.eyebrow, c.ink3)
+    Row(
+        Modifier.padding(top = 10.dp).fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        val hf = remember { SimpleDateFormat("h a", Locale.ENGLISH) }
+        d.hours.take(12).forEachIndexed { i, h ->
+            Column(
+                Modifier.width(58.dp).clip(RoundedCornerShape(16.dp)).background(c.raised).border(1.dp, c.line, RoundedCornerShape(16.dp)).padding(vertical = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Txt(if (i == 0) "Now" else hf.format(Date(h.ts)).lowercase(), T.eyebrow.copy(fontSize = 10.sp, lineHeight = 15.sp, letterSpacing = 0.04.em), c.ink3, maxLines = 1)
+                Ic(Weather.wmo(h.code, h.day).second, size = 20.dp, tint = c.ink2)
+                Txt(h.temp?.let { "${Math.round(it)}°" } ?: "–", T.body.copy(fontSize = 15.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold), c.ink)
+                Txt(if (h.rain >= 20) "${h.rain}%" else "", TextStyle(fontFamily = Mono, fontSize = 10.5.sp, lineHeight = 14.sp, fontWeight = if (h.rain >= 50) FontWeight.SemiBold else FontWeight.Normal), if (h.rain >= 50) Color(0xFF3B6FD8) else c.ink3)
+            }
+        }
+    }
+    Hint("Updated ${app.waylink.core.Fmt().ago(d.ts)} · Open-Meteo")
+    Spacer(Modifier.height(12.dp))
+    Btn(if (w is Weather.State.Loading) "Refreshing…" else "Refresh", vm::refreshWeather, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "refresh")
+    Row(
+        Modifier.padding(top = 14.dp).fillMaxWidth().pressable(label = "Change place", scale = 1f) { host.page("profile") }.padding(horizontal = 2.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Ic("pin", size = 15.dp, tint = c.ink3)
+        Spacer(Modifier.width(8.dp))
+        Txt("Showing ${d.place.ifBlank { "your location" }}", T.row.copy(fontSize = 13.5.sp), c.ink3, Modifier.weight(1f), maxLines = 1)
+        Txt("Change", T.row.copy(fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold), c.ink)
     }
 }

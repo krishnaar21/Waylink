@@ -69,5 +69,29 @@ class ScreenshotTest {
     @Test fun settingsDark() = shot("settings-dark", "sketchdark", Tab.SETTINGS) { SettingsScreen(sample, live, noop(), 80.dp) }
     // A phone-sized box: the shared 1900 dp canvas would push the slide text and buttons off the bottom.
     @Test fun onboarding() = shot("onboarding") { Box(Modifier.height(844.dp)) { app.waylink.ui.onboarding.Onboarding(freshState(), noop()) } }
+    @Test fun splash() = shot("splash") { Box(Modifier.height(844.dp)) { app.waylink.ui.components.Splash(1) {} } }
+    @Test fun loading() = shot("loading") { Box(Modifier.height(844.dp)) { app.waylink.ui.components.LoadingScreen("Loading your garage") } }
+    /** Other looks: the road progress style, Glow icons, every theme listed, Bluetooth frames on Route. */
+    @Test fun todayRoad() {
+        val alt = sample.copy(settings = sample.settings.copy(progress = "road", icons = "duo"))
+        captureRoboImage("build/shots/today-road.png") {
+            WaylinkTheme("auto", alt.settings.accent, progress = "road", icons = "duo") {
+                Box(Modifier.fillMaxSize().background(W.c.bg).grain()) { TodayScreen(alt, live, noop(), 80.dp) }
+            }
+        }
+    }
+    @Test fun settingsAll() {
+        val alt = sample.copy(settings = sample.settings.copy(allThemes = true, devFrames = true, font = "fraunces", bodyFont = "atkinson"))
+        captureRoboImage("build/shots/settings-allthemes.png") {
+            WaylinkTheme("obsidian", alt.settings.accent, "fraunces", "atkinson", icons = "fill") {
+                Box(Modifier.fillMaxSize().background(W.c.bg).grain()) { SettingsScreen(alt, live.copy(scenario = "edge"), noop(), 80.dp) }
+            }
+        }
+    }
+    @Test fun routeFrames() {
+        val alt = sample.copy(settings = sample.settings.copy(devFrames = true))
+        val frame = app.waylink.core.Protocol.tbtFrame(2, 350.0, 12_400.0, 4, 35, false, 0, "MG Road")
+        shot("route-frames", tab = Tab.ROUTE) { RouteScreen(alt, live.copy(lastFrame = "Turn" to frame, frameCount = 42), noop(), {}, 80.dp) }
+    }
     @Test fun profile() = shot("profile", tab = Tab.SETTINGS) { ProfileScreen(sample, {}, {}, {}, 80.dp) }
 }
