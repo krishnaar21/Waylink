@@ -2208,3 +2208,4 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .pc-cell.blood { min-width: 96px; }
 .pc-cell:not(.wide):not(.blood) .pc-v { display: block; -webkit-line-clamp: unset; }
 .pc-cell.wide .pc-v { -webkit-line-clamp: 4; }
+.pc-cell .pc-k svg { display: none; }
