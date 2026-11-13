@@ -96,4 +96,29 @@ class ScreenshotTest {
         shot("route-frames", tab = Tab.ROUTE) { RouteScreen(alt, live.copy(lastFrame = "Turn" to frame, frameCount = 42), noop(), {}, 80.dp) }
     }
     @Test fun profile() = shot("profile", tab = Tab.SETTINGS) { ProfileScreen(sample, {}, {}, {}, 80.dp) }
+
+    /** Developer preview states: a brand-new rider and the edge cases, for every tab, plus ride mode. */
+    private fun states(kind: String) {
+        val st = app.waylink.core.scenarioState(kind, sample)
+        val lv = live.copy(scenario = kind)
+        fun one(n: String, tab: Tab, body: @Composable () -> Unit) = captureRoboImage("build/shots/$kind-$n.png") {
+            WaylinkTheme("auto", st.settings.accent) {
+                Box(Modifier.fillMaxSize().background(W.c.bg).grain()) {
+                    body()
+                    TabBar(tab, st, lv, Modifier.align(Alignment.BottomCenter)) {}
+                }
+            }
+        }
+        one("today", Tab.TODAY) { TodayScreen(st, lv, noop(), 80.dp) }
+        one("route", Tab.ROUTE) { RouteScreen(st, lv, noop(), {}, 80.dp) }
+        one("rides", Tab.RIDES) { RidesScreen(st, lv, noop(), 80.dp) }
+        one("alerts", Tab.ALERTS) { AlertsScreen(st, lv, noop(), 80.dp) }
+        one("settings", Tab.SETTINGS) { SettingsScreen(st, lv, noop(), 80.dp) }
+        one("fuel", Tab.TODAY) { FuelScreen(st, noop(), 80.dp) }
+        one("logbook", Tab.TODAY) { LogbookScreen(st, noop(), 80.dp) }
+        one("profile", Tab.SETTINGS) { ProfileScreen(st, {}, {}, {}, 80.dp) }
+    }
+    @Test fun emptyStates() = states("empty")
+    @Test fun edgeStates() = states("edge")
+    @Test fun rideMode() = shot("ride-mode") { Box(Modifier.height(844.dp)) { app.waylink.ui.shell.RideMode(sample, live.copy(speed = 62, battery = 100)) {} } }
 }
