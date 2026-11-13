@@ -201,7 +201,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun sim(on: Boolean) = if (on) vm.simOn() else vm.simOff()
                     override fun soon(what: String) = vm.toast("$what comes in the next Android build.")
                 }, tabBarHeight)
-                Tab.ROUTE.key -> Placeholder("Route", "Turns on your bike", "Plan in Google Maps and your turns show on the cluster. On Android, Waylink will read Maps’ own turn alerts, which the web app can’t.", tabBarHeight)
+                Tab.ROUTE.key -> app.waylink.ui.route.RouteScreen(s, live, vm, openSheet, tabBarHeight)
                 Tab.RIDES.key -> RidesScreen(s, live, object : RidesActions {
                     override fun record() = startRec()
                     override fun endRide() = openSheet("rec-end")
@@ -250,6 +250,7 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
     fuelSheet(key, s, vm, nav)?.let { return it }
     rideSheet(key, s, live, vm, nav)?.let { return it }
     settingsSheet(key, s, live, vm, nav)?.let { return it }
+    app.waylink.ui.route.routeSheet(key, s, live, vm, nav)?.let { return it }
     val arg = key.substringAfter(':', "")
     return when (key.substringBefore(':')) {
         "garage" -> SheetSpec("Your bikes", "Garage") {

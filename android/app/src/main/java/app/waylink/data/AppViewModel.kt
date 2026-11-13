@@ -52,7 +52,19 @@ data class Live(
     /** A ride being recorded, or null. */
     val rec: Rec? = null,
     val gpsErr: Boolean = false,
+    /** Turn-by-turn in progress (rehearsal or one test turn), or null. */
+    val nav: Nav? = null,
+    val navSpeed: Int = 1,
+    /** The turn picked on "Test one turn". */
+    val turn: TurnTest = TurnTest(),
 )
+
+data class Nav(
+    val mode: String, val idx: Int, val maneuver: String, val stepMeters: Double, val totalMeters: Double,
+    val street: String, val say: String, val exit: Int, val eta: Long,
+)
+
+data class TurnTest(val maneuver: String = "TURN_RIGHT", val m: Int = 250, val exit: Int = 2, val street: String = "")
 
 /** A ride in progress: [pts] are [lat, lng, epoch ms]. */
 data class Rec(val start: Long, val km: Double = 0.0, val top: Int = 0, val pts: List<List<Double>> = emptyList())
@@ -388,6 +400,76 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun simOff() { _live.update { it.copy(link = LinkState.IDLE, simulated = false, engine = null) }; ensureGeo() }
+
+    // ---------- Route ----------
+    private var navJob: Job? = null
+
+    private fun etaFor(total: Double): Long {
+        val sp = _live.value.speed
+        val v = if (sp > 5) sp / 3.6 else 11.1
+        return System.currentTimeMillis() + (total / v * 1000).toLong()
+    }
+
+    fun startRehearsal() {
+        val st = app.waylink.core.Rehearsal.STEPS[0]
+        val total = app.waylink.core.Rehearsal.totalMeters
+        _live.update { it.copy(nav = Nav("rehearse", 0, st.maneuver, st.m, total, st.street, st.say, st.exit, etaFor(total)), navSpeed = 1) }
+        toast(if (_live.value.link == LinkState.CONNECTED) "Turns are streaming to your bike." else "Rehearsing on the phone. Link the bike to see it on the cluster.")
+        navJob?.cancel()
+        navJob = viewModelScope.launch {
+            var last = System.currentTimeMillis()
+            while (true) {
+                delay(250)
+                val now = System.currentTimeMillis()
+                val dt = (now - last) / 1000.0; last = now
+                val n = _live.value.nav ?: break
+                if (n.mode != "rehearse") break
+                val sp = _live.value.speed
+                val v = (if (sp > 5) sp / 3.6 else 11.1) * _live.value.navSpeed
+                val step = n.stepMeters - v * dt
+                val total = maxOf(0.0, n.totalMeters - v * dt)
+                if (step <= 0) nextTurn() else _live.update { it.copy(nav = n.copy(stepMeters = step, totalMeters = total, eta = etaFor(total))) }
+            }
+        }
+    }
+
+    fun nextTurn() {
+        val n = _live.value.nav ?: return
+        if (n.mode != "rehearse") return
+        val steps = app.waylink.core.Rehearsal.STEPS
+        val total = maxOf(0.0, n.totalMeters - maxOf(0.0, n.stepMeters))
+        val i = n.idx + 1
+        if (i >= steps.size) { endNav(); toast("You’ve arrived."); return }
+        val st = steps[i]
+        _live.update { it.copy(nav = n.copy(idx = i, maneuver = st.maneuver, stepMeters = st.m, totalMeters = total, street = st.street, say = st.say, exit = st.exit, eta = etaFor(total))) }
+    }
+
+    fun setNavSpeed(x: Int) = _live.update { it.copy(navSpeed = x.coerceIn(1, 16)) }
+
+    fun setTurn(t: TurnTest) = _live.update { it.copy(turn = t.copy(m = t.m.coerceIn(0, 3000), exit = t.exit.coerceIn(1, 7), street = t.street.take(31))) }
+
+    fun sendTurn() {
+        val t = _live.value.turn
+        val m = app.waylink.core.Maneuvers.of(t.maneuver)
+        val street = t.street.trim()
+        navJob?.cancel()
+        _live.update {
+            it.copy(nav = Nav(
+                "single", 0, t.maneuver, t.m.toDouble(), t.m + 1200.0, street, if (street.isNotEmpty()) "${m.label} · $street" else m.label,
+                if (m.glyph.startsWith("roundabout")) t.exit else 0, System.currentTimeMillis() + 6 * 60_000,
+            ))
+        }
+        if (_live.value.link != LinkState.CONNECTED) toast("Showing on the phone. Link the bike to see it on the cluster.")
+    }
+
+    /** Drags the single test turn's distance. */
+    fun setNavDistance(m: Double) {
+        val n = _live.value.nav ?: return
+        val d = m - n.stepMeters
+        _live.update { it.copy(nav = n.copy(stepMeters = m, totalMeters = maxOf(m, n.totalMeters + d))) }
+    }
+
+    fun endNav() { navJob?.cancel(); navJob = null; _live.update { it.copy(nav = null) } }
 
     // ---------- Settings ----------
     fun setTheme(key: String) = commit { it.copy(settings = it.settings.copy(theme = key)) }
