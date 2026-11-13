@@ -670,8 +670,7 @@ svg.faint { width: 16px; height: 16px; flex: none; color: var(--ink-3); }
 .themeopt .tp i { position: absolute; left: 14%; right: 14%; height: 18%; border-radius: 5px; background: var(--tcard); }
 .themeopt .tp i:first-child { top: 16%; } .themeopt .tp i:nth-child(2) { top: 40%; }
 .themeopt .tp b { position: absolute; left: 14%; bottom: 14%; width: 38%; height: 9%; border-radius: 4px; background: var(--accent); }
-.themeopt .tp.t-auto { background: linear-gradient(135deg, #EDEFF2 50%, #0E1013 50%); }
-.themeopt .tp.t-auto i { background: linear-gradient(135deg, #F9FAFB 50%, #23272D 50%); }
+
 .themeopt .nm { font-size: 13px; color: var(--ink-3); }
 .themeopt.on .tp { box-shadow: 0 0 0 2px var(--card), 0 0 0 3px var(--ink); }
 .themeopt.on .nm { color: var(--ink); font-weight: 600; }
@@ -1206,7 +1205,7 @@ html[data-brand="turns"] .splash-brand .wl-turns .slot { box-shadow: inset 0 0 0
 .fgauge .fg i { height: 5px; } .fgauge.thick .fg i { height: 6px; } .fgauge.sm .fg i { height: 4px; }
 /* Navy theme (was Black) */
 [data-theme="amoled"] { --bg: #0B1530; --card: #13203F; --sheet: #15234A; --raised: #1C2B55; --ink: #EAF0FF; --ink-2: #B9C4E2; --ink-3: #8794B8; --ink-4: #5B6890; --line: rgba(200,215,255,.1); --seg-off: #26365F; }
-.themeopt .tp.t-amoled { --tbg: #0B1530; }
+
 /* Live pill adapts to the theme: ink-on-paper in light, paper-on-ink in dark/navy */
 .live-pill { background: var(--ink); color: var(--bg); box-shadow: 0 8px 20px -10px rgba(0,0,0,.45), 0 0 0 1px color-mix(in srgb, var(--bg) 12%, transparent); }
 .live-pill .dot.x { background: var(--accent); }
@@ -1980,9 +1979,7 @@ html[data-theme="sketch"] .tabbar::after { display: none !important; }
 .rc-p { flex: 0 0 100%; scroll-snap-align: start; padding: 0 20px; box-sizing: border-box; min-width: 0; }
 .rc-name { font-size: 13px; font-weight: 600; color: var(--ink-3); margin-bottom: 10px; }
 .rc .hm { margin-top: 0; }
-.rc-dots { display: flex; justify-content: center; gap: 6px; margin-top: 14px; }
-.rc-dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--line); transition: width .25s, background .25s; }
-.rc-dots i.on { width: 18px; background: var(--ink-3); }
+
 .hm-col i.l4 { background: var(--accent); border-radius: 4px; transform: none; }
 .hm-col i.now { box-shadow: 0 0 0 1.5px var(--ink); }
 .rc-leg { display: flex; align-items: center; gap: 4px; justify-content: flex-end; margin-top: 10px; font-size: 11.5px; color: var(--ink-3); }
@@ -2006,7 +2003,7 @@ html[data-theme="sketch"] .tabbar::after { display: none !important; }
  
 
 .rc-grid { width: 28px; white-space: nowrap; } .rc-xl { margin-left: 36px; }
-.rc-tot { font-size: 13px; color: var(--ink-3); margin-bottom: 6px; } .rc-tot b { color: var(--ink); font-size: 15px; }
+ 
 
 /* Paper dark: the Paper theme by lamplight */
 html[data-theme="sketch"][data-night] {
@@ -2030,9 +2027,9 @@ html[data-theme="sketch"][data-night][data-accent="rust"] { --accent: #E46A48; }
 
  
  
-.rc-bub { width: 100%; height: 132px; display: block; overflow: visible; }
-.rc-bub .ax { stroke: var(--line); stroke-width: 1.5; } .rc-bub .tk { stroke: var(--line); stroke-dasharray: 2 4; }
-.rc-bub circle { fill: color-mix(in srgb, var(--accent) 55%, transparent); stroke: var(--card); stroke-width: 1.5; }
+
+ 
+
 html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 /* Calls & chats: an app icon on the left, a quiet Clear on the right */
 .ac-btns { display: flex !important; justify-content: space-between; align-items: center; }
@@ -2072,8 +2069,7 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .lk-street .lk-wave { left: 195px; top: 46px; width: 19px; height: 41px; }
 .lk-street .lk-wave path { stroke-width: 2.6; stroke-dasharray: 5 5; animation: lkDash .9s linear infinite; }
 @keyframes lkDash { to { stroke-dashoffset: -10; } }
-/* Ride charts: example fill when there's no data yet */
-.rc-dots { margin-top: 14px; }
+
 .rc-body { position: relative; }
 .rc.demo .rc-body > :not(.rc-demo), .rcopt-v.demo { opacity: .38; filter: saturate(.6); }
 .rc-demo { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: var(--card); color: var(--ink-2); font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; box-shadow: 0 0 0 1px var(--line); white-space: nowrap; }
@@ -2100,11 +2096,9 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .themeopt .tp i { left: 14%; right: 14%; height: 16%; border-radius: 6px; background: var(--tcard); box-shadow: 0 0 0 .5px rgba(0,0,0,.06); }
 .themeopt .tp i:first-child, .themeopt .tp i:nth-of-type(1) { top: 26%; } .themeopt .tp i:nth-of-type(2) { top: 47%; }
 .themeopt .tp b { left: 14%; bottom: 13%; width: 40%; height: 8%; border-radius: 99px; }
-.themeopt .tp.t-auto { background: #EEE7DA; }
-.themeopt .tp.t-auto em { position: absolute; inset: 0; background: #1E1B17; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
-.themeopt .tp.t-auto em::after { content: ""; position: absolute; right: 12%; bottom: 12%; width: 22%; aspect-ratio: 1; border-radius: 50%; box-shadow: inset -5px -3px 0 0 #EDE5D6; transform: rotate(-20deg); }
-.themeopt .tp.t-auto i { background: #F7F1E6; z-index: 0; } .themeopt .tp.t-auto u { background: #2A2620; }
-.themeopt .tp.t-auto b { z-index: 1; }
+
+ 
+
 .themeopt .nm { font-size: 14px; font-weight: 600; color: var(--ink-2); }
 .themeopt .tsub { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
 .themeopt.on .tp { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent) !important; }
@@ -2113,10 +2107,7 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .av-opt.on { box-shadow: 0 0 0 1.75px color-mix(in srgb, var(--accent) 65%, transparent); }
 /* About: one logo, one line */
 .about-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
-.themeopt .tp.t-auto em { z-index: 0; }
-.themeopt .tp.t-auto i, .themeopt .tp.t-auto u, .themeopt .tp.t-auto b { z-index: 1; }
-.themeopt .tp.t-auto i { background: rgba(255, 250, 240, .32); box-shadow: 0 0 0 .5px rgba(120, 105, 85, .25); }
-.themeopt .tp.t-auto u { background: #8C8273; }
+
 /* Support: the chosen amount reads clearly */
 .give-chips button.on { background: var(--ink); color: var(--bg); box-shadow: none; }
 /* Ride mode hint: one line */
@@ -2136,7 +2127,7 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .themeopt .tp u { top: 13%; height: 7%; } .themeopt .tp i:nth-of-type(1) { top: 30%; height: 17%; } .themeopt .tp i:nth-of-type(2) { top: 53%; height: 17%; }
 .themeopt .tp b { bottom: 10%; height: 9%; }
 .av-opt:not(.on) { transform: scale(.99); }
-.themeopt .tp.t-auto em::after { width: 15%; right: 7%; bottom: 8%; box-shadow: inset -4px -2px 0 0 #EDE5D6; }
+
 .av-opt:not(.on) { transform: scale(.9); }
 /* Photo option: its own surface (not the white avatar disc), so the camera and label read in both themes */
 .av-opt.av-photo { background: var(--raised); border: 1.5px dashed color-mix(in srgb, var(--ink) 45%, transparent); }
@@ -2145,3 +2136,10 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 /* Onboarding art: its top edge melts into the page instead of a hard line */
 .onb-stage .onb-img { -webkit-mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.35) 18%, #000 46%); mask-image: linear-gradient(to bottom, transparent 0, rgba(0,0,0,.35) 18%, #000 46%); }
 .lk-ring { border-color: var(--accent); }
+/* Ride charts: title row carries the legend; taller weekly bars; airier weekday rows */
+.rc-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.rc-head .rc-name { margin-bottom: 0; }
+.rc-head .rc-leg { margin-top: 0; }
+.rc-bars { height: 200px; }
+.rc-wk { gap: 15px; }
+.rc-wr div { height: 13px; }

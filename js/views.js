@@ -545,7 +545,7 @@ const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct
 const dayLab = (t) => new Date(t).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 // Fixed km bands, so one ride is shaded by its own distance rather than looking like a "best day".
 const band = (km) => (!km ? 0 : km < 15 ? 1 : km < 40 ? 2 : km < 80 ? 3 : 4);
-export const RC_NAMES = ['Calendar', 'Km per week', 'Km by weekday', 'Each ride'];
+export const RC_NAMES = ['Calendar', 'Km per week', 'Km by weekday'];
 // A sample riding pattern, drawn faintly when there's nothing real to show yet.
 function demoTrips(start, today) {
   const out = []; let seed = 7; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
@@ -571,7 +571,7 @@ export function ridePages(trips) {
     cols += `<div class="hm-col">${cells}</div>`;
   }
   const leg = `<div class="rc-leg"><span>0</span><i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i><span>80+ km a day</span></div>`;
-  const cal = `<div class="hm"><div class="hm-months">${months}</div><div class="hm-body"><div class="hm-days"><span>S</span><span></span><span>T</span><span></span><span>T</span><span></span><span>S</span></div><div class="hm-grid">${cols}</div></div>${leg}</div>`;
+  const cal = `<div class="hm"><div class="hm-months">${months}</div><div class="hm-body"><div class="hm-days"><span>S</span><span></span><span>T</span><span></span><span>T</span><span></span><span>S</span></div><div class="hm-grid">${cols}</div></div></div>`;
   // 2. Weekly bars: km per week, this week in the accent.
   const wks = Array.from({ length: 12 }, (_, w) => { const s0 = addDays(start, w * 7); let km = 0; for (let d = 0; d < 7; d++) km += kmBy[addDays(s0, d)] || 0; return { s0, km }; });
   const wMax = Math.max(1, ...wks.map((x) => x.km)), nice = wMax <= 20 ? 20 : wMax <= 50 ? 50 : Math.ceil(wMax / 100) * 100;
@@ -583,21 +583,14 @@ export function ridePages(trips) {
   for (const t of (demo ? trips : real)) { const g = new Date(t.start).getDay(); wd[g] += t.km; wn[g]++; }
   const wdMax = Math.max(1, ...wd), fav = wd.indexOf(Math.max(...wd)), WDN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const radial = `<div class="rc-wk">${[1, 2, 3, 4, 5, 6, 0].map((i) => `<div class="rc-wr${i === fav && wd[i] ? ' top' : ''}" title="${WDN[i]} · ${num(wd[i], 1)} km, ${plural(wn[i], 'ride', 'rides')}"><span>${WDN[i]}</span><div><i style="width:${wd[i] ? Math.max(4, (wd[i] / wdMax) * 100) : 0}%"></i></div><b>${wd[i] ? num(wd[i], wd[i] < 100 ? 1 : 0) : '–'}</b></div>`).join('')}</div>`;
-  // 4. Each ride: one bubble per ride along the 12 weeks, sized by distance.
-  const span = end - start, rr = trips.filter((t) => t.start >= start);
-  const kMax = Math.max(1, ...rr.map((t) => t.km));
-  const bub = rr.map((t, i) => { const bx = Math.min(300, Math.max(0, ((t.start - start) / span) * 300)), r = 3 + Math.sqrt(t.km / kMax) * 15, by = 60 + (i % 2 ? -1 : 1) * Math.min(14, r * .55);
-    return `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="${r.toFixed(1)}"><title>${dayLab(t.start)} · ${num(t.km, 1)} km</title></circle>`; }).join('');
-  const ticks = [0, 4, 8].map((w) => `<line class="tk" x1="${(w / 12) * 300}" x2="${(w / 12) * 300}" y1="20" y2="100"/>`).join('');
-  const each = `<div class="rc-tot"><b>${plural(rr.length, 'ride', 'rides')}</b> in 12 weeks · biggest ${num(rr.length ? Math.max(...rr.map((t) => t.km)) : 0, 1)} km</div><svg class="rc-bub" viewBox="-12 0 324 120">${ticks}<line class="ax" x1="0" x2="300" y1="60" y2="60"/>${bub}</svg><div class="rc-xl rc-xl3"><span>${new Date(start).getDate()} ${MON[new Date(start).getMonth()]}</span><span>${new Date(addDays(start, 28)).getDate()} ${MON[new Date(addDays(start, 28)).getMonth()]}</span><span>${new Date(addDays(start, 56)).getDate()} ${MON[new Date(addDays(start, 56)).getMonth()]}</span><span>Today</span></div>`;
-  return { pages: [cal, weekly, radial, each], demo };
+  return { pages: [cal, weekly, radial], demo, heads: [leg, '', ''] };
 }
-export const rideChartAt = (s) => Math.min(3, Math.max(0, +s.settings.rideChart || 0));
+export const rideChartAt = (s) => Math.min(RC_NAMES.length - 1, Math.max(0, +s.settings.rideChart || 0));
 // The rides card: swipe between the four; the one showing is remembered as the chosen style.
 export function rideCharts(s) {
-  const { pages, demo } = ridePages(s.trips), at = rideChartAt(s);
+  const { pages, demo, heads } = ridePages(s.trips), at = rideChartAt(s);
   const note = demo ? '<div class="rc-demo">An example. Your rides fill this in.</div>' : '';
-  return `<div class="rc${demo ? ' demo' : ''}" data-rc data-at="${at}">${pages.map((h, i) => `<section class="rc-p" aria-label="${RC_NAMES[i]}"><div class="rc-name">${RC_NAMES[i]}</div><div class="rc-body">${h}${note}</div></section>`).join('')}</div><div class="rc-dots">${RC_NAMES.map((n, i) => `<i class="${i === at ? 'on' : ''}" title="${n}"></i>`).join('')}</div>`;
+  return `<div class="rc${demo ? ' demo' : ''}" data-rc data-at="${at}">${pages.map((h, i) => `<section class="rc-p" aria-label="${RC_NAMES[i]}"><div class="rc-head"><div class="rc-name">${RC_NAMES[i]}</div>${heads[i]}</div><div class="rc-body">${h}${note}</div></section>`).join('')}</div>`;
 }
 
 export function trips(c) {
@@ -1123,9 +1116,9 @@ function sheetInner(c, key) {
         <div class="icoopts mt12">${icoHTML}</div>`;
     }
     case 'pick-ridechart': {
-      const { pages, demo } = ridePages(s.trips), cur = rideChartAt(s);
+      const { pages, demo, heads } = ridePages(s.trips), cur = rideChartAt(s);
       return `<div class="eyebrow">Appearance</div><h2>Ride chart</h2><p class="lead">How the Rides tab draws your riding. You can also swipe the chart there.${demo ? ' Shown with example rides until you have your own.' : ''}</p>
-        <div class="rcopts mt16">${pages.map((h, i) => `<button class="rcopt ${cur === i ? 'on' : ''}" data-act="ride-chart" data-arg="${i}" aria-pressed="${cur === i}"><div class="rcopt-t">${RC_NAMES[i]}</div><div class="rcopt-v${demo ? ' demo' : ''}" aria-hidden="true">${h}</div></button>`).join('')}</div>`;
+        <div class="rcopts mt16">${pages.map((h, i) => `<button class="rcopt ${cur === i ? 'on' : ''}" data-act="ride-chart" data-arg="${i}" aria-pressed="${cur === i}"><div class="rc-head rcopt-t"><span>${RC_NAMES[i]}</span>${heads[i]}</div><div class="rcopt-v${demo ? ' demo' : ''}" aria-hidden="true">${h}</div></button>`).join('')}</div>`;
     }
     case 'pick-progress': {
       const cur = s.settings.progress || 'gauge', was = PROGRESS;

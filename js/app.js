@@ -816,7 +816,7 @@ const A = {
     if (path === 'streetNames') link.sendStreetNames = s.settings.streetNames;
     buzz(6); commit(); if (sheetKey) refreshSheet();
   },
-  'ride-chart': (k) => { s.settings.rideChart = Math.min(3, Math.max(0, +k || 0)); SND.click(true); commit(); refreshSheet(); },
+  'ride-chart': (k) => { s.settings.rideChart = Math.min(V.RC_NAMES.length - 1, Math.max(0, +k || 0)); SND.click(true); commit(); refreshSheet(); },
   'progress-style': (k) => { s.settings.progress = V.PROGRESS_STYLES.some(([x]) => x === k) ? k : 'gauge'; SND.click(true); commit(); refreshSheet(); },
   brand: (k) => { s.settings.brand = V.BRANDS.some(([x]) => x === k) ? k : 'loop'; document.documentElement.dataset.brand = s.settings.brand; buzz(6); commit(); refreshSheet(); },
   'icon-style': (k) => { s.settings.icons = ['duo', 'fill'].includes(k) ? k : 'line'; SND.click(true); commit(); refreshSheet(); },
@@ -1262,7 +1262,7 @@ function registerUpdates() {
 document.addEventListener('scroll', (e) => {
   const el = e.target;
   if (el?.matches?.('[data-rc]')) {
-    const i = Math.round(el.scrollLeft / el.clientWidth); el.nextElementSibling?.querySelectorAll('i').forEach((d, k) => d.classList.toggle('on', k === i));
+    const i = Math.round(el.scrollLeft / el.clientWidth); 
     // Swiping picks the chart style too (same choice as Settings), saved once the swipe settles.
     clearTimeout(el._rcT); el._rcT = setTimeout(() => { if (s.settings.rideChart !== i) { s.settings.rideChart = i; S.save(s); } }, 400); return;
   }
