@@ -14,8 +14,19 @@ android {
         applicationId = "app.waylink"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
+        versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1)
         versionName = "0.1.0"
+    }
+
+    // A fixed debug key (Android's standard public debug credentials), so each preview build installs
+    // over the last one instead of asking to uninstall. Never use it for a store release.
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {

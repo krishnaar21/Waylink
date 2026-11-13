@@ -7,7 +7,7 @@ on:
     paths: ['android/**', '.github/workflows/android.yml']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write   # to publish the APK as a pre-release on pushes
 concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
@@ -33,3 +33,22 @@ jobs:
           name: waylink-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+      # Puts the APK on the Releases page so it can be installed straight from a phone.
+      # One rolling pre-release, "android-preview", always holds the latest build of a pushed branch.
+      - name: Publish the APK as a pre-release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          short=$(git rev-parse --short HEAD)
+          cp android/app/build/outputs/apk/debug/app-debug.apk waylink-debug.apk
+          notes="Debug build of the Android app from \`${GITHUB_REF_NAME}\` at ${short}, built $(date -u +'%d %b %Y %H:%M') UTC.
+
+          Install: open this page on your Android phone, tap **waylink-debug.apk**, and allow installs from your browser when asked.
+          New builds install over this one. It is a debug build signed with a shared test key, not a store release."
+          gh release delete android-preview --yes --cleanup-tag 2>/dev/null || true
+          gh release create android-preview waylink-debug.apk \
+            --prerelease --target "$GITHUB_SHA" \
+            --title "Android preview (${GITHUB_REF_NAME} · ${short})" --notes "$notes"
