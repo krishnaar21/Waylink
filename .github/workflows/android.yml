@@ -28,6 +28,10 @@ jobs:
         run: ./gradlew :core:test --stacktrace
       - name: Build the debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
+      # Pictures of each screen at the web app's phone size, for side-by-side checks against web-v0.
+      - name: Render screen pictures
+        continue-on-error: true
+        run: ./gradlew :app:recordRoborazziDebug --stacktrace && (cd app/build/shots && zip -q ../../../screens.zip *.png)
       - uses: actions/upload-artifact@v4
         with:
           name: waylink-debug-apk
@@ -49,6 +53,8 @@ jobs:
           Install: open this page on your Android phone, tap **waylink-debug.apk**, and allow installs from your browser when asked.
           New builds install over this one. It is a debug build signed with a shared test key, not a store release."
           gh release delete android-preview --yes --cleanup-tag 2>/dev/null || true
-          gh release create android-preview waylink-debug.apk \
+          files="waylink-debug.apk"
+          if [ -f android/screens.zip ]; then files="$files android/screens.zip"; fi
+          gh release create android-preview $files \
             --prerelease --target "$GITHUB_SHA" \
             --title "Android preview (${GITHUB_REF_NAME} · ${short})" --notes "$notes"

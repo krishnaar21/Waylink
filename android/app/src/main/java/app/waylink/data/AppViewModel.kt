@@ -81,7 +81,7 @@ data class Toast(val text: String, val id: Long = System.nanoTime())
  * Holds the app's state and saves it to a JSON file on this phone (same shape as the web app's
  * localStorage), with a short delay so quick taps write once.
  */
-class AppViewModel(app: Application) : AndroidViewModel(app) {
+class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.route.RouteActions {
     private val file = AtomicFile(File(app.filesDir, "waylink-state.json"))
     private val _state = MutableStateFlow(load())
     val state: StateFlow<AppState> = _state.asStateFlow()
@@ -108,7 +108,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun toast(text: String) = _live.update { it.copy(toast = Toast(text)) }
+    override fun toast(text: String) = _live.update { it.copy(toast = Toast(text)) }
     fun clearToast() = _live.update { it.copy(toast = null) }
 
     // ---------- Onboarding ----------
@@ -445,7 +445,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         return System.currentTimeMillis() + (total / v * 1000).toLong()
     }
 
-    fun startRehearsal() {
+    override fun startRehearsal() {
         val st = app.waylink.core.Rehearsal.STEPS[0]
         val total = app.waylink.core.Rehearsal.totalMeters
         _live.update { it.copy(nav = Nav("rehearse", 0, st.maneuver, st.m, total, st.street, st.say, st.exit, etaFor(total)), navSpeed = 1) }
@@ -468,7 +468,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun nextTurn() {
+    override fun nextTurn() {
         val n = _live.value.nav ?: return
         if (n.mode != "rehearse") return
         val steps = app.waylink.core.Rehearsal.STEPS
@@ -479,11 +479,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         _live.update { it.copy(nav = n.copy(idx = i, maneuver = st.maneuver, stepMeters = st.m, totalMeters = total, street = st.street, say = st.say, exit = st.exit, eta = etaFor(total))) }
     }
 
-    fun setNavSpeed(x: Int) = _live.update { it.copy(navSpeed = x.coerceIn(1, 16)) }
+    override fun setNavSpeed(x: Int) = _live.update { it.copy(navSpeed = x.coerceIn(1, 16)) }
 
     fun setTurn(t: TurnTest) = _live.update { it.copy(turn = t.copy(m = t.m.coerceIn(0, 3000), exit = t.exit.coerceIn(1, 7), street = t.street.take(31))) }
 
-    fun sendTurn() {
+    override fun sendTurn() {
         val t = _live.value.turn
         val m = app.waylink.core.Maneuvers.of(t.maneuver)
         val street = t.street.trim()
@@ -498,13 +498,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Drags the single test turn's distance. */
-    fun setNavDistance(m: Double) {
+    override fun setNavDistance(m: Double) {
         val n = _live.value.nav ?: return
         val d = m - n.stepMeters
         _live.update { it.copy(nav = n.copy(stepMeters = m, totalMeters = maxOf(m, n.totalMeters + d))) }
     }
 
-    fun endNav() { navJob?.cancel(); navJob = null; _live.update { it.copy(nav = null) } }
+    override fun endNav() { navJob?.cancel(); navJob = null; _live.update { it.copy(nav = null) } }
 
     // ---------- Parked bike ----------
     /** Saves where the phone is now as the bike's parking spot. Location permission is asked by the screen first. */
@@ -595,7 +595,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun setAccent(key: String) = commit { it.copy(settings = it.settings.copy(accent = key)) }
 
     /** Riding and sound switches by their web key. */
-    fun toggleSetting(key: String) = commit { s ->
+    override fun toggleSetting(key: String) = commit { s ->
         val st = s.settings
         s.copy(settings = when (key) {
             "autoRide" -> st.copy(autoRide = !st.autoRide)

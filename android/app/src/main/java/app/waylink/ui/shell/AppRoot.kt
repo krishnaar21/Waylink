@@ -325,7 +325,7 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
 }
 
 @Composable
-private fun TabBar(current: Tab, s: AppState, live: Live, modifier: Modifier, onTab: (Tab) -> Unit) {
+internal fun TabBar(current: Tab, s: AppState, live: Live, modifier: Modifier, onTab: (Tab) -> Unit) {
     val c = W.c
     val v = s.vehicle
     val needs = app.waylink.core.needsYou(v) > 0 || app.waylink.core.fuelStats(v).onReserve

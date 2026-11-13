@@ -81,15 +81,27 @@ import app.waylink.ui.theme.Serif
 import app.waylink.ui.theme.T
 import app.waylink.ui.theme.W
 
+/** What the Route tab can do. The view model implements it. */
+interface RouteActions {
+    fun toast(text: String)
+    fun toggleSetting(key: String)
+    fun startRehearsal()
+    fun sendTurn()
+    fun setNavSpeed(x: Int)
+    fun nextTurn()
+    fun setNavDistance(m: Double)
+    fun endNav()
+}
+
 /** The Route tab, a port of route() in web-v0/js/views.js. */
 @Composable
-fun RouteScreen(s: AppState, live: Live, vm: AppViewModel, openSheet: (String) -> Unit, bottom: Dp) {
+fun RouteScreen(s: AppState, live: Live, vm: RouteActions, openSheet: (String) -> Unit, bottom: Dp) {
     val n = live.nav
     if (n != null) EnRoute(s, live, n, vm, bottom) else Planner(s, live, vm, openSheet, bottom)
 }
 
 @Composable
-private fun Planner(s: AppState, live: Live, vm: AppViewModel, openSheet: (String) -> Unit, bottom: Dp) {
+private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (String) -> Unit, bottom: Dp) {
     val c = W.c
     val ctx = LocalContext.current
     val f = remember(s.country.locale) { Fmt(s.country.locale) }
@@ -182,7 +194,7 @@ private fun Planner(s: AppState, live: Live, vm: AppViewModel, openSheet: (Strin
 }
 
 @Composable
-private fun EnRoute(s: AppState, live: Live, n: Nav, vm: AppViewModel, bottom: Dp) {
+private fun EnRoute(s: AppState, live: Live, n: Nav, vm: RouteActions, bottom: Dp) {
     val c = W.c
     val f = remember(s.country.locale) { Fmt(s.country.locale) }
     val man = Maneuvers.of(n.maneuver)
