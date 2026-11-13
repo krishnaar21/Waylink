@@ -1,6 +1,13 @@
 package app.waylink.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,6 +54,7 @@ fun Field(label: String, modifier: Modifier = Modifier, content: @Composable () 
 }
 
 /** .input: 52 tall, 16 radius, raised paper with a hairline ring that darkens on focus. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Input(
     value: String,
@@ -65,6 +73,10 @@ fun Input(
     val c = W.c
     var focused by remember { mutableStateOf(false) }
     val shape = RoundedCornerShape(16.dp)
+    // Keep the field above the keyboard: when it gains focus, and again once the keyboard has opened.
+    val inView = remember { BringIntoViewRequester() }
+    val ime = WindowInsets.ime.getBottom(LocalDensity.current)
+    LaunchedEffect(focused, ime) { if (focused) { kotlinx.coroutines.delay(60); inView.bringIntoView() } }
     BasicTextField(
         value = value,
         onValueChange = { onChange(it.take(maxLength)) },
@@ -73,7 +85,7 @@ fun Input(
         cursorBrush = SolidColor(c.accent),
         keyboardOptions = KeyboardOptions(capitalization = caps, keyboardType = keyboard, imeAction = if (multiline) ImeAction.Default else imeAction),
         keyboardActions = if (onDone != null) KeyboardActions(onDone = { onDone() }) else KeyboardActions.Default,
-        modifier = modifier.fillMaxWidth().then(if (multiline) Modifier.heightIn(min = 96.dp) else Modifier.height(52.dp)).onFocusChanged { focused = it.isFocused }.semantics { contentDescription = label },
+        modifier = modifier.fillMaxWidth().bringIntoViewRequester(inView).then(if (multiline) Modifier.heightIn(min = 96.dp) else Modifier.height(52.dp)).onFocusChanged { focused = it.isFocused }.semantics { contentDescription = label },
         decorationBox = { inner ->
             Row(
                 Modifier.fillMaxWidth().then(if (multiline) Modifier.heightIn(min = 96.dp) else Modifier.height(52.dp)).clip(shape).background(c.raised)

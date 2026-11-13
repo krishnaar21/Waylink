@@ -190,7 +190,17 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun weather() = vm.refreshWeather()
                     override fun readingsHelp() = openSheet("help:readings")
                 }, tabBarHeight)
-                Tab.SETTINGS.key -> SettingsScreen(s, vm, tabBarHeight)
+                "profile" -> ProfileScreen(s, back = { page = null }, sheet = openSheet, help = { openSheet("help:$it") }, bottom = tabBarHeight)
+                Tab.SETTINGS.key -> SettingsScreen(s, live, object : SettingsActions {
+                    override fun sheet(key: String) = openSheet(key)
+                    override fun page(key: String) { page = key }
+                    override fun help(key: String) = openSheet("help:$key")
+                    override fun toggle(key: String) = vm.toggleSetting(key)
+                    override fun theme(key: String) = vm.setTheme(key)
+                    override fun accent(key: String) = vm.setAccent(key)
+                    override fun sim(on: Boolean) = if (on) vm.simOn() else vm.simOff()
+                    override fun soon(what: String) = vm.toast("$what comes in the next Android build.")
+                }, tabBarHeight)
                 Tab.ROUTE.key -> Placeholder("Route", "Turns on your bike", "Plan in Google Maps and your turns show on the cluster. On Android, Waylink will read Maps’ own turn alerts, which the web app can’t.", tabBarHeight)
                 Tab.RIDES.key -> RidesScreen(s, live, object : RidesActions {
                     override fun record() = startRec()
@@ -239,10 +249,11 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
     logbookSheet(key, s, vm, nav)?.let { return it }
     fuelSheet(key, s, vm, nav)?.let { return it }
     rideSheet(key, s, live, vm, nav)?.let { return it }
+    settingsSheet(key, s, live, vm, nav)?.let { return it }
     val arg = key.substringAfter(':', "")
     return when (key.substringBefore(':')) {
         "garage" -> SheetSpec("Your bikes", "Garage") {
-            GarageList(s, onPick = { vm.switchVehicle(it); nav.close() }, onAdd = { vm.toast("Adding a vehicle comes in the next Android build.") })
+            GarageList(s, onPick = { vm.switchVehicle(it); nav.close() }, onAdd = { nav.open("vehicle:new") })
         }
         "pair" -> SheetSpec("Link your bike", "Bluetooth") {
             PairSheet(live, onSim = { vm.simOn(); nav.close() }, onSimOff = { vm.simOff(); nav.close() })

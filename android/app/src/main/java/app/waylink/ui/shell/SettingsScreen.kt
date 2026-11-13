@@ -1,5 +1,7 @@
 package app.waylink.ui.shell
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -7,132 +9,314 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.waylink.core.AppState
-import app.waylink.data.AppViewModel
+import app.waylink.core.Catalog
+import app.waylink.core.Fmt
+import app.waylink.core.modelName
+import app.waylink.core.needsYou
+import app.waylink.core.shortName
+import app.waylink.core.vehicleTitle
+import app.waylink.data.LinkState
+import app.waylink.data.Live
 import app.waylink.ui.components.Avatar
-import app.waylink.ui.components.Btn
-import app.waylink.ui.components.BtnKind
+import app.waylink.ui.components.BikeArt
+import app.waylink.ui.components.CircleBtn
+import app.waylink.ui.components.Hairline
 import app.waylink.ui.components.Ic
+import app.waylink.ui.components.ListCard
+import app.waylink.ui.components.ListRow
+import app.waylink.ui.components.Page
+import app.waylink.ui.components.PageHead
+import app.waylink.ui.components.SectionGap
 import app.waylink.ui.components.SectionHead
+import app.waylink.ui.components.Switch
 import app.waylink.ui.components.Txt
 import app.waylink.ui.components.card
 import app.waylink.ui.components.pressable
 import app.waylink.ui.theme.Accent
+import app.waylink.ui.theme.Serif
 import app.waylink.ui.theme.T
 import app.waylink.ui.theme.W
 
-/** A first slice of Settings: profile header, look (theme and accent), and erasing data. The rest follows. */
-@Composable
-fun SettingsScreen(s: AppState, vm: AppViewModel, bottom: Dp) {
-    val c = W.c
-    var confirm by remember { mutableStateOf(false) }
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-            .windowInsetsPadding(WindowInsets.statusBars).windowInsetsPadding(WindowInsets.navigationBars)
-            .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = bottom + 24.dp),
-    ) {
-        Txt("Settings", T.title, c.ink)
-        Spacer(Modifier.height(3.dp))
-        Txt("Profile, bikes and look", T.subtitle, c.ink3)
-        Spacer(Modifier.height(18.dp))
+/** What Settings can do. Sheet keys follow the web app ("vehicle:<id>", "specs", "backup"). */
+interface SettingsActions {
+    fun sheet(key: String)
+    fun page(key: String)
+    fun help(key: String)
+    fun toggle(key: String)
+    fun theme(key: String)
+    fun accent(key: String)
+    fun sim(on: Boolean)
+    fun soon(what: String)
+}
 
-        Row(Modifier.fillMaxWidth().card(20.dp).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Avatar(s.profile.avatar)
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Txt(s.profile.name.ifBlank { "Rider" }, T.cardTitle, c.ink, maxLines = 1)
-                Txt("Rider profile", T.row, c.ink3)
+val RIDE_CHARTS = listOf("Calendar", "Km per week", "Km by weekday")
+
+/** Bluetooth state in a word, as on the vehicle card. */
+fun connText(s: AppState, live: Live) = when {
+    live.link == LinkState.CONNECTED -> if (live.simulated) "Simulated" else "Connected"
+    s.vehicle.bike.id != null -> "Paired"
+    else -> "Not paired"
+}
+
+/** The Settings tab, a port of settings() in web-v0/js/views.js. */
+@Composable
+fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp) {
+    val c = W.c
+    val f = remember(s.country.locale) { Fmt(s.country.locale) }
+    val v = s.vehicle
+    val st = s.settings
+    val conn = connText(s, live)
+    Page(bottom) {
+        PageHead("Settings", "Profile, bikes and look")
+        ProfileCard(s) { act.page("profile") }
+
+        SectionGap()
+        SectionHead("Garage", right = { if (s.vehicles.size > 1) Txt("Switch", T.link, c.ink2, Modifier.pressable(label = "Switch vehicle") { act.sheet("garage") }) })
+        Column(Modifier.fillMaxWidth().card(20.dp)) {
+            Box {
+                Row(
+                    Modifier.fillMaxWidth().pressable(label = "Switch vehicle") { act.sheet("garage") }.padding(start = 12.dp, end = 64.dp, top = 12.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    BikeArt(Modifier.size(width = 112.dp, height = 76.dp), 14.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Txt(vehicleTitle(s), Serif.copy(fontSize = 19.sp, lineHeight = 24.sp), c.ink, maxLines = 1)
+                        Txt((if (v.nickname.isNotBlank()) modelName(s, s.model) + " · " else "") + v.plate.ifBlank { "No plate" }, T.row, c.ink2, maxLines = 1)
+                        Spacer(Modifier.height(8.dp))
+                        Txt("${f.short(v.odo)} km · $conn", T.eyebrow, c.ink3, maxLines = 1)
+                    }
+                }
+                CircleBtn("edit", "Edit vehicle", { act.sheet("vehicle:${v.id}") }, Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 12.dp), size = 38.dp)
             }
+            Hairline()
+            ListRow("Spec sheet", "Oil, tyres, chain, plugs", icon = "spec", onClick = { act.sheet("specs") })
+            Hairline(16.dp)
+            ListRow("Odometer", "Correct it if it drifts", icon = "gauge", end = "${f.num(Math.floor(v.odo))} km", onClick = { act.sheet("odo") })
+            Hairline(16.dp)
+            ListRow("Bluetooth", "Pair and check the link", icon = "bt", end = conn, onClick = { act.sheet("pair") })
         }
 
-        Spacer(Modifier.height(30.dp))
+        // Support card: a soft accent row.
+        Spacer(Modifier.height(16.dp))
+        Row(
+            Modifier.fillMaxWidth().card(20.dp).pressable(label = "Support Waylink") { act.sheet("support") }.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(c.accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
+                Ic("love", size = 19.dp, tint = c.accent)
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Txt("Support Waylink", T.rowTitle, c.ink)
+                Txt("Chip in if it helps", T.row, c.ink3)
+            }
+            Ic("chev", size = 15.dp, tint = c.ink3)
+        }
+
+        SectionGap()
+        SectionHead("Records & safety", help = { act.help("papers") })
+        ListCard {
+            val due = needsYou(v)
+            ListRow("Logbook", "Reminders and visits", icon = "wrench", end = if (due > 0) "$due due" else "All good", onClick = { act.page("logbook") })
+            Hairline(66.dp)
+            ListRow("Fuel", "Fill-ups and petrol price", icon = "fuel", end = "${v.fuel.size} fills", onClick = { act.page("fuel") })
+            Hairline(66.dp)
+            ListRow("Digital glovebox", "RC, insurance, PUC, licence", icon = "folder", end = "Soon", onClick = { act.soon("The glovebox") })
+            Hairline(66.dp)
+            val park = v.parking
+            ListRow("Parked bike", "Find your way back to it", icon = "pin", end = if (park != null) f.ago(park.ts) else "Not saved", onClick = { act.soon("Parked bike") })
+        }
+
+        SectionGap()
+        SectionHead("Riding", help = { act.help("riding") })
+        ListCard {
+            ListRow("Open ride mode by itself", "Above 15 km/h", icon = "speed", trailing = { Switch(st.autoRide, "Open ride mode by itself", { act.toggle("autoRide") }) })
+            Hairline(66.dp)
+            ListRow("Record rides by themselves", "When the bike links", icon = "route", trailing = { Switch(st.autoRecord, "Record rides by themselves", { act.toggle("autoRecord") }) })
+            Hairline(66.dp)
+            ListRow("Keep the screen on", "While in ride mode", icon = "sparkles", trailing = { Switch(st.wakeLock, "Keep the screen on", { act.toggle("wakeLock") }) })
+            Hairline(66.dp)
+            ListRow("Street names on the bike", "Road name beside the arrow", icon = "eye", trailing = { Switch(st.streetNames, "Street names on the bike", { act.toggle("streetNames") }) })
+        }
+
+        SectionGap()
         SectionHead("Look")
-        Column(Modifier.fillMaxWidth().card(20.dp).padding(16.dp)) {
-            Txt("Theme", T.eyebrow, c.ink3)
-            Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(
-                    Triple("auto", "Auto", listOf(Color(0xFFEEE7DA), Color(0xFF1E1B17))),
-                    Triple("sketch", "Paper", listOf(Color(0xFFEEE7DA), Color(0xFFEEE7DA))),
-                    Triple("sketchdark", "Paper dark", listOf(Color(0xFF1E1B17), Color(0xFF1E1B17))),
-                ).forEach { (key, label, sw) ->
-                    val on = s.settings.theme == key
-                    Column(
-                        Modifier.weight(1f).semantics { selected = on }.pressable(label = label, role = Role.RadioButton) { vm.setTheme(key) },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Row(
-                            Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(14.dp))
-                                .border(if (on) 2.dp else 1.dp, if (on) c.ink else c.line, RoundedCornerShape(14.dp)),
-                        ) { sw.forEach { Box(Modifier.weight(1f).fillMaxSize().background(it)) } }
-                        Spacer(Modifier.height(6.dp))
-                        Txt(label, T.rowSub, if (on) c.ink else c.ink3)
+        LookCard(s, act)
+
+        SectionGap()
+        SectionHead("Data & region", help = { act.help("backup") })
+        ListCard {
+            ListRow("Country", "Currency and SOS", icon = "globe", end = s.country.name, onClick = { act.sheet("country") })
+            Hairline(66.dp)
+            ListRow("Backup & restore", "Save, move or bring back your data", icon = "down", onClick = { act.sheet("backup") })
+            Hairline(66.dp)
+            ListRow(if (s.sample) "Erase sample data" else "Erase everything", icon = "trash", danger = true, onClick = { act.sheet("erase") })
+            Hairline(66.dp)
+            ListRow("Reset the app", "Like a fresh install", icon = "refresh", danger = true, onClick = { act.sheet("reset") })
+        }
+
+        SectionGap()
+        SectionHead("Help & about")
+        ListCard {
+            ListRow("Questions and answers", "Pairing, fuel, weather, privacy", icon = "info", onClick = { act.sheet("faq") })
+            Hairline(66.dp)
+            ListRow("Report a problem", "Copy your app details and tell us", icon = "flag", onClick = { act.sheet("report") })
+            Hairline(66.dp)
+            ListRow("About Waylink", "Version $APP_VERSION, credits and licences", icon = "heart", onClick = { act.sheet("about") })
+        }
+
+        SectionGap()
+        SectionHead("Developer", help = { act.help("developer") })
+        ListCard {
+            val simOn = live.simulated && live.link == LinkState.CONNECTED
+            ListRow("Simulated bike", "Try it all without a bike", icon = "bolt", trailing = { Switch(simOn, "Simulated bike", { act.sim(!simOn) }) })
+        }
+
+        Spacer(Modifier.height(36.dp))
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Txt("waylink", T.title.copy(fontSize = 24.sp), c.ink2)
+            Spacer(Modifier.height(6.dp))
+            Txt("Version $APP_VERSION · MIT licence", T.rowSub, c.ink3)
+            Spacer(Modifier.height(4.dp))
+            Txt("Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.", T.rowSub.copy(textAlign = TextAlign.Center), c.ink4)
+        }
+    }
+}
+
+const val APP_VERSION = "1.0"
+
+/** The profile card: avatar, name, and the emergency info folded underneath. */
+@Composable
+private fun ProfileCard(s: AppState, onOpen: () -> Unit) {
+    val c = W.c
+    val p = s.profile
+    val rows = listOfNotNull(
+        p.blood.takeIf { it.isNotBlank() }?.let { Triple("drop", "Blood", it) },
+        p.iceName.takeIf { it.isNotBlank() }?.let { Triple("phone", "Emergency contact", it) },
+        p.medical.takeIf { it.isNotBlank() }?.let { Triple("hospital", "Medical notes", it) },
+    )
+    var open by rememberSaveable { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().card(20.dp)) {
+        Row(Modifier.fillMaxWidth().pressable(label = "Your profile", onClick = onOpen).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Avatar(p.avatar)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Txt(shortName(p.name).ifEmpty { "Add your name" }, Serif, c.ink, maxLines = 1)
+                Txt(if (rows.isNotEmpty()) "Rider profile" else "Licence, blood group, emergency contact", T.row, c.ink3, maxLines = 1)
+            }
+            Ic("chev", size = 15.dp, tint = c.ink3)
+        }
+        if (rows.isNotEmpty()) {
+            val sum = listOfNotNull(
+                p.blood.takeIf { it.isNotBlank() }?.let { "Blood $it" },
+                "ICE".takeIf { p.iceName.isNotBlank() },
+                "Medical".takeIf { p.medical.isNotBlank() },
+            ).joinToString(" · ")
+            val turn by animateFloatAsState(if (open) 90f else 0f, label = "pc")
+            Hairline()
+            Row(
+                Modifier.fillMaxWidth().pressable(label = "Emergency info") { open = !open }.padding(horizontal = 16.dp, vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Ic("shield", size = 17.dp, tint = c.ink2)
+                Spacer(Modifier.width(10.dp))
+                Txt("Emergency info", T.row.copy(fontSize = 14.5.sp), c.ink)
+                Spacer(Modifier.width(8.dp))
+                Txt(sum, T.rowSub, c.ink3, Modifier.weight(1f), maxLines = 1)
+                Ic("chev", Modifier.rotate(turn), size = 14.dp, tint = c.ink3)
+            }
+            AnimatedVisibility(open) {
+                Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+                    rows.forEachIndexed { i, (ic, k, value) ->
+                        if (i > 0) Spacer(Modifier.height(8.dp))
+                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(c.raised).padding(horizontal = 14.dp, vertical = 10.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Ic(ic, size = 14.dp, tint = c.ink3)
+                                Spacer(Modifier.width(6.dp))
+                                Txt(k, T.rowSub, c.ink3)
+                            }
+                            Spacer(Modifier.height(2.dp))
+                            Txt(value, T.body.copy(fontSize = 15.sp), c.ink)
+                        }
                     }
                 }
             }
-            Spacer(Modifier.height(18.dp))
+        }
+    }
+}
+
+/** Themes, accents and the ride chart. */
+@Composable
+private fun LookCard(s: AppState, act: SettingsActions) {
+    val c = W.c
+    Column(Modifier.fillMaxWidth().card(20.dp)) {
+        Column(Modifier.padding(16.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    Triple("auto", "Auto", "Follows phone"),
+                    Triple("sketch", "Paper", "Light"),
+                    Triple("sketchdark", "Paper dark", "Dark"),
+                ).forEach { (key, label, sub) ->
+                    val on = s.settings.theme == key
+                    val sw = when (key) { "auto" -> listOf(Color(0xFFEEE7DA), Color(0xFF1E1B17)); "sketch" -> listOf(Color(0xFFEEE7DA)); else -> listOf(Color(0xFF1E1B17)) }
+                    Column(
+                        Modifier.weight(1f).semantics { selected = on }.pressable(label = label, role = Role.RadioButton) { act.theme(key) },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth().height(64.dp).clip(RoundedCornerShape(14.dp))
+                                .border(if (on) 2.dp else 1.dp, if (on) c.ink else c.line, RoundedCornerShape(14.dp)),
+                        ) { sw.forEach { Box(Modifier.weight(1f).fillMaxSize().background(it)) } }
+                        Spacer(Modifier.height(6.dp))
+                        Txt(label, T.rowSub.copy(fontSize = 13.5.sp), if (on) c.ink else c.ink2)
+                        Txt(sub, T.rowSub.copy(fontSize = 12.sp), c.ink4)
+                    }
+                }
+            }
+            Spacer(Modifier.height(22.dp))
             Txt("Accent", T.eyebrow, c.ink3)
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Accent.entries.forEach { a ->
                     val on = s.settings.accent == a.key
                     val col = if (c.dark) a.dark else a.light
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.semantics { selected = on }.pressable(label = a.label, role = Role.RadioButton) { vm.setAccent(a.key) }) {
-                        Box(
-                            Modifier.size(38.dp).then(if (on) Modifier.border(2.dp, col, CircleShape) else Modifier).padding(4.dp).clip(CircleShape).background(col),
-                            contentAlignment = Alignment.Center,
-                        ) { if (on) Ic("check", size = 14.dp, tint = Color.White) }
-                        Spacer(Modifier.height(6.dp))
-                        Txt(a.label, T.rowSub, if (on) c.ink else c.ink3)
-                    }
+                    Box(
+                        Modifier.size(40.dp).semantics { selected = on }.pressable(label = a.label, role = Role.RadioButton) { act.accent(a.key) }
+                            .then(if (on) Modifier.border(2.dp, col, CircleShape) else Modifier).padding(5.dp).clip(CircleShape).background(col),
+                        contentAlignment = Alignment.Center,
+                    ) { if (on) Ic("check", size = 14.dp, tint = Color.White) }
                 }
             }
         }
-
-        Spacer(Modifier.height(30.dp))
-        SectionHead("Data")
-        Column(Modifier.fillMaxWidth().card(20.dp).padding(16.dp)) {
-            Txt(
-                if (s.sample) "You’re looking at sample data. Erase it to set up your own bike." else "Everything lives on this phone only. Backup and restore arrive in the next build.",
-                T.lead, c.ink2,
-            )
-            Spacer(Modifier.height(14.dp))
-            if (!confirm) Btn(if (s.sample) "Erase sample data" else "Erase all data", { confirm = true }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "trash")
-            else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Btn("Cancel", { confirm = false }, Modifier.weight(1f), kind = BtnKind.LINE)
-                Btn("Erase", { confirm = false; vm.eraseAll() }, Modifier.weight(1f), kind = BtnKind.ACCENT)
-            }
-        }
-
-        Spacer(Modifier.height(30.dp))
-        Txt("Waylink for Android · 0.1 preview. The web app (v0) is the design reference.", T.note, c.ink3)
+        Hairline()
+        ListRow("Ride chart", icon = "trips", end = RIDE_CHARTS[s.settings.rideChart.coerceIn(0, 2)], onClick = { act.sheet("pick-ridechart") })
     }
 }

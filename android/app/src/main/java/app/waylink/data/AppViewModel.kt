@@ -394,12 +394,96 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun setRideChart(i: Int) = commit { it.copy(settings = it.settings.copy(rideChart = i.coerceIn(0, 2))) }
     fun setAccent(key: String) = commit { it.copy(settings = it.settings.copy(accent = key)) }
 
+    /** Riding and sound switches by their web key. */
+    fun toggleSetting(key: String) = commit { s ->
+        val st = s.settings
+        s.copy(settings = when (key) {
+            "autoRide" -> st.copy(autoRide = !st.autoRide)
+            "autoRecord" -> st.copy(autoRecord = !st.autoRecord)
+            "wakeLock" -> st.copy(wakeLock = !st.wakeLock)
+            "streetNames" -> st.copy(streetNames = !st.streetNames)
+            "sounds" -> st.copy(sounds = !st.sounds)
+            else -> st
+        })
+    }
+
+    fun setCountry(code: String) {
+        val co = Catalog.country(code)
+        commit { it.copy(profile = it.profile.copy(country = co.code)) }
+        toast("Country set to ${co.name}.")
+    }
+
+    // ---------- Profile ----------
+    fun setAvatar(key: String) { if (Regex("^a([1-9]|1[01])$").matches(key)) commit { it.copy(profile = it.profile.copy(avatar = key, photo = null)) } }
+
+    fun saveProfileAbout(name: String, phone: String, email: String, city: String) {
+        val oldCity = _state.value.profile.city
+        commit { it.copy(profile = it.profile.copy(name = name.trim().take(30), phone = phone.trim().take(20), email = email.trim().take(60), city = city.trim().take(24))) }
+        if (city.trim() != oldCity) refreshWeather()
+    }
+
+    fun saveLicence(no: String, expiry: Long?) =
+        commit { it.copy(profile = it.profile.copy(licenceNo = no.trim().uppercase().take(20), licenceExpiry = expiry)) }
+
+    fun saveMedical(blood: String, medical: String, iceName: String, icePhone: String) = commit {
+        it.copy(profile = it.profile.copy(
+            blood = blood.takeIf { b -> b in Catalog.BLOOD_GROUPS } ?: "", medical = medical.trim().take(240),
+            iceName = iceName.trim().take(30), icePhone = icePhone.trim().take(20),
+        ))
+    }
+
+    // ---------- Vehicles ----------
+    /** Adds a vehicle ([id] null) or edits one. Returns an error to show, or null. */
+    fun saveVehicle(id: String?, model: String, nickname: String, plate: String, odo: Double?, colour: String): String? {
+        if (odo == null || odo < 0 || odo >= 1_000_000) return "Enter the odometer in km."
+        val m = Catalog.model(model).id
+        val col = Catalog.COLOURS.firstOrNull { it.first == colour }?.first ?: Catalog.COLOURS[0].first
+        val nick = nickname.trim().take(20)
+        val pl = plate.trim().uppercase().take(13)
+        if (id == null) {
+            val v = newVehicle(model = m, nickname = nick, plate = pl, odo = odo, colour = col)
+            commit { it.copy(vehicles = it.vehicles + v, active = v.id) }
+            toast("Added to your garage.")
+        } else {
+            commit { s -> s.updateVehicle(id) { it.copy(model = m, nickname = nick, plate = pl, odo = Math.round(odo * 10) / 10.0, colour = col) } }
+            toast("Saved.")
+        }
+        return null
+    }
+
+    fun deleteVehicle(id: String) {
+        val s = _state.value
+        if (s.vehicles.size < 2 || s.vehicles.none { it.id == id }) return
+        commit { st -> val rest = st.vehicles.filter { it.id != id }; st.copy(vehicles = rest, active = if (st.active == id) rest.first().id else st.active) }
+        toast("Removed from your garage.")
+    }
+
+    // ---------- Backup ----------
+    fun backupText(): String = Vault.export(_state.value)
+
+    /** Replaces everything with a backup. Returns false (and says why) when it isn't one. */
+    fun restore(text: String): Boolean = try {
+        val s = Vault.import(text)
+        simOff()
+        commit { s }
+        toast("Restored ${app.waylink.core.plural(s.vehicles.size, "bike", "bikes")} from your backup.")
+        refreshWeather()
+        true
+    } catch (e: Vault.NotABackup) { toast(e.message ?: "That isn’t a backup."); false }
+
     /** Wipes everything on this phone and returns to onboarding. */
     fun eraseAll() {
         simOff()
         commit { s -> freshState().copy(settings = s.settings) }
         toast("Erased. Waylink starts fresh.")
     }
+
+    /** Like a fresh install: data and every setting go. */
+    fun resetAll() {
+        simOff()
+        commit { freshState() }
+    }
+
 
     // ---------- Weather ----------
     fun refreshWeather() {
