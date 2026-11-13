@@ -341,7 +341,7 @@ export const previewBar = (live) => `<div class="preview-bar">${icon('flask')}<s
 // Ride in progress, as the row inside the Today bike card.
 function recRow(live) {
   const r = live.rec;
-  return `<div class="bc-conn conn-compact rec-row"><button class="cc-main" data-act="go" data-arg="trips"><span class="cc-ic rec"><span class="dot x pulse"></span>${icon('trips')}</span><span class="cc-tx"><span class="cc-t">Ride in progress</span><span class="cc-s"><span data-live="rec-km">${num(r.km, 2)}</span> km · <span data-live="rec-time">${clock((Date.now() - r.start) / 1000)}</span> · <span data-live="speed">${num(live.speed)}</span> km/h</span></span></button><button class="btn sm cc-act" data-act="sheet" data-arg="rec-end" style="background:var(--accent);color:var(--on-accent)">${icon('stop')}End</button></div>`;
+  return `<div class="bc-conn conn-compact rec-row"><button class="cc-main" data-act="go" data-arg="trips"><span class="cc-ic rec"><span class="dot x pulse"></span>${icon('trips')}</span><span class="cc-tx"><span class="cc-t">Ride in progress</span><span class="cc-s"><span data-live="rec-km">${num(r.km, 2)}</span> km · <span data-live="rec-time">${clock((Date.now() - r.start) / 1000)}</span> · <span data-live="speed">${num(live.speed)}</span> km/h</span></span></button><button class="btn sm cc-act" data-act="ride" style="background:var(--accent);color:var(--on-accent)">${icon('speed')}Ride mode</button></div>`;
 }
 function tile(to, name, dot, status, bar) {
   const ic = { fuel: 'fuel', logbook: 'wrench', trips: 'trips', glovebox: 'folder' }[to];
@@ -607,7 +607,7 @@ export function trips(c) {
   ${r ? `<div class="card rec-card mt20"><div class="flex between"><span class="tag x"><span class="dot x pulse"></span>Recording</span><span class="mono small faint" data-live="rec-time">${clock((Date.now() - r.start) / 1000)}</span></div>
       <div class="serif mt12" style="font-size:24px">Today’s ride, in progress.</div>
       <div class="flex gap12 mt12" style="align-items:baseline"><span class="big"><span data-live="rec-km">${num(r.km, 2)}</span><span class="unit">km</span></span><span class="small muted"><span data-live="speed">${num(live.speed)}</span> km/h now · top <span data-live="rec-top">${num(r.top)}</span></span></div>
-      <button class="btn ink block mt16" data-act="sheet" data-arg="rec-end">${icon('stop')} End ride</button></div>`
+      <button class="btn block mt16" data-act="sheet" data-arg="rec-end" style="background:var(--accent);color:var(--on-accent)">${icon('stop')} End ride</button></div>`
     : `<div class="card pad mt20 flex gap12"><div class="grow"><div class="serif" style="font-size:22px">Ready when you are</div><div class="small muted mt8">${s.settings.autoRecord ? 'Rides record by themselves once the bike links.' : 'Tap play to record with your phone’s GPS.'}</div></div><button class="circle ink" data-act="rec-start" aria-label="Record a ride">${icon('play')}</button></div>`}
   ${(() => { const tot = s.trips.reduce((a, t) => a + (t.km || 0), 0); return `<div class="card pad rides-hero mt12"><div class="ms-t">All rides</div><div class="big rh-n">${s.trips.length}</div><p class="rh-line">${s.trips.length ? `You’ve ridden <u>${num(tot, tot < 100 ? 1 : 0)} km</u> on ${esc(clip(S.vehicleTitle(s), 20))}${s.trips.length > 1 ? `, about ${num(tot / s.trips.length, 0)} km a ride` : ''}.` : 'Your rides will fill this in, one square a day.'}</p>${rideCharts(s)}</div>`; })()}
   <div class="card stat2 mt12">${stat('This week', wk)}${stat('Last 30 days', mo)}</div>
