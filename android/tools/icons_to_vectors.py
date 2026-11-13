@@ -44,11 +44,14 @@ def walk(el, ctx, out):
         pts = el.attrib['points'].replace(',', ' ').split()
         d = 'M' + ' '.join(pts) + ('z' if tag == 'polygon' else '')
     if d:
-        out.append((d, ctx))
+        closed = tag in ('circle', 'rect', 'ellipse') or (tag == 'path' and d.rstrip()[-1:] in ('Z', 'z'))
+        out.append((d, ctx, closed))
     for c in el:
         walk(c, ctx, out)
 
-def to_vector(svg_inner):
+def to_vector(svg_inner, look='line'):
+    """look: line; duo (Glow: each stroke again underneath, 4.2 wide at 22 %); fill (Duotone: closed shapes filled at 32 %).
+    Matches web-v0 styles.css svg.i .duo and svg.i.ifill."""
     root = ET.fromstring(f'<svg xmlns="http://www.w3.org/2000/svg">{svg_inner}</svg>')
     paths = []
     walk(root, {'fill': 'none', 'opacity': 1.0}, paths)
@@ -58,8 +61,15 @@ def to_vector(svg_inner):
              '    android:width="24dp" android:height="24dp"',
              '    android:viewportWidth="26" android:viewportHeight="26">',
              '  <group android:translateX="1" android:translateY="1">']
-    for d, c in paths:
+    if look == 'duo':
+        for d, c, _ in paths:
+            stroke = c.get('stroke')
+            if stroke and stroke != 'none':
+                lines.append(f'    <path android:pathData="{d}"\n        android:strokeColor="#FF000000"\n        android:strokeWidth="4.2"\n        android:strokeAlpha="0.22"\n        android:strokeLineCap="round"\n        android:strokeLineJoin="round"/>')
+    for d, c, closed in paths:
         a = [f'android:pathData="{d}"']
+        if look == 'fill' and closed and c.get('fill', 'none') == 'none':
+            a.append('android:fillColor="#FF000000"'); a.append('android:fillAlpha="0.32"')
         op = float(c.get('opacity', 1))
         fill = c.get('fill', 'none')
         if fill != 'none':
@@ -94,10 +104,14 @@ def main():
             print('skip', name, e, file=sys.stderr); continue
         n = 'ic_' + snake(name)
         open(os.path.join(OUT, n + '.xml'), 'w', encoding='utf-8').write(xml)
+        for look in ('duo', 'fill'):
+            open(os.path.join(OUT, f'{n}_{look}.xml'), 'w', encoding='utf-8').write(to_vector(svg, look))
         names.append((name, n))
     # A typed map from the web app's icon names, so code can say Ic("wrench") like the web views do,
     # and resource shrinking still sees every icon in use.
     rows = ',\n'.join(f'        "{web}" to R.drawable.{n}' for web, n in names)
+    duo = ',\n'.join(f'        "{web}" to R.drawable.{n}_duo' for web, n in names)
+    fill = ',\n'.join(f'        "{web}" to R.drawable.{n}_fill' for web, n in names)
     open(KT, 'w', encoding='utf-8').write(f'''package app.waylink.ui.components
 
 import app.waylink.R
@@ -106,6 +120,14 @@ import app.waylink.R
 internal object IconMap {{
     val byName: Map<String, Int> = mapOf(
 {rows},
+    )
+    /** The Glow look. */
+    val duo: Map<String, Int> = mapOf(
+{duo},
+    )
+    /** The Duotone look. */
+    val fill: Map<String, Int> = mapOf(
+{fill},
     )
 }}
 ''')

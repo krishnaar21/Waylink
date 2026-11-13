@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
@@ -151,7 +153,9 @@ object W {
 
 /** theme: "auto" follows the phone; "sketch" is Paper; "sketchdark" is Paper dark. */
 @Composable
-fun WaylinkTheme(theme: String, accent: String, font: String = "system", bodyFont: String = "system", content: @Composable () -> Unit) {
+fun WaylinkTheme(theme: String, accent: String, font: String = "system", bodyFont: String = "system", progress: String = "gauge", icons: String = "line", content: @Composable () -> Unit) {
+    if (Looks.progress != progress) Looks.progress = progress
+    if (Looks.icons != icons) Looks.icons = icons
     if (Fonts.title != font) Fonts.title = font
     if (Fonts.body != bodyFont) Fonts.body = bodyFont
     val sys = isSystemInDarkTheme()
@@ -165,4 +169,12 @@ fun WaylinkTheme(theme: String, accent: String, font: String = "system", bodyFon
         else -> if (sys) paperDark(a) else paper(a)
     }
     CompositionLocalProvider(LocalColors provides colors, content = content)
+}
+
+/** App-wide looks picked in Settings: the service progress style and how icons are drawn (web PROGRESS, ICON_STYLE). */
+object Looks {
+    val PROGRESS = listOf("gauge" to "Fuel gauge", "road" to "On the road", "tread" to "Tyre tread", "dipstick" to "Dipstick")
+    val ICONS = listOf("line" to "Line", "duo" to "Glow", "fill" to "Duotone")
+    var progress by androidx.compose.runtime.mutableStateOf("gauge")
+    var icons by androidx.compose.runtime.mutableStateOf("line")
 }

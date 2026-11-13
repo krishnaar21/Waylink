@@ -110,8 +110,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         if (file.baseFile.exists()) Vault.decode(String(file.readFully(), Charsets.UTF_8)) else freshState()
     } catch (e: Exception) { freshState() }
 
+    /** The rider's real data, put aside while a developer preview state is shown (web realState). */
+    private var realState: AppState? = null
+
     private fun commit(f: (AppState) -> AppState) {
         _state.update(f)
+        if (realState != null) return // previewing: nothing is saved
         saveJob?.cancel()
         saveJob = viewModelScope.launch {
             delay(150)
@@ -146,7 +150,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     fun showLoading(text: String = "Loading your garage") = _live.update { it.copy(loading = text) }
     fun hideLoading() = _live.update { it.copy(loading = null) }
     fun showOnboarding(on: Boolean) { sound.click(on); _live.update { it.copy(onbTest = on) } }
-    fun setScenario(k: String?) { sound.click(true); _live.update { it.copy(scenario = k?.takeIf { x -> x == "empty" || x == "edge" }) } }
+    fun setScenario(k: String?) {
+        val kind = k?.takeIf { x -> x == "empty" || x == "edge" }
+        sound.click(true)
+        if (kind == null) { realState?.let { _state.value = it }; realState = null }
+        else { val real = realState ?: _state.value; realState = real; _state.value = app.waylink.core.scenarioState(kind, real) }
+        _live.update { it.copy(scenario = kind) }
+    }
     fun logLink(text: String) = _live.update { it.copy(linkLog = (it.linkLog + (System.currentTimeMillis() to text)).takeLast(200)) }
 
     // ---------- Onboarding ----------
@@ -682,6 +692,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     fun uiClick(on: Boolean = true) = sound.click(on)
     fun uiSwipe(dir: Int) = sound.swipe(dir)
     fun uiTick(p: Float) = sound.tick(p)
+    /** Remembers that the auto-ride question was asked (web settings.autoAsked); true if this is the first time. */
+    fun takeAutoAsk(): Boolean {
+        if (_state.value.settings.autoAsked) return false
+        commit { it.copy(settings = it.settings.copy(autoAsked = true)) }
+        return true
+    }
     fun playSplashSound() = sound.play(Sound.Fx.ENGINE_START)
     // The launcher icon changes only when picked in Settings > Icons: switching it can unpin a Home Screen shortcut.
     fun setAccent(key: String) = commit { it.copy(settings = it.settings.copy(accent = key)) }

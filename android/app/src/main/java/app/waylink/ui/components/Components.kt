@@ -59,8 +59,8 @@ import app.waylink.ui.theme.W
 
 /** An icon from the web app's set, by its web name ("wrench", "chev", "bt"…). */
 @Composable
-fun Ic(name: String, modifier: Modifier = Modifier, size: Dp = 20.dp, tint: Color = W.c.ink2) {
-    val id = IconMap.byName[name] ?: return
+fun Ic(name: String, modifier: Modifier = Modifier, size: Dp = 20.dp, tint: Color = W.c.ink2, look: String? = null) {
+    val id = (when (look ?: app.waylink.ui.theme.Looks.icons) { "duo" -> IconMap.duo[name]; "fill" -> IconMap.fill[name]; else -> null }) ?: IconMap.byName[name] ?: return
     Image(painterResource(id), contentDescription = null, modifier = modifier.size(size), colorFilter = ColorFilter.tint(tint))
 }
 

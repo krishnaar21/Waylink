@@ -67,6 +67,8 @@ data class Settings(
     val sounds: Boolean = true,
     val autoRide: Boolean = false,
     val autoRecord: Boolean = false,
+    /** The "Start rides by themselves?" question was asked after the first link. */
+    val autoAsked: Boolean = false,
     val wakeLock: Boolean = true,
     val streetNames: Boolean = false,
     val simulated: Boolean = false,

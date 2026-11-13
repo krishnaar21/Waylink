@@ -107,6 +107,8 @@ interface TodayActions {
     fun glovebox()
     fun weather()
     fun readingsHelp()
+    /** Leaves a developer preview state. */
+    fun exitPreview() {}
 }
 
 /** The Today tab, a faithful port of today() in web-v0/js/views.js. */
@@ -136,11 +138,12 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
                 val today = LocalDate.now()
                 Txt(today.dayOfWeek.getDisplayName(JTextStyle.FULL, Locale.ENGLISH), T.title, c.ink, Modifier.semantics { heading() })
                 Spacer(Modifier.height(3.dp))
-                if (s.sample || live.simulated) DemoPill()
+                if (s.sample || live.simulated || live.scenario != null) DemoPill()
                 else Txt("${today.dayOfMonth} ${today.month.getDisplayName(JTextStyle.FULL, Locale.ENGLISH)}", T.subtitle, c.ink3)
             }
             CircleBtn("sos", "Emergency SOS", act::sos, Modifier.padding(top = 11.dp), tint = c.red)
         }
+        live.scenario?.let { Spacer(Modifier.height(12.dp)); app.waylink.ui.components.PreviewBar(it, act::exitPreview) }
 
         Spacer(Modifier.height(28.dp))
         BikeCard(s, live, f, good, verdict.ok, act)
@@ -342,7 +345,8 @@ private fun UpCard(r: ServiceRow, f: Fmt, onClick: () -> Unit) {
         Txt(r.item.name, T.row.copy(fontSize = 14.5.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), c.ink2, maxLines = 1)
         if (st.status != Due.OK) {
             Spacer(Modifier.height(10.dp))
-            ServiceGauge(if (over) 0 else max(1, ((1 - st.frac) * 8).roundToInt()))
+            if (app.waylink.ui.theme.Looks.progress != "gauge") app.waylink.ui.components.ProgressAlt(st, app.waylink.ui.theme.Looks.progress, showEnds = false, labelSize = 9.5f)
+            else ServiceGauge(if (over) 0 else max(1, ((1 - st.frac) * 8).roundToInt()))
         }
     }
 }

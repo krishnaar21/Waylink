@@ -110,7 +110,7 @@ enum class Tab(val key: String, val label: String, val icon: String) {
 fun AppRoot(vm: AppViewModel) {
     val s by vm.state.collectAsStateWithLifecycle()
     val live by vm.live.collectAsStateWithLifecycle()
-    WaylinkTheme(s.settings.theme, s.settings.accent, s.settings.font, s.settings.bodyFont) {
+    WaylinkTheme(s.settings.theme, s.settings.accent, s.settings.font, s.settings.bodyFont, s.settings.progress, s.settings.icons) {
         val c = W.c
         Box(Modifier.fillMaxSize().background(c.bg).grain()) {
             Crossfade(s.onboarded, animationSpec = tween(260), label = "root") { onboarded ->
@@ -122,9 +122,7 @@ fun AppRoot(vm: AppViewModel) {
                     override fun finish(simulated: Boolean) = vm.finishOnboarding(simulated)
                 })
                 else {
-                    // Developer preview states show a made-up garage; the real one is untouched.
-                    val shown = live.scenario?.let { k -> remember(k) { app.waylink.core.scenarioState(k, s) } } ?: s
-                    Main(shown, live, vm)
+                    Main(s, live, vm)
                 }
             }
             // Developer: onboarding as a preview over the app. Nothing it asks is saved.
@@ -158,6 +156,7 @@ fun AppRoot(vm: AppViewModel) {
 @Composable
 private fun Main(s: AppState, live: Live, vm: AppViewModel) {
     val c = W.c
+    val hostActivity = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
     var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
     // An inner page over the tabs (logbook, fuel, profile), like the web's pushed screens.
     var page by rememberSaveable { mutableStateOf<String?>(null) }
@@ -198,6 +197,24 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         if (fast && wasSlow && s.settings.autoRide && !live.rideMode) vm.openRideMode(true)
         wasSlow = !fast
     }
+    // After the first link, ask once whether rides should start by themselves (web auto-ask).
+    LaunchedEffect(live.link) {
+        if (live.link == app.waylink.data.LinkState.CONNECTED && !s.settings.autoAsked && vm.takeAutoAsk()) {
+            kotlinx.coroutines.delay(900)
+            if (stack.isEmpty()) openSheet("auto-ask")
+        }
+    }
+    // Once a day, with no bike linked or paired, Today offers to pair (web pair-intro nudge).
+    val prefCtx = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(tab, s.onboarded) {
+        if (tab != Tab.TODAY || !s.onboarded || live.scenario != null) return@LaunchedEffect
+        if (s.vehicle.bike.id != null || live.link != app.waylink.data.LinkState.IDLE) return@LaunchedEffect
+        val prefs = prefCtx.getSharedPreferences("waylink-ui", android.content.Context.MODE_PRIVATE)
+        val day = java.time.LocalDate.now().toString()
+        if (prefs.getString("pair-nudge", null) == day) return@LaunchedEffect
+        kotlinx.coroutines.delay(2600) // after the launch splash
+        if (stack.isEmpty() && page == null) { prefs.edit().putString("pair-nudge", day).apply(); openSheet("pair-intro") }
+    }
     // The screen stays on while a ride records, so GPS keeps flowing.
     val view = LocalView.current
     val awake = live.rec != null || (live.rideMode && s.settings.wakeLock)
@@ -234,6 +251,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun help(key: String) = openSheet("help:$key")
                 }, tabBarHeight)
                 Tab.TODAY.key -> TodayScreen(s, live, object : TodayActions {
+                    override fun exitPreview() = vm.setScenario(null)
                     override fun garage() = openSheet("garage")
                     override fun sos() = openSheet("sos")
                     override fun pair() = openSheet("pair")
@@ -263,6 +281,8 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                         "splash" -> vm.showSplash()
                         "loading" -> vm.showLoading()
                         "pair-all" -> openSheet("pair")
+                        // Android has no cached web build to fetch; reloading the screen keeps every bit of data.
+                        "refresh" -> { vm.showLoading("Refreshing"); hostActivity?.recreate(); Unit }
                         else -> Unit
                     }
                     override fun scenario(key: String?) = vm.setScenario(key)
@@ -344,6 +364,7 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
     fuelSheet(key, s, vm, nav)?.let { return it }
     rideSheet(key, s, live, vm, nav)?.let { return it }
     settingsSheet(key, s, live, vm, nav)?.let { return it }
+    devSheet(key, s, live, vm, nav)?.let { return it }
     extraSheet(key, s, live, vm, nav, host)?.let { return it }
     app.waylink.ui.route.routeSheet(key, s, live, vm, nav)?.let { return it }
     val arg = key.substringAfter(':', "")

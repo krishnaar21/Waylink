@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.em
 import app.waylink.core.AppState
 import app.waylink.core.Catalog
 import app.waylink.core.Fmt
@@ -108,6 +109,7 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp) {
     val conn = connText(s, live)
     Page(bottom) { androidx.compose.runtime.CompositionLocalProvider(app.waylink.ui.components.LocalBigRowIcons provides true) {
         PageHead("Settings", "Profile, bikes and look")
+        live.scenario?.let { app.waylink.ui.components.PreviewBar(it, { act.scenario(null) }); Spacer(Modifier.height(12.dp)) }
         ProfileCard(s) { act.page("profile") }
 
         SectionGap()
@@ -187,7 +189,7 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp) {
         }
 
         SectionGap()
-        SectionHead("Look")
+        SectionHead("Look & sound")
         LookCard(s, act)
 
         SectionGap()
@@ -210,24 +212,74 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp) {
             ListRow("Report a problem", "Copy your app details and tell us", icon = "flag", onClick = { act.sheet("report") })
             Hairline(66.dp)
             ListRow("About Waylink", "Version $APP_VERSION, credits and licences", icon = "heart", onClick = { act.sheet("about") })
+            Hairline(66.dp)
+            ListRow("Refresh the app", "Latest version, data kept", icon = "refresh", onClick = { act.dev("refresh") })
         }
 
         SectionGap()
         SectionHead("Developer", help = { act.help("developer") })
         ListCard {
             val simOn = live.simulated && live.link == LinkState.CONNECTED
+            ListRow("Show onboarding", "Preview first launch", icon = "flag", onClick = { act.dev("onboarding") })
+            Hairline(66.dp)
+            ListRow("Show the splash screen", "The logo animation. Tap to close.", icon = "sparkles", onClick = { act.dev("splash") })
+            Hairline(66.dp)
+            ListRow("Show the loading screen", "Turn signs while something loads", icon = "refresh", onClick = { act.dev("loading") })
+            Hairline(66.dp)
             ListRow("Simulated bike", "Try it all without a bike", icon = "bolt", trailing = { Switch(simOn, "Simulated bike", { act.sim(!simOn) }) })
+            Hairline(66.dp)
+            ListRow("Show all themes", "Light, Dark and Navy besides Paper", icon = "sparkles", trailing = { Switch(st.allThemes, "Show all themes", { act.toggle("allThemes") }) })
+            Hairline(66.dp)
+            ListRow("Show Bluetooth messages", "Raw bytes on the Route tab", icon = "btMsgs", trailing = { Switch(st.devFrames, "Show Bluetooth messages", { act.toggle("devFrames") }) })
+            Hairline(66.dp)
+            ListRow("Pair from all devices", "If your bike isn’t listed", icon = "bt", onClick = { act.dev("pair-all") })
+            Hairline(66.dp)
+            ListRow("Connection log", "Each step of the Bluetooth link", icon = "list", end = "${live.linkLog.size}", onClick = { act.sheet("log") })
+            Hairline(66.dp)
+            ListRow("Protocol", "Service, frames and timings", icon = "protocol", onClick = { act.sheet("protocol") })
+        }
+        // Preview states: a made-up garage, the real one is put aside and comes back on Exit.
+        Spacer(Modifier.height(12.dp))
+        Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Txt("Preview states", T.msT, c.ink, Modifier.weight(1f))
+                Txt("Your data is safe", T.eyebrow, c.ink3)
+            }
+            Spacer(Modifier.height(12.dp))
+            SegPills(listOf("real" to "My data", "empty" to "Empty", "edge" to "Edge cases"), live.scenario ?: "real") { act.scenario(it.takeIf { k -> k != "real" }) }
+            app.waylink.ui.components.Hint("Empty shows a brand-new rider. Edge cases shows long names, huge numbers and everything overdue. Nothing is saved while previewing.")
         }
 
+        // footer.about: the two wordmarks, a mono version line, the legal line
         Spacer(Modifier.height(36.dp))
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Txt("waylink", T.title.copy(fontSize = 24.sp), c.ink2)
-            Spacer(Modifier.height(6.dp))
-            Txt("Version $APP_VERSION · MIT licence", T.rowSub, c.ink3)
-            Spacer(Modifier.height(4.dp))
-            Txt("Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.", T.rowSub.copy(textAlign = TextAlign.Center), c.ink4)
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                app.waylink.ui.components.TurnsWordmark(24f)
+                app.waylink.ui.components.LoopWordmark(24f, animate = false)
+            }
+            Spacer(Modifier.height(10.dp))
+            Txt("VERSION $APP_VERSION · MIT LICENCE", T.rowSub.copy(fontFamily = app.waylink.ui.theme.Mono, fontSize = 10.5.sp, lineHeight = 15.75.sp, letterSpacing = 0.14.em), c.ink3)
+            Spacer(Modifier.height(8.dp))
+            Txt("Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.", T.rowSub.copy(fontSize = 12.5.sp, lineHeight = 18.75.sp, textAlign = TextAlign.Center), c.ink4)
         }
     } }
+}
+
+/** .seg pills: the chosen one filled with ink, the rest outlined on raised paper. */
+@Composable
+fun SegPills(items: List<Pair<String, String>>, on: String, onPick: (String) -> Unit) {
+    val c = W.c
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items.forEach { (k, l) ->
+            val sel = k == on
+            Box(
+                Modifier.weight(1f).height(38.dp).clip(CircleShape).background(if (sel) c.ink else c.raised)
+                    .then(if (sel) Modifier else Modifier.border(1.dp, c.line, CircleShape))
+                    .semantics { selected = sel }.pressable(label = l, role = Role.RadioButton) { onPick(k) },
+                contentAlignment = Alignment.Center,
+            ) { Txt(l, T.row.copy(fontSize = 13.5.sp, fontWeight = if (sel) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal), if (sel) c.bg else c.ink2, maxLines = 1) }
+        }
+    }
 }
 
 const val APP_VERSION = "1.0"
@@ -306,18 +358,15 @@ private fun PcCell(row: Triple<String, String, String>, modifier: Modifier) {
     }
 }
 
-/** Themes, accents and the ride chart (.themecard). */
+/** Themes, accents, and the "Sound, icons & fonts" disclosure (.themecard, .tc-more). */
 @Composable
 private fun LookCard(s: AppState, act: SettingsActions) {
     val c = W.c
     Column(Modifier.fillMaxWidth().card(20.dp)) {
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 20.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                listOf(
-                    Triple("auto", "Auto", "Follows phone"),
-                    Triple("sketch", "Paper", "Light"),
-                    Triple("sketchdark", "Paper dark", "Dark"),
-                ).forEach { (key, label, sub) ->
+                app.waylink.ui.theme.THEMES.filter { s.settings.allThemes || it[0] in listOf("auto", "sketch", "sketchdark") }.forEach { t ->
+                    val key = t[0]; val label = t[1]; val sub = t[5]
                     val on = s.settings.theme == key
                     Column(
                         Modifier.weight(1f).semantics { selected = on }.pressable(label = label, role = Role.RadioButton, scale = 0.95f) { act.theme(key) },
@@ -361,7 +410,34 @@ private fun LookCard(s: AppState, act: SettingsActions) {
             }
         }
         Hairline()
-        ListRow("Ride chart", icon = "trips", end = RIDE_CHARTS[s.settings.rideChart.coerceIn(0, 2)], onClick = { act.sheet("pick-ridechart") })
+        var open by rememberSaveable { mutableStateOf(false) }
+        val turn by animateFloatAsState(if (open) -90f else 90f, androidx.compose.animation.core.tween(200), label = "tc")
+        Row(
+            Modifier.fillMaxWidth().rowPress(label = "Sound, icons & fonts") { open = !open; act.click(open) }.padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Txt("Sound, icons & fonts", T.body.copy(fontSize = 15.sp, lineHeight = 22.5.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), c.ink, Modifier.weight(1f), maxLines = 1)
+            Ic("chev", Modifier.rotate(turn), size = 16.dp, tint = c.ink3)
+        }
+        AnimatedVisibility(open) {
+            val st = s.settings
+            Column {
+                Hairline()
+                ListRow("Sound effects", if (st.sounds) "Engine start, clicks, revs" else "Off. The app stays silent", icon = "volume", trailing = { Switch(st.sounds, "Sound effects", { act.toggle("sounds") }) })
+                Hairline(66.dp)
+                val appIcon = app.waylink.data.AppIcon.STYLES.firstOrNull { it.first == st.iconStyle }?.second ?: "Classic"
+                val look = app.waylink.ui.theme.Looks.ICONS.firstOrNull { it.first == st.icons }?.second ?: "Line"
+                ListRow("Icons", icon = "sparkles", end = "$appIcon · $look", onClick = { act.sheet("pick-brand") })
+                Hairline(66.dp)
+                val title = app.waylink.ui.theme.Fonts.TITLE_NAMES[st.font] ?: "System"
+                val body = app.waylink.ui.theme.Fonts.BODIES.firstOrNull { it.first == st.bodyFont }?.second ?: "System"
+                ListRow("Fonts", icon = "font", end = "$title · $body", onClick = { act.sheet("pick-font") })
+                Hairline(66.dp)
+                ListRow("Ride chart", icon = "trips", end = RIDE_CHARTS[st.rideChart.coerceIn(0, 2)], onClick = { act.sheet("pick-ridechart") })
+                Hairline(66.dp)
+                ListRow("Progress style", icon = "progress", end = app.waylink.ui.theme.Looks.PROGRESS.firstOrNull { it.first == st.progress }?.second ?: "Fuel gauge", onClick = { act.sheet("pick-progress") })
+            }
+        }
     }
 }
 
@@ -369,10 +445,9 @@ private fun LookCard(s: AppState, act: SettingsActions) {
 @Composable
 private fun ThemePreview(key: String, on: Boolean, modifier: Modifier) {
     val c = W.c
-    val (bg, card, ink) = when (key) {
-        "sketchdark" -> Triple(Color(0xFF1E1B17), Color(0xFF2A2621), Color(0xFFEDE5D6))
-        else -> Triple(Color(0xFFEEE7DA), Color(0xFFF7F1E6), Color(0xFF2A2620))
-    }
+    val t = app.waylink.ui.theme.THEMES.firstOrNull { it[0] == key } ?: app.waylink.ui.theme.THEMES[0]
+    fun hex(h: String) = Color(android.graphics.Color.parseColor(h))
+    val bg = hex(t[2]); val card = hex(t[3]); val ink = hex(t[4])
     val shape = RoundedCornerShape(14.dp)
     Box(
         modifier

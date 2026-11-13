@@ -88,6 +88,8 @@ object T {
     val section get() = TextStyle(fontFamily = Body, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, letterSpacing = (-0.01).em, lineHeight = 27.sp)
     val link get() = TextStyle(fontFamily = Body, fontSize = 13.5.sp, fontWeight = FontWeight.Medium, lineHeight = 20.sp)
     val unit get() = TextStyle(fontFamily = Body, fontSize = 13.sp, lineHeight = 19.5.sp)
+    /** .ms-t: small card titles ("Preview states", "App icon"). */
+    val msT get() = TextStyle(fontFamily = Body, fontSize = 17.sp, fontWeight = FontWeight(650), lineHeight = 25.5.sp)
     val row get() = TextStyle(fontFamily = Body, fontSize = 14.sp, lineHeight = 21.sp)
     val rowTitle get() = TextStyle(fontFamily = Body, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, lineHeight = 22.5.sp)
     val rowSub get() = TextStyle(fontFamily = Body, fontSize = 13.sp, lineHeight = 19.5.sp)
