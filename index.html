@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="paper" data-accent="rust" data-font="system" data-body="system">
+<head>
+  <meta charset="utf-8">
+  <title>Waylink</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#EDEFF2">
+  <meta name="description" content="Turn-by-turn, caller names, rides, fuel and service for Bajaj Pulsar and Dominar Bluetooth clusters. Private, on-device.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Waylink">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="img/logos/wl-loop-rust.svg" type="image/svg+xml">
+  <!-- iOS shows these while the Home Screen app starts, instead of a white screen. -->
+  <link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" href="img/splash/light-1320x2868.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="img/splash/dark-1320x2868.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" href="img/splash/light-1290x2796.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="img/splash/dark-1290x2796.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" href="img/splash/light-1206x2622.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="img/splash/dark-1206x2622.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" href="img/splash/light-1179x2556.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="img/splash/dark-1179x2556.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" href="img/splash/light-1284x2778.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="img/splash/dark-1284x2778.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" href="img/splash/light-1170x2532.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="img/splash/dark-1170x2532.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" href="img/splash/light-1125x2436.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="img/splash/dark-1125x2436.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" href="img/splash/light-1080x2340.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="img/splash/dark-1080x2340.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" href="img/splash/light-1242x2688.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="img/splash/dark-1242x2688.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) and (prefers-color-scheme: light)" href="img/splash/light-828x1792.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) and (prefers-color-scheme: dark)" href="img/splash/dark-828x1792.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) and (prefers-color-scheme: light)" href="img/splash/light-750x1334.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait) and (prefers-color-scheme: dark)" href="img/splash/dark-750x1334.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: light)" href="img/splash/light-1242x2208.png">
+  <link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait) and (prefers-color-scheme: dark)" href="img/splash/dark-1242x2208.png">
+  <link rel="apple-touch-icon" href="img/logos/png/wl-loop-rust-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Web fonts never block the first paint: the app shows at once in system fonts and swaps when they arrive. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&display=swap" media="print" onload="this.media='all'">
+  <style>html,body{margin:0;background:#EDEFF2}html[data-theme="obsidian"],html[data-theme="obsidian"] body{background:#0E1013}html[data-theme="sketch"],html[data-theme="sketch"] body{background:#EEE7DA}html[data-night],html[data-night] body{background:#1E1B17}html[data-theme="amoled"],html[data-theme="amoled"] body{background:#0B1530}</style>
+  <script>/* Paint the saved theme before anything loads, so there's no white flash. */
+  try { var d = JSON.parse(localStorage.getItem('pulsarnav-web-v2') || '{}'), st = d.settings || {}, h = document.documentElement, t = st.theme || 'auto';
+    if (t === 'auto') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'sketchdark' : 'sketch';
+    if (t === 'sketchdark') { t = 'sketch'; h.dataset.night = ''; }
+    h.dataset.theme = t; h.dataset.brand = 'loop'; h.dataset.accent = st.accent || 'wine';
+    /* First launch only: warm the onboarding pictures for this theme. */
+    if (!d.onboarded) ['img/onb/rider-street.webp', 'img/onb/scene-' + ('night' in h.dataset ? 'night' : t === 'paper' || t === 'sketch' ? 'light' : 'dark') + '.webp'].forEach(function (u) { var l = document.createElement('link'); l.rel = 'preload'; l.as = 'image'; l.href = u; document.head.appendChild(l); });
+    /* The logo plays once per launch: reloads and updates in the same session skip it. */
+    if (sessionStorage.getItem('wl-splashed')) h.classList.add('no-splash'); else sessionStorage.setItem('wl-splashed', '1'); } catch (e) {}</script>
+  <link rel="modulepreload" href="js/app.js"><link rel="modulepreload" href="js/views.js"><link rel="modulepreload" href="js/store.js"><link rel="modulepreload" href="js/icons-huge.js"><link rel="modulepreload" href="js/protocol.js"><link rel="modulepreload" href="js/link.js"><link rel="modulepreload" href="js/sound.js">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="splash anim" id="splash" role="status" aria-label="Loading"><div class="splash-brand"><span class="wl-loop" aria-label="waylink"><svg class="lw-w" viewBox="0 0 100 100" aria-hidden="true"><defs><mask id="wl-taper" maskUnits="userSpaceOnUse" x="-20" y="-20" width="140" height="140"><rect x="-20" y="-20" width="140" height="140" fill="#fff"/><polygon points="-20,-20 6,-20 6,44 3.8,48.5 2.1,52.5 0.9,56 0.2,59 -0.1,61.5 -20,61.5" fill="#000"/></mask></defs><path class="lw" mask="url(#wl-taper)" pathLength="100" d="M2.5 44C3 64 12 80 25 80C37 80 42 64 46 50C48.8 40.5 54.5 31 54 22C53.6 13.5 39 12.5 38.6 22C38.2 31 43.4 40.5 46.8 50C51 64 58 80 71 80C84 80 90 56 91.5 26L91.5 14"/></svg><span class="rest" aria-hidden="true"><i class="ty ty0">a</i><i class="ty ty1">y</i><i class="ty ty2">l</i><i class="ty ty3">i</i><i class="ty ty4">n</i><i class="ty ty5">k</i></span></span></div></div>
+    <div class="statusbar" aria-hidden="true"><span id="sb-time">9:41</span><span class="island"></span><span class="sb-r"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="15" width="3.5" height="5" rx="1"/><rect x="7.5" y="11.5" width="3.5" height="8.5" rx="1"/><rect x="13" y="8" width="3.5" height="12" rx="1"/><rect x="18.5" y="4.5" width="3.5" height="15.5" rx="1"/></svg><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M2 8.8a15 15 0 0 1 20 0M5.5 12.6a10 10 0 0 1 13 0M9 16.4a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r=".6" fill="currentColor"/></svg><svg viewBox="0 0 28 14" style="width:26px"><rect x=".5" y=".5" width="23" height="13" rx="4" fill="none" stroke="currentColor" opacity=".45"/><rect x="2.5" y="2.5" width="17" height="9" rx="2.2" fill="currentColor"/><path d="M25.5 5v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".5"/></svg></span></div>
+    <div class="views" id="views"></div>
+    <div id="fab"></div>
+    <nav class="tabbar" id="tabbar" aria-label="Main"></nav>
+    <div id="pill"></div>
+    <div id="overlay"></div>
+    <div id="sheets"></div>
+    <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+    <div class="home-ind" aria-hidden="true"></div>
+    <div class="rotate-lock" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg><b>Turn your phone upright</b><span>Only Route and ride mode work sideways.</span></div>
+  </div>
+  <script>
+    // Safety net: if the app hasn't started within 8 s, or something breaks while starting, take the loader down
+    // and say what happened, with a way to reload. Plain script, so it runs even if a module fails to load.
+    (function () {
+      var t0 = Date.now(), shown = false;
+      function fail(msg) {
+        if (window.__waylinkReady || shown) return; shown = true;
+        var sp = document.getElementById('splash'); if (sp) sp.remove();
+        var d = document.createElement('div'); d.className = 'bootfail';
+        d.innerHTML = '<b>Waylink didn’t start</b><span></span><button type="button">Reload</button><button type="button" class="ghost">Reset the app’s saved files</button>';
+        d.querySelector('span').textContent = msg || 'It took too long to load. Check your connection and try again.';
+        d.querySelector('button').onclick = function () { location.reload(); };
+        d.querySelector('.ghost').onclick = function () {
+          var done = function () { location.reload(); };
+          try { (navigator.serviceWorker ? navigator.serviceWorker.getRegistrations() : Promise.resolve([])).then(function (r) { r.forEach(function (x) { x.unregister(); }); return window.caches ? caches.keys().then(function (k) { return Promise.all(k.map(function (n) { return caches.delete(n); })); }) : 0; }).then(done, done); } catch (e) { done(); }
+        };
+        (document.getElementById('app') || document.body).appendChild(d);
+      }
+      window.addEventListener('error', function (e) { var t = e.target; if (t && t !== window && t.tagName !== 'SCRIPT') return; /* fonts and images may fail; only scripts matter */ if (!window.__waylinkReady) fail('Error: ' + (e.message || 'a file failed to load') + (e.filename ? ' (' + e.filename.split('/').pop() + ')' : '')); }, true);
+      window.addEventListener('unhandledrejection', function (e) { if (!window.__waylinkReady) fail('Error: ' + ((e.reason && e.reason.message) || e.reason)); });
+      setTimeout(function () { if (!window.__waylinkReady) fail(); }, 8000);
+    })();
+  </script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
