@@ -522,7 +522,9 @@ export function sketch(pts, lg = false) {
     const a = P2[0], b = P2[P2.length - 1], r = lg ? 6 : 4;
     ends = `<circle cx="${a[0]}" cy="${a[1]}" r="${r}" fill="var(--sage-ink)" stroke="var(--bg)" stroke-width="2"/><rect x="${b[0] - r}" y="${b[1] - r}" width="${r * 2}" height="${r * 2}" transform="rotate(45 ${b[0]} ${b[1]})" fill="var(--accent)" stroke="var(--bg)" stroke-width="2"/>`;
   }
-  return `<svg class="sketch ${lg ? 'lg' : ''}" viewBox="0 0 ${Wd} ${H}" preserveAspectRatio="xMidYMid meet"><g stroke="var(--line)" stroke-width="1">${grid.join('')}</g>${line}${ends}</svg>`;
+  // No GPS track (too short, or recorded without location): say so instead of an empty grid.
+  const none = line ? '' : `<text x="${Wd / 2}" y="${H / 2}" text-anchor="middle" dominant-baseline="central" font-size="${lg ? 15 : 10.5}" font-weight="600" fill="var(--ink-3)">No route</text>`;
+  return `<svg class="sketch ${lg ? 'lg' : ''}${line ? '' : ' none'}" viewBox="0 0 ${Wd} ${H}" preserveAspectRatio="xMidYMid meet"><g stroke="var(--line)" stroke-width="1"${line ? '' : ' opacity=".5"'}>${grid.join('')}</g>${line}${ends}${none}</svg>`;
 }
 
 // ---------- TRIPS ----------
