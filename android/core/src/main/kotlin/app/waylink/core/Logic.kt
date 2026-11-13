@@ -99,7 +99,10 @@ data class FuelStats(
     val costPerKm: Double?,
     val totalSpent: Double,
     val onReserve: Boolean,
+    val last30: Last30 = Last30(0, 0.0, 0.0),
 )
+
+data class Last30(val count: Int, val litres: Double, val cost: Double)
 
 fun fuelStats(v: Vehicle, now: Long = System.currentTimeMillis()): FuelStats {
     val m = Catalog.model(v.model)
@@ -149,6 +152,7 @@ fun fuelStats(v: Vehicle, now: Long = System.currentTimeMillis()): FuelStats {
         tank = tank, reserve = m.reserve, tanks = tanks, avg = avg, lifetime = lifetime, lastTank = lastTank,
         litresLeft = litresLeft, sinceFull = sinceFull, range = range, bars = bars, costPerKm = costPerKm,
         totalSpent = list.sumOf { it.cost }, onReserve = litresLeft != null && litresLeft <= m.reserve,
+        last30 = list.filter { it.ts >= now - 30 * DAY_MS }.let { r -> Last30(r.size, r.sumOf { it.litres }, r.sumOf { it.cost }) },
     )
 }
 

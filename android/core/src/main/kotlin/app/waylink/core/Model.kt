@@ -46,7 +46,12 @@ data class Profile(
     /** a1 to a11. */
     val avatar: String = "a1",
     val since: Long = 0,
+    /** Where the petrol rate comes from, set by "Use my location". */
+    val fuelArea: FuelArea? = null,
 )
+
+@Serializable
+data class FuelArea(val state: String, val place: String = "", val ts: Long = 0)
 
 @Serializable
 data class Settings(

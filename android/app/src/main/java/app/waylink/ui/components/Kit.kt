@@ -218,3 +218,20 @@ fun numText(n: Double?): String = when {
     n == Math.floor(n) && kotlin.math.abs(n) < 1e15 -> n.toLong().toString()
     else -> n.toString()
 }
+
+/** A date-and-time input (datetime-local): picks the date, then the time. */
+@Composable
+fun DateTimeField(value: Long, onChange: (Long) -> Unit, modifier: Modifier = Modifier, label: String = "Date and time", max: Long? = null) {
+    val ctx = LocalContext.current
+    val zone = ZoneId.systemDefault()
+    val at = Instant.ofEpochMilli(value).atZone(zone)
+    val text = "${dFull(value)}, ${String.format(java.util.Locale.ENGLISH, "%d:%02d %s", (at.hour + 11) % 12 + 1, at.minute, if (at.hour < 12) "am" else "pm")}"
+    Select(text, {
+        val d = at.toLocalDate()
+        DatePickerDialog(ctx, { _, y, m, day ->
+            android.app.TimePickerDialog(ctx, { _, h, min ->
+                onChange(LocalDate.of(y, m + 1, day).atTime(h, min).atZone(zone).toInstant().toEpochMilli())
+            }, at.hour, at.minute, android.text.format.DateFormat.is24HourFormat(ctx)).show()
+        }, d.year, d.monthValue - 1, d.dayOfMonth).apply { if (max != null) datePicker.maxDate = max }.show()
+    }, modifier, label = "$label, $text")
+}

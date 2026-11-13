@@ -63,6 +63,9 @@ import app.waylink.ui.components.Txt
 import app.waylink.ui.components.card
 import app.waylink.ui.components.grain
 import app.waylink.ui.components.pressable
+import app.waylink.ui.fuel.FuelActions
+import app.waylink.ui.fuel.FuelScreen
+import app.waylink.ui.fuel.fuelSheet
 import app.waylink.ui.garage.GarageList
 import app.waylink.ui.logbook.LogbookActions
 import app.waylink.ui.logbook.LogbookScreen
@@ -145,6 +148,11 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun deleteCheck(id: String) = vm.deleteCheck(id)
                     override fun addCheck(text: String) = vm.addCheck(text)
                 }, tabBarHeight)
+                "fuel" -> FuelScreen(s, object : FuelActions {
+                    override fun back() { page = null }
+                    override fun sheet(key: String) = openSheet(key)
+                    override fun help(key: String) = openSheet("help:$key")
+                }, tabBarHeight)
                 Tab.TODAY.key -> TodayScreen(s, live, object : TodayActions {
                     override fun garage() = openSheet("garage")
                     override fun sos() = openSheet("sos")
@@ -153,7 +161,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun logbook() { page = "logbook" }
                     override fun service(id: String) = openSheet("svc:$id")
                     override fun alerts() { tab = Tab.ALERTS }
-                    override fun fuel() = soon("The fuel log")
+                    override fun fuel() { page = "fuel" }
                     override fun trip(which: String) = openSheet("trip:$which")
                     override fun rides() { tab = Tab.RIDES }
                     override fun glovebox() = soon("The glovebox")
@@ -188,6 +196,7 @@ private val PAGES = setOf("logbook", "fuel", "profile")
 /** Every sheet the app can show, by key ("svc:<id>", "help:reminders", "garage"). */
 private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetNav): SheetSpec? {
     logbookSheet(key, s, vm, nav)?.let { return it }
+    fuelSheet(key, s, vm, nav)?.let { return it }
     val arg = key.substringAfter(':', "")
     return when (key.substringBefore(':')) {
         "garage" -> SheetSpec("Your bikes", "Garage") {

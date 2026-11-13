@@ -9,6 +9,8 @@ import app.waylink.core.Catalog
 import app.waylink.core.ChecklistItem
 import app.waylink.core.DAY_MS
 import app.waylink.core.Fmt
+import app.waylink.core.FuelEntry
+import app.waylink.core.fuelStats
 import app.waylink.core.ServiceItem
 import app.waylink.core.ServiceRecord
 import app.waylink.core.TripMeter
@@ -182,6 +184,37 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val t = TripMeter(0.0, System.currentTimeMillis())
         veh { if (which == "A") it.copy(tripA = t) else it.copy(tripB = t) }
         toast("Trip $which reset.")
+    }
+
+    // ---------- Fuel ----------
+    /** Logs or edits a fill-up. Returns an error to show, or null. */
+    fun saveFuel(id: String?, odo: Double?, litres: Double?, costIn: Double?, full: Boolean, ts: Long, price: Double): String? {
+        if (odo == null || odo <= 0 || litres == null || litres <= 0) return "Odometer and litres, please."
+        val cost = if (costIn != null && costIn > 0) costIn else Math.round(litres * price * 100) / 100.0
+        val e = FuelEntry(id = id ?: uid(), ts = ts, odo = odo, litres = litres, cost = cost, full = full)
+        veh { v ->
+            val list = if (v.fuel.any { it.id == e.id }) v.fuel.map { if (it.id == e.id) e else it } else v.fuel + e
+            v.copy(
+                fuel = list,
+                fuelPrice = if (cost > 0) Math.round(cost / litres * 100) / 100.0 else v.fuelPrice,
+                odo = if (odo > v.odo) Math.round(odo * 10) / 10.0 else v.odo,
+            )
+        }
+        val t = fuelStats(_state.value.vehicle).tanks.firstOrNull { it.id == e.id }
+        toast(if (t != null) "${fmt().num(t.kmpl, 1)} km/L on that tank." else if (full) "Logged. Next full tank gives you mileage." else "Top-up logged.")
+        return null
+    }
+
+    fun deleteFuel(id: String) { veh { v -> v.copy(fuel = v.fuel.filter { it.id != id }) }; toast("Fill-up removed.") }
+
+    /** Your pump price for this bike. */
+    fun setFuelPrice(n: Double) { if (n > 0 && n < 100_000) veh { it.copy(fuelPrice = n) } }
+
+    /** Uses a state rate for every bike. */
+    fun useFuelPrice(n: Double) {
+        if (!(n > 0)) return
+        commit { s -> s.copy(vehicles = s.vehicles.map { it.copy(fuelPrice = n) }) }
+        toast("Petrol set to ${_state.value.country.cur}${fmt().num(n, 2)} a litre.")
     }
 
     fun fmt() = Fmt(_state.value.country.locale)
