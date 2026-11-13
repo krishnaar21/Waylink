@@ -2170,3 +2170,16 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 /* About you: every rider fits on screen, in a tidy grid aligned with the fields */
 .onb-avs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px 8px; overflow: visible; margin: 0 0 18px; padding: 2px 0; }
 .onb-av { width: 100%; height: auto; aspect-ratio: 1; }
+/* Theme cards: Auto is half Paper, half Paper dark (class built as t-<theme> in code) */
+.themeopt .tp.t-auto { background: #EEE7DA; }
+.themeopt .tp.t-auto em { position: absolute; inset: 0; z-index: 0; background: #1E1B17; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+.themeopt .tp.t-auto em::after { content: ""; position: absolute; right: 7%; bottom: 8%; width: 15%; aspect-ratio: 1; border-radius: 50%; box-shadow: inset -4px -2px 0 0 #EDE5D6; transform: rotate(-20deg); }
+.themeopt .tp.t-auto i, .themeopt .tp.t-auto u, .themeopt .tp.t-auto b { z-index: 1; }
+.themeopt .tp.t-auto i { background: rgba(255, 250, 240, .32); box-shadow: 0 0 0 .5px rgba(120, 105, 85, .25); }
+.themeopt .tp.t-auto u { background: #8C8273; }
+.themeopt .tp.t-amoled { --tbg: #0B1530; }
+/* The chosen card's ring sits inside its edge, so all three line up with the card's padding */
+.themeopt .tp { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 16%, transparent) !important; }
+.themeopt.on .tp { box-shadow: inset 0 0 0 2px var(--accent), inset 0 0 0 4px var(--card) !important; }
+.themeopt.on .tp::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 2px var(--accent); z-index: 3; pointer-events: none; }
+.themes { gap: 18px !important; }
