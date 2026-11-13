@@ -18,6 +18,8 @@ data class AppState(
     val alerts: Alerts = Alerts(),
     val vehicles: List<Vehicle> = emptyList(),
     val active: String = "",
+    /** Papers in the glovebox. The files stay in app storage, never in backups. */
+    val glove: List<GloveDoc> = emptyList(),
 ) {
     /** The vehicle being ridden now. */
     val vehicle: Vehicle get() = vehicles.firstOrNull { it.id == active } ?: vehicles.first()
@@ -49,6 +51,10 @@ data class Profile(
     /** Where the petrol rate comes from, set by "Use my location". */
     val fuelArea: FuelArea? = null,
 )
+
+/** A paper in the glovebox: [slot] is "<vehicle id>:rc|insurance|puc|other" or "rider:licence". */
+@Serializable
+data class GloveDoc(val slot: String, val name: String, val type: String, val added: Long, val expiry: Long? = null)
 
 @Serializable
 data class FuelArea(val state: String, val place: String = "", val ts: Long = 0)

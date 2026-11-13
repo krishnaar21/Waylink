@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
@@ -119,6 +120,7 @@ fun AppRoot(vm: AppViewModel) {
 
 @Composable
 private fun Main(s: AppState, live: Live, vm: AppViewModel) {
+    val c = W.c
     var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
     // An inner page over the tabs (logbook, fuel, profile), like the web's pushed screens.
     var page by rememberSaveable { mutableStateOf<String?>(null) }
@@ -135,18 +137,34 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
     val tabBarHeight = 80.dp
     if (page != null) BackHandler { page = null }
     // Recording asks for location the first time; the simulated bike needs none.
+    // What to do once location is allowed: record a ride, or save where you parked.
+    var pendingLoc by remember { mutableStateOf<(() -> Unit)?>(null) }
     val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
-        if (granted.values.any { it }) vm.startRecording()
-        else vm.toast("Location is off. Allow it to record rides, or use the simulated bike.")
+        if (granted.values.any { it }) pendingLoc?.invoke()
+        else vm.toast("Location is off. Allow it in Android settings, or use the simulated bike.")
+        pendingLoc = null
     }
-    val startRec = {
-        if (live.simulated || vm.hasLocation()) vm.startRecording()
-        else askLocation.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION))
+    val needLocation = { then: () -> Unit ->
+        if (live.simulated || vm.hasLocation()) then()
+        else { pendingLoc = then; askLocation.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)) }
+    }
+    val beginRec = { needLocation { vm.startRecording() } }
+    val host = object : app.waylink.ui.shell.ExtraHost {
+        override fun withLocation(then: () -> Unit) = needLocation(then)
+        override fun startRec() = beginRec()
+        override fun rideMode() = vm.openRideMode(true)
+    }
+    // Ride mode opens by itself when you pass 15 km/h, if that's switched on.
+    var wasSlow by remember { mutableStateOf(true) }
+    LaunchedEffect(live.speed) {
+        val fast = live.speed > 15
+        if (fast && wasSlow && s.settings.autoRide && !live.rideMode) vm.openRideMode(true)
+        wasSlow = !fast
     }
     // The screen stays on while a ride records, so GPS keeps flowing.
     val view = LocalView.current
-    val recording = live.rec != null
-    DisposableEffect(recording) { view.keepScreenOn = recording; onDispose { view.keepScreenOn = false } }
+    val awake = live.rec != null || (live.rideMode && s.settings.wakeLock)
+    DisposableEffect(awake) { view.keepScreenOn = awake; onDispose { view.keepScreenOn = false } }
     Box(Modifier.fillMaxSize()) {
         AnimatedContent(
             page ?: tab.key,
@@ -179,14 +197,14 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun garage() = openSheet("garage")
                     override fun sos() = openSheet("sos")
                     override fun pair() = openSheet("pair")
-                    override fun ride() = soon("Ride mode")
+                    override fun ride() = vm.openRideMode(true)
                     override fun logbook() { page = "logbook" }
                     override fun service(id: String) = openSheet("svc:$id")
                     override fun alerts() { tab = Tab.ALERTS }
                     override fun fuel() { page = "fuel" }
                     override fun trip(which: String) = openSheet("trip:$which")
                     override fun rides() { tab = Tab.RIDES }
-                    override fun glovebox() = soon("The glovebox")
+                    override fun glovebox() = openSheet("glovebox")
                     override fun weather() = vm.refreshWeather()
                     override fun readingsHelp() = openSheet("help:readings")
                 }, tabBarHeight)
@@ -203,7 +221,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                 }, tabBarHeight)
                 Tab.ROUTE.key -> app.waylink.ui.route.RouteScreen(s, live, vm, openSheet, tabBarHeight)
                 Tab.RIDES.key -> RidesScreen(s, live, object : RidesActions {
-                    override fun record() = startRec()
+                    override fun record() = beginRec()
                     override fun endRide() = openSheet("rec-end")
                     override fun open(id: String) = openSheet("trip-detail:$id")
                     override fun chart(page: Int) = vm.setRideChart(page)
@@ -228,10 +246,21 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         TabBar(if (page == "logbook" || page == "fuel") Tab.TODAY else if (page == "profile") Tab.SETTINGS else tab, s, live, Modifier.align(Alignment.BottomCenter)) {
             page = null; tab = it
         }
+        // Quick actions on Today, like the web's + button.
+        androidx.compose.animation.AnimatedVisibility(
+            page == null && tab == Tab.TODAY, Modifier.align(Alignment.BottomEnd),
+            enter = fadeIn() + androidx.compose.animation.scaleIn(initialScale = 0.8f), exit = fadeOut(),
+        ) {
+            Box(
+                Modifier.windowInsetsPadding(WindowInsets.navigationBars).padding(end = 20.dp, bottom = tabBarHeight + 16.dp)
+                    .size(56.dp).shadow(10.dp, CircleShape).clip(CircleShape).background(c.ink).pressable(label = "Quick actions") { openSheet("quick") },
+                contentAlignment = Alignment.Center,
+            ) { Ic("plus", size = 24.dp, tint = c.bg) }
+        }
 
         // One sheet host. The top of the stack shows; the last one stays drawn while it slides away.
         val top = sheets.lastOrNull()
-        val spec = top?.let { buildSheet(it, s, live, vm, nav) }
+        val spec = top?.let { buildSheet(it, s, live, vm, nav, host) }
         var last by remember { mutableStateOf<SheetSpec?>(null) }
         if (spec != null) last = spec
         if (top != null && spec == null) LaunchedEffect(top) { nav.back() }
@@ -239,17 +268,25 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         Sheet(spec != null, nav::close, shown?.title ?: "", shown?.sub, onBack = if (sheets.size > 1) nav::back else null) {
             shown?.content?.invoke(this)
         }
+
+        androidx.compose.animation.AnimatedVisibility(live.rideMode, enter = fadeIn(tween(220)), exit = fadeOut(tween(200))) {
+            RideMode(s, live) { vm.openRideMode(false) }
+        }
+        androidx.compose.animation.AnimatedVisibility(live.call != null, enter = fadeIn(tween(200)), exit = fadeOut(tween(200))) {
+            CallOverlay(live, vm::answerCall, vm::declineCall, vm::endCall)
+        }
     }
 }
 
 private val PAGES = setOf("logbook", "fuel", "profile")
 
 /** Every sheet the app can show, by key ("svc:<id>", "help:reminders", "garage"). */
-private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetNav): SheetSpec? {
+private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetNav, host: ExtraHost): SheetSpec? {
     logbookSheet(key, s, vm, nav)?.let { return it }
     fuelSheet(key, s, vm, nav)?.let { return it }
     rideSheet(key, s, live, vm, nav)?.let { return it }
     settingsSheet(key, s, live, vm, nav)?.let { return it }
+    extraSheet(key, s, live, vm, nav, host)?.let { return it }
     app.waylink.ui.route.routeSheet(key, s, live, vm, nav)?.let { return it }
     val arg = key.substringAfter(':', "")
     return when (key.substringBefore(':')) {

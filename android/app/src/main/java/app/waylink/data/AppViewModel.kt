@@ -57,7 +57,13 @@ data class Live(
     val navSpeed: Int = 1,
     /** The turn picked on "Test one turn". */
     val turn: TurnTest = TurnTest(),
+    /** A call shown on the bike (ringing or active), or null. */
+    val call: Call? = null,
+    /** Ride mode is open. */
+    val rideMode: Boolean = false,
 )
+
+data class Call(val name: String, val ringing: Boolean, val since: Long)
 
 data class Nav(
     val mode: String, val idx: Int, val maneuver: String, val stepMeters: Double, val totalMeters: Double,
@@ -356,7 +362,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             "ring" -> {
                 if (!a.calls) { toast("Phone calls are switched off above."); return }
                 commit { it.copy(alerts = logAlert(it.alerts, "call", name)) }
-                toast(if (linked) "$name is ringing on the cluster." else "Saved. Link the bike to send it.")
+                ring(name)
             }
             "missed" -> {
                 if (!a.calls) { toast("Phone calls are switched off above."); return }
@@ -383,8 +389,37 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }))
     }
 
+    private var ringJob: Job? = null
+
+    /** Shows an incoming call; unanswered after 25 s it becomes a missed call. */
+    private fun ring(name: String) {
+        _live.update { it.copy(call = Call(name, true, System.currentTimeMillis())) }
+        ringJob?.cancel()
+        ringJob = viewModelScope.launch {
+            delay(25_000)
+            val c = _live.value.call
+            if (c != null && c.ringing) {
+                _live.update { it.copy(call = null) }
+                commit { it.copy(alerts = logAlert(it.alerts, "missed", c.name).let { x -> x.copy(missed = x.missed + NamedEvent(c.name, System.currentTimeMillis())) }) }
+            }
+        }
+    }
+
+    fun answerCall() { ringJob?.cancel(); _live.update { l -> l.copy(call = l.call?.copy(ringing = false, since = System.currentTimeMillis())) } }
+    fun declineCall() { ringJob?.cancel(); _live.update { it.copy(call = null) } }
+    fun endCall() { ringJob?.cancel(); _live.update { it.copy(call = null) }; toast("Call ended.") }
+
+    fun openRideMode(open: Boolean) = _live.update { it.copy(rideMode = open) }
+
     /** A handlebar press from the simulated bike. */
     fun press(kind: String) {
+        // With a call showing, a tap answers and a long press declines or ends it.
+        val call = _live.value.call
+        if (call != null) {
+            if (kind == "tap" && call.ringing) answerCall() else if (call.ringing) declineCall() else endCall()
+            commit { it.copy(alerts = logAlert(it.alerts, "button", if (kind == "tap") "Tap · Answer" else "Long press · ${if (call.ringing) "Decline" else "End call"}", count = false)) }
+            return
+        }
         val label = if (kind == "tap") "Play / pause" else "Next track"
         commit { it.copy(alerts = logAlert(it.alerts, "button", "${if (kind == "tap") "Tap" else "Long press"} · $label", count = false)) }
         toast("Handlebar · $label")
@@ -471,6 +506,89 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun endNav() { navJob?.cancel(); navJob = null; _live.update { it.copy(nav = null) } }
 
+    // ---------- Parked bike ----------
+    /** Saves where the phone is now as the bike's parking spot. Location permission is asked by the screen first. */
+    @android.annotation.SuppressLint("MissingPermission")
+    fun saveParking() {
+        if (_live.value.simulated) { setParking(sim[0], sim[1]); return }
+        if (!hasLocation()) { toast("Allow location to save where you parked."); return }
+        val provider = when {
+            locations.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) -> android.location.LocationManager.GPS_PROVIDER
+            locations.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER) -> android.location.LocationManager.NETWORK_PROVIDER
+            else -> null
+        }
+        if (provider == null) { toast("Location is off. Turn it on in quick settings."); return }
+        toast("Finding where you are…")
+        try {
+            androidx.core.location.LocationManagerCompat.getCurrentLocation(
+                locations, provider, null, androidx.core.content.ContextCompat.getMainExecutor(getApplication()),
+            ) { loc ->
+                val l = loc ?: locations.getLastKnownLocation(provider)
+                if (l == null) toast("Couldn’t get a location fix. Try again outside.") else setParking(l.latitude, l.longitude)
+            }
+        } catch (e: SecurityException) { toast("Allow location to save where you parked.") }
+    }
+
+    private fun setParking(lat: Double, lng: Double) {
+        veh { it.copy(parking = app.waylink.core.Parking(r6(lat), r6(lng), System.currentTimeMillis())) }
+        toast("Parking saved.")
+    }
+
+    fun clearParking() { veh { it.copy(parking = null) }; toast("Parking cleared.") }
+
+    // ---------- Glovebox ----------
+    private val gloveDir get() = File(getApplication<Application>().filesDir, "glove")
+    fun docFile(slot: String) = File(gloveDir, slot.replace(Regex("[^A-Za-z0-9_-]"), "_"))
+
+    /** Copies a picked photo or PDF into app storage. Up to 15 MB. */
+    fun addDoc(slot: String, uri: android.net.Uri) {
+        val app = getApplication<Application>()
+        viewModelScope.launch {
+            val res = withContext(Dispatchers.IO) {
+                try {
+                    val cr = app.contentResolver
+                    val type = cr.getType(uri) ?: "application/octet-stream"
+                    if (!type.startsWith("image/") && type != "application/pdf") return@withContext "Choose a photo or a PDF."
+                    var name = "Document"
+                    cr.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c -> if (c.moveToFirst()) name = c.getString(0) ?: name }
+                    gloveDir.mkdirs()
+                    val tmp = File(gloveDir, ".incoming")
+                    var total = 0L
+                    cr.openInputStream(uri)?.use { input ->
+                        tmp.outputStream().use { out ->
+                            val buf = ByteArray(64 * 1024)
+                            while (true) {
+                                val n = input.read(buf); if (n < 0) break
+                                total += n
+                                if (total > 15L * 1024 * 1024) { out.close(); tmp.delete(); return@withContext "That file is over 15 MB. Try a smaller photo." }
+                                out.write(buf, 0, n)
+                            }
+                        }
+                    } ?: return@withContext "Couldn’t open the file."
+                    val dest = docFile(slot)
+                    dest.delete()
+                    if (!tmp.renameTo(dest)) return@withContext "Couldn’t save the file."
+                    commit { s ->
+                        val old = s.glove.firstOrNull { it.slot == slot }
+                        s.copy(glove = s.glove.filter { it.slot != slot } + app.waylink.core.GloveDoc(slot, name.take(80), type, System.currentTimeMillis(), old?.expiry))
+                    }
+                    null
+                } catch (e: Exception) { "Couldn’t save the file." }
+            }
+            toast(res ?: "Saved in your glovebox.")
+        }
+    }
+
+    fun setDocExpiry(slot: String, ts: Long?) = commit { s -> s.copy(glove = s.glove.map { if (it.slot == slot) it.copy(expiry = ts) else it }) }
+
+    fun deleteDoc(slot: String) {
+        docFile(slot).delete()
+        commit { s -> s.copy(glove = s.glove.filter { it.slot != slot }) }
+        toast("Removed from your glovebox.")
+    }
+
+    private fun wipeGlove() { try { gloveDir.deleteRecursively() } catch (e: Exception) { } }
+
     // ---------- Settings ----------
     fun setTheme(key: String) = commit { it.copy(settings = it.settings.copy(theme = key)) }
     fun setRideChart(i: Int) = commit { it.copy(settings = it.settings.copy(rideChart = i.coerceIn(0, 2))) }
@@ -547,7 +665,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun restore(text: String): Boolean = try {
         val s = Vault.import(text)
         simOff()
-        commit { s }
+        commit { cur -> s.copy(glove = cur.glove) }
         toast("Restored ${app.waylink.core.plural(s.vehicles.size, "bike", "bikes")} from your backup.")
         refreshWeather()
         true
@@ -557,6 +675,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun eraseAll() {
         simOff()
         commit { s -> freshState().copy(settings = s.settings) }
+        wipeGlove()
         toast("Erased. Waylink starts fresh.")
     }
 
@@ -564,6 +683,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun resetAll() {
         simOff()
         commit { freshState() }
+        wipeGlove()
     }
 
 

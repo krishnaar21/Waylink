@@ -31,7 +31,7 @@ object Vault {
 
     /** A backup file: { format: "waylink-vault", version: 2, exported, data }. Pairing is left out. */
     fun export(s: AppState, now: Long = System.currentTimeMillis()): String {
-        val data = s.copy(vehicles = s.vehicles.map { it.copy(bike = PairedBike()) })
+        val data = s.copy(vehicles = s.vehicles.map { it.copy(bike = PairedBike()) }, glove = emptyList())
         val obj = buildJsonObject {
             put("format", "waylink-vault")
             put("version", 2)
@@ -53,7 +53,7 @@ object Vault {
         val vehicles = try { data["vehicles"]?.jsonArray } catch (e: IllegalArgumentException) { null }
         if (vehicles.isNullOrEmpty()) throw NotABackup()
         val s = try { json.decodeFromJsonElement(AppState.serializer(), data) } catch (e: Exception) { throw NotABackup() }
-        return normalise(s).copy(onboarded = true)
+        return normalise(s).copy(onboarded = true, glove = emptyList())
     }
 
     /** Keeps state valid: a vehicle always exists, the active one is real, the theme is one Android offers. */

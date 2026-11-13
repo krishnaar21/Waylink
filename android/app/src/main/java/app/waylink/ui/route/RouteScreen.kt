@@ -2,6 +2,7 @@ package app.waylink.ui.route
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures

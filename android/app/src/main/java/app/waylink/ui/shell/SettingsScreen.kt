@@ -149,10 +149,11 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp) {
             Hairline(66.dp)
             ListRow("Fuel", "Fill-ups and petrol price", icon = "fuel", end = "${v.fuel.size} fills", onClick = { act.page("fuel") })
             Hairline(66.dp)
-            ListRow("Digital glovebox", "RC, insurance, PUC, licence", icon = "folder", end = "Soon", onClick = { act.soon("The glovebox") })
+            val docs = s.glove.count { it.slot.startsWith(v.id + ":") || it.slot.startsWith("rider:") }
+            ListRow("Digital glovebox", "RC, insurance, PUC, licence", icon = "folder", end = "$docs", onClick = { act.sheet("glovebox") })
             Hairline(66.dp)
             val park = v.parking
-            ListRow("Parked bike", "Find your way back to it", icon = "pin", end = if (park != null) f.ago(park.ts) else "Not saved", onClick = { act.soon("Parked bike") })
+            ListRow("Parked bike", "Find your way back to it", icon = "pin", end = if (park != null) f.ago(park.ts) else "Not saved", onClick = { act.sheet("parking") })
         }
 
         SectionGap()
