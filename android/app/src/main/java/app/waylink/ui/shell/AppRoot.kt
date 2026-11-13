@@ -91,6 +91,9 @@ import app.waylink.ui.logbook.SheetSpec
 import app.waylink.ui.logbook.logbookSheet
 import app.waylink.ui.onboarding.Onboarding
 import app.waylink.ui.onboarding.OnboardingActions
+import app.waylink.ui.components.AutoClose
+import app.waylink.ui.components.LoadingScreen
+import app.waylink.ui.components.Splash
 import app.waylink.ui.theme.T
 import app.waylink.ui.theme.W
 import app.waylink.ui.theme.WaylinkTheme
@@ -107,7 +110,7 @@ enum class Tab(val key: String, val label: String, val icon: String) {
 fun AppRoot(vm: AppViewModel) {
     val s by vm.state.collectAsStateWithLifecycle()
     val live by vm.live.collectAsStateWithLifecycle()
-    WaylinkTheme(s.settings.theme, s.settings.accent) {
+    WaylinkTheme(s.settings.theme, s.settings.accent, s.settings.font, s.settings.bodyFont) {
         val c = W.c
         Box(Modifier.fillMaxSize().background(c.bg).grain()) {
             Crossfade(s.onboarded, animationSpec = tween(260), label = "root") { onboarded ->
@@ -118,7 +121,34 @@ fun AppRoot(vm: AppViewModel) {
                         vm.saveAboutYou(avatar, name, city, blood, iceName, icePhone)
                     override fun finish(simulated: Boolean) = vm.finishOnboarding(simulated)
                 })
-                else Main(s, live, vm)
+                else {
+                    // Developer preview states show a made-up garage; the real one is untouched.
+                    val shown = live.scenario?.let { k -> remember(k) { app.waylink.core.scenarioState(k, s) } } ?: s
+                    Main(shown, live, vm)
+                }
+            }
+            // Developer: onboarding as a preview over the app. Nothing it asks is saved.
+            androidx.compose.animation.AnimatedVisibility(live.onbTest && s.onboarded, enter = fadeIn(tween(260)), exit = fadeOut(tween(260))) {
+                BackHandler { vm.showOnboarding(false) }
+                Box(Modifier.fillMaxSize().background(c.bg).grain()) {
+                    Onboarding(app.waylink.core.freshState(), object : OnboardingActions {
+                        override fun sample() = vm.showOnboarding(false)
+                        override fun saveBike(model: String, plate: String, odo: Double, country: String) {}
+                        override fun saveAboutYou(avatar: String, name: String, city: String, blood: String, iceName: String, icePhone: String) {}
+                        override fun finish(simulated: Boolean) = vm.showOnboarding(false)
+                    })
+                }
+            }
+            androidx.compose.animation.AnimatedVisibility(live.loading != null, enter = fadeIn(tween(250)), exit = fadeOut(tween(250))) {
+                LoadingScreen(live.loading ?: "Loading")
+                AutoClose(live.loading ?: "", 3200) { vm.hideLoading() }
+            }
+            // The splash: 2 s at launch, 6 s (or a tap) from Developer; fades out over .35 s.
+            androidx.compose.animation.AnimatedVisibility(live.splash > 0, enter = fadeIn(tween(1)), exit = fadeOut(tween(350))) {
+                var shown by remember { mutableStateOf(live.splash) }
+                if (live.splash > 0) shown = live.splash
+                Splash(shown) { vm.hideSplash() }
+                AutoClose(shown, if (shown == 1) 2050 else 6000) { vm.hideSplash() }
             }
             ToastHost(live, vm::clearToast)
         }
@@ -228,6 +258,15 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun accent(key: String) = vm.setAccent(key)
                     override fun sim(on: Boolean) = if (on) vm.simOn() else vm.simOff()
                     override fun soon(what: String) = vm.toast("$what comes in the next Android build.")
+                    override fun dev(key: String) = when (key) {
+                        "onboarding" -> vm.showOnboarding(true)
+                        "splash" -> vm.showSplash()
+                        "loading" -> vm.showLoading()
+                        "pair-all" -> openSheet("pair")
+                        else -> Unit
+                    }
+                    override fun scenario(key: String?) = vm.setScenario(key)
+                    override fun click(on: Boolean) = vm.uiClick(on)
                 }, tabBarHeight)
                 Tab.ROUTE.key -> app.waylink.ui.route.RouteScreen(s, live, vm, openSheet, tabBarHeight)
                 Tab.RIDES.key -> RidesScreen(s, live, object : RidesActions {

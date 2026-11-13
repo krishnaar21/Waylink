@@ -81,6 +81,12 @@ interface SettingsActions {
     fun accent(key: String)
     fun sim(on: Boolean)
     fun soon(what: String)
+    /** Developer actions: "onboarding", "splash", "loading", "pair-all". */
+    fun dev(key: String)
+    /** Preview states: null for my data, "empty" or "edge". */
+    fun scenario(key: String?)
+    /** The switch click sound, for local toggles like the Look disclosure. */
+    fun click(on: Boolean)
 }
 
 val RIDE_CHARTS = listOf("Calendar", "Km per week", "Km by weekday")

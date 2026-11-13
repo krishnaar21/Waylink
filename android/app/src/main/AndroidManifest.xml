@@ -21,12 +21,174 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize" />
+        <!-- The app icon picker (Settings > Icons): one launcher entry per style, only the chosen one enabled. -->
+        <activity-alias
+            android:name=".Launcher"
+            android:enabled="true"
+            android:exported="true"
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_chrome"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_chrome"
+            android:roundIcon="@mipmap/ic_app_chrome"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_retro"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_retro"
+            android:roundIcon="@mipmap/ic_app_retro"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_leather"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_leather"
+            android:roundIcon="@mipmap/ic_app_leather"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_ascii"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_ascii"
+            android:roundIcon="@mipmap/ic_app_ascii"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_wool"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_wool"
+            android:roundIcon="@mipmap/ic_app_wool"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_oil"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_oil"
+            android:roundIcon="@mipmap/ic_app_oil"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_stitch"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_stitch"
+            android:roundIcon="@mipmap/ic_app_stitch"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_classic_rust"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_classic_rust"
+            android:roundIcon="@mipmap/ic_app_classic_rust"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_classic_wine"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_classic_wine"
+            android:roundIcon="@mipmap/ic_app_classic_wine"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_classic_blue"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_classic_blue"
+            android:roundIcon="@mipmap/ic_app_classic_blue"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_classic_slate"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_classic_slate"
+            android:roundIcon="@mipmap/ic_app_classic_slate"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_classic_amber"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_classic_amber"
+            android:roundIcon="@mipmap/ic_app_classic_amber"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".Icon_classic_mint"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_app_classic_mint"
+            android:roundIcon="@mipmap/ic_app_classic_mint"
+            android:targetActivity=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
         <!-- Lets a PDF in the glovebox open in your PDF viewer, one file at a time, read-only. -->
         <provider
             android:name="androidx.core.content.FileProvider"

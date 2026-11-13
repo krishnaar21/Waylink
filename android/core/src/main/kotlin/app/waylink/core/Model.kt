@@ -61,7 +61,7 @@ data class FuelArea(val state: String, val place: String = "", val ts: Long = 0)
 
 @Serializable
 data class Settings(
-    /** auto, sketch (Paper) or sketchdark (Paper dark). Other web themes map to auto. */
+    /** auto, sketch (Paper), sketchdark (Paper dark), or with "Show all themes": paper (Light), obsidian (Dark), amoled (Navy). */
     val theme: String = "auto",
     val accent: String = "wine",
     val sounds: Boolean = true,
@@ -72,6 +72,15 @@ data class Settings(
     val simulated: Boolean = false,
     val rideChart: Int = 0,
     val progress: String = "gauge",
+    /** Title face (web FONTS key) and body face (BODY_FONTS key). */
+    val font: String = "system",
+    val bodyFont: String = "system",
+    /** App icon style (web ICON_STYLES) and the icon look: line, duo (Glow) or fill (Duotone). */
+    val iconStyle: String = "classic",
+    val icons: String = "line",
+    /** Developer: raw Bluetooth frames on Route, and every theme in the picker. */
+    val devFrames: Boolean = false,
+    val allThemes: Boolean = false,
     val alerts: AlertSettings = AlertSettings(),
 )
 

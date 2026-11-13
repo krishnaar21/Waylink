@@ -136,3 +136,43 @@ object Sample {
 
     private fun round6(x: Double) = (x * 1e6).roundToLong() / 1e6
 }
+
+/**
+ * Developer preview states (web store.js scenario): "empty" is a brand-new rider; "edge" has long names,
+ * huge and tiny numbers and everything due at once. Built fresh each time and never saved.
+ */
+fun scenarioState(kind: String, base: AppState, now: Long = System.currentTimeMillis()): AppState {
+    val day = 86_400_000L
+    val f = freshState(now).copy(onboarded = true, settings = base.settings)
+    if (kind == "empty") return f.copy(profile = f.profile.copy(name = ""))
+    val profile = f.profile.copy(
+        name = "Venkataraghavan Subramaniam", city = "Thiruvananthapuram", blood = "AB−",
+        medical = "Allergic to penicillin, sulfa drugs and bee stings. Carries an EpiPen in the left jacket pocket.",
+        iceName = "Lakshmi Narayanan (Amma)", icePhone = "+91 98450 00000", licenceNo = "KA05 20190012345", licenceExpiry = now - 3 * day,
+    )
+    val v0 = newVehicle(model = "dominar400", nickname = "Long-distance tourer", plate = "22 BH 1234 AA", odo = 199999.9, colour = "#E9E6DF", now = now)
+    val v = v0.copy(
+        tripA = TripMeter(9999.9, now - 400 * day), tripB = TripMeter(0.0, now),
+        fuel = listOf(
+            FuelEntry(ts = now - 40 * day, odo = 199400.0, litres = 13.0, cost = 1338.0, full = true),
+            FuelEntry(ts = now - 30 * day, odo = 199402.0, litres = 0.4, cost = 41.0, full = false),
+            FuelEntry(ts = now - 20 * day, odo = 199760.0, litres = 12.6, cost = 99999.0, full = true),
+            FuelEntry(ts = now - 2 * day, odo = 199995.0, litres = 1.1, cost = 113.0, full = false),
+        ),
+        service = defaultServiceItems(150000.0, now - 900 * day) + ServiceItem(kind = "custom", name = "Steering bearings and swingarm re-grease", icon = "wrench", everyKm = 1.0, everyDays = 1, lastKm = 0.0, lastDate = now - 999 * day),
+        records = listOf(ServiceRecord(date = now - 10 * day, odo = 199900.0, title = "Engine rebuild after a long Western Ghats road trip", workshop = "Sri Venkateshwara Motorcycle Works", cost = 1234567.0)),
+        checklist = List(6) { i -> ChecklistItem(text = if (i == 0) "A very long mechanic note that keeps going to check how the list wraps on small screens without breaking the layout" else "Item ${i + 1}", done = i % 2 == 0) },
+        trips = listOf(
+            Trip(n = 9999, start = now - 3_600_000, end = now - 3_500_000, km = 0.1, sec = 60.0, top = 3.0, avg = 6.0, title = "A", pts = listOf(listOf(12.97, 77.59, (now - 3_600_000).toDouble()))),
+            Trip(n = 9998, start = now - 5 * day, end = now - 4 * day, km = 1240.6, sec = 86000.0, top = 162.0, avg = 52.0, title = "Bengaluru to Leh in one go, a ride with a title long enough to wrap twice"),
+        ),
+        rideNo = 9999, parking = Parking(34.1526, 77.5771, now - 40 * day),
+    )
+    return f.copy(
+        profile = profile, vehicles = listOf(v), active = v.id,
+        alerts = Alerts(
+            missed = List(128) { i -> NamedEvent(if (i == 127) "Dr. Venkataraghavan Subramaniam" else "Rohan", now - i * 60_000L) },
+            wa = List(12) { NamedEvent("Priya 🌸", now) }, sent = 99999,
+        ),
+    )
+}

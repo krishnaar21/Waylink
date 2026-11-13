@@ -61,6 +61,18 @@ data class Live(
     val call: Call? = null,
     /** Ride mode is open. */
     val rideMode: Boolean = false,
+    /** The splash is up (at launch, or from Developer); the number restarts its animation. */
+    val splash: Int = 1,
+    /** The loading screen's line, while it shows. */
+    val loading: String? = null,
+    /** Developer: onboarding shown over the app as a preview. */
+    val onbTest: Boolean = false,
+    /** Developer preview states: null (my data), "empty" or "edge". Nothing is saved while previewing. */
+    val scenario: String? = null,
+    /** Each step of the Bluetooth link, newest last (time, text). */
+    val linkLog: List<Pair<Long, String>> = emptyList(),
+    /** Recent frames sent to the cluster, as hex, for "Show Bluetooth messages". */
+    val frames: List<String> = emptyList(),
 )
 
 data class Call(val name: String, val ringing: Boolean, val since: Long)
@@ -89,7 +101,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     val live: StateFlow<Live> = _live.asStateFlow()
     private var saveJob: Job? = null
 
-    init { refreshWeather() }
+    /** The web's sound effects; follows the "Sound effects" switch. */
+    val sound = Sound(app).also { it.enabled = _state.value.settings.sounds }
+
+    init { refreshWeather(); sound.play(Sound.Fx.ENGINE_START) }
 
     private fun load(): AppState = try {
         if (file.baseFile.exists()) Vault.decode(String(file.readFully(), Charsets.UTF_8)) else freshState()
@@ -124,6 +139,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         } catch (_: Exception) { }
     }
     fun clearToast() = _live.update { it.copy(toast = null) }
+
+    // ---------- Developer ----------
+    fun showSplash() { _live.update { it.copy(splash = it.splash + 1) }; sound.play(Sound.Fx.ENGINE_START) }
+    fun hideSplash() = _live.update { it.copy(splash = 0) }
+    fun showLoading(text: String = "Loading your garage") = _live.update { it.copy(loading = text) }
+    fun hideLoading() = _live.update { it.copy(loading = null) }
+    fun showOnboarding(on: Boolean) { sound.click(on); _live.update { it.copy(onbTest = on) } }
+    fun setScenario(k: String?) { sound.click(true); _live.update { it.copy(scenario = k?.takeIf { x -> x == "empty" || x == "edge" }) } }
+    fun logLink(text: String) = _live.update { it.copy(linkLog = (it.linkLog + (System.currentTimeMillis() to text)).takeLast(200)) }
 
     // ---------- Onboarding ----------
     fun onboardSample() {
@@ -341,6 +365,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         if (_live.value.rec != null) return
         if (!_live.value.simulated && !hasLocation()) { toast("Allow location to record rides, or use the simulated bike."); return }
         lastFix = null
+        sound.play(Sound.Fx.REV_UP)
         _live.update { it.copy(rec = Rec(System.currentTimeMillis())) }
         ensureGeo()
         toast("Recording. Ride safe.")
@@ -349,6 +374,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     fun stopRecording(keep: Boolean) {
         val r = _live.value.rec ?: return
         _live.update { it.copy(rec = null) }
+        sound.play(Sound.Fx.ENGINE_OFF)
         if (keep && r.km >= 0.1) {
             veh { it.addRide(r.start, System.currentTimeMillis(), r.km, r.top.toDouble(), r.pts) }
             toast("Saved · ${fmt().num(r.km, 1)} km")
@@ -359,7 +385,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     fun renameTrip(id: String, title: String) = veh { v -> v.copy(trips = v.trips.map { if (it.id == id) it.copy(title = title.trim().take(60).ifEmpty { it.title }) else it }) }
     fun deleteTrip(id: String) { veh { v -> v.copy(trips = v.trips.filter { it.id != id }) }; toast("Ride deleted. The odometer is unchanged.") }
 
-    override fun onCleared() { stopGps(); super.onCleared() }
+    override fun onCleared() { stopGps(); sound.release(); super.onCleared() }
 
     // ---------- Alerts ----------
     private fun logAlert(a: Alerts, kind: String, name: String, count: Boolean = true): Alerts {
@@ -380,15 +406,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
                 commit { it.copy(alerts = logAlert(it.alerts, "call", name)) }
                 ring(name)
                 buzz(30, 60, 30)
+                sound.play(Sound.Fx.HORN)
             }
             "missed" -> {
                 if (!a.calls) { toast("Phone calls are switched off above."); return }
                 commit { it.copy(alerts = logAlert(it.alerts, "missed", name).let { x -> x.copy(missed = x.missed + NamedEvent(name, now)) }) }
+                if (linked) pushFrame("Missed call", app.waylink.core.Protocol.missedCall(name))
                 toast(if (linked) "Missed call from $name sent." else "Saved. Link the bike to send it.")
             }
             "wa" -> {
                 if (!a.waMsgs) { toast("WhatsApp messages are switched off above."); return }
                 commit { it.copy(alerts = logAlert(it.alerts, "wa", name).let { x -> x.copy(wa = x.wa + NamedEvent(name, now)) }) }
+                if (linked) pushFrame("WhatsApp", app.waylink.core.Protocol.whatsAppAlert(name))
                 toast(if (linked) "$name on the cluster for 6 s." else "Saved. Link the bike to send it.")
             }
         }
@@ -404,7 +433,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "waCalls" -> a.copy(waCalls = !a.waCalls)
             else -> a.copy(waMsgs = !a.waMsgs)
         }))
-    } }
+    }
+        val a = _state.value.settings.alerts
+        sound.click(when (key) { "calls" -> a.calls; "waCalls" -> a.waCalls; else -> a.waMsgs })
+    }
 
     private var ringJob: Job? = null
 
@@ -446,13 +478,43 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     // ---------- Link ----------
     fun simOn() {
-        if (_live.value.link != LinkState.CONNECTED) buzz(15)
+        if (_live.value.link != LinkState.CONNECTED) { buzz(15); sound.click(true) }
+        logLink("Simulated cluster: started"); logLink("Linked. Status every 5 s, turns every 0.8 s")
         _live.update { it.copy(link = LinkState.CONNECTED, simulated = true, engine = 83, speed = 0) }
+        startStream()
         toast("Simulated cluster linked.")
         ensureGeo()
     }
 
-    fun simOff() { _live.update { it.copy(link = LinkState.IDLE, simulated = false, engine = null) }; ensureGeo() }
+    // The frames the cluster would get, built by the real protocol code, so "Show Bluetooth messages" has something to show.
+    private var streamJob: Job? = null
+    private fun pushFrame(label: String, bytes: ByteArray) =
+        _live.update { it.copy(frames = (it.frames + "$label · ${app.waylink.core.Protocol.hex(bytes)}").takeLast(6)) }
+    private fun startStream() {
+        streamJob?.cancel()
+        streamJob = viewModelScope.launch {
+            var beat = 0L
+            while (_live.value.link == LinkState.CONNECTED) {
+                val l = _live.value
+                val now = System.currentTimeMillis()
+                if (now - beat >= app.waylink.core.Protocol.HEARTBEAT_MS) {
+                    beat = now
+                    val call = l.call
+                    pushFrame("Status", app.waylink.core.Protocol.generalV2(l.battery ?: 80,
+                        if (call == null) 0 else if (call.ringing) app.waylink.core.Protocol.Call.INCOMING else app.waylink.core.Protocol.Call.ACTIVE,
+                        call?.name, _state.value.alerts.missed.size))
+                }
+                l.nav?.let { n ->
+                    val eta = java.time.Instant.ofEpochMilli(n.eta).atZone(java.time.ZoneId.systemDefault())
+                    pushFrame("Turn", app.waylink.core.Protocol.tbtFrame(app.waylink.core.Maneuvers.of(n.maneuver).op, n.stepMeters, n.totalMeters,
+                        (eta.hour + 11) % 12 + 1, eta.minute, eta.hour < 12, n.exit, if (_state.value.settings.streetNames) n.street else ""))
+                }
+                delay(app.waylink.core.Protocol.TBT_STREAM_MS)
+            }
+        }
+    }
+
+    fun simOff() { streamJob?.cancel(); sound.click(false); logLink("Disconnected"); _live.update { it.copy(link = LinkState.IDLE, simulated = false, engine = null) }; ensureGeo() }
 
     // ---------- Route ----------
     private var navJob: Job? = null
@@ -610,7 +672,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     // ---------- Settings ----------
     fun setTheme(key: String) = commit { it.copy(settings = it.settings.copy(theme = key)) }
-    fun setRideChart(i: Int) = commit { it.copy(settings = it.settings.copy(rideChart = i.coerceIn(0, 2))) }
+    fun setRideChart(i: Int) { sound.click(true); commit { it.copy(settings = it.settings.copy(rideChart = i.coerceIn(0, 2))) } }
+    fun setProgress(k: String) { sound.click(true); commit { it.copy(settings = it.settings.copy(progress = if (k in listOf("gauge", "road", "tread", "dipstick")) k else "gauge")) } }
+    fun setIconLook(k: String) { sound.click(true); commit { it.copy(settings = it.settings.copy(icons = if (k == "duo" || k == "fill") k else "line")) } }
+    fun setAppIcon(k: String) { sound.click(true); commit { it.copy(settings = it.settings.copy(iconStyle = k)) }; AppIcon.apply(getApplication(), k, _state.value.settings.accent) }
+    fun setFont(k: String) { sound.click(true); commit { it.copy(settings = it.settings.copy(font = k)) } }
+    fun setBodyFont(k: String) { sound.click(true); commit { it.copy(settings = it.settings.copy(bodyFont = k)) } }
+    /** UI-only sounds the screens ask for (tab swipes, open/close disclosure, slider). */
+    fun uiClick(on: Boolean = true) = sound.click(on)
+    fun uiSwipe(dir: Int) = sound.swipe(dir)
+    fun uiTick(p: Float) = sound.tick(p)
+    fun playSplashSound() = sound.play(Sound.Fx.ENGINE_START)
+    // The launcher icon changes only when picked in Settings > Icons: switching it can unpin a Home Screen shortcut.
     fun setAccent(key: String) = commit { it.copy(settings = it.settings.copy(accent = key)) }
 
     /** Riding and sound switches by their web key. */
@@ -622,9 +695,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "wakeLock" -> st.copy(wakeLock = !st.wakeLock)
             "streetNames" -> st.copy(streetNames = !st.streetNames)
             "sounds" -> st.copy(sounds = !st.sounds)
+            "devFrames" -> st.copy(devFrames = !st.devFrames)
+            "allThemes" -> st.copy(allThemes = !st.allThemes)
             else -> st
         })
-    } }
+    }
+        val st = _state.value.settings
+        sound.enabled = st.sounds
+        sound.click(when (key) { "autoRide" -> st.autoRide; "autoRecord" -> st.autoRecord; "wakeLock" -> st.wakeLock; "streetNames" -> st.streetNames; "sounds" -> st.sounds; "devFrames" -> st.devFrames; "allThemes" -> st.allThemes; else -> true })
+    }
 
     fun setCountry(code: String) {
         val co = Catalog.country(code)
