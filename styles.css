@@ -2209,3 +2209,6 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .pc-cell:not(.wide):not(.blood) .pc-v { display: block; -webkit-line-clamp: unset; }
 .pc-cell.wide .pc-v { -webkit-line-clamp: 4; }
 .pc-cell .pc-k svg { display: none; }
+/* Ride mode: a bigger speedometer, close to the full screen width */
+.rm-dial { width: min(380px, 92vw, 52vh) !important; }
+.rm-dial .big { font-size: min(112px, 27vw, 15vh) !important; }
