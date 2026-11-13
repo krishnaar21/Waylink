@@ -16,4 +16,11 @@ bike = mono.resize((W, H), Image.LANCZOS).filter(ImageFilter.GaussianBlur(.5))
 bike.putalpha(bike.getchannel('A').point(lambda p: int(p * .95)))
 for n in ['light', 'dark', 'night']:
     p = f'img/onb/scene-{n}.webp'; sc = Image.open(p).convert('RGBA')
+    # cover the old bike's hard ground shadow with plain road from just beside it, feathered at the ends
+    band = (x0 - 6, y0 + H - 22, x0 + W + 6, y0 + H + 6)
+    patch = sc.crop((band[0] + 170, band[1], band[2] + 170, band[3]))
+    m = Image.new('L', patch.size, 255).filter(ImageFilter.GaussianBlur(0))
+    import numpy as _np
+    mm = _np.ones(patch.size[::-1], _np.float32); ramp = _np.clip(_np.arange(patch.size[0]) / 10, 0, 1); mm *= _np.minimum(ramp, ramp[::-1])[None, :]
+    sc.paste(patch, band[:2], Image.fromarray((mm * 255).astype(_np.uint8), 'L'))
     sc.alpha_composite(bike, (x0, y0)); sc.convert('RGB').save(p, quality=62, method=6); print('painted', p)
