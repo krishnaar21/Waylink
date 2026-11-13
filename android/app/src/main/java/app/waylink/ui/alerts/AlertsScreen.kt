@@ -110,7 +110,6 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
     Page(bottom) { androidx.compose.runtime.CompositionLocalProvider(app.waylink.ui.components.LocalBigRowIcons provides true) {
         Spacer(Modifier.height(7.dp))
         Txt("Alerts", T.title, c.ink)
-        Spacer(Modifier.height(3.dp))
         Txt(if (needs.isNotEmpty()) "${plural(needs.size, "thing needs", "things need")} you" else "Nothing needs you right now", T.subtitle, c.ink3)
         Spacer(Modifier.height(26.dp))
         // .ltabs: underlined tabs with counts and how many alerts reached the bike, set 10 dp in like the web app.
@@ -129,7 +128,7 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
         }
         app.waylink.ui.components.StickyInfo("Alerts", below = tabs)
         tabs()
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(24.dp))
 
         Column(Modifier.graphicsLayer { alpha = slide.value; translationX = (1f - slide.value) * 24.dp.toPx() * from }) {
         if (tab == "needs") {

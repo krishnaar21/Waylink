@@ -107,7 +107,7 @@ fun FuelScreen(s: AppState, act: FuelActions, bottom: Dp) {
             val n = fs.tanks.size
             Txt(
                 when {
-                    hasRange -> "Based on your last ${if (n >= 3) "three" else WORDS.getOrElse(n) { n.toString() }} full ${if (n == 1) "tank" else "tanks"}: ${f.num(fs.avg, 1)} km/L." + if (fs.onReserve) " You’re on reserve." else ""
+                    hasRange -> "Based on your last ${if (n >= 3) "three" else WORDS.getOrElse(n) { n.toString() }} full ${if (n == 1) "tank" else "tanks"}: ${f.num(fs.avg, 1)}\u00A0km\u2060/\u2060L." + if (fs.onReserve) " You’re on reserve." else ""
                     v.fuel.isNotEmpty() -> "Fill to the brim once more to see your range."
                     else -> "Fill to the brim and log it. Range appears after the next full tank."
                 },

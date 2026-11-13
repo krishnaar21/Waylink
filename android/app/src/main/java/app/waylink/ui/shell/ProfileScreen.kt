@@ -71,9 +71,8 @@ fun ProfileScreen(s: AppState, back: () -> Unit, sheet: (String) -> Unit, help: 
                     contentAlignment = Alignment.Center,
                 ) { Ic("edit", size = 15.dp, tint = c.ink) }
             }
-            Spacer(Modifier.height(12.dp + 6.dp))
+            Spacer(Modifier.height(15.dp))
             Txt(shortName(p.name).ifEmpty { "Your profile" }, T.title, c.ink, Modifier.semantics { heading() }, maxLines = 1)
-            Spacer(Modifier.height(3.dp))
             Txt("Rider since ${dMonthYear(if (p.since > 0) p.since else System.currentTimeMillis())}", T.subtitle, c.ink3)
         }
         // .stat3: three cells, 16 padding, big 30 with its unit on the line below

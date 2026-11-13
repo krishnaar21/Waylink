@@ -144,7 +144,6 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
             Column(Modifier.weight(1f).padding(top = 1.dp)) {
                 val today = LocalDate.now()
                 Txt(today.dayOfWeek.getDisplayName(JTextStyle.FULL, Locale.ENGLISH), T.title, c.ink, Modifier.semantics { heading() })
-                Spacer(Modifier.height(3.dp))
                 if (s.sample || live.simulated || live.scenario != null) DemoPill()
                 else Txt("${today.dayOfMonth} ${today.month.getDisplayName(JTextStyle.FULL, Locale.ENGLISH)}", T.subtitle, c.ink3)
             }
