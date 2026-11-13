@@ -349,6 +349,10 @@ private fun LinkBike(onBack: () -> Unit, onFinish: (Boolean) -> Unit) {
 @Composable
 private fun LinkHero() {
     val c = W.c
+    if (app.waylink.ui.theme.Motion.still) {
+        Box(Modifier.size(width = 220.dp, height = 208.dp)) { Image(painterResource(R.drawable.rider_street), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit) }
+        return
+    }
     val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "lk")
     val ride = remember { androidx.compose.animation.core.Animatable(0f) }
     val badge = remember { androidx.compose.animation.core.Animatable(0f) }

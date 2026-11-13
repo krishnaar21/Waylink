@@ -126,7 +126,7 @@ fun LoadingScreen(text: String) {
             Box(Modifier.size(64.dp).clip(CircleShape).background(c.raised).border(1.dp, c.line, CircleShape), contentAlignment = Alignment.Center) {
                 TURN_SIGNS.forEachIndexed { i, (name, _) ->
                     // ldSwap: 3 s loop, each sign 0.5 s after the last; in from below, hold, out upwards.
-                    val ph by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3000, easing = LinearEasing), RepeatMode.Restart, androidx.compose.animation.core.StartOffset(i * 500)), label = "ld$i")
+                    val ph = if (app.waylink.ui.theme.Motion.still) (if (i == 0) 0.1f else 0.5f) else inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3000, easing = LinearEasing), RepeatMode.Restart, androidx.compose.animation.core.StartOffset(i * 500)), label = "ld$i").value
                     val (a, y, k) = when {
                         ph < 0.06f -> { val f = CubicBezierEasing(.4f, 0f, .2f, 1f).transform(ph / 0.06f); Triple(f, 10f * (1 - f), 0.85f + 0.15f * f) }
                         ph < 0.15f -> Triple(1f, 0f, 1f)
@@ -141,7 +141,7 @@ fun LoadingScreen(text: String) {
                 val ts = TextStyle(fontFamily = Body, fontSize = 15.sp, fontWeight = FontWeight.Medium, letterSpacing = (-0.005).em, lineHeight = 22.5.sp)
                 Txt(text, ts, c.ink2)
                 repeat(3) { i ->
-                    val o by inf.animateFloat(0.2f, 0.2f, infiniteRepeatable(keyframes { durationMillis = 1200; 0.2f at 0; 1f at 480; 0.2f at 1200 }, RepeatMode.Restart, androidx.compose.animation.core.StartOffset(i * 200)), label = "dot$i")
+                    val o = if (app.waylink.ui.theme.Motion.still) 1f else inf.animateFloat(0.2f, 1f, infiniteRepeatable(keyframes { durationMillis = 1200; 0.2f at 0; 1f at 480; 0.2f at 1200 }, RepeatMode.Restart, androidx.compose.animation.core.StartOffset(i * 200)), label = "dot$i").value
                     Txt(".", ts, c.ink2, Modifier.alpha(o))
                 }
             }
@@ -162,7 +162,7 @@ fun TurnsWordmark(fontSize: Float = 24f, modifier: Modifier = Modifier) {
         Txt("way", style, c.ink)
         Box(Modifier.size((fontSize * 0.64f).sp.toDp()).offset(y = (fontSize * 0.03f).sp.toDp()), contentAlignment = Alignment.Center) {
             TURN_SIGNS.forEachIndexed { i, (name, col) ->
-                val ph by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(4800, easing = LinearEasing), RepeatMode.Restart, androidx.compose.animation.core.StartOffset(i * 800)), label = "tg$i")
+                val ph = if (app.waylink.ui.theme.Motion.still) (if (i == 0) 0.1f else 0.5f) else inf.animateFloat(0f, 1f, infiniteRepeatable(tween(4800, easing = LinearEasing), RepeatMode.Restart, androidx.compose.animation.core.StartOffset(i * 800)), label = "tg$i").value
                 // tgCycle: pop in over 2.5 % with a springy overshoot, hold to 16 %, fade out by 18.5 %.
                 val (a, k) = when {
                     ph < 0.025f -> { val f = CubicBezierEasing(.3f, 1.5f, .5f, 1f).transform(ph / 0.025f); f.coerceIn(0f, 1f) to (0.4f + 0.6f * f) }

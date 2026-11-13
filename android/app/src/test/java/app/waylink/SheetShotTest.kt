@@ -38,6 +38,8 @@ import java.lang.reflect.Proxy
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [34], qualifiers = "w390dp-h844dp-mdpi")
 class SheetShotTest {
+    init { app.waylink.ui.theme.Motion.still = true }
+
     private val sample: AppState = Sample.seed(freshState()).copy(onboarded = true)
     private val live = Live()
 
