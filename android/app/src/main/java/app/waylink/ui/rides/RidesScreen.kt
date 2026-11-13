@@ -1,5 +1,7 @@
 package app.waylink.ui.rides
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -157,17 +159,40 @@ fun RidesScreen(s: AppState, live: Live, act: RidesActions, bottom: Dp) {
                 Spacer(Modifier.height(10.dp))
                 Txt("${v.trips.size}", T.big(64f), c.ink)
                 Spacer(Modifier.height(12.dp))
+                // .rh-line u: the distance underlined in the accent colour, 1.5 dp thick, 4 dp below the text
+                var uStart = -1; var uEnd = -1
                 val line = buildAnnotatedString {
                     if (v.trips.isEmpty()) append("Your rides will fill this in, one square a day.")
                     else {
                         append("You’ve ridden ")
-                        withStyle(SpanStyle(textDecoration = TextDecoration.Underline)) { append("${f.num(tot, if (tot < 100) 1 else 0)} km") }
+                        uStart = length
+                        append("${f.num(tot, if (tot < 100) 1 else 0)} km")
+                        uEnd = length
                         append(" on $title")
                         if (v.trips.size > 1) append(", about ${f.num(tot / v.trips.size, 0)} km a ride")
                         append(".")
                     }
                 }
-                Txt(line, Serif, c.ink)
+                var layout by remember { mutableStateOf<androidx.compose.ui.text.TextLayoutResult?>(null) }
+                val accent = c.accent
+                androidx.compose.foundation.text.BasicText(
+                    line,
+                    Modifier.drawBehind {
+                        val l = layout ?: return@drawBehind
+                        if (uStart < 0 || uEnd > l.layoutInput.text.length) return@drawBehind
+                        val th = 1.5.dp.toPx(); val off = 4.dp.toPx()
+                        // one stroke per line the range covers
+                        val first = l.getLineForOffset(uStart); val last = l.getLineForOffset(uEnd - 1)
+                        for (ln in first..last) {
+                            val x0 = if (ln == first) l.getHorizontalPosition(uStart, true) else l.getLineLeft(ln)
+                            val x1 = if (ln == last) l.getHorizontalPosition(uEnd, true) else l.getLineRight(ln)
+                            val y = l.getLineBaseline(ln) + off
+                            drawRect(accent, androidx.compose.ui.geometry.Offset(minOf(x0, x1), y), androidx.compose.ui.geometry.Size(kotlin.math.abs(x1 - x0), th))
+                        }
+                    },
+                    Serif.copy(color = c.ink, lineHeightStyle = androidx.compose.ui.text.style.LineHeightStyle(androidx.compose.ui.text.style.LineHeightStyle.Alignment.Center, androidx.compose.ui.text.style.LineHeightStyle.Trim.None)),
+                    onTextLayout = { layout = it },
+                )
             }
             Spacer(Modifier.height(18.dp))
             Charts(charts, s.settings.rideChart, act::chart, f)

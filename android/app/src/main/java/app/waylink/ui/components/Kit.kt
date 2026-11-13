@@ -69,18 +69,19 @@ fun Page(bottom: Dp, content: @Composable ColumnScope.() -> Unit) {
 fun PageHead(title: String, sub: String?, onBack: (() -> Unit)? = null, action: (@Composable RowScope.() -> Unit)? = null) {
     val c = W.c
     if (onBack != null || action != null) {
-        Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        // .topbar: 44 tall from the page top (24), 14 below it
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 14.dp).height(44.dp), verticalAlignment = Alignment.CenterVertically) {
             if (onBack != null) CircleBtn("back", "Back", onBack)
             Spacer(Modifier.weight(1f))
             action?.invoke(this)
         }
-    } else Spacer(Modifier.height(4.dp))
+    } else Spacer(Modifier.height(10.dp))
     Txt(title, T.title, c.ink, Modifier.semantics { heading() })
     if (sub != null) {
         Spacer(Modifier.height(3.dp))
         Txt(sub, T.subtitle, c.ink3, maxLines = 1)
     }
-    Spacer(Modifier.height(18.dp))
+    Spacer(Modifier.height(32.dp))
 }
 
 /** Space between page sections (.section margin-top: 30px). */
@@ -112,12 +113,16 @@ fun ListRow(
 ) {
     val c = W.c
     Row(
-        Modifier.fillMaxWidth().then(if (onClick != null) Modifier.pressable(label = title, onClick = onClick) else Modifier)
+        Modifier.fillMaxWidth().then(if (onClick != null) Modifier.rowPress(label = title, onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 14.dp).heightIn(min = 36.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            IconTile(icon, size = 36.dp, radius = 10.dp, bg = c.bg, tint = if (danger) c.red else c.ink2)
+            val big = LocalBigRowIcons.current
+            IconTile(
+                icon, size = if (big) 44.dp else 36.dp, radius = if (big) 13.dp else 10.dp, iconSize = if (big) 24.dp else 19.dp,
+                bg = if (danger) c.tintRed else c.bg, tint = if (danger) c.red else c.ink2,
+            )
             Spacer(Modifier.width(14.dp))
         }
         Column(Modifier.weight(1f)) {

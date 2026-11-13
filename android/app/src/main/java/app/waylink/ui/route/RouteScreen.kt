@@ -118,8 +118,10 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
     Page(bottom) {
         PageHead("Route", "Turns on your bike")
         SectionHead("Where to?")
-        Txt("Plan the ride in Google Maps. Its turns show on your bike.", T.row, c.ink3, Modifier.padding(bottom = 10.dp))
-        Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 18.dp, vertical = 16.dp)) {
+        // .sec-note: tucked 6 dp up under the heading, inset like it, 12 above the card
+        Txt("Plan the ride in Google Maps. Its turns show on your bike.", T.row.copy(lineHeight = 20.3.sp), c.ink3, Modifier.offset(y = (-6).dp).padding(horizontal = 14.dp))
+        Spacer(Modifier.height(6.dp))
+        Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp)) {
             Txt("Destination", T.eyebrow, c.ink3)
             Spacer(Modifier.height(8.dp))
             Input(dest, { dest = it }, placeholder = "Nandi Hills", label = "Destination", caps = KeyboardCapitalization.Words, maxLength = 120, imeAction = ImeAction.Go, onDone = openMaps)
@@ -129,19 +131,22 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
 
         SectionGap()
         SectionHead("How this works")
-        Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 18.dp, vertical = 6.dp)) {
+        // .howto: numbered steps in filled ink circles, 14 apart, 15/1.5 text
+        Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             listOf(
                 "Plan the ride in Google Maps." to " It draws the map and gives voice directions on your phone.",
                 "Rehearse a route" to " to see how turns look on your bike’s display before you ride.",
                 "Test one turn" to " to check a single arrow and distance on the display.",
             ).forEachIndexed { i, (b, rest) ->
-                if (i > 0) Hairline()
-                Row(Modifier.padding(vertical = 12.dp)) {
-                    Txt("${i + 1}", T.plate.copy(fontSize = 12.sp), c.ink3, Modifier.width(22.dp).padding(top = 3.dp))
+                Row {
+                    Box(Modifier.padding(top = 1.dp).size(24.dp).clip(CircleShape).background(c.ink), contentAlignment = Alignment.Center) {
+                        Txt("${i + 1}", T.chip.copy(fontSize = 12.5.sp, lineHeight = 12.5.sp), c.bg)
+                    }
+                    Spacer(Modifier.width(12.dp))
                     Txt(androidx.compose.ui.text.buildAnnotatedString {
                         pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.SemiBold, color = c.ink)); append(b); pop()
                         append(rest)
-                    }, T.row.copy(fontSize = 14.5.sp), c.ink2)
+                    }, T.row.copy(fontSize = 15.sp, lineHeight = 22.5.sp), c.ink2)
                 }
             }
         }
@@ -149,10 +154,10 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
 
         SectionGap()
         SectionHead("Rehearse a route", help = { openSheet("help:rehearse") })
-        Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
-            Txt(Rehearsal.NAME, Serif.copy(fontSize = 24.sp, lineHeight = 30.sp), c.ink)
-            Spacer(Modifier.height(6.dp))
-            Txt("${f.num(Rehearsal.totalMeters / 1000, 1)} km · ${Rehearsal.STEPS.size} turns · NH 44", T.row, c.ink3)
+        Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp)) {
+            Txt(Rehearsal.NAME, T.title.copy(fontSize = 24.sp, lineHeight = 36.sp), c.ink)
+            Spacer(Modifier.height(8.dp))
+            Txt("${f.num(Rehearsal.totalMeters / 1000, 1)} km · ${Rehearsal.STEPS.size} turns · NH 44", T.row, c.ink2)
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Rehearsal.STEPS.forEach { st -> TurnArrow(Maneuvers.of(st.maneuver).glyph, Modifier.size(24.dp, 30.dp), faint = 0.25f, sw = 9f) }
@@ -166,23 +171,26 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
         val t = live.turn
         val sel = Maneuvers.of(t.maneuver)
         val rb = sel.glyph.startsWith("roundabout")
-        Column(Modifier.fillMaxWidth().card(20.dp)) {
+        // .tt-card: 12 padding, 12 gap; 48 dp arrow tile in ink 6 %, title 16 semibold, "Change" 14 semibold
+        Column(Modifier.fillMaxWidth().card(20.dp).padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
-                Modifier.fillMaxWidth().pressable(label = "Change the turn") { openSheet("turn-test") }.padding(16.dp),
+                Modifier.fillMaxWidth().pressable(label = "Change the turn") { openSheet("turn-test") },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(c.raised), contentAlignment = Alignment.Center) {
-                    TurnArrow(sel.glyph, Modifier.size(36.dp, 44.dp), exit = if (rb) t.exit else 0, faint = 0.3f, sw = 9f)
+                Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(c.inkA(0.06f)), contentAlignment = Alignment.Center) {
+                    TurnArrow(sel.glyph, Modifier.size(30.dp), exit = if (rb) t.exit else 0, faint = 0.3f, sw = 9f)
                 }
-                Spacer(Modifier.width(14.dp))
-                Column(Modifier.weight(1f)) {
-                    Txt(sel.label, T.rowTitle, c.ink)
-                    Txt("${f.num(t.m)} m" + (if (rb) " · exit ${t.exit}" else "") + (if (t.street.isNotBlank()) " · ${t.street}" else ""), T.row, c.ink3, maxLines = 1)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Txt(sel.label, T.body.copy(fontWeight = FontWeight.SemiBold), c.ink, maxLines = 1)
+                    Txt("${f.num(t.m)} m" + (if (rb) " · exit ${t.exit}" else "") + (if (t.street.isNotBlank()) " · ${t.street}" else ""), T.rowSub, c.ink3, maxLines = 1)
                 }
-                Txt("Change", T.link, c.ink2)
-                Ic("chev", size = 14.dp, tint = c.ink3)
+                Spacer(Modifier.width(12.dp))
+                Txt("Change", T.row.copy(fontWeight = FontWeight.SemiBold), c.ink2)
+                Spacer(Modifier.width(2.dp))
+                Ic("chev", size = 15.dp, tint = c.ink2)
             }
-            Btn("Send to bike", vm::sendTurn, Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp), kind = BtnKind.ACCENT)
+            Btn("Send to bike", vm::sendTurn, Modifier.fillMaxWidth(), kind = BtnKind.ACCENT)
         }
 
         SectionGap()

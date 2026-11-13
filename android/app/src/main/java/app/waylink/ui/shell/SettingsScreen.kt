@@ -1,6 +1,13 @@
 package app.waylink.ui.shell
 
 import androidx.compose.animation.AnimatedVisibility
+import app.waylink.ui.components.rowPress
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -93,7 +100,7 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp) {
     val v = s.vehicle
     val st = s.settings
     val conn = connText(s, live)
-    Page(bottom) {
+    Page(bottom) { androidx.compose.runtime.CompositionLocalProvider(app.waylink.ui.components.LocalBigRowIcons provides true) {
         PageHead("Settings", "Profile, bikes and look")
         ProfileCard(s) { act.page("profile") }
 
@@ -102,43 +109,48 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp) {
         Column(Modifier.fillMaxWidth().card(20.dp)) {
             Box {
                 Row(
-                    Modifier.fillMaxWidth().pressable(label = "Switch vehicle") { act.sheet("garage") }.padding(start = 12.dp, end = 64.dp, top = 12.dp, bottom = 12.dp),
+                    Modifier.fillMaxWidth().pressable(label = "Switch vehicle") { act.sheet("garage") }.padding(start = 12.dp, end = 58.dp, top = 12.dp, bottom = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    BikeArt(Modifier.size(width = 112.dp, height = 76.dp), 14.dp)
+                    // .art.card-art 96 × 96, radius 16; .vc-name 20/23 semibold; .vc-line 14 ink-2; eyebrow 13.5 ink-3
+                    BikeArt(Modifier.size(96.dp), 16.dp)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Txt(vehicleTitle(s), Serif.copy(fontSize = 19.sp, lineHeight = 24.sp), c.ink, maxLines = 1)
+                        Txt(vehicleTitle(s), T.cardTitle.copy(fontSize = 20.sp, lineHeight = 23.sp), c.ink, maxLines = 2)
+                        Spacer(Modifier.height(3.dp))
                         Txt((if (v.nickname.isNotBlank()) modelName(s, s.model) + " · " else "") + v.plate.ifBlank { "No plate" }, T.row, c.ink2, maxLines = 1)
                         Spacer(Modifier.height(8.dp))
                         Txt("${f.short(v.odo)} km · $conn", T.eyebrow, c.ink3, maxLines = 1)
                     }
                 }
-                CircleBtn("edit", "Edit vehicle", { act.sheet("vehicle:${v.id}") }, Modifier.align(Alignment.TopEnd).padding(top = 12.dp, end = 12.dp), size = 38.dp)
+                // .vcard .edit: 36 dp, flat ink 6 %, 42 down and 14 in from the corner
+                CircleBtn("edit", "Edit vehicle", { act.sheet("vehicle:${v.id}") }, Modifier.align(Alignment.TopEnd).padding(top = 42.dp, end = 14.dp), size = 36.dp, flat = true, iconSize = 15.dp)
             }
             Hairline()
             ListRow("Spec sheet", "Oil, tyres, chain, plugs", icon = "spec", onClick = { act.sheet("specs") })
-            Hairline(16.dp)
+            Hairline(66.dp)
             ListRow("Odometer", "Correct it if it drifts", icon = "gauge", end = "${f.num(Math.floor(v.odo))} km", onClick = { act.sheet("odo") })
-            Hairline(16.dp)
+            Hairline(66.dp)
             ListRow("Bluetooth", "Pair and check the link", icon = "bt", end = conn, onClick = { act.sheet("pair") })
         }
 
-        // Support card: a soft accent row.
-        Spacer(Modifier.height(16.dp))
+        // .support-card: card, 44 dp heart tile in ink 7 %, bold title, ink-2 line.
+        Spacer(Modifier.height(30.dp))
         Row(
-            Modifier.fillMaxWidth().card(20.dp).pressable(label = "Support Waylink") { act.sheet("support") }.padding(horizontal = 16.dp, vertical = 14.dp),
+            Modifier.fillMaxWidth().card(20.dp).pressable(label = "Support Waylink") { act.sheet("support") }.padding(start = 14.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(c.accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                Ic("love", size = 19.dp, tint = c.accent)
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(c.inkA(0.07f)), contentAlignment = Alignment.Center) {
+                Ic("love", size = 22.dp, tint = c.ink)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Txt("Support Waylink", T.rowTitle, c.ink)
-                Txt("Chip in if it helps", T.row, c.ink3)
+                Txt("Support Waylink", T.body.copy(fontSize = 16.5.sp, lineHeight = 24.75.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold), c.ink)
+                Spacer(Modifier.height(2.dp))
+                Txt("Chip in if it helps", T.row, c.ink2)
             }
-            Ic("chev", size = 15.dp, tint = c.ink3)
+            Spacer(Modifier.width(14.dp))
+            Ic("chev", size = 18.dp, tint = c.ink3)
         }
 
         SectionGap()
@@ -209,12 +221,12 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp) {
             Spacer(Modifier.height(4.dp))
             Txt("Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.", T.rowSub.copy(textAlign = TextAlign.Center), c.ink4)
         }
-    }
+    } }
 }
 
 const val APP_VERSION = "1.0"
 
-/** The profile card: avatar, name, and the emergency info folded underneath. */
+/** The profile card (.profile-card): avatar, name, and the emergency info folded underneath (.pc-more). */
 @Composable
 private fun ProfileCard(s: AppState, onOpen: () -> Unit) {
     val c = W.c
@@ -230,10 +242,11 @@ private fun ProfileCard(s: AppState, onOpen: () -> Unit) {
             Avatar(p.avatar)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Txt(shortName(p.name).ifEmpty { "Add your name" }, Serif, c.ink, maxLines = 1)
+                Txt(shortName(p.name).ifEmpty { "Add your name" }, T.cardTitle.copy(lineHeight = 24.15.sp), c.ink, maxLines = 1)
                 Txt(if (rows.isNotEmpty()) "Rider profile" else "Licence, blood group, emergency contact", T.row, c.ink3, maxLines = 1)
             }
-            Ic("chev", size = 15.dp, tint = c.ink3)
+            Spacer(Modifier.width(12.dp))
+            Ic("chev", size = 16.dp, tint = c.ink3)
         }
         if (rows.isNotEmpty()) {
             val sum = listOfNotNull(
@@ -241,83 +254,131 @@ private fun ProfileCard(s: AppState, onOpen: () -> Unit) {
                 "ICE".takeIf { p.iceName.isNotBlank() },
                 "Medical".takeIf { p.medical.isNotBlank() },
             ).joinToString(" · ")
-            val turn by animateFloatAsState(if (open) 90f else 0f, label = "pc")
+            // summary chevron points down, and up when open (rotate 90 → -90 over .2s)
+            val turn by animateFloatAsState(if (open) -90f else 90f, androidx.compose.animation.core.tween(200), label = "pc")
             Hairline()
             Row(
-                Modifier.fillMaxWidth().pressable(label = "Emergency info") { open = !open }.padding(horizontal = 16.dp, vertical = 13.dp),
+                Modifier.fillMaxWidth().rowPress(label = "Emergency info") { open = !open }.padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Ic("shield", size = 17.dp, tint = c.ink2)
+                Ic("shield", size = 17.dp, tint = c.ink3)
                 Spacer(Modifier.width(10.dp))
-                Txt("Emergency info", T.row.copy(fontSize = 14.5.sp), c.ink)
-                Spacer(Modifier.width(8.dp))
+                Txt("Emergency info", T.row.copy(fontSize = 14.5.sp, lineHeight = 21.75.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), c.ink)
+                Spacer(Modifier.width(10.dp))
                 Txt(sum, T.rowSub, c.ink3, Modifier.weight(1f), maxLines = 1)
-                Ic("chev", Modifier.rotate(turn), size = 14.dp, tint = c.ink3)
+                Spacer(Modifier.width(10.dp))
+                Ic("chev", Modifier.rotate(turn), size = 17.dp, tint = c.ink3)
             }
+            // .pc-grid: two columns of soft cells, medical notes full width
             AnimatedVisibility(open) {
-                Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
-                    rows.forEachIndexed { i, (ic, k, value) ->
-                        if (i > 0) Spacer(Modifier.height(8.dp))
-                        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(c.raised).padding(horizontal = 14.dp, vertical = 10.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Ic(ic, size = 14.dp, tint = c.ink3)
-                                Spacer(Modifier.width(6.dp))
-                                Txt(k, T.rowSub, c.ink3)
-                            }
-                            Spacer(Modifier.height(2.dp))
-                            Txt(value, T.body.copy(fontSize = 15.sp), c.ink)
+                Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val (wide, half) = rows.partition { it.second == "Medical notes" }
+                    half.chunked(2).forEach { pair ->
+                        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            pair.forEach { PcCell(it, Modifier.weight(1f).fillMaxHeight()) }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f))
                         }
                     }
+                    wide.forEach { PcCell(it, Modifier.fillMaxWidth()) }
                 }
             }
         }
     }
 }
 
-/** Themes, accents and the ride chart. */
+@Composable
+private fun PcCell(row: Triple<String, String, String>, modifier: Modifier) {
+    val c = W.c
+    Column(modifier.clip(RoundedCornerShape(12.dp)).background(c.inkA(0.04f)).padding(horizontal = 12.dp, vertical = 10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Ic(row.first, size = 14.dp, tint = c.ink3)
+            Spacer(Modifier.width(6.dp))
+            Txt(row.second, T.rowSub.copy(fontSize = 12.sp, lineHeight = 18.sp), c.ink3, maxLines = 1)
+        }
+        Spacer(Modifier.height(4.dp))
+        Txt(row.third, T.row.copy(fontSize = 14.5.sp, lineHeight = 19.6.sp), c.ink)
+    }
+}
+
+/** Themes, accents and the ride chart (.themecard). */
 @Composable
 private fun LookCard(s: AppState, act: SettingsActions) {
     val c = W.c
     Column(Modifier.fillMaxWidth().card(20.dp)) {
-        Column(Modifier.padding(16.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 20.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 listOf(
                     Triple("auto", "Auto", "Follows phone"),
                     Triple("sketch", "Paper", "Light"),
                     Triple("sketchdark", "Paper dark", "Dark"),
                 ).forEach { (key, label, sub) ->
                     val on = s.settings.theme == key
-                    val sw = when (key) { "auto" -> listOf(Color(0xFFEEE7DA), Color(0xFF1E1B17)); "sketch" -> listOf(Color(0xFFEEE7DA)); else -> listOf(Color(0xFF1E1B17)) }
                     Column(
-                        Modifier.weight(1f).semantics { selected = on }.pressable(label = label, role = Role.RadioButton) { act.theme(key) },
+                        Modifier.weight(1f).semantics { selected = on }.pressable(label = label, role = Role.RadioButton, scale = 0.95f) { act.theme(key) },
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Row(
-                            Modifier.fillMaxWidth().height(64.dp).clip(RoundedCornerShape(14.dp))
-                                .border(if (on) 2.dp else 1.dp, if (on) c.ink else c.line, RoundedCornerShape(14.dp)),
-                        ) { sw.forEach { Box(Modifier.weight(1f).fillMaxSize().background(it)) } }
-                        Spacer(Modifier.height(6.dp))
-                        Txt(label, T.rowSub.copy(fontSize = 13.5.sp), if (on) c.ink else c.ink2)
-                        Txt(sub, T.rowSub.copy(fontSize = 12.sp), c.ink4)
+                        ThemePreview(key, on, Modifier.fillMaxWidth().aspectRatio(1.25f))
+                        Spacer(Modifier.height(8.dp))
+                        Txt(label, T.row.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), if (on) c.ink else c.ink2, maxLines = 1)
+                        Spacer(Modifier.height(2.dp))
+                        Txt(sub, T.rowSub.copy(fontSize = 12.sp, lineHeight = 18.sp), c.ink3, maxLines = 1)
                     }
                 }
             }
-            Spacer(Modifier.height(22.dp))
+            Spacer(Modifier.height(24.dp))
             Txt("Accent", T.eyebrow, c.ink3)
             Spacer(Modifier.height(12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Accent.entries.forEach { a ->
                     val on = s.settings.accent == a.key
                     val col = if (c.dark) a.dark else a.light
+                    // .accentopt .dot: 32 dp glossy dot with a white inner ring; on, it shrinks to .92 inside a 1.5 dp accent ring
+                    val k by animateFloatAsState(if (on) 0.92f else 1f, androidx.compose.animation.core.tween(200, easing = app.waylink.ui.theme.Spring), label = "acc")
+                    val density = androidx.compose.ui.platform.LocalDensity.current.density
                     Box(
-                        Modifier.size(40.dp).semantics { selected = on }.pressable(label = a.label, role = Role.RadioButton) { act.accent(a.key) }
-                            .then(if (on) Modifier.border(2.dp, col, CircleShape) else Modifier).padding(5.dp).clip(CircleShape).background(col),
+                        Modifier.size(46.dp).semantics { selected = on }.pressable(label = a.label, role = Role.RadioButton, scale = 0.9f) { act.accent(a.key) },
                         contentAlignment = Alignment.Center,
-                    ) { if (on) Ic("check", size = 14.dp, tint = Color.White) }
+                    ) {
+                        if (on) Box(Modifier.size(36.dp).border(1.5.dp, col, CircleShape))
+                        Box(
+                            Modifier.size(32.dp).graphicsLayer { scaleX = k; scaleY = k }
+                                .shadow(if (on) 0.dp else 1.5.dp, CircleShape).clip(CircleShape)
+                                .background(col)
+                                .background(androidx.compose.ui.graphics.Brush.radialGradient(
+                                    0f to Color.White.copy(alpha = 0.45f), 0.55f to Color.White.copy(alpha = 0f),
+                                    center = androidx.compose.ui.geometry.Offset(32f * 0.32f * density, 32f * 0.28f * density), radius = 32f * density,
+                                ))
+                                .border(2.dp, Color.White.copy(alpha = if (on) 0.7f else 0.55f), CircleShape),
+                        )
+                    }
                 }
             }
         }
         Hairline()
         ListRow("Ride chart", icon = "trips", end = RIDE_CHARTS[s.settings.rideChart.coerceIn(0, 2)], onClick = { act.sheet("pick-ridechart") })
+    }
+}
+
+/** .themeopt .tp: a tiny page in the theme's colours, a title bar, two cards and an accent pill. */
+@Composable
+private fun ThemePreview(key: String, on: Boolean, modifier: Modifier) {
+    val c = W.c
+    val (bg, card, ink) = when (key) {
+        "sketchdark" -> Triple(Color(0xFF1E1B17), Color(0xFF2A2621), Color(0xFFEDE5D6))
+        else -> Triple(Color(0xFFEEE7DA), Color(0xFFF7F1E6), Color(0xFF2A2620))
+    }
+    val shape = RoundedCornerShape(14.dp)
+    Box(
+        modifier
+            .then(if (on) Modifier.border(2.dp, c.accent, RoundedCornerShape(18.dp)).padding(4.dp) else Modifier.shadow(3.dp, shape, ambientColor = Color(0x59000000), spotColor = Color(0x59000000)))
+            .clip(shape).background(bg).border(1.dp, c.line, shape),
+    ) {
+        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
+            val w = maxWidth; val h = maxHeight
+            Box(Modifier.offset(w * 0.14f, h * 0.13f).size(w * 0.34f, h * 0.07f).clip(RoundedCornerShape(3.dp)).background(ink.copy(alpha = 0.7f)))
+            Box(Modifier.offset(w * 0.14f, h * 0.30f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card))
+            Box(Modifier.offset(w * 0.14f, h * 0.53f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card))
+            Box(Modifier.offset(w * 0.14f, h * 0.81f).size(w * 0.40f, h * 0.09f).clip(RoundedCornerShape(99.dp)).background(c.accent))
+        }
     }
 }

@@ -1,5 +1,7 @@
 package app.waylink.ui.alerts
 
+import app.waylink.ui.components.rowPress
+import androidx.compose.foundation.layout.offset
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -92,14 +94,14 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
     var tab by rememberSaveable { mutableStateOf("needs") }
     val n = s.alerts.missed.size + s.alerts.wa.size
 
-    Page(bottom) {
-        Spacer(Modifier.height(4.dp))
+    Page(bottom) { androidx.compose.runtime.CompositionLocalProvider(app.waylink.ui.components.LocalBigRowIcons provides true) {
+        Spacer(Modifier.height(10.dp))
         Txt("Alerts", T.title, c.ink)
         Spacer(Modifier.height(3.dp))
         Txt(if (needs.isNotEmpty()) "${plural(needs.size, "thing needs", "things need")} you" else "Nothing needs you right now", T.subtitle, c.ink3)
-        Spacer(Modifier.height(14.dp))
-        // Underlined tabs with counts, and how many alerts reached the bike.
-        Column {
+        Spacer(Modifier.height(26.dp))
+        // .ltabs: underlined tabs with counts and how many alerts reached the bike, set 10 dp in like the web app.
+        Column(Modifier.offset(x = 10.dp)) {
             Row(verticalAlignment = Alignment.Bottom) {
                 LTab("Status", needs.size, tab == "needs") { tab = "needs" }
                 Spacer(Modifier.width(22.dp))
@@ -109,7 +111,7 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
             }
             Box(Modifier.fillMaxWidth().height(1.dp).background(c.line))
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(32.dp))
 
         if (tab == "needs") {
             if (needs.isEmpty()) Txt(
@@ -183,13 +185,13 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
                 Txt("Until the bike link reads your phone’s own calls and chats, send them here by hand to test.", T.row.copy(fontSize = 13.5.sp, lineHeight = 21.sp), c.ink3, Modifier.padding(top = 12.dp))
             }
         }
-    }
+    } }
 }
 
 @Composable
 private fun LTab(label: String, count: Int, on: Boolean, onClick: () -> Unit) {
     val c = W.c
-    Column(Modifier.semantics { selected = on }.pressable(label = label, role = Role.Tab, onClick = onClick), horizontalAlignment = Alignment.Start) {
+    Column(Modifier.width(IntrinsicSize.Max).semantics { selected = on }.pressable(label = label, role = Role.Tab, onClick = onClick), horizontalAlignment = Alignment.Start) {
         Row(Modifier.padding(top = 10.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Txt(label, T.body.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold, lineHeight = 15.sp), if (on) c.ink else c.ink3)
             if (count > 0) {
@@ -207,8 +209,8 @@ private fun LTab(label: String, count: Int, on: Boolean, onClick: () -> Unit) {
 private fun NeedRow(x: InboxItem, onClick: () -> Unit) {
     val c = W.c
     val hot = x.tone == "red"
-    Row(Modifier.fillMaxWidth().pressable(label = x.title, onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-        IconTile(x.icon, size = 36.dp, radius = 10.dp, bg = if (hot) c.tintRed else c.bg, tint = if (hot) c.red else c.ink2)
+    Row(Modifier.fillMaxWidth().rowPress(label = x.title, onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        IconTile(x.icon, size = 44.dp, radius = 13.dp, iconSize = 24.dp, bg = if (hot) c.tintRed else c.inkA(0.06f), tint = if (hot) c.red else c.ink2)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Txt(x.title, T.body.copy(lineHeight = 22.4.sp), c.ink, maxLines = 2)

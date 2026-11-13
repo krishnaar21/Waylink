@@ -114,6 +114,20 @@ fun Modifier.paperCard(radius: Dp = 20.dp, color: Color, line: Color, dark: Bool
 @Composable
 fun Modifier.card(radius: Dp = 20.dp, color: Color = W.c.card): Modifier = paperCard(radius, color, W.c.line, W.c.dark)
 
+/** .li:active: list rows don't shrink, they tint (background: ink 3 %). */
+@Composable
+fun Modifier.rowPress(enabled: Boolean = true, label: String? = null, role: Role = Role.Button, onClick: () -> Unit): Modifier {
+    val src = remember { MutableInteractionSource() }
+    val pressed by src.collectIsPressedAsState()
+    return this
+        .background(if (pressed) W.c.inkA(0.03f) else Color.Transparent)
+        .clickable(src, indication = null, enabled = enabled, role = role, onClick = onClick)
+        .then(if (label != null) Modifier.semantics { contentDescription = label } else Modifier)
+}
+
+/** Settings and Alerts draw their list icons larger: 44 dp tiles, radius 13, 24 dp glyphs. */
+val LocalBigRowIcons = androidx.compose.runtime.staticCompositionLocalOf { false }
+
 /** Press feedback used everywhere instead of ripples: a slight shrink, like the web app's :active scale. */
 @Composable
 fun Modifier.pressable(enabled: Boolean = true, label: String? = null, role: Role = Role.Button, scale: Float = 0.975f, onClick: () -> Unit): Modifier {
@@ -166,7 +180,7 @@ fun Btn(
 
 /** .circle: 42 round, raised, soft shadow. Used for back, SOS and sheet close. */
 @Composable
-fun CircleBtn(icon: String, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, tint: Color = W.c.ink, size: Dp = 42.dp, flat: Boolean = false) {
+fun CircleBtn(icon: String, label: String, onClick: () -> Unit, modifier: Modifier = Modifier, tint: Color = W.c.ink, size: Dp = 42.dp, flat: Boolean = false, iconSize: Dp? = null) {
     val c = W.c
     Box(
         modifier
@@ -176,7 +190,7 @@ fun CircleBtn(icon: String, label: String, onClick: () -> Unit, modifier: Modifi
             .background(if (flat) c.inkA(0.07f) else c.raised)
             .pressable(label = label, scale = 0.92f, onClick = onClick),
         contentAlignment = Alignment.Center,
-    ) { Ic(icon, size = if (flat) 18.dp else 20.dp, tint = tint) }
+    ) { Ic(icon, size = iconSize ?: if (flat) 18.dp else 20.dp, tint = tint) }
 }
 
 /** Section header: "Readings" on the left, an optional link or tag on the right. */

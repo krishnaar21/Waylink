@@ -34,9 +34,11 @@ fun freshSegs(st: ServiceStatus, n: Int): Int = if (st.status == Due.OVERDUE) 0 
 
 /** The service gauge with the job's tone: red stripes overdue, amber due soon, ink otherwise. */
 @Composable
-fun JobGauge(st: ServiceStatus, n: Int = 10, height: androidx.compose.ui.unit.Dp = 5.dp) {
+fun JobGauge(st: ServiceStatus, n: Int = 10, height: androidx.compose.ui.unit.Dp = 5.dp, inRow: Boolean = false) {
     val c = W.c
-    val on = when (st.status) { Due.OVERDUE -> c.red; Due.SOON -> c.amber; Due.OK -> c.inkA(0.42f) }
+    // In list rows the web app greys the gauge (.row .fgauge: due soon ink 42 %, fine ink 30 %); sheets keep the tone.
+    val on = if (inRow) (if (st.status == Due.OK) c.inkA(0.30f) else c.inkA(0.42f))
+    else when (st.status) { Due.OVERDUE -> c.red; Due.SOON -> c.amber; Due.OK -> c.inkA(0.42f) }
     ServiceGauge(freshSegs(st, n), n, height = height, onColor = on)
 }
 
@@ -93,7 +95,7 @@ fun ServiceRowItem(r: ServiceRow, f: Fmt, onClick: () -> Unit) {
         }
         if (st.status != Due.OK) {
             Spacer(Modifier.height(12.dp))
-            JobGauge(st)
+            JobGauge(st, inRow = true)
         }
     }
 }
