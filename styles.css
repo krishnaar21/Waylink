@@ -2214,3 +2214,6 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 .rm-dial .big { font-size: min(112px, 27vw, 15vh) !important; }
 .rm-dial { width: min(350px, 84vw, 50vh) !important; margin-top: 4vh !important; }
 .rm-dial .big { font-size: min(104px, 25vw, 14vh) !important; }
+/* Ride mode speed: open up the digits a little, evenly spaced */
+.rm-dial .big { letter-spacing: .02em !important; font-variant-numeric: tabular-nums; padding-left: .02em; }
+.cl-tag.new { background: color-mix(in srgb, var(--sage) 22%, var(--card)) !important; color: var(--sage-ink) !important; box-shadow: none; }
