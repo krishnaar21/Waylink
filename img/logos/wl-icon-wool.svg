@@ -1,7 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs>
-<pattern id="knit" width="14" height="12" patternUnits="userSpaceOnUse"><rect width="14" height="12" fill="#7A2E2A"/><path d="M0 0L7 9L14 0" fill="none" stroke="#9A3E36" stroke-width="3.2"/><path d="M0 4L7 12" stroke="#5E2220" stroke-width="1"/></pattern>
-<pattern id="thread" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-40)"><rect width="5" height="5" fill="#F4E3C3"/><rect width="5" height="1.6" fill="#D9BE8E"/></pattern>
-<filter id="fz"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="4"/></filter>
-<filter id="sh" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity=".45"/></filter></defs>
-<rect width="512" height="512" rx="114" fill="url(#knit)"/><rect x="40" y="40" width="432" height="432" rx="86" fill="none" stroke="#4A1A18" stroke-width="6" stroke-dasharray="2 6"/>
-<g transform="translate(256 266) scale(3.5) translate(-47 -48)" filter="url(#sh)"><path d="M2.5 44C3 64 12 80 25 80C37 80 42 64 46 50C48.8 40.5 54.5 31 54 22C53.6 13.5 39 12.5 38.6 22C38.2 31 43.4 40.5 46.8 50C51 64 58 80 71 80C84 80 90 56 91.5 26L91.5 14" fill="none" stroke="url(#thread)" stroke-width="11" stroke-linejoin="round" filter="url(#fz)"/></g></svg>
+<clipPath id="wc"><rect width="512" height="512" rx="114"/></clipPath>
+<pattern id="knit" width="18" height="16" patternUnits="userSpaceOnUse"><rect width="18" height="16" fill="#6E2824"/>
+<path d="M1 1Q4.5 9 9 15" fill="none" stroke="#8E3832" stroke-width="5" stroke-linecap="round"/><path d="M17 1Q13.5 9 9 15" fill="none" stroke="#81322D" stroke-width="5" stroke-linecap="round"/>
+<path d="M2 2Q5 8 8.5 13" fill="none" stroke="#A9504A" stroke-width="1.2" stroke-linecap="round" opacity=".7"/><path d="M16 2Q13 8 9.5 13" fill="none" stroke="#9A443E" stroke-width="1.2" stroke-linecap="round" opacity=".5"/></pattern>
+<filter id="fz" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="8"/><feDisplacementMap in="SourceGraphic" scale="3.2"/></filter>
+<filter id="fb" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="2.4" numOctaves="1" seed="2" result="t"/><feDisplacementMap in="SourceGraphic" in2="t" scale="7"/><feGaussianBlur stdDeviation=".4"/></filter>
+<filter id="ws" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2.4" stdDeviation="2.2" flood-color="#2A0A08" flood-opacity=".6"/></filter>
+<filter id="kn" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".8" numOctaves="2" seed="9"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .22 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+</defs><g clip-path="url(#wc)">
+<rect width="512" height="512" fill="url(#knit)"/><rect width="512" height="512" fill="#000" filter="url(#kn)"/>
+<g transform="translate(256 262) scale(3.1) translate(-47 -48)">
+<g filter="url(#ws)">
+<path d="M2.5 44C3 64 12 80 25 80C37 80 42 64 46 50C48.8 40.5 54.5 31 54 22C53.6 13.5 39 12.5 38.6 22C38.2 31 43.4 40.5 46.8 50C51 64 58 80 71 80C84 80 90 56 91.5 26L91.5 14" fill="none" stroke="#E8D3AA" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" opacity=".22" filter="url(#fb)"/>
+<path d="M2.5 44C3 64 12 80 25 80C37 80 42 64 46 50C48.8 40.5 54.5 31 54 22C53.6 13.5 39 12.5 38.6 22C38.2 31 43.4 40.5 46.8 50C51 64 58 80 71 80C84 80 90 56 91.5 26L91.5 14" fill="none" stroke="#E9D5AE" stroke-width="10.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#fz)"/>
+<path d="M2.5 44C3 64 12 80 25 80C37 80 42 64 46 50C48.8 40.5 54.5 31 54 22C53.6 13.5 39 12.5 38.6 22C38.2 31 43.4 40.5 46.8 50C51 64 58 80 71 80C84 80 90 56 91.5 26L91.5 14" fill="none" stroke="#A98C5C" stroke-width="10.5" stroke-linejoin="round" stroke-dasharray="1.3 1.5" stroke-linecap="butt" filter="url(#fz)"/>
+<path d="M2.5 44C3 64 12 80 25 80C37 80 42 64 46 50C48.8 40.5 54.5 31 54 22C53.6 13.5 39 12.5 38.6 22C38.2 31 43.4 40.5 46.8 50C51 64 58 80 71 80C84 80 90 56 91.5 26L91.5 14" fill="none" stroke="#FBF1DC" stroke-width="5.6" stroke-linejoin="round" stroke-dasharray="1.1 1.7" stroke-dashoffset="-1.4" stroke-linecap="butt" transform="translate(-.4 -.5)" filter="url(#fz)"/>
+<path d="M2.5 44C3 64 12 80 25 80C37 80 42 64 46 50C48.8 40.5 54.5 31 54 22C53.6 13.5 39 12.5 38.6 22C38.2 31 43.4 40.5 46.8 50C51 64 58 80 71 80C84 80 90 56 91.5 26L91.5 14" fill="none" stroke="#FFF8EA" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" opacity=".55" transform="translate(-1.6 -1.9)" filter="url(#fb)"/>
+</g></g></g></svg>
