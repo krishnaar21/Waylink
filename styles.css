@@ -2217,3 +2217,6 @@ html[data-night] .onb-img { background-image: url(img/onb/scene-night.webp); }
 /* Ride mode speed: open up the digits a little, evenly spaced */
 .rm-dial .big { letter-spacing: -.005em !important; font-variant-numeric: tabular-nums; }
 .cl-tag.new { background: color-mix(in srgb, var(--sage) 22%, var(--card)) !important; color: var(--sage-ink) !important; box-shadow: none; }
+/* Ride mode: status tags sit just under the dial, clear of the readings below */
+.lay-a .speed .rm-tags { margin-top: 2px !important; margin-bottom: 18px; position: relative; z-index: 1; }
+.lay-a .speed .rm-tags .tag { padding: 6px 12px; }
