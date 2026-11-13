@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.em
+import androidx.compose.animation.core.animateFloat
 import app.waylink.ui.components.card
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -177,6 +178,7 @@ private fun SpeedDial(speed: Float, max: Int, sub: String, big: String) {
     val sans = app.waylink.ui.theme.Body
     BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         val side = minOf(300.dp, maxWidth * 0.76f)
+        val bigPx = minOf(84.dp, maxWidth * 0.21f)
         Box(Modifier.size(side), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {
                 val k = size.width / 200f
@@ -210,7 +212,7 @@ private fun SpeedDial(speed: Float, max: Int, sub: String, big: String) {
                 label("$max", 156f, 146f, 11f, FontWeight.Bold, ink, 2)
                 label(sub, 100f, 146f, 9.5f, FontWeight.Medium, c.ink3, 1)
             }
-            val px = minOf(84.dp, maxWidth * 0.21f)
+            val px = bigPx
             val sp = with(androidx.compose.ui.platform.LocalDensity.current) { px.toSp() }
             Txt(big, T.big(sp.value).copy(letterSpacing = (-0.04).em, fontFeatureSettings = "tnum"), c.ink, Modifier.graphicsLayer { translationY = size.height * 0.02f }, maxLines = 1)
         }
@@ -223,7 +225,7 @@ private fun Tag(text: String, bg: Color, fg: Color, dot: Boolean = false) {
     Row(Modifier.clip(RoundedCornerShape(8.dp)).background(bg).padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         if (dot) {
             val blink = androidx.compose.animation.core.rememberInfiniteTransition(label = "blink")
-            val a by blink.animateFloat(1f, 0.25f, androidx.compose.animation.core.infiniteRepeatable(tween(700), androidx.compose.animation.core.RepeatMode.Reverse), label = "a")
+            val a by blink.animateFloat(initialValue = 1f, targetValue = 0.25f, animationSpec = androidx.compose.animation.core.infiniteRepeatable(tween(700), androidx.compose.animation.core.RepeatMode.Reverse), label = "a")
             Box(Modifier.size(7.dp).graphicsLayer { alpha = if (app.waylink.ui.theme.Motion.still) 1f else a }.clip(CircleShape).background(fg))
             Spacer(Modifier.width(6.dp))
         }
