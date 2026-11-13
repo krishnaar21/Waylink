@@ -1,5 +1,8 @@
 package app.waylink.ui.components
 
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -297,3 +300,24 @@ fun IconTile(icon: String, modifier: Modifier = Modifier, size: Dp = 38.dp, radi
 }
 
 fun shapeOf(radius: Dp): Shape = RoundedCornerShape(radius)
+
+/**
+ * A sideways swipe anywhere on this element, without taking the touch from taps or scrolling inside it:
+ * [onSwipe] gets 1 for a swipe to the left (next) and -1 to the right (previous). Web: Alerts tabs and the tab bar.
+ */
+fun Modifier.swipeSides(minDx: Dp, ratio: Float = 1.3f, maxMs: Long = Long.MAX_VALUE, onSwipe: (Int) -> Unit): Modifier = pointerInput(Unit) {
+    awaitEachGesture {
+        val down = awaitFirstDown(requireUnconsumed = false, pass = androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+        val t0 = down.uptimeMillis
+        var last = down.position
+        var lastT = t0
+        while (true) {
+            val ev = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+            val ch = ev.changes.firstOrNull { it.id == down.id } ?: break
+            last = ch.position; lastT = ch.uptimeMillis
+            if (!ch.pressed) break
+        }
+        val dx = last.x - down.position.x; val dy = last.y - down.position.y
+        if (kotlin.math.abs(dx) >= minDx.toPx() && kotlin.math.abs(dx) >= kotlin.math.abs(dy) * ratio && lastT - t0 <= maxMs) onSwipe(if (dx < 0) 1 else -1)
+    }
+}

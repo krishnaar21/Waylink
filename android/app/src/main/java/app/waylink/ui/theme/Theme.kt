@@ -168,6 +168,8 @@ fun WaylinkTheme(theme: String, accent: String, font: String = "system", bodyFon
         "amoled" -> night(a, navy = true)
         else -> if (sys) paperDark(a) else paper(a)
     }
+    val scene = when (theme) { "sketchdark" -> "night"; "obsidian", "amoled" -> "dark"; "sketch", "paper" -> "light"; else -> if (sys) "night" else "light" }
+    if (Looks.scene != scene) Looks.scene = scene
     CompositionLocalProvider(LocalColors provides colors, content = content)
 }
 
@@ -177,4 +179,6 @@ object Looks {
     val ICONS = listOf("line" to "Line", "duo" to "Glow", "fill" to "Duotone")
     var progress by androidx.compose.runtime.mutableStateOf("gauge")
     var icons by androidx.compose.runtime.mutableStateOf("line")
+    /** Which onboarding scene fits the theme: light, dark (Dark, Navy) or night (Paper dark). */
+    var scene by androidx.compose.runtime.mutableStateOf("light")
 }

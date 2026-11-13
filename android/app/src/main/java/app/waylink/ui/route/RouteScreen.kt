@@ -55,6 +55,7 @@ import app.waylink.core.distText
 import app.waylink.core.tShort
 import app.waylink.data.AppViewModel
 import app.waylink.data.LinkState
+import androidx.compose.ui.text.withStyle
 import app.waylink.data.Live
 import app.waylink.data.Nav
 import app.waylink.ui.components.Btn
@@ -91,6 +92,8 @@ interface RouteActions {
     fun nextTurn()
     fun setNavDistance(m: Double)
     fun endNav()
+    /** The slider's throttle blip. */
+    fun uiTick(p: Float) {}
 }
 
 /** The Route tab, a port of route() in web-v0/js/views.js. */
@@ -198,6 +201,27 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
         ListCard {
             ListRow("Street names on the bike", "Road name beside the arrow", icon = "eye", trailing = { Switch(s.settings.streetNames, "Street names on the bike", { vm.toggleSetting("streetNames") }) })
         }
+        if (s.settings.devFrames) FrameCard(live)
+    }
+}
+
+/** Developer: the last Bluetooth message in hex, the arrow id and checksum in bold (web frameCard). */
+@Composable
+private fun FrameCard(live: Live) {
+    val c = W.c
+    val (name, b) = live.lastFrame ?: return
+    SectionGap()
+    SectionHead("Last Bluetooth message · ${b.size} bytes", right = { Txt(name, T.eyebrow, c.ink3) })
+    Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
+        val hex = app.waylink.core.Protocol.hex(b).split(' ')
+        val text = androidx.compose.ui.text.buildAnnotatedString {
+            hex.forEachIndexed { i, h ->
+                if (i > 0) append(' ')
+                if ((i == 1 && b.size == 48) || i == b.size - 1) withStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, color = c.ink)) { append(h) } else append(h)
+            }
+        }
+        Txt(text, androidx.compose.ui.text.TextStyle(fontFamily = app.waylink.ui.theme.Mono, fontSize = 12.sp, lineHeight = 19.sp), c.ink2)
+        app.waylink.ui.components.Hint(if (live.link == LinkState.CONNECTED) "${live.frameCount} frames sent this session." else "Not linked. Frames are built, not sent.")
     }
 }
 
@@ -258,7 +282,7 @@ private fun EnRoute(s: AppState, live: Live, n: Nav, vm: RouteActions, bottom: D
                     Txt("${f.num(Math.round(n.stepMeters).toDouble())} m", T.plate.copy(fontSize = 13.sp), c.ink2)
                 }
                 Spacer(Modifier.height(12.dp))
-                Slider(n.stepMeters.toFloat() / 3000f, { vm.setNavDistance(Math.round(it * 300) * 10.0) }, "Distance to turn")
+                Slider(n.stepMeters.toFloat() / 3000f, { vm.uiTick(it); vm.setNavDistance(Math.round(it * 300) * 10.0) }, "Distance to turn")
                 Scale()
                 Hint("Under 100 m, the bike blinks the arrow.")
             }
@@ -287,6 +311,7 @@ private fun EnRoute(s: AppState, live: Live, n: Nav, vm: RouteActions, bottom: D
                 }
             }
         }
+        if (s.settings.devFrames) FrameCard(live)
     }
 }
 
@@ -371,7 +396,7 @@ fun routeSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Shee
                 Txt("${f.num(t.m)} m", T.plate.copy(fontSize = 13.sp), c.ink2)
             }
             Spacer(Modifier.height(12.dp))
-            Slider(t.m / 3000f, { vm.setTurn(t.copy(m = Math.round(it * 300) * 10)) }, "Distance")
+            Slider(t.m / 3000f, { vm.uiTick(it); vm.setTurn(t.copy(m = Math.round(it * 300) * 10)) }, "Distance")
             Scale()
             if (sel.glyph.startsWith("roundabout")) {
                 Txt("Roundabout exit", T.eyebrow, c.ink3, Modifier.padding(top = 16.dp, bottom = 8.dp))

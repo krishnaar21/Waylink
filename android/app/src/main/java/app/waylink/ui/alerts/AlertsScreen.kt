@@ -1,5 +1,9 @@
 package app.waylink.ui.alerts
 
+import app.waylink.ui.components.swipeSides
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import app.waylink.ui.components.rowPress
 import androidx.compose.foundation.layout.offset
 import android.content.Intent
@@ -83,6 +87,9 @@ interface AlertsActions {
     fun toggle(key: String)
     fun relay(kind: String, name: String)
     fun press(kind: String)
+    /** Sounds: a click for a tab tap, a swipe for a sideways swipe. */
+    fun clickSound() {}
+    fun swipeSound(dir: Int) {}
 }
 
 /** The Alerts tab, a port of alerts() in web-v0/js/views.js: Status (what needs you) and Notifications. */
@@ -93,7 +100,13 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
     val needs = remember(s) { inbox(s, f).filter { it.icon != "missed" && it.icon != "chat" } }
     var tab by rememberSaveable { mutableStateOf("needs") }
     val n = s.alerts.missed.size + s.alerts.wa.size
+    // A swipe slides the new tab in from its side (.lt-body.in-l / in-r, .28 s).
+    var from by remember { mutableStateOf(0) }
+    val slide = remember { androidx.compose.animation.core.Animatable(1f) }
+    LaunchedEffect(tab) { if (from != 0) { slide.snapTo(0f); slide.animateTo(1f, androidx.compose.animation.core.tween(280)) } }
+    fun pick(k: String, dir: Int) { if (tab == k) return; from = dir; if (dir == 0) act.clickSound() else act.swipeSound(dir); tab = k }
 
+    Box(Modifier.fillMaxSize().swipeSides(50.dp) { dir -> pick(if (dir > 0) "recent" else "needs", dir) }) {
     Page(bottom) { androidx.compose.runtime.CompositionLocalProvider(app.waylink.ui.components.LocalBigRowIcons provides true) {
         Spacer(Modifier.height(7.dp))
         Txt("Alerts", T.title, c.ink)
@@ -103,9 +116,9 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
         // .ltabs: underlined tabs with counts and how many alerts reached the bike, set 10 dp in like the web app.
         Column(Modifier.offset(x = 10.dp)) {
             Row(verticalAlignment = Alignment.Bottom) {
-                LTab("Status", needs.size, tab == "needs") { tab = "needs" }
+                LTab("Status", needs.size, tab == "needs") { pick("needs", 0) }
                 Spacer(Modifier.width(22.dp))
-                LTab("Notifications", n, tab == "recent") { tab = "recent" }
+                LTab("Notifications", n, tab == "recent") { pick("recent", 0) }
                 Spacer(Modifier.weight(1f))
                 Txt("${f.short(s.alerts.sent.toDouble())} sent", T.eyebrow.copy(fontSize = 14.sp), c.ink3, Modifier.padding(bottom = 12.dp))
             }
@@ -113,6 +126,7 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
         }
         Spacer(Modifier.height(32.dp))
 
+        Column(Modifier.graphicsLayer { alpha = slide.value; translationX = (1f - slide.value) * 24.dp.toPx() * from }) {
         if (tab == "needs") {
             if (needs.isEmpty()) Txt(
                 "All clear. Service, papers and fuel show up here when they need you.", T.row.copy(fontSize = 14.5.sp, textAlign = TextAlign.Center), c.ink3,
@@ -185,7 +199,9 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
                 Txt("Until the bike link reads your phone’s own calls and chats, send them here by hand to test.", T.row.copy(fontSize = 13.5.sp, lineHeight = 21.sp), c.ink3, Modifier.padding(top = 12.dp))
             }
         }
+        }
     } }
+    }
 }
 
 @Composable

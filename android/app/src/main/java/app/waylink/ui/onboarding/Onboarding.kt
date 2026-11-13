@@ -1,6 +1,13 @@
 package app.waylink.ui.onboarding
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -152,7 +159,7 @@ private fun Intro(onSkip: () -> Unit, onDone: () -> Unit, onSample: () -> Unit) 
             val w = maxWidth
             val p = pager.currentPage + pager.currentPageOffsetFraction
             Image(
-                painterResource(if (c.dark) R.drawable.scene_dark else R.drawable.scene_light), null,
+                painterResource(when (app.waylink.ui.theme.Looks.scene) { "night" -> R.drawable.scene_night; "dark" -> R.drawable.scene_dark; else -> if (c.dark) R.drawable.scene_night else R.drawable.scene_light }), null,
                 Modifier.align(Alignment.BottomStart).requiredWidth(w * 5).height(372.dp).offset(x = -(w * p) + w * 2),
                 contentScale = ContentScale.FillBounds,
             )
@@ -308,13 +315,7 @@ private fun LinkBike(onBack: () -> Unit, onFinish: (Boolean) -> Unit) {
     ) {
         Top({ CircleBtn("back", "Back", onBack) }, "Skip") { onFinish(false) }
         Spacer(Modifier.weight(1f))
-        Box(Modifier.size(width = 240.dp, height = 210.dp)) {
-            Image(painterResource(R.drawable.rider_street), null, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
-            Box(
-                Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = 6.dp).size(32.dp).clip(CircleShape).background(c.accent.copy(alpha = 0.85f)),
-                contentAlignment = Alignment.Center,
-            ) { Ic("bt", size = 17.dp, tint = c.onAccent) }
-        }
+        LinkHero()
         Spacer(Modifier.height(24.dp))
         Txt("Step 3 of 3", T.eyebrow, c.ink3)
         Spacer(Modifier.height(6.dp))
@@ -338,5 +339,106 @@ private fun LinkBike(onBack: () -> Unit, onFinish: (Boolean) -> Unit) {
         Spacer(Modifier.height(12.dp))
         LinkText("I’ll do this later", { onFinish(false) }, style = T.body.copy(fontSize = 14.5.sp), color = c.ink3)
         Spacer(Modifier.height(30.dp))
+    }
+}
+
+/**
+ * The "Link your bike" picture (web .lk-hero.lk-street): the rider rolls in from the left, the headlamp and its beam
+ * glow, a dotted signal climbs to a Bluetooth badge that pops in and sends out rings.
+ */
+@Composable
+private fun LinkHero() {
+    val c = W.c
+    val t = androidx.compose.animation.core.rememberInfiniteTransition(label = "lk")
+    val ride = remember { androidx.compose.animation.core.Animatable(0f) }
+    val badge = remember { androidx.compose.animation.core.Animatable(0f) }
+    val wave = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(Unit) {
+        launch { ride.animateTo(1f, androidx.compose.animation.core.tween(1400, easing = androidx.compose.animation.core.CubicBezierEasing(0.2f, 0.75f, 0.25f, 1f))) }
+        launch { kotlinx.coroutines.delay(1100); wave.animateTo(1f, androidx.compose.animation.core.tween(400)) }
+        launch { kotlinx.coroutines.delay(1500); badge.animateTo(1f, androidx.compose.animation.core.tween(500, easing = androidx.compose.animation.core.CubicBezierEasing(0.3f, 1.4f, 0.5f, 1f))) }
+    }
+    fun loop(ms: Int, delay: Int, frames: androidx.compose.animation.core.KeyframesSpec.KeyframesSpecConfig<Float>.() -> Unit) =
+        androidx.compose.animation.core.infiniteRepeatable<Float>(androidx.compose.animation.core.keyframes { durationMillis = ms; frames() }, initialStartOffset = androidx.compose.animation.core.StartOffset(delay))
+    // lkLamp2 / lkBeam: 2.8 s from 1.6 s
+    val lamp by t.animateFloat(0f, 1f, loop(2800, 1600) { 0f at 0; 1f at 420; 0.95f at 840; 0.95f at 1960; 0.55f at 2800 }, label = "lamp")
+    val lampScale by t.animateFloat(0.5f, 1f, loop(2800, 1600) { 0.5f at 0; 1.1f at 420; 1f at 840; 1f at 2800 }, label = "lampS")
+    val beam by t.animateFloat(0f, 1f, loop(2800, 1600) { 0f at 0; 1f at 420; 1f at 1960; 0.4f at 2800 }, label = "beam")
+    // lkIdle: a breath every 2.6 s once the rider has arrived
+    val idle by t.animateFloat(0f, 1f, loop(2600, 1500) { 0f at 0; 1f at 1300; 0f at 2600 }, label = "idle")
+    // lkDash: the dotted signal flows up, .9 s a step
+    val dash by t.animateFloat(0f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(900, easing = androidx.compose.animation.core.LinearEasing)), label = "dash")
+    val ring1 by t.animateFloat(0f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(2400, easing = androidx.compose.animation.core.LinearOutSlowInEasing), initialStartOffset = androidx.compose.animation.core.StartOffset(2000)), label = "r1")
+    val ring2 by t.animateFloat(0f, 1f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(2400, easing = androidx.compose.animation.core.LinearOutSlowInEasing), initialStartOffset = androidx.compose.animation.core.StartOffset(3200)), label = "r2")
+    val wavePath = remember { androidx.compose.ui.graphics.vector.PathParser().parsePathString("M3 49C3 38 15 36 13 26S8 10 21 3").toPath() }
+    val ink = c.ink
+
+    Box(Modifier.size(width = 220.dp, height = 208.dp)) {
+        // ride-in: from 190 dp left, tilted back, overshooting 6 dp at 82 %
+        val p = ride.value
+        val x = if (p < 0.82f) -190f + 196f * (p / 0.82f) else 6f - 6f * ((p - 0.82f) / 0.18f)
+        val rot = if (p < 0.82f) -1.5f + 2.1f * (p / 0.82f) else 0.6f - 0.6f * ((p - 0.82f) / 0.18f)
+        val fade = (p / 0.2f).coerceIn(0f, 1f)
+        // .lk-glow: the shadow under the bike
+        Box(
+            Modifier.align(Alignment.BottomCenter).padding(horizontal = 13.dp).fillMaxWidth().height(37.dp)
+                .graphicsLayer { translationX = (-190f * (1 - p)).dp.toPx(); alpha = p }
+                .drawBehind { drawOval(androidx.compose.ui.graphics.Brush.radialGradient(listOf(Color.Black.copy(alpha = 0.18f), Color.Transparent), center = center, radius = size.width / 2)) },
+        )
+        // .lk-beam, behind the lamp: a widening wedge of warm light
+        Box(
+            Modifier.offset(x = 180.dp, y = 64.dp).size(120.dp, 70.dp).graphicsLayer { alpha = beam * fade; translationX = x.dp.toPx() }.drawBehind {
+                val wedge = androidx.compose.ui.graphics.Path().apply {
+                    moveTo(0f, size.height * 0.42f); lineTo(size.width, 0f); lineTo(size.width, size.height); lineTo(0f, size.height * 0.58f); close()
+                }
+                clipPath(wedge) {
+                    drawRect(androidx.compose.ui.graphics.Brush.radialGradient(
+                        0f to Color(0x8CFFECBE), 0.55f to Color(0x1FFFECBE), 0.75f to Color.Transparent,
+                        center = Offset(0f, size.height / 2), radius = size.width,
+                    ))
+                }
+            },
+        )
+        Image(
+            painterResource(R.drawable.rider_street), null,
+            Modifier.fillMaxSize().graphicsLayer {
+                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, 1f)
+                translationX = x.dp.toPx(); rotationZ = rot; alpha = fade
+                translationY = -1.2f * idle * density; scaleY = 1f + 0.004f * idle
+            },
+            contentScale = ContentScale.Fit,
+        )
+        // .lk-lamp: the headlamp glow at 80 %, 43 %
+        Box(
+            Modifier.offset(x = 176.dp - 20.dp, y = 89.dp - 20.dp).size(40.dp).graphicsLayer { alpha = lamp * fade; scaleX = lampScale; scaleY = lampScale; translationX = x.dp.toPx() }
+                .drawBehind {
+                    drawCircle(androidx.compose.ui.graphics.Brush.radialGradient(
+                        0f to Color.White, 0.4f to Color(0xBFFFF0C8), 0.7f to Color(0x33FFDC96), 1f to Color.Transparent, center = center, radius = size.minDimension / 2,
+                    ))
+                },
+        )
+        // .lk-wave: dotted signal from the bike up to the badge
+        Box(
+            Modifier.offset(x = 195.dp, y = 46.dp).size(19.dp, 41.dp).graphicsLayer { alpha = wave.value; translationY = (6f * (1 - wave.value)).dp.toPx() }.drawBehind {
+                val k = size.width / 24f
+                scale(k, k, pivot = Offset.Zero) {
+                    drawPath(wavePath, ink.copy(alpha = 0.6f), style = androidx.compose.ui.graphics.drawscope.Stroke(
+                        width = 2.6f, cap = androidx.compose.ui.graphics.StrokeCap.Round,
+                        pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(5f, 5f), -10f * dash),
+                    ))
+                }
+            },
+        )
+        // .lk-bt: the badge pops in, two rings pulse out of it
+        Box(Modifier.offset(x = 226.dp, y = (-2).dp).size(36.dp), contentAlignment = Alignment.Center) {
+            val accent = c.accent
+            listOf(ring1, ring2).forEach { r ->
+                Box(Modifier.matchParentSize().graphicsLayer { val sc = 1f + 0.75f * r; scaleX = sc; scaleY = sc; alpha = 0.7f * (1 - r) * badge.value }.border(1.5.dp, accent, CircleShape))
+            }
+            Box(Modifier.matchParentSize().graphicsLayer { val sc = 0.4f + 0.6f * badge.value; scaleX = sc; scaleY = sc; alpha = badge.value.coerceIn(0f, 1f) }, contentAlignment = Alignment.Center) {
+                Image(painterResource(R.drawable.bt_disc), null, Modifier.requiredSize(40.dp), contentScale = ContentScale.FillBounds)
+                Ic("bt", size = 17.dp, tint = Color.White)
+            }
+        }
     }
 }

@@ -70,6 +70,7 @@ import app.waylink.data.Live
 import app.waylink.ui.components.Btn
 import app.waylink.ui.components.BtnKind
 import app.waylink.ui.components.Ic
+import app.waylink.ui.components.swipeSides
 import app.waylink.ui.components.Sheet
 import app.waylink.ui.components.Txt
 import app.waylink.ui.components.card
@@ -296,6 +297,8 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun chart(page: Int) = vm.setRideChart(page)
                 }, tabBarHeight)
                 else -> AlertsScreen(s, live, object : AlertsActions {
+                    override fun clickSound() = vm.uiClick(true)
+                    override fun swipeSound(dir: Int) = vm.uiSwipe(dir)
                     override fun go(target: String) {
                         val (kind, rest) = target.substringBefore(':') to target.substringAfter(':')
                         when (kind) {
@@ -312,8 +315,13 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                 }, tabBarHeight)
             }
         }
-        TabBar(if (page == "logbook" || page == "fuel") Tab.TODAY else if (page == "profile") Tab.SETTINGS else tab, s, live, Modifier.align(Alignment.BottomCenter)) {
-            page = null; tab = it
+        val shownTab = if (page == "logbook" || page == "fuel") Tab.TODAY else if (page == "profile") Tab.SETTINGS else tab
+        var skipTap by remember { mutableStateOf(0L) }
+        TabBar(shownTab, s, live, Modifier.align(Alignment.BottomCenter), onSwipe = { dir ->
+            skipTap = android.os.SystemClock.uptimeMillis()
+            Tab.entries.getOrNull(shownTab.ordinal + dir)?.let { vm.uiSwipe(dir); page = null; tab = it }
+        }) {
+            if (android.os.SystemClock.uptimeMillis() - skipTap > 400) { page = null; tab = it }
         }
         // Quick actions on Today, like the web's + button.
         androidx.compose.animation.AnimatedVisibility(
@@ -404,7 +412,7 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
 }
 
 @Composable
-internal fun TabBar(current: Tab, s: AppState, live: Live, modifier: Modifier, onTab: (Tab) -> Unit) {
+internal fun TabBar(current: Tab, s: AppState, live: Live, modifier: Modifier, onSwipe: (Int) -> Unit = {}, onTab: (Tab) -> Unit) {
     // .tabbar: bg 84 % + hairline, a soft fade above it, padding 12 22 10, tabs up to 76 dp wide, 4 dp apart.
     val c = W.c
     val v = s.vehicle
@@ -416,7 +424,9 @@ internal fun TabBar(current: Tab, s: AppState, live: Live, modifier: Modifier, o
         Column(Modifier.fillMaxWidth().background(c.bg.copy(alpha = 0.94f))) {
             Box(Modifier.fillMaxWidth().height(0.5.dp).background(c.inkA(0.09f)))
             Row(
-                Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.navigationBars).padding(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 10.dp),
+                // Swipe along the bar to page between tabs, one step per swipe (web #tabbar touch handlers).
+                Modifier.fillMaxWidth().swipeSides(36.dp, ratio = 1.4f, maxMs = 700, onSwipe = onSwipe)
+                    .windowInsetsPadding(WindowInsets.navigationBars).padding(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
             ) {
                 Tab.entries.forEach { t ->

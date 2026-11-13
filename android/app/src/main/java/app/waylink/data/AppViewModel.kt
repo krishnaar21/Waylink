@@ -73,6 +73,9 @@ data class Live(
     val linkLog: List<Pair<Long, String>> = emptyList(),
     /** Recent frames sent to the cluster, as hex, for "Show Bluetooth messages". */
     val frames: List<String> = emptyList(),
+    /** The last frame built for the bike: its name and bytes (web link.lastFrame), and how many went out. */
+    val lastFrame: Pair<String, ByteArray>? = null,
+    val frameCount: Int = 0,
 )
 
 data class Call(val name: String, val ringing: Boolean, val since: Long)
@@ -499,7 +502,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     // The frames the cluster would get, built by the real protocol code, so "Show Bluetooth messages" has something to show.
     private var streamJob: Job? = null
     private fun pushFrame(label: String, bytes: ByteArray) =
-        _live.update { it.copy(frames = (it.frames + "$label · ${app.waylink.core.Protocol.hex(bytes)}").takeLast(6)) }
+        _live.update { it.copy(frames = (it.frames + "$label · ${app.waylink.core.Protocol.hex(bytes)}").takeLast(6), lastFrame = label to bytes, frameCount = it.frameCount + 1) }
     private fun startStream() {
         streamJob?.cancel()
         streamJob = viewModelScope.launch {
@@ -691,7 +694,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     /** UI-only sounds the screens ask for (tab swipes, open/close disclosure, slider). */
     fun uiClick(on: Boolean = true) = sound.click(on)
     fun uiSwipe(dir: Int) = sound.swipe(dir)
-    fun uiTick(p: Float) = sound.tick(p)
+    override fun uiTick(p: Float) = sound.tick(p)
     /** Remembers that the auto-ride question was asked (web settings.autoAsked); true if this is the first time. */
     fun takeAutoAsk(): Boolean {
         if (_state.value.settings.autoAsked) return false
