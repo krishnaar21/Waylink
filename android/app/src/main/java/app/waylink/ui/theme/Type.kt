@@ -14,7 +14,7 @@ import app.waylink.R
  * Display: Geist SemiBold, tracked tight (-0.04em). Body: the phone's own sans (Roboto), like the web app's
  * "system" body font. Mono: JetBrains Mono, for number plates and small tags.
  */
-val Display = FontFamily(Font(R.font.geist_semibold, FontWeight.SemiBold))
+val Display = FontFamily(Font(R.font.geist_regular, FontWeight.Normal), Font(R.font.geist_semibold, FontWeight.SemiBold))
 val Mono = FontFamily(Font(R.font.jetbrains_mono_regular, FontWeight.Normal), Font(R.font.jetbrains_mono_medium, FontWeight.Medium))
 val Body = FontFamily.Default
 
@@ -55,3 +55,6 @@ object T {
     /** Number plates: mono, spaced, upper case. */
     val plate = TextStyle(fontFamily = Mono, fontSize = 11.sp, letterSpacing = 0.1.em, lineHeight = 16.5.sp)
 }
+
+/** The web's .serif text: Geist at regular weight ("You've ridden 382 km…"). */
+val Serif = TextStyle(fontFamily = Display, fontWeight = FontWeight.Normal, fontSize = 21.sp, letterSpacing = (-0.01).em, lineHeight = 28.35.sp)

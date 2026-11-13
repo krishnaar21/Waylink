@@ -3,6 +3,9 @@
 
     <!-- Weather only: the city name goes to Open-Meteo. Nothing else leaves the phone. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Recording rides with the phone's GPS, only while you record. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"

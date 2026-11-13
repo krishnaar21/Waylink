@@ -170,4 +170,25 @@ class CoreTest {
         assertEquals("Fri, 25 Sept", dMed(java.time.ZonedDateTime.of(2026, 9, 25, 9, 0, 0, 0, zone).toInstant().toEpochMilli(), zone))
         assertEquals("14 Mar 2035", dFull(java.time.ZonedDateTime.of(2035, 3, 14, 9, 0, 0, 0, zone).toInstant().toEpochMilli(), zone))
     }
+
+    @Test fun `rides save, chart and export`() {
+        val zone = java.time.ZoneId.of("Asia/Kolkata")
+        val now = java.time.ZonedDateTime.of(2026, 11, 13, 19, 2, 0, 0, zone).toInstant().toEpochMilli()
+        assertEquals("24 min", dur(24 * 60.0))
+        assertEquals("1 h 21", dur(81 * 60.0))
+        assertEquals("4:07", clock(247.0))
+        assertEquals("7:02 pm", tShort(now, zone))
+        var v = newVehicle(odo = 100.0)
+        v = v.addRide(now - 1_440_000, now, 10.004, 62.0, listOf(listOf(12.9, 77.5, now.toDouble()), listOf(12.95, 77.55, now.toDouble())), zone)
+        assertEquals(1, v.trips.first().n)
+        assertEquals("Evening ride", v.trips.first().title)
+        assertEquals(110.0, v.odo)
+        assertTrue(toGPX(v.trips.first()).contains("<trkpt lat=\"12.900000\" lon=\"77.500000\">"))
+        val ch = rideCharts(v.trips, now, zone)
+        assertEquals(false, ch.demo)
+        assertEquals(12, ch.weeks.size)
+        assertTrue(ch.weeks.last().any { it.today && it.km == 10.0 && it.band == 1 })
+        assertEquals(20, ch.nice)
+        assertTrue(rideCharts(emptyList(), now, zone).demo)
+    }
 }

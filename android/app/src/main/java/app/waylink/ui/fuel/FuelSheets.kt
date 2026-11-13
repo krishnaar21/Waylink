@@ -131,15 +131,16 @@ private fun PriceBody(s: AppState, vm: AppViewModel, nav: SheetNav) {
         val d = LocalDate.parse(FuelPrices.AS_OF)
         val asOf = dShort(d.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli())
         Column(Modifier.fillMaxWidth().padding(top = 16.dp).card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp)) {
-            if (found?.price != null) {
+            val fp = found?.price
+            if (found != null && fp != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Txt("Petrol in ${found.state}", T.eyebrow, c.ink3)
-                        BigValue(cur + f.num(found.price, 2), "a litre", 28f)
+                        BigValue(cur + f.num(fp, 2), "a litre", 28f)
                         Txt("${area?.place?.ifEmpty { null } ?: s.profile.city.ifEmpty { found.state }} · rate on $asOf", T.rowSub, c.ink4)
                     }
-                    if (kotlin.math.abs(found.price - price) < 0.005) Chip("In use", {}, icon = "check", on = true)
-                    else Chip("Use", { vm.useFuelPrice(found.price); text = two(found.price) })
+                    if (kotlin.math.abs(fp - price) < 0.005) Chip("In use", {}, icon = "check", on = true)
+                    else Chip("Use", { vm.useFuelPrice(fp); text = two(fp) })
                 }
             } else Txt(
                 if (found != null) "No rate for ${found.state} yet. Enter the pump price below." else "Add your city in Profile to see the petrol rate where you ride.",

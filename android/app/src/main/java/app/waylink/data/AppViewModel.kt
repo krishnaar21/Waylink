@@ -11,6 +11,8 @@ import app.waylink.core.DAY_MS
 import app.waylink.core.Fmt
 import app.waylink.core.FuelEntry
 import app.waylink.core.fuelStats
+import app.waylink.core.addRide
+import app.waylink.core.haversine
 import app.waylink.core.ServiceItem
 import app.waylink.core.ServiceRecord
 import app.waylink.core.TripMeter
@@ -44,7 +46,13 @@ data class Live(
     val battery: Int? = null,
     val weather: Weather.State = Weather.State.Idle,
     val toast: Toast? = null,
+    /** A ride being recorded, or null. */
+    val rec: Rec? = null,
+    val gpsErr: Boolean = false,
 )
+
+/** A ride in progress: [pts] are [lat, lng, epoch ms]. */
+data class Rec(val start: Long, val km: Double = 0.0, val top: Int = 0, val pts: List<List<Double>> = emptyList())
 
 data class Toast(val text: String, val id: Long = System.nanoTime())
 
@@ -217,18 +225,119 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         toast("Petrol set to ${_state.value.country.cur}${fmt().num(n, 2)} a litre.")
     }
 
+    // ---------- Rides ----------
+    private val locations = app.getSystemService(android.content.Context.LOCATION_SERVICE) as android.location.LocationManager
+    private var lastFix: Triple<Double, Double, Long>? = null
+    private var simJob: Job? = null
+    private val sim = doubleArrayOf(12.9716, 77.5946, 0.6, 0.0, 0.0) // lat, lng, heading, speed, t
+    private val listener = android.location.LocationListener { l ->
+        onFix(l.latitude, l.longitude, if (l.hasSpeed()) l.speed.toDouble() else null, if (l.hasAccuracy()) l.accuracy.toDouble() else 999.0, l.time)
+    }
+    private var watching = false
+
+    fun hasLocation(): Boolean = androidx.core.content.ContextCompat.checkSelfPermission(
+        getApplication(), android.Manifest.permission.ACCESS_FINE_LOCATION,
+    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+    /** Starts or stops GPS (or the simulated bike's route) to match what needs it. */
+    private fun ensureGeo() {
+        val want = _live.value.rec != null
+        val simulated = _live.value.simulated
+        if (want && simulated) {
+            stopGps()
+            if (simJob == null) simJob = viewModelScope.launch { while (true) { simStep(); delay(1000) } }
+        } else if (want) {
+            simJob?.cancel(); simJob = null
+            if (!watching && hasLocation()) {
+                try {
+                    val provider = if (locations.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER)) android.location.LocationManager.GPS_PROVIDER
+                        else android.location.LocationManager.NETWORK_PROVIDER
+                    locations.requestLocationUpdates(provider, 1000L, 0f, listener, android.os.Looper.getMainLooper())
+                    watching = true
+                } catch (e: SecurityException) { _live.update { it.copy(gpsErr = true) } }
+                  catch (e: IllegalArgumentException) { _live.update { it.copy(gpsErr = true) }; toast("No GPS on this phone. Try the simulated bike.") }
+            }
+        } else {
+            stopGps(); simJob?.cancel(); simJob = null
+            _live.update { it.copy(speed = 0) }
+        }
+    }
+
+    private fun stopGps() { if (watching) { locations.removeUpdates(listener); watching = false } }
+
+    private fun simStep() {
+        sim[4] += 1
+        val t = sim[4]
+        val target = maxOf(0.0, 42 + 18 * Math.sin(t / 23) + 8 * Math.sin(t / 7) - (if (t % 90 > 82) 60 else 0))
+        sim[3] += (target - sim[3]) * 0.25
+        sim[2] += Math.sin(t / 11) * 0.12
+        val m = sim[3] / 3.6
+        sim[0] += Math.cos(sim[2]) * m / 111320
+        sim[1] += Math.sin(sim[2]) * m / (111320 * Math.cos(sim[0] * Math.PI / 180))
+        _live.update { it.copy(engine = Math.round(80 + 6 * Math.sin(t / 40) + sim[3] / 25).toInt()) }
+        onFix(sim[0], sim[1], m, 5.0, System.currentTimeMillis())
+    }
+
+    private fun onFix(lat: Double, lng: Double, speedMs: Double?, acc: Double, ts: Long) {
+        var kmh = speedMs?.takeIf { !it.isNaN() }?.let { it * 3.6 }
+        var rec = _live.value.rec
+        val lf = lastFix
+        if (lf != null) {
+            val d = haversine(listOf(lf.first, lf.second), listOf(lat, lng))
+            val dt = (ts - lf.third) / 1000.0
+            if (kmh == null && dt > 0) kmh = d / dt * 3.6
+            if (rec != null && acc <= 40 && dt > 0 && d / dt * 3.6 < 220 && d > 2) {
+                val lp = rec.pts.lastOrNull()
+                val pts = if (lp == null || haversine(lp, listOf(lat, lng)) >= 12) rec.pts + listOf(listOf(r6(lat), r6(lng), ts.toDouble())) else rec.pts
+                rec = rec.copy(km = rec.km + d / 1000, pts = pts)
+            }
+        } else if (rec != null && rec.pts.isEmpty()) rec = rec.copy(pts = listOf(listOf(r6(lat), r6(lng), ts.toDouble())))
+        lastFix = Triple(lat, lng, ts)
+        val speed = maxOf(0, Math.round(kmh ?: 0.0).toInt())
+        if (rec != null) rec = rec.copy(top = maxOf(rec.top, speed))
+        _live.update { it.copy(speed = speed, rec = rec, gpsErr = false) }
+    }
+
+    private fun r6(x: Double) = Math.round(x * 1e6) / 1e6
+
+    fun startRecording() {
+        if (_live.value.rec != null) return
+        if (!_live.value.simulated && !hasLocation()) { toast("Allow location to record rides, or use the simulated bike."); return }
+        lastFix = null
+        _live.update { it.copy(rec = Rec(System.currentTimeMillis())) }
+        ensureGeo()
+        toast("Recording. Ride safe.")
+    }
+
+    fun stopRecording(keep: Boolean) {
+        val r = _live.value.rec ?: return
+        _live.update { it.copy(rec = null) }
+        if (keep && r.km >= 0.1) {
+            veh { it.addRide(r.start, System.currentTimeMillis(), r.km, r.top.toDouble(), r.pts) }
+            toast("Saved · ${fmt().num(r.km, 1)} km")
+        } else toast(if (keep) "Too short to keep." else "Ride discarded.")
+        ensureGeo()
+    }
+
+    fun renameTrip(id: String, title: String) = veh { v -> v.copy(trips = v.trips.map { if (it.id == id) it.copy(title = title.trim().take(60).ifEmpty { it.title }) else it }) }
+    fun deleteTrip(id: String) { veh { v -> v.copy(trips = v.trips.filter { it.id != id }) }; toast("Ride deleted. The odometer is unchanged.") }
+
+    override fun onCleared() { stopGps(); super.onCleared() }
+
     fun fmt() = Fmt(_state.value.country.locale)
 
     // ---------- Link ----------
     fun simOn() {
         _live.update { it.copy(link = LinkState.CONNECTED, simulated = true, engine = 83, speed = 0) }
         toast("Simulated cluster linked.")
+        ensureGeo()
     }
 
-    fun simOff() = _live.update { it.copy(link = LinkState.IDLE, simulated = false, engine = null) }
+    fun simOff() { _live.update { it.copy(link = LinkState.IDLE, simulated = false, engine = null) }; ensureGeo() }
 
     // ---------- Settings ----------
     fun setTheme(key: String) = commit { it.copy(settings = it.settings.copy(theme = key)) }
+    fun setRideChart(i: Int) = commit { it.copy(settings = it.settings.copy(rideChart = i.coerceIn(0, 2))) }
     fun setAccent(key: String) = commit { it.copy(settings = it.settings.copy(accent = key)) }
 
     /** Wipes everything on this phone and returns to onboarding. */

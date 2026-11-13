@@ -3,6 +3,10 @@ package app.waylink.ui.shell
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
@@ -67,6 +71,9 @@ import app.waylink.ui.fuel.FuelActions
 import app.waylink.ui.fuel.FuelScreen
 import app.waylink.ui.fuel.fuelSheet
 import app.waylink.ui.garage.GarageList
+import app.waylink.ui.rides.RidesActions
+import app.waylink.ui.rides.RidesScreen
+import app.waylink.ui.rides.rideSheet
 import app.waylink.ui.logbook.LogbookActions
 import app.waylink.ui.logbook.LogbookScreen
 import app.waylink.ui.logbook.SheetNav
@@ -125,6 +132,19 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
     val soon = { what: String -> vm.toast("$what comes in the next Android build.") }
     val tabBarHeight = 80.dp
     if (page != null) BackHandler { page = null }
+    // Recording asks for location the first time; the simulated bike needs none.
+    val askLocation = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
+        if (granted.values.any { it }) vm.startRecording()
+        else vm.toast("Location is off. Allow it to record rides, or use the simulated bike.")
+    }
+    val startRec = {
+        if (live.simulated || vm.hasLocation()) vm.startRecording()
+        else askLocation.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION))
+    }
+    // The screen stays on while a ride records, so GPS keeps flowing.
+    val view = LocalView.current
+    val recording = live.rec != null
+    DisposableEffect(recording) { view.keepScreenOn = recording; onDispose { view.keepScreenOn = false } }
     Box(Modifier.fillMaxSize()) {
         AnimatedContent(
             page ?: tab.key,
@@ -170,7 +190,12 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                 }, tabBarHeight)
                 Tab.SETTINGS.key -> SettingsScreen(s, vm, tabBarHeight)
                 Tab.ROUTE.key -> Placeholder("Route", "Turns on your bike", "Plan in Google Maps and your turns show on the cluster. On Android, Waylink will read Maps’ own turn alerts, which the web app can’t.", tabBarHeight)
-                Tab.RIDES.key -> Placeholder("Rides", "${s.vehicle.trips.size} rides on ${app.waylink.core.vehicleTitle(s)}", "Record rides with GPS, see your 12-week calendar and km per week.", tabBarHeight)
+                Tab.RIDES.key -> RidesScreen(s, live, object : RidesActions {
+                    override fun record() = startRec()
+                    override fun endRide() = openSheet("rec-end")
+                    override fun open(id: String) = openSheet("trip-detail:$id")
+                    override fun chart(page: Int) = vm.setRideChart(page)
+                }, tabBarHeight)
                 else -> Placeholder("Alerts", "Calls and what needs you", "Missed calls and WhatsApp alerts sent to the bike, plus overdue service and expiring papers.", tabBarHeight)
             }
         }
@@ -197,6 +222,7 @@ private val PAGES = setOf("logbook", "fuel", "profile")
 private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetNav): SheetSpec? {
     logbookSheet(key, s, vm, nav)?.let { return it }
     fuelSheet(key, s, vm, nav)?.let { return it }
+    rideSheet(key, s, live, vm, nav)?.let { return it }
     val arg = key.substringAfter(':', "")
     return when (key.substringBefore(':')) {
         "garage" -> SheetSpec("Your bikes", "Garage") {

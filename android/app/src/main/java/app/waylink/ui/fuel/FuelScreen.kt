@@ -217,12 +217,13 @@ private fun Kv(label: String, value: String, edit: Boolean = false, onClick: (()
 /** Where this tank sits between your thirstiest and thriftiest (mileageScale in views.js). */
 @Composable
 private fun MileageScale(fs: FuelStats, f: Fmt) {
-    if (fs.tanks.size < 2 || fs.lastTank == null) return
+    val last = fs.lastTank
+    if (fs.tanks.size < 2 || last == null) return
     val c = W.c
     val vals = fs.tanks.map { it.kmpl }
     val lo = vals.min()
     val hi = vals.max()
-    val pos = ((fs.lastTank - lo) / max(0.1, hi - lo)).coerceIn(0.0, 1.0).toFloat()
+    val pos = ((last - lo) / max(0.1, hi - lo)).coerceIn(0.0, 1.0).toFloat()
     val verdict = when { pos > 0.66f -> "One of your best tanks."; pos < 0.33f -> "Thirstier than usual. Check tyre pressure and chain."; else -> "About your usual." }
     Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp)) {
         Row(verticalAlignment = Alignment.Top) {
