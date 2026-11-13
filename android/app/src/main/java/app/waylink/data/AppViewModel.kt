@@ -521,11 +521,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         toast("Finding where you are…")
         try {
             androidx.core.location.LocationManagerCompat.getCurrentLocation(
-                locations, provider, null, androidx.core.content.ContextCompat.getMainExecutor(getApplication()),
-            ) { loc ->
+                locations, provider, null as android.os.CancellationSignal?, androidx.core.content.ContextCompat.getMainExecutor(getApplication()),
+                androidx.core.util.Consumer<android.location.Location?> { loc ->
                 val l = loc ?: locations.getLastKnownLocation(provider)
                 if (l == null) toast("Couldn’t get a location fix. Try again outside.") else setParking(l.latitude, l.longitude)
-            }
+            })
         } catch (e: SecurityException) { toast("Allow location to save where you parked.") }
     }
 
@@ -542,11 +542,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Copies a picked photo or PDF into app storage. Up to 15 MB. */
     fun addDoc(slot: String, uri: android.net.Uri) {
-        val app = getApplication<Application>()
+        val ctx = getApplication<Application>()
         viewModelScope.launch {
             val res = withContext(Dispatchers.IO) {
                 try {
-                    val cr = app.contentResolver
+                    val cr = ctx.contentResolver
                     val type = cr.getType(uri) ?: "application/octet-stream"
                     if (!type.startsWith("image/") && type != "application/pdf") return@withContext "Choose a photo or a PDF."
                     var name = "Document"
