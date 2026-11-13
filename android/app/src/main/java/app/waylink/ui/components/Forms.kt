@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -57,6 +58,9 @@ fun Input(
     keyboard: KeyboardType = KeyboardType.Text,
     caps: KeyboardCapitalization = KeyboardCapitalization.Sentences,
     maxLength: Int = 60,
+    multiline: Boolean = false,
+    imeAction: ImeAction = ImeAction.Next,
+    onDone: (() -> Unit)? = null,
 ) {
     val c = W.c
     var focused by remember { mutableStateOf(false) }
@@ -64,18 +68,18 @@ fun Input(
     BasicTextField(
         value = value,
         onValueChange = { onChange(it.take(maxLength)) },
-        singleLine = true,
+        singleLine = !multiline,
         textStyle = T.input.copy(color = c.ink),
         cursorBrush = SolidColor(c.accent),
-        keyboardOptions = KeyboardOptions(capitalization = caps, keyboardType = keyboard, imeAction = ImeAction.Next),
-        keyboardActions = KeyboardActions.Default,
-        modifier = modifier.fillMaxWidth().height(52.dp).onFocusChanged { focused = it.isFocused }.semantics { contentDescription = label },
+        keyboardOptions = KeyboardOptions(capitalization = caps, keyboardType = keyboard, imeAction = if (multiline) ImeAction.Default else imeAction),
+        keyboardActions = if (onDone != null) KeyboardActions(onDone = { onDone() }) else KeyboardActions.Default,
+        modifier = modifier.fillMaxWidth().then(if (multiline) Modifier.heightIn(min = 96.dp) else Modifier.height(52.dp)).onFocusChanged { focused = it.isFocused }.semantics { contentDescription = label },
         decorationBox = { inner ->
             Row(
-                Modifier.fillMaxWidth().height(52.dp).clip(shape).background(c.raised)
+                Modifier.fillMaxWidth().then(if (multiline) Modifier.heightIn(min = 96.dp) else Modifier.height(52.dp)).clip(shape).background(c.raised)
                     .border(if (focused) 1.5.dp else 1.dp, if (focused) c.ink.copy(alpha = 0.55f) else c.line, shape)
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(horizontal = 16.dp, vertical = if (multiline) 14.dp else 0.dp),
+                verticalAlignment = if (multiline) Alignment.Top else Alignment.CenterVertically,
             ) {
                 Box(Modifier.weight(1f)) {
                     if (value.isEmpty()) Txt(placeholder, T.input, c.ink4, maxLines = 1)

@@ -83,6 +83,19 @@ class Fmt(locale: String = "en-IN") {
     }
 }
 
+private val MON = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", "Oct", "Nov", "Dec")
+private val WDAY = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+private fun ld(ts: Long, zone: java.time.ZoneId) = java.time.Instant.ofEpochMilli(ts).atZone(zone).toLocalDate()
+
+/** "16 Jul", like en-IN toLocaleDateString with day and short month (September is "Sept"). */
+fun dShort(ts: Long, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): String = ld(ts, zone).let { "${it.dayOfMonth} ${MON[it.monthValue - 1]}" }
+/** "Sun, 8 Nov" */
+fun dMed(ts: Long, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): String = ld(ts, zone).let { "${WDAY[it.dayOfWeek.value - 1]}, ${it.dayOfMonth} ${MON[it.monthValue - 1]}" }
+/** "14 Mar 2035" */
+fun dFull(ts: Long, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): String = ld(ts, zone).let { "${it.dayOfMonth} ${MON[it.monthValue - 1]} ${it.year}" }
+/** "Sept 2025" */
+fun dMonthYear(ts: Long, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): String = ld(ts, zone).let { "${MON[it.monthValue - 1]} ${it.year}" }
+
 fun plural(n: Int, one: String, many: String) = "$n ${if (n == 1) one else many}"
 
 /** First name if the full name is too long for a row. */

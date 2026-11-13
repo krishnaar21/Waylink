@@ -151,4 +151,23 @@ class CoreTest {
         val mon = java.time.ZonedDateTime.of(2026, 11, 9, 0, 0, 0, 0, zone).toInstant().toEpochMilli()
         assertEquals(mon, weekStart(fri, zone))
     }
+
+    @Test fun `logbook wording matches the web`() {
+        val f = Fmt("en-IN")
+        val zone = java.time.ZoneId.of("Asia/Kolkata")
+        val now = java.time.ZonedDateTime.of(2026, 11, 13, 9, 0, 0, 0, zone).toInstant().toEpochMilli()
+        val chain = ServiceItem(kind = "chain", name = "Chain", everyKm = 500.0, lastKm = 11_655.0, lastDate = now - 20 * DAY_MS)
+        assertEquals("every 500 km", everyText(chain, f))
+        assertEquals("every 3,000 km or 6 months", everyText(chain.copy(everyKm = 3000.0, everyDays = 182), f))
+        assertEquals("every 2 weeks", everyText(chain.copy(everyKm = 0.0, everyDays = 14), f))
+        assertEquals("next at 15,000 km", everyText(chain.copy(milestone = true, targetKm = 15_000.0), f))
+        val over = serviceStatus(12_261.0, chain, now)
+        assertEquals(RowValue("106", "km overdue", true), rowValue(over, f))
+        assertEquals("Overdue by 106 km. Do it on your next stop.", dueSentence(over, f, zone))
+        val ok = serviceStatus(11_700.0, chain, now)
+        assertEquals("Due in 455 km, at 12,155\u00A0km.", dueSentence(ok, f, zone))
+        assertEquals("16 Jul", dShort(java.time.ZonedDateTime.of(2026, 7, 16, 9, 0, 0, 0, zone).toInstant().toEpochMilli(), zone))
+        assertEquals("Fri, 25 Sept", dMed(java.time.ZonedDateTime.of(2026, 9, 25, 9, 0, 0, 0, zone).toInstant().toEpochMilli(), zone))
+        assertEquals("14 Mar 2035", dFull(java.time.ZonedDateTime.of(2035, 3, 14, 9, 0, 0, 0, zone).toInstant().toEpochMilli(), zone))
+    }
 }

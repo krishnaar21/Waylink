@@ -116,7 +116,7 @@ fun Modifier.pressable(enabled: Boolean = true, label: String? = null, role: Rol
         .then(if (label != null) Modifier.semantics { contentDescription = label } else Modifier)
 }
 
-enum class BtnKind { INK, LINE, ACCENT, GHOST }
+enum class BtnKind { INK, LINE, ACCENT, GHOST, DANGER }
 
 /** .btn: 52 tall, 16 radius. Small: 34 tall, 12 radius. */
 @Composable
@@ -134,6 +134,7 @@ fun Btn(
         BtnKind.ACCENT -> c.accent to c.onAccent
         BtnKind.LINE -> c.raised to c.ink
         BtnKind.GHOST -> Color.Transparent to c.ink2
+        BtnKind.DANGER -> c.tintRed to c.red
     }
     val shape = RoundedCornerShape(if (small) 12.dp else 16.dp)
     Row(
@@ -169,9 +170,17 @@ fun CircleBtn(icon: String, label: String, onClick: () -> Unit, modifier: Modifi
 
 /** Section header: "Readings" on the left, an optional link or tag on the right. */
 @Composable
-fun SectionHead(title: String, modifier: Modifier = Modifier, right: @Composable RowScope.() -> Unit = {}) {
+fun SectionHead(title: String, modifier: Modifier = Modifier, help: (() -> Unit)? = null, right: @Composable RowScope.() -> Unit = {}) {
     Row(modifier.fillMaxWidth().padding(start = 14.dp, end = 14.dp, bottom = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-        Txt(title, T.section, W.c.ink, Modifier.weight(1f))
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Txt(title, T.section, W.c.ink, Modifier.weight(1f, fill = false), maxLines = 1)
+            if (help != null) {
+                Spacer(Modifier.width(4.dp))
+                Box(Modifier.size(26.dp).clip(CircleShape).pressable(label = "About $title", onClick = help), contentAlignment = Alignment.Center) {
+                    Ic("info", size = 15.dp, tint = W.c.ink4)
+                }
+            }
+        }
         right()
     }
 }
@@ -226,11 +235,11 @@ fun FuelBars(bars: Int?, low: Boolean, modifier: Modifier = Modifier, height: Dp
 
 /** Parallelogram segments for service progress (the web .fgauge.sm). */
 @Composable
-fun ServiceGauge(fresh: Int, total: Int = 8, modifier: Modifier = Modifier) {
+fun ServiceGauge(fresh: Int, total: Int = 8, modifier: Modifier = Modifier, height: Dp = 4.dp, onColor: Color? = null) {
     val c = W.c
-    val on = c.inkA(0.42f)
+    val on = onColor ?: c.inkA(0.42f)
     Box(
-        modifier.fillMaxWidth().height(4.dp).drawBehind {
+        modifier.fillMaxWidth().height(height).drawBehind {
             val gap = 2.dp.toPx()
             val w = (size.width - gap * (total - 1)) / total
             for (i in 0 until total) {

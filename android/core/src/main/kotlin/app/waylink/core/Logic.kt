@@ -284,3 +284,49 @@ fun weekStart(now: Long = System.currentTimeMillis(), zone: ZoneId = ZoneId.syst
     val d = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
     return d.minusDays((d.dayOfWeek.value - 1).toLong()).atStartOfDay(zone).toInstant().toEpochMilli()
 }
+
+// ---------- Logbook wording (everyText, rowValue, dueSentence in views.js) ----------
+
+/** "every 3,000 km or 6 months", or "next at 15,000 km" for milestone services. */
+fun everyText(it: ServiceItem, f: Fmt): String {
+    if (it.milestone) return "next at ${f.num(it.targetKm)} km"
+    val k = if (it.everyKm > 0) "${f.num(it.everyKm)} km" else ""
+    val months = if (it.everyDays >= 28) Math.round(it.everyDays / 30.4).toInt() else 0
+    val t = when {
+        it.everyDays <= 0 -> ""
+        months > 0 -> plural(months, "month", "months")
+        it.everyDays % 7 == 0 -> plural(it.everyDays / 7, "week", "weeks")
+        else -> plural(it.everyDays, "day", "days")
+    }
+    return "every " + listOf(k, t).filter { it.isNotEmpty() }.joinToString(" or ")
+}
+
+/** The big number on a service row and its unit ("km overdue", "days"). */
+data class RowValue(val v: String, val u: String, val red: Boolean)
+
+fun rowValue(st: ServiceStatus, f: Fmt): RowValue = when {
+    st.status == Due.OVERDUE && st.overdueKm > 0 -> RowValue(f.short(st.overdueKm), "km overdue", true)
+    st.status == Due.OVERDUE -> RowValue(f.short(st.overdueDays.toDouble()), if (st.overdueDays == 1) "day overdue" else "days overdue", true)
+    st.byTime || st.remKm == null -> RowValue(f.short(st.remDays?.toDouble()), if (st.remDays == 1) "day" else "days", false)
+    else -> RowValue(f.short(st.remKm), "km", false)
+}
+
+/** Keep the last two words together so a line never ends on a lone word. */
+private fun nb(s: String) = s.replace(Regex(" (\\S+)$"), " $1")
+
+fun dueSentence(st: ServiceStatus, f: Fmt, zone: ZoneId = ZoneId.systemDefault()): String {
+    if (st.status == Due.OVERDUE) {
+        val parts = buildList {
+            if (st.overdueKm > 0) add("${f.num(st.overdueKm)} km")
+            if (st.overdueDays > 0) add(plural(st.overdueDays, "day", "days"))
+        }
+        return "Overdue by ${parts.joinToString(" and ")}. Do it on your next stop."
+    }
+    val km = st.remKm?.let { "in ${f.num(it)} km" }
+    val days = if (st.remDays != null && st.dueDate != null) "by ${dShort(st.dueDate, zone)}" else null
+    if (km != null && days != null) return nb("Due ${if (st.byTime) "$days or $km" else "$km or $days"}, whichever comes first.")
+    return nb("Due ${if (km != null) "$km, at ${f.num(st.dueKm)} km" else days}.")
+}
+
+/** Average km a day over the last 30 days of recorded rides, for back-dating a job. */
+fun kmPerDay(v: Vehicle, now: Long = System.currentTimeMillis()): Double = periodStats(v.trips, now - 30 * DAY_MS).km / 30

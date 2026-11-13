@@ -105,6 +105,7 @@ fun Sheet(
     onClose: () -> Unit,
     title: String,
     sub: String? = null,
+    onBack: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = W.c
@@ -115,7 +116,7 @@ fun Sheet(
                 .semantics { contentDescription = "Close" },
         )
     }
-    if (visible) BackHandler(onBack = onClose)
+    if (visible) BackHandler(onBack = onBack ?: onClose)
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
         AnimatedVisibility(
             visible,
@@ -145,7 +146,11 @@ fun Sheet(
                     Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp), contentAlignment = Alignment.Center) {
                         Box(Modifier.width(36.dp).height(5.dp).clip(CircleShape).background(c.inkA(0.18f)))
                     }
-                    Row(Modifier.fillMaxWidth().padding(start = 24.dp, end = 16.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().padding(start = if (onBack != null) 16.dp else 24.dp, end = 16.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        if (onBack != null) {
+                            CircleBtn("back", "Back", onBack, size = 36.dp, flat = true)
+                            Spacer(Modifier.width(8.dp))
+                        }
                         Txt(title, T.sheetTitle, c.ink, Modifier.weight(1f).padding(top = 6.dp))
                         CircleBtn("x", "Close", onClose, size = 36.dp, flat = true)
                     }

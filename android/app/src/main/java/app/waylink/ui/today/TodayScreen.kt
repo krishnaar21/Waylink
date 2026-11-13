@@ -72,6 +72,7 @@ import app.waylink.ui.components.BtnKind
 import app.waylink.ui.components.CircleBtn
 import app.waylink.ui.components.Dot
 import app.waylink.ui.components.FuelBars
+import app.waylink.ui.components.Hero
 import app.waylink.ui.components.Ic
 import app.waylink.ui.components.IconTile
 import app.waylink.ui.components.LinkText
@@ -165,7 +166,7 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
 
         // Readings
         Spacer(Modifier.height(30.dp))
-        SectionHead("Readings") {
+        SectionHead("Readings", help = act::readingsHelp) {
             Txt(s.model.series, T.eyebrow, c.ink3)
         }
         Readings(s, live, f, fs, act)
@@ -306,33 +307,6 @@ private fun WeatherRow(w: Weather.State, onClick: () -> Unit) {
         if (temp.isNotEmpty()) Txt(temp, T.row.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), c.ink)
         Txt(sub, T.row, c.ink3, Modifier.weight(1f), maxLines = 1)
         Ic("chev", size = 17.dp, tint = c.ink4)
-    }
-}
-
-@Composable
-private fun Hero(v: app.waylink.core.Verdict, line: String, reserve: Boolean, onClick: () -> Unit) {
-    val c = W.c
-    val colors = when {
-        reserve && v.over == 0 -> c.heroSoon
-        v.tone == Due.OVERDUE -> c.heroBad
-        v.tone == Due.SOON -> c.heroSoon
-        else -> c.heroOk
-    }
-    Column(
-        Modifier.fillMaxWidth().card(24.dp, Color.Transparent).background(c.hero(colors))
-            .pressable(onClick = onClick).padding(start = 22.dp, end = 22.dp, top = 22.dp, bottom = 20.dp),
-    ) {
-        Txt("Verdict", T.eyebrow, c.ink3)
-        Spacer(Modifier.height(10.dp))
-        Txt(v.word, T.verdict, c.ink)
-        Spacer(Modifier.height(8.dp))
-        Txt(line, T.lead, c.ink2)
-        Spacer(Modifier.height(18.dp))
-        if (v.over + v.soon > 0) {
-            Segs(v.bar.map { when (it) { Due.OVERDUE -> Tone.BAD; Due.SOON -> Tone.SOON; Due.OK -> Tone.OK } }, height = 7.dp, gap = 4.dp)
-            Spacer(Modifier.height(10.dp))
-            Txt("${v.ok} on track · ${v.soon} due soon · ${v.over} overdue", T.eyebrow.copy(fontSize = 14.sp), c.ink3)
-        } else Txt("All ${v.ok} jobs on track", T.eyebrow.copy(fontSize = 14.sp), c.ink3)
     }
 }
 

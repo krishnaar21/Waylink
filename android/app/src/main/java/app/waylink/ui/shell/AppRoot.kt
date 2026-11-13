@@ -2,8 +2,13 @@ package app.waylink.ui.shell
 
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -59,6 +64,11 @@ import app.waylink.ui.components.card
 import app.waylink.ui.components.grain
 import app.waylink.ui.components.pressable
 import app.waylink.ui.garage.GarageList
+import app.waylink.ui.logbook.LogbookActions
+import app.waylink.ui.logbook.LogbookScreen
+import app.waylink.ui.logbook.SheetNav
+import app.waylink.ui.logbook.SheetSpec
+import app.waylink.ui.logbook.logbookSheet
 import app.waylink.ui.onboarding.Onboarding
 import app.waylink.ui.onboarding.OnboardingActions
 import app.waylink.ui.theme.T
@@ -98,42 +108,107 @@ fun AppRoot(vm: AppViewModel) {
 @Composable
 private fun Main(s: AppState, live: Live, vm: AppViewModel) {
     var tab by rememberSaveable { mutableStateOf(Tab.TODAY) }
-    var sheet by rememberSaveable { mutableStateOf<String?>(null) }
+    // An inner page over the tabs (logbook, fuel, profile), like the web's pushed screens.
+    var page by rememberSaveable { mutableStateOf<String?>(null) }
+    // Open sheets, newest last, joined by newlines so the stack survives rotation.
+    var stack by rememberSaveable { mutableStateOf("") }
+    val sheets = stack.split('\n').filter { it.isNotEmpty() }
+    val nav = object : SheetNav {
+        override fun open(key: String) { stack = (sheets + key).joinToString("\n") }
+        override fun back() { stack = sheets.dropLast(1).joinToString("\n") }
+        override fun close() { stack = "" }
+    }
+    val openSheet = { key: String -> stack = key }
     val soon = { what: String -> vm.toast("$what comes in the next Android build.") }
     val tabBarHeight = 80.dp
+    if (page != null) BackHandler { page = null }
     Box(Modifier.fillMaxSize()) {
-        Crossfade(tab, animationSpec = tween(180), label = "tab") { t ->
-            when (t) {
-                Tab.TODAY -> TodayScreen(s, live, object : TodayActions {
-                    override fun garage() { sheet = "garage" }
-                    override fun sos() { sheet = "sos" }
-                    override fun pair() { sheet = "pair" }
+        AnimatedContent(
+            page ?: tab.key,
+            transitionSpec = {
+                val push = targetState in PAGES && initialState !in PAGES
+                val pop = initialState in PAGES && targetState !in PAGES
+                when {
+                    push -> (slideInHorizontally(tween(320)) { it / 4 } + fadeIn(tween(220))) togetherWith fadeOut(tween(160))
+                    pop -> fadeIn(tween(220)) togetherWith (slideOutHorizontally(tween(260)) { it / 4 } + fadeOut(tween(200)))
+                    else -> fadeIn(tween(180)) togetherWith fadeOut(tween(180))
+                }
+            },
+            label = "screen",
+        ) { key ->
+            when (key) {
+                "logbook" -> LogbookScreen(s, object : LogbookActions {
+                    override fun back() { page = null }
+                    override fun sheet(key: String) = openSheet(key)
+                    override fun help(key: String) = openSheet("help:$key")
+                    override fun toggleCheck(id: String) = vm.toggleCheck(id)
+                    override fun deleteCheck(id: String) = vm.deleteCheck(id)
+                    override fun addCheck(text: String) = vm.addCheck(text)
+                }, tabBarHeight)
+                Tab.TODAY.key -> TodayScreen(s, live, object : TodayActions {
+                    override fun garage() = openSheet("garage")
+                    override fun sos() = openSheet("sos")
+                    override fun pair() = openSheet("pair")
                     override fun ride() = soon("Ride mode")
-                    override fun logbook() = soon("The logbook")
-                    override fun service(id: String) = soon("Service details")
+                    override fun logbook() { page = "logbook" }
+                    override fun service(id: String) = openSheet("svc:$id")
                     override fun alerts() { tab = Tab.ALERTS }
                     override fun fuel() = soon("The fuel log")
-                    override fun trip(which: String) = soon("Trip $which reset")
+                    override fun trip(which: String) = openSheet("trip:$which")
                     override fun rides() { tab = Tab.RIDES }
                     override fun glovebox() = soon("The glovebox")
                     override fun weather() = vm.refreshWeather()
-                    override fun readingsHelp() = Unit
+                    override fun readingsHelp() = openSheet("help:readings")
                 }, tabBarHeight)
-                Tab.SETTINGS -> SettingsScreen(s, vm, tabBarHeight)
-                Tab.ROUTE -> Placeholder("Route", "Turns on your bike", "Plan in Google Maps and your turns show on the cluster. On Android, Waylink will read Maps’ own turn alerts, which the web app can’t.", tabBarHeight)
-                Tab.RIDES -> Placeholder("Rides", "${s.vehicle.trips.size} rides on ${app.waylink.core.vehicleTitle(s)}", "Record rides with GPS, see your 12-week calendar and km per week.", tabBarHeight)
-                Tab.ALERTS -> Placeholder("Alerts", "Calls and what needs you", "Missed calls and WhatsApp alerts sent to the bike, plus overdue service and expiring papers.", tabBarHeight)
+                Tab.SETTINGS.key -> SettingsScreen(s, vm, tabBarHeight)
+                Tab.ROUTE.key -> Placeholder("Route", "Turns on your bike", "Plan in Google Maps and your turns show on the cluster. On Android, Waylink will read Maps’ own turn alerts, which the web app can’t.", tabBarHeight)
+                Tab.RIDES.key -> Placeholder("Rides", "${s.vehicle.trips.size} rides on ${app.waylink.core.vehicleTitle(s)}", "Record rides with GPS, see your 12-week calendar and km per week.", tabBarHeight)
+                else -> Placeholder("Alerts", "Calls and what needs you", "Missed calls and WhatsApp alerts sent to the bike, plus overdue service and expiring papers.", tabBarHeight)
             }
         }
-        TabBar(tab, s, live, Modifier.align(Alignment.BottomCenter)) { tab = it }
+        TabBar(if (page == "logbook" || page == "fuel") Tab.TODAY else if (page == "profile") Tab.SETTINGS else tab, s, live, Modifier.align(Alignment.BottomCenter)) {
+            page = null; tab = it
+        }
 
-        Sheet(sheet == "garage", { sheet = null }, "Your bikes", "Garage") {
-            GarageList(s, onPick = { vm.switchVehicle(it); sheet = null }, onAdd = { soon("Adding a vehicle") })
+        // One sheet host. The top of the stack shows; the last one stays drawn while it slides away.
+        val top = sheets.lastOrNull()
+        val spec = top?.let { buildSheet(it, s, live, vm, nav) }
+        var last by remember { mutableStateOf<SheetSpec?>(null) }
+        if (spec != null) last = spec
+        if (top != null && spec == null) LaunchedEffect(top) { nav.back() }
+        val shown = spec ?: last
+        Sheet(spec != null, nav::close, shown?.title ?: "", shown?.sub, onBack = if (sheets.size > 1) nav::back else null) {
+            shown?.content?.invoke(this)
         }
-        Sheet(sheet == "pair", { sheet = null }, "Link your bike", "Bluetooth") {
-            PairSheet(live, onSim = { vm.simOn(); sheet = null }, onSimOff = { vm.simOff(); sheet = null })
+    }
+}
+
+private val PAGES = setOf("logbook", "fuel", "profile")
+
+/** Every sheet the app can show, by key ("svc:<id>", "help:reminders", "garage"). */
+private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetNav): SheetSpec? {
+    logbookSheet(key, s, vm, nav)?.let { return it }
+    val arg = key.substringAfter(':', "")
+    return when (key.substringBefore(':')) {
+        "garage" -> SheetSpec("Your bikes", "Garage") {
+            GarageList(s, onPick = { vm.switchVehicle(it); nav.close() }, onAdd = { vm.toast("Adding a vehicle comes in the next Android build.") })
         }
-        Sheet(sheet == "sos", { sheet = null }, "Emergency SOS", "Medical ID") { SosSheet(s) }
+        "pair" -> SheetSpec("Link your bike", "Bluetooth") {
+            PairSheet(live, onSim = { vm.simOn(); nav.close() }, onSimOff = { vm.simOff(); nav.close() })
+        }
+        "sos" -> SheetSpec("Emergency SOS", "Medical ID") { SosSheet(s) }
+        "help" -> HELP[arg]?.let { h ->
+            SheetSpec(h.title, h.eyebrow) {
+                val c = W.c
+                h.paras.forEachIndexed { i, p ->
+                    Spacer(Modifier.height(if (i == 0) 12.dp else 10.dp))
+                    Txt(p, if (i == 0) T.lead else T.lead.copy(fontSize = 15.sp), if (i == 0) c.ink2 else c.ink3)
+                }
+                Spacer(Modifier.height(24.dp))
+                Btn("Got it", nav::close, Modifier.fillMaxWidth())
+            }
+        }
+        else -> null
     }
 }
 
