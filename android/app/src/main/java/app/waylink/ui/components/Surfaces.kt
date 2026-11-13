@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -147,17 +148,23 @@ fun Sheet(
                     ),
                 ) {
                     Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp), contentAlignment = Alignment.Center) {
-                        Box(Modifier.width(36.dp).height(5.dp).clip(CircleShape).background(c.inkA(0.18f)))
+                        Box(Modifier.width(36.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(c.segOff))
                     }
-                    Row(Modifier.fillMaxWidth().padding(start = if (onBack != null) 16.dp else 24.dp, end = 16.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // .sheet-head: min 52 tall, padding 2 16 8 24 (16 with a back button), 10 apart; title 24/1.1
+                    Row(
+                        Modifier.fillMaxWidth().padding(start = if (onBack != null) 16.dp else 24.dp, end = 16.dp, top = 2.dp, bottom = 8.dp).heightIn(min = 42.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         if (onBack != null) {
-                            CircleBtn("back", "Back", onBack, size = 36.dp, flat = true)
-                            Spacer(Modifier.width(8.dp))
+                            CircleBtn("back", "Back", onBack, size = 36.dp, flat = true, iconSize = 17.dp)
+                            Spacer(Modifier.width(10.dp))
                         }
-                        Txt(title, T.sheetTitle, c.ink, Modifier.weight(1f).padding(top = 6.dp))
-                        CircleBtn("x", "Close", onClose, size = 36.dp, flat = true)
+                        Txt(title, T.sheetTitle.copy(lineHeight = 26.4.sp), c.ink, Modifier.weight(1f), maxLines = 2)
+                        Spacer(Modifier.width(10.dp))
+                        CircleBtn("x", "Close", onClose, size = 36.dp, flat = true, iconSize = 17.dp)
                     }
-                    if (sub != null) Txt(sub, T.lead.copy(fontSize = T.eyebrow.fontSize), c.ink3, Modifier.padding(start = 24.dp, top = 10.dp))
+                    // .sheet-sub: 15 ink-3, first thing in the body (padding-top 2)
+                    if (sub != null) Txt(sub, T.subtitle, c.ink3, Modifier.padding(start = 24.dp, end = 24.dp, top = 2.dp))
                 }
                 Column(
                     Modifier.verticalScroll(rememberScrollState()).padding(start = 24.dp, end = 24.dp, bottom = 24.dp),

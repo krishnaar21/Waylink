@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -57,11 +58,22 @@ import java.time.ZoneId
 @Composable
 fun Page(bottom: Dp, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState())
+        Modifier.fillMaxSize().imePadding().rise().verticalScroll(rememberScrollState())
             .windowInsetsPadding(WindowInsets.statusBars).windowInsetsPadding(WindowInsets.navigationBars)
             .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = bottom + 24.dp),
         content = content,
     )
+}
+
+/**
+ * .stagger > * { animation: rise .55s var(--spring) }: content settles up 10 dp as a page opens.
+ * (The web staggers each block by 35 ms; here the page rises as one, which reads the same at this distance.)
+ */
+@Composable
+fun Modifier.rise(): Modifier {
+    val p = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(0f) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { p.animateTo(1f, androidx.compose.animation.core.tween(550, easing = app.waylink.ui.theme.Spring)) }
+    return this.then(Modifier.graphicsLayer { translationY = (1f - p.value) * 10.dp.toPx() })
 }
 
 /** .pagehead: optional back and action circles, then the title and its grey subtitle. */

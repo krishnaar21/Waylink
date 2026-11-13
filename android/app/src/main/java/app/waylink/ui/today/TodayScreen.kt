@@ -83,6 +83,7 @@ import app.waylink.ui.components.Tone
 import app.waylink.ui.components.Txt
 import app.waylink.ui.components.card
 import app.waylink.ui.components.pressable
+import app.waylink.ui.components.rise
 import app.waylink.ui.theme.T
 import app.waylink.ui.theme.W
 import java.time.LocalDate
@@ -124,7 +125,7 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
     val missed = s.alerts.missed
 
     Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+        Modifier.fillMaxWidth().rise().verticalScroll(rememberScrollState())
             .windowInsetsPadding(WindowInsets.statusBars)
             .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = bottomPadding + 24.dp),

@@ -3,6 +3,8 @@
 
     <!-- Weather only: the city name goes to Open-Meteo. Nothing else leaves the phone. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Short taps of vibration on toggles and events, like the web app's navigator.vibrate. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Recording rides and saving where you parked, only when you ask. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />

@@ -109,6 +109,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     }
 
     override fun toast(text: String) = _live.update { it.copy(toast = Toast(text)) }
+
+    /** The web app's buzz(): a short vibration (or a pattern, off/on in ms) on toggles and events. Silent if unavailable. */
+    private fun buzz(vararg ms: Long) {
+        try {
+            val ctx = getApplication<Application>()
+            val vib = if (android.os.Build.VERSION.SDK_INT >= 31)
+                (ctx.getSystemService(android.content.Context.VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager)?.defaultVibrator
+            else @Suppress("DEPRECATION") (ctx.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? android.os.Vibrator)
+            if (vib == null || !vib.hasVibrator()) return
+            val effect = if (ms.size <= 1) android.os.VibrationEffect.createOneShot(if (ms.isEmpty()) 8L else ms[0], android.os.VibrationEffect.DEFAULT_AMPLITUDE)
+            else android.os.VibrationEffect.createWaveform(longArrayOf(0L) + ms, -1)
+            vib.vibrate(effect)
+        } catch (_: Exception) { }
+    }
     fun clearToast() = _live.update { it.copy(toast = null) }
 
     // ---------- Onboarding ----------
@@ -140,6 +154,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     // ---------- Garage ----------
     fun switchVehicle(id: String) {
+        buzz(10)
         val s = _state.value
         if (s.active == id || s.vehicles.none { it.id == id }) return
         commit { it.copy(active = id) }
@@ -152,6 +167,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     /** Marks a job done now, or back-dated to [at] (and [km], when known). */
     fun serviceDone(id: String, at: Long? = null, km: Double? = null) {
+        buzz(12)
         val it0 = item(id) ?: return
         val now = System.currentTimeMillis()
         veh { v ->
@@ -363,6 +379,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
                 if (!a.calls) { toast("Phone calls are switched off above."); return }
                 commit { it.copy(alerts = logAlert(it.alerts, "call", name)) }
                 ring(name)
+                buzz(30, 60, 30)
             }
             "missed" -> {
                 if (!a.calls) { toast("Phone calls are switched off above."); return }
@@ -380,14 +397,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     fun clearMissed() { commit { it.copy(alerts = it.alerts.copy(missed = emptyList())) }; toast("Missed calls cleared.") }
     fun clearWa() { commit { it.copy(alerts = it.alerts.copy(wa = emptyList())) }; toast("WhatsApp alerts cleared.") }
 
-    fun toggleAlert(key: String) = commit { s ->
+    fun toggleAlert(key: String) { buzz(6); commit { s ->
         val a = s.settings.alerts
         s.copy(settings = s.settings.copy(alerts = when (key) {
             "calls" -> a.copy(calls = !a.calls)
             "waCalls" -> a.copy(waCalls = !a.waCalls)
             else -> a.copy(waMsgs = !a.waMsgs)
         }))
-    }
+    } }
 
     private var ringJob: Job? = null
 
@@ -409,7 +426,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     fun declineCall() { ringJob?.cancel(); _live.update { it.copy(call = null) } }
     fun endCall() { ringJob?.cancel(); _live.update { it.copy(call = null) }; toast("Call ended.") }
 
-    fun openRideMode(open: Boolean) = _live.update { it.copy(rideMode = open) }
+    fun openRideMode(open: Boolean) { if (open) buzz(12); _live.update { it.copy(rideMode = open) } }
 
     /** A handlebar press from the simulated bike. */
     fun press(kind: String) {
@@ -429,6 +446,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     // ---------- Link ----------
     fun simOn() {
+        if (_live.value.link != LinkState.CONNECTED) buzz(15)
         _live.update { it.copy(link = LinkState.CONNECTED, simulated = true, engine = 83, speed = 0) }
         toast("Simulated cluster linked.")
         ensureGeo()
@@ -470,6 +488,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     override fun nextTurn() {
         val n = _live.value.nav ?: return
+        buzz(10)
         if (n.mode != "rehearse") return
         val steps = app.waylink.core.Rehearsal.STEPS
         val total = maxOf(0.0, n.totalMeters - maxOf(0.0, n.stepMeters))
@@ -595,7 +614,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     fun setAccent(key: String) = commit { it.copy(settings = it.settings.copy(accent = key)) }
 
     /** Riding and sound switches by their web key. */
-    override fun toggleSetting(key: String) = commit { s ->
+    override fun toggleSetting(key: String) { buzz(6); commit { s ->
         val st = s.settings
         s.copy(settings = when (key) {
             "autoRide" -> st.copy(autoRide = !st.autoRide)
@@ -605,7 +624,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "sounds" -> st.copy(sounds = !st.sounds)
             else -> st
         })
-    }
+    } }
 
     fun setCountry(code: String) {
         val co = Catalog.country(code)
