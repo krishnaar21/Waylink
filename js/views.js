@@ -588,7 +588,8 @@ export function ridePages(trips) {
   const radial = `<div class="rc-wk">${[1, 2, 3, 4, 5, 6, 0].map((i) => `<div class="rc-wr${i === fav && wd[i] ? ' top' : ''}" title="${WDN[i]} · ${num(wd[i], 1)} km, ${plural(wn[i], 'ride', 'rides')}"><span>${WDN[i]}</span><div><i style="width:${wd[i] ? Math.max(4, (wd[i] / wdMax) * 100) : 0}%"></i></div><b>${wd[i] ? num(wd[i], wd[i] < 100 ? 1 : 0) : '–'}</b></div>`).join('')}</div>`;
   return { pages: [cal, weekly, radial], demo, heads: [leg, '', ''] };
 }
-export const rideChartAt = (s) => Math.min(RC_NAMES.length - 1, Math.max(0, +s.settings.rideChart || 0));
+// Km per week (the bar chart) unless the rider picked another.
+export const rideChartAt = (s) => Math.min(RC_NAMES.length - 1, Math.max(0, s.settings.rideChart == null ? 1 : +s.settings.rideChart || 0));
 // The rides card: swipe between the four; the one showing is remembered as the chosen style.
 export function rideCharts(s) {
   const { pages, demo, heads } = ridePages(s.trips), at = rideChartAt(s);
