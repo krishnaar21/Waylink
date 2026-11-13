@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
@@ -103,9 +104,9 @@ fun Input(
     )
 }
 
-/** A select (.input with a chevron). Tapping it opens [onOpen], usually a picker sheet. */
+/** A select (.input with a chevron down, or [icon] for date fields). Tapping it opens [onOpen], usually a picker sheet. */
 @Composable
-fun Select(text: String, onOpen: () -> Unit, modifier: Modifier = Modifier, label: String = text) {
+fun Select(text: String, onOpen: () -> Unit, modifier: Modifier = Modifier, label: String = text, icon: String? = null) {
     val c = W.c
     val shape = RoundedCornerShape(16.dp)
     Row(
@@ -114,7 +115,7 @@ fun Select(text: String, onOpen: () -> Unit, modifier: Modifier = Modifier, labe
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Txt(text, T.input, c.ink, Modifier.weight(1f), maxLines = 1)
-        Ic("down", size = 16.dp, tint = c.ink2)
+        if (icon != null) Ic(icon, size = 17.dp, tint = c.ink2) else Ic("chev", Modifier.rotate(90f), size = 14.dp, tint = c.ink3)
     }
 }
 

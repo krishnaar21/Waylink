@@ -242,7 +242,7 @@ fun DateField(value: Long, onChange: (Long) -> Unit, modifier: Modifier = Modifi
             val t = Instant.ofEpochMilli(value).atZone(zone).toLocalTime()
             onChange(LocalDate.of(y, m + 1, day).atTime(t).atZone(zone).toInstant().toEpochMilli())
         }, d.year, d.monthValue - 1, d.dayOfMonth).apply { if (max != null) datePicker.maxDate = max }.show()
-    }, modifier, label = "$label, ${dFull(value)}")
+    }, modifier, label = "$label, ${dFull(value)}", icon = "cal")
 }
 
 /** Parses a number typed by hand; commas and spaces are ignored. */
@@ -269,5 +269,5 @@ fun DateTimeField(value: Long, onChange: (Long) -> Unit, modifier: Modifier = Mo
                 onChange(LocalDate.of(y, m + 1, day).atTime(h, min).atZone(zone).toInstant().toEpochMilli())
             }, at.hour, at.minute, android.text.format.DateFormat.is24HourFormat(ctx)).show()
         }, d.year, d.monthValue - 1, d.dayOfMonth).apply { if (max != null) datePicker.maxDate = max }.show()
-    }, modifier, label = "$label, $text")
+    }, modifier, label = "$label, $text", icon = "cal")
 }
