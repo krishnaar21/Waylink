@@ -321,7 +321,7 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
             val n = if (wa) s.alerts.wa.size else s.alerts.missed.size
             SheetSpec(if (wa) "Clear WhatsApp alerts?" else "Clear missed calls?", "Alerts") {
                 Spacer(Modifier.height(12.dp))
-                Txt("${app.waylink.core.plural(n, if (wa) "chat" else "call", if (wa) "chats" else "calls")} will be removed here and the count on your bike goes to zero. Your phone keeps its own history.", T.lead, W.c.ink2)
+                Txt("${app.waylink.core.plural(n, if (wa) "chat" else "call", if (wa) "chats" else "calls")} will be removed here and the count on your bike goes to zero. Your phone keeps its own history.", T.sheetLead, W.c.ink2)
                 Spacer(Modifier.height(24.dp))
                 Btn("Clear", { if (wa) vm.clearWa() else vm.clearMissed(); nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.DANGER)
                 Spacer(Modifier.height(8.dp))
@@ -333,7 +333,7 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
                 val c = W.c
                 h.paras.forEachIndexed { i, p ->
                     Spacer(Modifier.height(if (i == 0) 12.dp else 10.dp))
-                    Txt(p, if (i == 0) T.lead else T.lead.copy(fontSize = 15.sp), if (i == 0) c.ink2 else c.ink3)
+                    Txt(p, if (i == 0) T.sheetLead else T.sheetLead.copy(fontSize = 15.sp), if (i == 0) c.ink2 else c.ink3)
                 }
                 Spacer(Modifier.height(24.dp))
                 Btn("Got it", nav::close, Modifier.fillMaxWidth())
@@ -447,7 +447,7 @@ private fun Placeholder(title: String, sub: String, what: String, bottom: androi
         Column(Modifier.fillMaxWidth().card(20.dp).padding(20.dp)) {
             Txt("Coming next on Android", T.rowTitle, c.ink)
             Spacer(Modifier.height(6.dp))
-            Txt(what, T.lead, c.ink2)
+            Txt(what, T.sheetLead, c.ink2)
         }
     }
 }
@@ -457,11 +457,11 @@ private fun PairSheet(live: Live, onSim: () -> Unit, onSimOff: () -> Unit) {
     val c = W.c
     Spacer(Modifier.height(12.dp))
     if (live.link == LinkState.CONNECTED) {
-        Txt("The simulated cluster is linked. Readings and the ride button behave as if a bike were there.", T.lead, c.ink2)
+        Txt("The simulated cluster is linked. Readings and the ride button behave as if a bike were there.", T.sheetLead, c.ink2)
         Spacer(Modifier.height(20.dp))
         Btn("Unlink the simulated bike", onSimOff, Modifier.fillMaxWidth(), kind = BtnKind.LINE)
     } else {
-        Txt("Real pairing with the Bluetooth cluster arrives in the next Android build. Until then, the simulated bike shows how everything works.", T.lead, c.ink2)
+        Txt("Real pairing with the Bluetooth cluster arrives in the next Android build. Until then, the simulated bike shows how everything works.", T.sheetLead, c.ink2)
         Spacer(Modifier.height(20.dp))
         Btn("Try the simulated bike", onSim, Modifier.fillMaxWidth(), icon = "bolt")
     }

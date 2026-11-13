@@ -33,6 +33,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
@@ -40,6 +41,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -105,9 +107,10 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
                 val c = W.c
                 val f = Fmt(s.country.locale)
                 Spacer(Modifier.height(8.dp))
-                Txt(m.engine, T.lead, c.ink2)
+                Txt(m.engine, T.sheetLead, c.ink2)
                 Spacer(Modifier.height(16.dp))
-                Column(Modifier.fillMaxWidth().card(20.dp, c.raised).padding(horizontal = 18.dp, vertical = 2.dp)) {
+                // Web: .card with box-shadow none on raised paper, so only the hairline ring shows.
+                Column(Modifier.fillMaxWidth().border(1.dp, c.line, RoundedCornerShape(20.dp)).clip(RoundedCornerShape(20.dp)).background(c.raised).padding(horizontal = 18.dp, vertical = 2.dp)) {
                     listOf(
                         "Fuel tank" to "${f.num(m.tank, 1)} L · ${f.num(m.reserve, 1)} L reserve",
                         "Engine oil" to m.oil,
@@ -119,10 +122,10 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
                         "Spark plug" to m.plug,
                     ).forEachIndexed { i, (k, v) ->
                         if (i > 0) Hairline()
-                        Row(Modifier.fillMaxWidth().padding(vertical = 13.dp), verticalAlignment = Alignment.Top) {
-                            Txt(k, T.row.copy(fontSize = 15.sp), c.ink3)
+                        Row(Modifier.fillMaxWidth().padding(vertical = 15.dp)) {
+                            Txt(k, T.row.copy(fontSize = 15.5.sp, lineHeight = 22.5.sp), c.ink2, Modifier.alignByBaseline())
                             Spacer(Modifier.width(16.dp))
-                            Txt(v, T.row.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.End), c.ink, Modifier.weight(1f))
+                            Txt(v, T.row.copy(fontSize = 15.5.sp, lineHeight = 22.5.sp, fontWeight = FontWeight.Medium, textAlign = TextAlign.End), c.ink, Modifier.weight(1f).alignByBaseline())
                         }
                     }
                 }
@@ -132,7 +135,7 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
         "country" -> SheetSpec("Country", "Region") {
             val c = W.c
             Spacer(Modifier.height(8.dp))
-            Txt("Sets currency, fuel price and emergency numbers.", T.lead, c.ink2)
+            Txt("Sets currency, fuel price and emergency numbers.", T.sheetLead, c.ink2)
             Spacer(Modifier.height(16.dp))
             ListCard(flat = true) {
                 Catalog.COUNTRIES.forEachIndexed { i, co ->
@@ -144,7 +147,7 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
         "pick-ridechart" -> SheetSpec("Ride chart", "Appearance") {
             val c = W.c
             Spacer(Modifier.height(8.dp))
-            Txt("How the Rides tab draws your riding. You can also swipe the chart there.", T.lead, c.ink2)
+            Txt("How the Rides tab draws your riding. You can also swipe the chart there.", T.sheetLead, c.ink2)
             Spacer(Modifier.height(16.dp))
             ListCard(flat = true) {
                 RIDE_CHARTS.forEachIndexed { i, n ->
@@ -159,7 +162,7 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
             val board = LocalClipboardManager.current
             val text = remember { vm.backupText() }
             Spacer(Modifier.height(8.dp))
-            Txt("Copy it somewhere safe, or paste it into Waylink on your new phone.", T.lead, c.ink2)
+            Txt("Copy it somewhere safe, or paste it into Waylink on your new phone.", T.sheetLead, c.ink2)
             Spacer(Modifier.height(16.dp))
             Txt(text.take(1200) + if (text.length > 1200) "…" else "", T.plate.copy(fontSize = 11.sp, lineHeight = 16.sp), c.ink2,
                 Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(16.dp)).background(c.raised).padding(14.dp))
@@ -171,7 +174,7 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
             val c = W.c
             var text by remember { mutableStateOf("") }
             Spacer(Modifier.height(8.dp))
-            Txt("Paste a backup you copied from Waylink. It replaces everything on this phone.", T.lead, c.ink2)
+            Txt("Paste a backup you copied from Waylink. It replaces everything on this phone.", T.sheetLead, c.ink2)
             FormField("Backup") { Input(text, { text = it }, placeholder = "{\"format\":\"waylink-vault\", …}", label = "Backup text", multiline = true, maxLength = 5_000_000, caps = KeyboardCapitalization.None) }
             Spacer(Modifier.height(16.dp))
             Btn("Restore", { if (text.isBlank()) vm.toast("Paste a backup first.") else if (vm.restore(text)) nav.close() }, Modifier.fillMaxWidth())
@@ -198,7 +201,7 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
         "avatar" -> SheetSpec("Your picture", "Profile") {
             val c = W.c
             Spacer(Modifier.height(8.dp))
-            Txt("Pick a rider.", T.lead, c.ink2)
+            Txt("Pick a rider.", T.sheetLead, c.ink2)
             Spacer(Modifier.height(16.dp))
             (1..11).map { "a$it" }.chunked(4).forEach { row ->
                 Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -233,7 +236,7 @@ private fun Check(on: Boolean) {
 @Composable
 private fun Confirm(text: String, yes: String, no: String, onYes: () -> Unit, onNo: () -> Unit) {
     Spacer(Modifier.height(12.dp))
-    Txt(text, T.lead, W.c.ink2)
+    Txt(text, T.sheetLead, W.c.ink2)
     Spacer(Modifier.height(24.dp))
     Btn(yes, onYes, Modifier.fillMaxWidth(), kind = BtnKind.DANGER)
     Spacer(Modifier.height(8.dp))
@@ -315,7 +318,7 @@ private fun BackupBody(vm: AppViewModel, nav: SheetNav) {
         } catch (e: Exception) { vm.toast("Couldn’t open the file.") }
     }
     Spacer(Modifier.height(8.dp))
-    Txt("Everything stays on this phone. Keep a copy, or move it to a new phone.", T.lead, c.ink2)
+    Txt("Everything stays on this phone. Keep a copy, or move it to a new phone.", T.sheetLead, c.ink2)
     Spacer(Modifier.height(16.dp))
     ListCard(flat = true) {
         ListRow("Export backup", "Save one .json file", icon = "down", onClick = { save.launch("waylink-backup-${java.time.LocalDate.now()}.json") })
@@ -363,7 +366,7 @@ private fun Faq() {
                     Txt(q, T.body.copy(fontSize = 15.5.sp, fontWeight = FontWeight.Medium), c.ink, Modifier.weight(1f))
                     Ic("chev", Modifier.rotate(if (open == i) 90f else 0f), size = 14.dp, tint = c.ink3)
                 }
-                AnimatedVisibility(open == i) { Txt(a, T.lead.copy(fontSize = 15.sp), c.ink2, Modifier.padding(top = 8.dp)) }
+                AnimatedVisibility(open == i) { Txt(a, T.sheetLead.copy(fontSize = 15.sp), c.ink2, Modifier.padding(top = 8.dp)) }
             }
         }
     }
@@ -387,7 +390,7 @@ private fun ReportBody(s: AppState, live: Live, vm: AppViewModel) {
     fun full() = (body.trim().ifEmpty { "(Describe what happened)" }) + "\n\n---\n" + info
     fun go(i: Intent) = try { ctx.startActivity(i) } catch (e: Exception) { vm.toast("No app can open that.") }
     Spacer(Modifier.height(8.dp))
-    Txt("Say what you tapped, what you expected and what happened. Your app details are added for you. Nothing personal is included.", T.lead, c.ink2)
+    Txt("Say what you tapped, what you expected and what happened. Your app details are added for you. Nothing personal is included.", T.sheetLead, c.ink2)
     FormField("Subject") { Input(subj, { subj = it }, placeholder = "Turn arrows stop after a few minutes", label = "Subject", maxLength = 80) }
     FormField("What happened") { Input(body, { body = it }, placeholder = "Steps, what you expected, what you saw", label = "What happened", multiline = true, maxLength = 4000) }
     Spacer(Modifier.height(12.dp))
@@ -446,29 +449,41 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav) {
     val ctx = LocalContext.current
     var amt by rememberSaveable { mutableIntStateOf(99) }
     fun go(i: Intent) = try { ctx.startActivity(i) } catch (e: Exception) { vm.toast("No app can open that.") }
-    Spacer(Modifier.height(8.dp))
-    Txt("Waylink is free, with no ads and no tracking. If it makes your rides easier, you can chip in towards new features and upkeep.", T.lead, c.ink2)
     Spacer(Modifier.height(20.dp))
-    Column(Modifier.fillMaxWidth().card(20.dp).padding(16.dp)) {
+    Txt("Waylink is free, with no ads and no tracking. If it makes your rides easier, you can chip in towards new features and upkeep.", T.sheetLead, c.ink2)
+    Spacer(Modifier.height(20.dp))
+    // Web .give: card paper with a hairline ring, neutral icon square, the amount in the display face, a segmented amount picker.
+    Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(c.accent.copy(alpha = 0.12f)), contentAlignment = Alignment.Center) {
-                Ic(AMT.getValue(amt).first, size = 24.dp, tint = c.accent)
+            Box(Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)).background(c.inkA(0.06f)), contentAlignment = Alignment.Center) {
+                Ic(AMT.getValue(amt).first, size = 26.dp, tint = c.ink)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Txt(if (amt > 0) "₹$amt" else "Any amount", T.cardTitle, c.ink)
-                Txt(AMT.getValue(amt).second, T.row, c.ink3)
+                Txt(if (amt > 0) "₹$amt" else "Any amount", T.big(34f).copy(lineHeight = 35.7.sp), c.ink, maxLines = 1)
+                Spacer(Modifier.height(3.dp))
+                Txt(AMT.getValue(amt).second, T.row, c.ink3, maxLines = 1)
             }
         }
-        Spacer(Modifier.height(14.dp))
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AMOUNTS.forEach { a -> Chip(if (a > 0) "₹$a" else "Other", { amt = a }, on = amt == a) }
+        Spacer(Modifier.height(18.dp))
+        Row(Modifier.fillMaxWidth().clip(CircleShape).background(c.inkA(0.05f)).padding(4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            AMOUNTS.forEach { a ->
+                val on = amt == a
+                Box(
+                    Modifier.weight(1f).height(38.dp).clip(CircleShape).background(if (on) c.ink else Color.Transparent)
+                        .semantics { selected = on }.pressable(label = if (a > 0) "₹$a" else "Other amount", role = Role.RadioButton) { amt = a },
+                    contentAlignment = Alignment.Center,
+                ) { Txt(if (a > 0) "₹$a" else "Other", T.body.copy(fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold), if (on) c.bg else c.ink2, maxLines = 1) }
+            }
         }
-        Spacer(Modifier.height(14.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Spacer(Modifier.height(16.dp))
+        // No UPI ID yet, so the pay button shows disabled like the web's (opacity .35).
+        Btn("Pay ${if (amt > 0) "₹$amt " else ""}with any UPI app", {}, Modifier.fillMaxWidth().alpha(0.35f).semantics { disabled() })
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             Ic("info", size = 15.dp, tint = c.ink3)
             Spacer(Modifier.width(8.dp))
-            Txt("Payments open once a UPI ID is added.", T.rowSub, c.ink3)
+            Txt("Payments open once a UPI ID is added.", T.row.copy(fontSize = 13.sp), c.ink3)
         }
     }
     Spacer(Modifier.height(24.dp))

@@ -2,6 +2,7 @@ package app.waylink
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -66,6 +67,7 @@ class ScreenshotTest {
     @Test fun alerts() = shot("alerts", tab = Tab.ALERTS) { AlertsScreen(sample, live, noop(), 80.dp) }
     @Test fun settings() = shot("settings", tab = Tab.SETTINGS) { SettingsScreen(sample, live, noop(), 80.dp) }
     @Test fun settingsDark() = shot("settings-dark", "sketchdark", Tab.SETTINGS) { SettingsScreen(sample, live, noop(), 80.dp) }
-    @Test fun onboarding() = shot("onboarding") { app.waylink.ui.onboarding.Onboarding(freshState(), noop()) }
+    // A phone-sized box: the shared 1900 dp canvas would push the slide text and buttons off the bottom.
+    @Test fun onboarding() = shot("onboarding") { Box(Modifier.height(844.dp)) { app.waylink.ui.onboarding.Onboarding(freshState(), noop()) } }
     @Test fun profile() = shot("profile", tab = Tab.SETTINGS) { ProfileScreen(sample, {}, {}, {}, 80.dp) }
 }

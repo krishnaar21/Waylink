@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -88,7 +89,7 @@ fun logbookSheet(key: String, s: AppState, vm: AppViewModel, nav: SheetNav): She
             val t = if (arg == "A") v.tripA else v.tripB
             SheetSpec("${f.num(t.km, 1)} km", "Trip $arg") {
                 Spacer(Modifier.height(12.dp))
-                Txt("Since ${dFull(t.since)}. Every ride you record adds to it.", T.lead, W.c.ink2)
+                Txt("Since ${dFull(t.since)}. Every ride you record adds to it.", T.sheetLead, W.c.ink2)
                 Spacer(Modifier.height(24.dp))
                 Btn("Reset trip $arg", { vm.resetTrip(arg); nav.close() }, Modifier.fillMaxWidth())
             }
@@ -117,15 +118,16 @@ private fun SvcBody(s: AppState, id: String, vm: AppViewModel, nav: SheetNav) {
     var pickDate by rememberSaveable(id) { mutableLongStateOf(System.currentTimeMillis()) }
     var pickKm by rememberSaveable(id) { mutableStateOf(numText(Math.round(v.odo).toDouble())) }
 
-    Row(Modifier.fillMaxWidth().padding(top = 16.dp), verticalAlignment = Alignment.Bottom) {
+    // Web: .flex.between with align-items: baseline, "Last done" as .small.muted (14 / ink-2).
+    Row(Modifier.fillMaxWidth().padding(top = 16.dp)) {
         val col = if (rv.red) c.red else c.ink
-        BigValue(rv.v, if (st.status == Due.OVERDUE) rv.u else rv.u + " left", 52f, col, Modifier.weight(1f))
-        Txt("Last done ${dMed(it.lastDate)}", T.row.copy(fontSize = 13.5.sp), c.ink3)
+        BigValue(rv.v, if (st.status == Due.OVERDUE) rv.u else rv.u + " left", 52f, col, Modifier.weight(1f).alignByBaseline(), unitSize = 14f, unitColor = if (rv.red) c.red else c.ink3)
+        Txt("Last done ${dMed(it.lastDate)}", T.row, c.ink2, Modifier.alignByBaseline())
     }
     Spacer(Modifier.height(12.dp))
-    JobGauge(st, 10, 7.dp)
+    JobGauge(st, 10, 6.dp, labels = true)
     Spacer(Modifier.height(14.dp))
-    Txt(dueSentence(st, f), T.lead, c.ink2)
+    Txt(dueSentence(st, f), T.sheetLead, c.ink2)
     if (hint != null) Hint(hint)
     Spacer(Modifier.height(20.dp))
     Btn("Mark as done", { vm.serviceDone(id); nav.close() }, Modifier.fillMaxWidth(), icon = "check")
@@ -240,8 +242,8 @@ private fun RecBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNav) {
 @Composable
 private fun OdoBody(s: AppState, vm: AppViewModel, nav: SheetNav) {
     var odo by rememberSaveable { mutableStateOf(numText(s.vehicle.odo)) }
-    Spacer(Modifier.height(4.dp))
-    FormField("Odometer") {
+    // Web fieldForm: the sheet title names the field, so the input has no label of its own.
+    Box(Modifier.padding(top = 18.dp)) {
         Input(odo, { x -> odo = x.filter { ch -> ch.isDigit() || ch == '.' }.take(9) }, placeholder = "0", suffix = "km", label = "Odometer", keyboard = KeyboardType.Decimal)
     }
     Hint("Recorded rides add to this. Fix it here if it drifts.")

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
@@ -121,7 +122,8 @@ fun Onboarding(s: AppState, act: OnboardingActions) {
 
 @Composable
 private fun Top(left: @Composable () -> Unit, right: String, onRight: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(top = 18.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+    // Web .onb: padding-top 36, .onb-top at least 44 tall.
+    Row(Modifier.fillMaxWidth().padding(top = 36.dp, bottom = 10.dp).heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically) {
         left()
         Spacer(Modifier.weight(1f))
         LinkText(right, onRight, style = T.body.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold), color = W.c.ink2)

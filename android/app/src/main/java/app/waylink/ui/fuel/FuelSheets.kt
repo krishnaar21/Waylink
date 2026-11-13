@@ -124,7 +124,7 @@ private fun PriceBody(s: AppState, vm: AppViewModel, nav: SheetNav) {
     val price = fuelPriceOf(s)
     var text by rememberSaveable { mutableStateOf(two(price).removeSuffix(".00")) }
     Spacer(Modifier.height(12.dp))
-    Txt("Fills in the cost when you log fuel.", T.lead, c.ink2)
+    Txt("Fills in the cost when you log fuel.", T.sheetLead, c.ink2)
     if (s.country.code == "IN") {
         val area = s.profile.fuelArea
         val found = FuelPrices.lookup(area?.state, area?.place, s.profile.city)

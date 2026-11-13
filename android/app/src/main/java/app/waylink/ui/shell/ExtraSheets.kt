@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -94,7 +95,7 @@ fun extraSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Shee
             val p = v.parking
             Spacer(Modifier.height(8.dp))
             if (p != null) {
-                Txt("Saved ${f.ago(p.ts)}, at ${tShort(p.ts)}.", T.lead, c.ink2)
+                Txt("Saved ${f.ago(p.ts)}, at ${tShort(p.ts)}.", T.sheetLead, c.ink2)
                 Txt("%.5f, %.5f".format(java.util.Locale.ROOT, p.lat, p.lng), T.plate.copy(fontSize = 12.sp), c.ink4, Modifier.padding(top = 4.dp))
                 Spacer(Modifier.height(20.dp))
                 Btn("Walk back with Google Maps", {
@@ -107,7 +108,7 @@ fun extraSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Shee
                     Btn("Clear", { vm.clearParking() }, Modifier.weight(1f), kind = BtnKind.LINE)
                 }
             } else {
-                Txt("Saves where you are now, so you can walk back to it.", T.lead, c.ink2)
+                Txt("Saves where you are now, so you can walk back to it.", T.sheetLead, c.ink2)
                 Spacer(Modifier.height(24.dp))
                 Btn("Save where I parked", { host.withLocation { vm.saveParking() } }, Modifier.fillMaxWidth(), icon = "pin")
             }
@@ -116,7 +117,7 @@ fun extraSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Shee
             val c = W.c
             val title = vehicleTitle(s)
             Spacer(Modifier.height(8.dp))
-            Txt("Copies for when there’s no signal. Kept only on this phone, and never in backups.", T.lead, c.ink2)
+            Txt("Copies for when there’s no signal. Kept only on this phone, and never in backups.", T.sheetLead, c.ink2)
             Spacer(Modifier.height(16.dp))
             ListCard(flat = true) {
                 listOf("${v.id}:rc" to title, "${v.id}:insurance" to title, "${v.id}:puc" to title, "rider:licence" to "You", "${v.id}:other" to title).forEachIndexed { i, (slot, who) ->
@@ -161,7 +162,7 @@ private fun DocBody(s: AppState, slot: String, vm: AppViewModel, nav: SheetNav) 
         }
     }
     Spacer(Modifier.height(16.dp))
-    if (d == null) Txt("Add a clear photo or a PDF.", T.lead, c.ink2)
+    if (d == null) Txt("Add a clear photo or a PDF.", T.sheetLead, c.ink2)
     else if (d.type.startsWith("image/")) {
         val b = img
         Box(Modifier.fillMaxWidth().heightIn(min = 160.dp).clip(RoundedCornerShape(16.dp)).background(c.raised), contentAlignment = Alignment.Center) {
@@ -209,57 +210,71 @@ private fun QuickBody(s: AppState, live: Live, vm: AppViewModel, nav: SheetNav, 
     val due = sortedService(v).filter { it.st.status != Due.OK }.take(2)
     val rec = live.rec
     val park = v.parking
-    Spacer(Modifier.height(16.dp))
+    // Web .qtile .qi: colour is kept only for things that need you; fuel, record and parking icons sit on neutral ink 7 %.
+    val quiet = c.inkA(0.07f) to c.ink2
+    Spacer(Modifier.height(20.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        QTile("fuel", c.amber, "Log fuel", lastFill?.let { "Last: ${dShort(it.ts)}" } ?: "At the pump", Modifier.weight(1f)) { nav.open("fuel:new") }
-        if (rec != null) QTile("stop", c.red, "End ride", "${f.num(rec.km, 1)} km so far", Modifier.weight(1f)) { nav.open("rec-end") }
-        else QTile("play", c.accent, "Record a ride", "Uses phone GPS", Modifier.weight(1f)) { nav.close(); host.startRec() }
+        QTile("fuel", quiet, "Log fuel", lastFill?.let { "Last: ${dShort(it.ts)}" } ?: "At the pump", Modifier.weight(1f)) { nav.open("fuel:new") }
+        if (rec != null) QTile("stop", c.bg.copy(alpha = 0.16f) to c.bg, "End ride", "${f.num(rec.km, 1)} km so far", Modifier.weight(1f), live = true) { nav.open("rec-end") }
+        else QTile("play", quiet, "Record a ride", "Uses phone GPS", Modifier.weight(1f)) { nav.close(); host.startRec() }
     }
     Spacer(Modifier.height(10.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        QTile("speed", c.ink, "Ride mode", "Big speed, next turn", Modifier.weight(1f)) { nav.close(); host.rideMode() }
-        QTile("pin", c.sageInk, "Save parking", park?.let { "Saved ${f.ago(it.ts)}" } ?: "Find it later", Modifier.weight(1f)) { host.withLocation { vm.saveParking() } }
+        QTile("speed", c.inkA(0.08f) to c.ink, "Ride mode", "Big speed, next turn", Modifier.weight(1f)) { nav.close(); host.rideMode() }
+        QTile("pin", quiet, "Save parking", park?.let { "Saved ${f.ago(it.ts)}" } ?: "Find it later", Modifier.weight(1f)) { host.withLocation { vm.saveParking() } }
     }
     if (due.isNotEmpty()) {
         Txt("Due on this bike", T.eyebrow, c.ink3, Modifier.padding(top = 24.dp, bottom = 10.dp))
-        due.forEach { r ->
+        due.forEachIndexed { i, r ->
             val rv = rowValue(r.st, f)
-            Row(Modifier.fillMaxWidth().padding(bottom = 8.dp).card(16.dp, c.raised).padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                val red = r.st.status == Due.OVERDUE
-                Box(Modifier.size(34.dp).clip(RoundedCornerShape(12.dp)).background(if (red) c.tintRed else c.tintAmber), contentAlignment = Alignment.Center) {
-                    Ic(r.item.icon.ifEmpty { "wrench" }, size = 17.dp, tint = if (red) c.red else c.amber)
+            val red = r.st.status == Due.OVERDUE
+            if (i > 0) Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth().card(16.dp, c.raised).padding(start = 16.dp, end = 14.dp, top = 12.dp, bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(34.dp).clip(RoundedCornerShape(12.dp)).background(if (red) c.tintRed else c.inkA(0.07f)), contentAlignment = Alignment.Center) {
+                    Ic(r.item.icon.ifEmpty { "wrench" }, size = 17.dp, tint = if (red) c.red else c.ink2)
                 }
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Txt(r.item.name, T.body.copy(fontSize = 15.sp), c.ink, maxLines = 1)
-                    Txt("${rv.v} ${rv.u}", T.row, if (rv.red) c.red else c.ink3)
+                    Txt(r.item.name, T.body.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium), c.ink, maxLines = 1)
+                    Spacer(Modifier.height(2.dp))
+                    Txt("${rv.v} ${rv.u}", T.row.copy(fontSize = 12.5.sp), if (rv.red) c.red else c.ink3, maxLines = 1)
                 }
+                Spacer(Modifier.width(12.dp))
                 Chip("Done", { vm.serviceDone(r.item.id) }, icon = "check")
             }
         }
     }
-    Spacer(Modifier.height(16.dp))
+    Spacer(Modifier.height(18.dp))
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(c.tintRed).pressable(label = "Emergency SOS") { nav.open("sos") }.padding(horizontal = 16.dp, vertical = 14.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.tintRed).pressable(label = "Emergency SOS") { nav.open("sos") }.padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Ic("sos", size = 20.dp, tint = c.red)
+        Ic("sos", size = 19.dp, tint = c.red)
         Spacer(Modifier.width(12.dp))
-        Txt("Emergency SOS", T.body.copy(fontWeight = FontWeight.SemiBold), c.red)
-        Txt(" · ${s.country.amb} ambulance", T.row, c.red.copy(alpha = 0.75f), Modifier.weight(1f))
-        Ic("chev", size = 14.dp, tint = c.red)
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Txt("Emergency SOS", T.body.copy(fontWeight = FontWeight.Medium), c.red)
+            Txt(" · ${s.country.amb} ambulance", T.row.copy(fontSize = 12.5.sp), lerp(c.red, c.ink, 0.3f), maxLines = 1)
+        }
+        Spacer(Modifier.width(12.dp))
+        Ic("chev", size = 19.dp, tint = c.red)
     }
 }
 
+/** Web .qtile: 140 tall, 16 padding, icon square top, title and line at the bottom; .live inverts to ink. */
 @Composable
-private fun QTile(icon: String, tone: Color, title: String, desc: String, modifier: Modifier, onClick: () -> Unit) {
+private fun QTile(icon: String, qi: Pair<Color, Color>, title: String, desc: String, modifier: Modifier, live: Boolean = false, onClick: () -> Unit) {
     val c = W.c
-    Column(modifier.card(18.dp, c.raised).pressable(label = title, onClick = onClick).padding(14.dp)) {
-        Box(Modifier.size(36.dp).clip(RoundedCornerShape(12.dp)).background(tone.copy(alpha = 0.13f)), contentAlignment = Alignment.Center) {
-            Ic(icon, size = 18.dp, tint = tone)
+    Column(
+        modifier.height(140.dp).card(20.dp, if (live) c.ink else c.raised).pressable(label = title, scale = 0.97f, onClick = onClick).padding(16.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp)).background(qi.first), contentAlignment = Alignment.Center) {
+            Ic(icon, size = 19.dp, tint = qi.second)
         }
-        Spacer(Modifier.height(12.dp))
-        Txt(title, T.rowTitle, c.ink, maxLines = 1)
-        Txt(desc, T.rowSub, c.ink3, maxLines = 1)
+        Column {
+            Txt(title, T.body.copy(fontSize = 15.5.sp, fontWeight = FontWeight.Medium, letterSpacing = (-0.155).sp), if (live) c.bg else c.ink, maxLines = 1)
+            Spacer(Modifier.height(4.dp))
+            Txt(desc, T.row.copy(fontSize = 13.5.sp, lineHeight = 19.6.sp), if (live) c.bg.copy(alpha = 0.7f) else c.ink3, maxLines = 2)
+        }
     }
 }

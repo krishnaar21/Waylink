@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,7 +59,7 @@ fun rideSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Sheet
     return when (key.substringBefore(':')) {
         "trip-detail" -> {
             val t = v.trips.firstOrNull { it.id == arg } ?: return null
-            SheetSpec(t.title, "№${t.n.toString().padStart(3, '0')} · ${dMed(t.start)} · ${tShort(t.start)} to ${tShort(t.end)}") { TripBody(s, t, vm, nav) }
+            SheetSpec(t.title, null) { TripBody(s, t, vm, nav) }
         }
         "trip-rename" -> {
             val t = v.trips.firstOrNull { it.id == arg } ?: return null
@@ -77,7 +78,7 @@ fun rideSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Sheet
                     Triple("Top", f.num(r.top), "km/h"),
                 )
                 Spacer(Modifier.height(14.dp))
-                Txt(if (short) "This ride is under 100 m, so it won’t be kept." else "Saving adds ${f.num(r.km, 1)} km to the odometer and both trips.", T.lead, c.ink2)
+                Txt(if (short) "This ride is under 100 m, so it won’t be kept." else "Saving adds ${f.num(r.km, 1)} km to the odometer and both trips.", T.sheetLead, c.ink2)
                 Spacer(Modifier.height(20.dp))
                 Btn(if (short) "End ride" else "Save ride", { vm.stopRecording(true); nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.ACCENT, icon = "check")
                 Spacer(Modifier.height(8.dp))
@@ -96,7 +97,7 @@ fun rideSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Sheet
 @Composable
 private fun Stat3(vararg cells: Triple<String, String, String>) {
     val c = W.c
-    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.raised).height(IntrinsicSize.Min)) {
+    Row(Modifier.fillMaxWidth().border(1.dp, c.line, RoundedCornerShape(20.dp)).clip(RoundedCornerShape(20.dp)).background(c.raised).height(IntrinsicSize.Min)) {
         cells.forEachIndexed { i, (label, value, unit) ->
             if (i > 0) Box(Modifier.width(1.dp).fillMaxHeight().background(c.line))
             Column(Modifier.weight(1f).padding(16.dp)) {
@@ -123,6 +124,8 @@ private fun TripBody(s: AppState, t: Trip, vm: AppViewModel, nav: SheetNav) {
     }
     Spacer(Modifier.height(16.dp))
     Sketch(t.pts, Modifier.fillMaxWidth().height(210.dp).clip(RoundedCornerShape(20.dp)).background(c.bg), large = true)
+    // Web: the ride's number and time sit under the map, not under the title.
+    Txt("№${t.n.toString().padStart(3, '0')} · ${dMed(t.start)} · ${tShort(t.start)} to ${tShort(t.end)}", T.eyebrow, c.ink3, Modifier.padding(top = 16.dp), maxLines = 1)
     Spacer(Modifier.height(16.dp))
     Stat3(
         Triple("Distance", f.num(t.km, 1), "km"),
@@ -144,7 +147,7 @@ private fun TripBody(s: AppState, t: Trip, vm: AppViewModel, nav: SheetNav) {
 @Composable
 private fun RenameBody(t: Trip, vm: AppViewModel, nav: SheetNav) {
     var name by rememberSaveable(t.id) { mutableStateOf(t.title) }
-    FormField("Name") { Input(name, { name = it }, placeholder = t.title, label = "Ride name", maxLength = 60) }
+    Box(Modifier.padding(top = 18.dp)) { Input(name, { name = it }, placeholder = t.title, label = "Ride name", maxLength = 60) }
     Spacer(Modifier.height(24.dp))
     Btn("Save", { vm.renameTrip(t.id, name); nav.back() }, Modifier.fillMaxWidth())
 }

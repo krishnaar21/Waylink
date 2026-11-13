@@ -32,14 +32,26 @@ import kotlin.math.roundToInt
 /** How many of [n] gauge segments are still "fresh" for a job. */
 fun freshSegs(st: ServiceStatus, n: Int): Int = if (st.status == Due.OVERDUE) 0 else max(1, ((1 - st.frac) * n).roundToInt())
 
-/** The service gauge with the job's tone: red stripes overdue, amber due soon, ink otherwise. */
+/**
+ * The service gauge with the job's tone (web .fgauge). In list rows it is grey; in a sheet it keeps the tone
+ * (ink 30 % fine, amber due soon, every segment pale red overdue) and gets E and F at its ends.
+ */
 @Composable
-fun JobGauge(st: ServiceStatus, n: Int = 10, height: androidx.compose.ui.unit.Dp = 5.dp, inRow: Boolean = false) {
+fun JobGauge(st: ServiceStatus, n: Int = 10, height: androidx.compose.ui.unit.Dp = 5.dp, inRow: Boolean = false, labels: Boolean = false) {
     val c = W.c
-    // In list rows the web app greys the gauge (.row .fgauge: due soon ink 42 %, fine ink 30 %); sheets keep the tone.
+    val over = st.status == Due.OVERDUE
     val on = if (inRow) (if (st.status == Due.OK) c.inkA(0.30f) else c.inkA(0.42f))
-    else when (st.status) { Due.OVERDUE -> c.red; Due.SOON -> c.amber; Due.OK -> c.inkA(0.42f) }
-    ServiceGauge(freshSegs(st, n), n, height = height, onColor = on)
+    else when (st.status) { Due.OVERDUE -> c.red; Due.SOON -> c.amber; Due.OK -> c.inkA(0.30f) }
+    val off = if (over && !inRow) c.red.copy(alpha = 0.22f) else null
+    if (!labels) { ServiceGauge(freshSegs(st, n), n, height = height, onColor = on, offColor = off); return }
+    val ef = T.eyebrow.copy(fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.sp, lineHeight = 11.sp)
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Txt("E", ef, if (over) c.red else c.ink3)
+        Spacer(Modifier.width(8.dp))
+        ServiceGauge(freshSegs(st, n), n, Modifier.weight(1f), height = height, onColor = on, offColor = off)
+        Spacer(Modifier.width(8.dp))
+        Txt("F", ef, c.ink3)
+    }
 }
 
 @Composable

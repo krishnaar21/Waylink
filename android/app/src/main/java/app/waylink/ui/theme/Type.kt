@@ -36,6 +36,8 @@ object T {
     val subtitle = TextStyle(fontFamily = Body, fontSize = 15.sp, lineHeight = 20.sp)
     val body = TextStyle(fontFamily = Body, fontSize = 16.sp, lineHeight = 24.sp)
     val lead = TextStyle(fontFamily = Body, fontSize = 15.5.sp, lineHeight = 24.sp)
+    /** .sheet .lead: a touch larger than the page lead. */
+    val sheetLead = TextStyle(fontFamily = Body, fontSize = 16.sp, lineHeight = 25.6.sp)
     val onbP = TextStyle(fontFamily = Body, fontSize = 15.sp, lineHeight = 23.25.sp)
     /** Small grey captions over values ("Odometer", "Trip A", "Verdict"). */
     val eyebrow = TextStyle(fontFamily = Body, fontSize = 13.5.sp, fontWeight = FontWeight.Medium, lineHeight = 20.sp)

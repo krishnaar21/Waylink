@@ -87,13 +87,13 @@ fun PageHead(title: String, sub: String?, onBack: (() -> Unit)? = null, action: 
             Spacer(Modifier.weight(1f))
             action?.invoke(this)
         }
-    } else Spacer(Modifier.height(10.dp))
+    } else Spacer(Modifier.height(7.dp)) // .title margin 6; Geist's tall line box takes the other 3
     Txt(title, T.title, c.ink, Modifier.semantics { heading() })
     if (sub != null) {
         Spacer(Modifier.height(3.dp))
         Txt(sub, T.subtitle, c.ink3, maxLines = 1)
     }
-    Spacer(Modifier.height(32.dp))
+    Spacer(Modifier.height(28.dp)) // padding 14 + margin 18, less what the taller title lines already add
 }
 
 /** Space between page sections (.section margin-top: 30px). */

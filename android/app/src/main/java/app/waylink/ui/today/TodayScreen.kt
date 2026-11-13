@@ -132,7 +132,7 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
     ) {
         // Header: weekday, demo pill or date, SOS.
         Row(verticalAlignment = Alignment.Top) {
-            Column(Modifier.weight(1f).padding(top = 4.dp)) {
+            Column(Modifier.weight(1f).padding(top = 1.dp)) {
                 val today = LocalDate.now()
                 Txt(today.dayOfWeek.getDisplayName(JTextStyle.FULL, Locale.ENGLISH), T.title, c.ink, Modifier.semantics { heading() })
                 Spacer(Modifier.height(3.dp))
@@ -142,7 +142,7 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
             CircleBtn("sos", "Emergency SOS", act::sos, Modifier.padding(top = 11.dp), tint = c.red)
         }
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(28.dp))
         BikeCard(s, live, f, good, verdict.ok, act)
 
         if (!good) {
@@ -273,8 +273,8 @@ private fun ConnRow(s: AppState, live: Live, good: Boolean, okCount: Int, act: T
             }
         }
         Spacer(Modifier.width(10.dp))
-        if (connected) Btn("Ride", act::ride, kind = BtnKind.ACCENT, icon = "speed", small = true)
-        else Btn("Pair", act::pair, kind = BtnKind.INK, icon = "bt", small = true)
+        if (connected) Btn("Ride", act::ride, kind = BtnKind.ACCENT, icon = "speed", small = true, compact = true)
+        else Btn("Pair", act::pair, kind = BtnKind.INK, icon = "bt", small = true, compact = true)
     }
 }
 

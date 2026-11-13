@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.waylink.ui.theme.T
 import app.waylink.ui.theme.W
 
@@ -88,12 +89,11 @@ private fun TextStyle.css(color: Color): TextStyle = copy(color = color, lineHei
 
 /** A big reading with its small unit: "41,520 km". */
 @Composable
-fun BigValue(value: String, unit: String?, size: Float, color: Color = W.c.ink, modifier: Modifier = Modifier) {
-    val unitColor = W.c.ink3
+fun BigValue(value: String, unit: String?, size: Float, color: Color = W.c.ink, modifier: Modifier = Modifier, unitSize: Float = 13f, unitColor: Color = W.c.ink3) {
     val s = buildAnnotatedString {
         append(value)
         if (!unit.isNullOrEmpty()) {
-            withStyle(SpanStyle(fontFamily = T.unit.fontFamily, fontSize = T.unit.fontSize, letterSpacing = T.unit.letterSpacing, color = unitColor, fontWeight = T.unit.fontWeight)) {
+            withStyle(SpanStyle(fontFamily = T.unit.fontFamily, fontSize = unitSize.sp, letterSpacing = T.unit.letterSpacing, color = unitColor, fontWeight = T.unit.fontWeight)) {
                 append(" "); append(unit)
             }
         }
@@ -143,7 +143,7 @@ fun Modifier.pressable(enabled: Boolean = true, label: String? = null, role: Rol
 
 enum class BtnKind { INK, LINE, ACCENT, GHOST, DANGER }
 
-/** .btn: 52 tall, 16 radius. Small: 34 tall, 12 radius. */
+/** .btn: 52 tall, 16 radius. Small (.btn.sm): 40 tall, 12 radius. Compact (.cc-act): 34 tall. */
 @Composable
 fun Btn(
     text: String,
@@ -152,29 +152,32 @@ fun Btn(
     kind: BtnKind = BtnKind.INK,
     icon: String? = null,
     small: Boolean = false,
+    compact: Boolean = false,
 ) {
     val c = W.c
     val (bg, fg) = when (kind) {
         BtnKind.INK -> c.ink to c.bg
         BtnKind.ACCENT -> c.accent to c.onAccent
         BtnKind.LINE -> c.raised to c.ink
-        BtnKind.GHOST -> Color.Transparent to c.ink2
+        BtnKind.GHOST -> c.raised to c.ink
         BtnKind.DANGER -> c.tintRed to c.red
     }
     val shape = RoundedCornerShape(if (small) 12.dp else 16.dp)
     Row(
         modifier
-            .height(if (small) 34.dp else 52.dp)
+            .height(if (compact) 34.dp else if (small) 40.dp else 52.dp)
             .then(if (kind == BtnKind.LINE) Modifier.border(1.dp, c.line, shape) else Modifier)
+            // .btn.ghost: raised paper with --shadow-btn.
+            .then(if (kind == BtnKind.GHOST) Modifier.shadow(4.dp, shape, ambientColor = Color(0x12281E0F), spotColor = Color(0x38281E0F)) else Modifier)
             .clip(shape)
             .background(bg)
             .pressable(onClick = onClick)
             .padding(horizontal = if (small) 14.dp else 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(if (small) 6.dp else 9.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 9.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (icon != null) Ic(icon, size = if (small) 16.dp else 19.dp, tint = fg)
-        Txt(text, if (small) T.buttonSm else T.button, fg, maxLines = 1)
+        if (icon != null) Ic(icon, size = if (compact) 16.dp else 18.dp, tint = fg)
+        Txt(text, if (compact) T.buttonSm.copy(fontSize = 14.sp) else if (small) T.buttonSm else T.button, fg, maxLines = 1)
     }
 }
 
@@ -260,7 +263,7 @@ fun FuelBars(bars: Int?, low: Boolean, modifier: Modifier = Modifier, height: Dp
 
 /** Parallelogram segments for service progress (the web .fgauge.sm). */
 @Composable
-fun ServiceGauge(fresh: Int, total: Int = 8, modifier: Modifier = Modifier, height: Dp = 4.dp, onColor: Color? = null) {
+fun ServiceGauge(fresh: Int, total: Int = 8, modifier: Modifier = Modifier, height: Dp = 4.dp, onColor: Color? = null, offColor: Color? = null) {
     val c = W.c
     val on = onColor ?: c.inkA(0.42f)
     Box(
@@ -274,7 +277,7 @@ fun ServiceGauge(fresh: Int, total: Int = 8, modifier: Modifier = Modifier, heig
                 val p = Path().apply {
                     moveTo(x + l, 0f); lineTo(x + w, 0f); lineTo(x + w - r, size.height); lineTo(x, size.height); close()
                 }
-                clipPath(p) { drawRect(if (i < fresh) on else c.segOff) }
+                clipPath(p) { drawRect(if (i < fresh) on else offColor ?: c.segOff) }
             }
         },
     )

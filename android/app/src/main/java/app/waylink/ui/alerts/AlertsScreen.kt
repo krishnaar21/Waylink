@@ -95,7 +95,7 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
     val n = s.alerts.missed.size + s.alerts.wa.size
 
     Page(bottom) { androidx.compose.runtime.CompositionLocalProvider(app.waylink.ui.components.LocalBigRowIcons provides true) {
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(7.dp))
         Txt("Alerts", T.title, c.ink)
         Spacer(Modifier.height(3.dp))
         Txt(if (needs.isNotEmpty()) "${plural(needs.size, "thing needs", "things need")} you" else "Nothing needs you right now", T.subtitle, c.ink3)
@@ -178,9 +178,9 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
                 Input(name, { name = it }, placeholder = "Rohan", label = "Name", maxLength = 32)
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Btn("Ring", { act.relay("ring", name) }, Modifier.weight(1f), kind = BtnKind.LINE, icon = "phone", small = true)
-                    Btn("Missed", { act.relay("missed", name) }, Modifier.weight(1f), kind = BtnKind.LINE, icon = "missed", small = true)
-                    Btn("Chat", { act.relay("wa", name) }, Modifier.weight(1f), kind = BtnKind.LINE, icon = "chat", small = true)
+                    Btn("Ring", { act.relay("ring", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, icon = "phone", small = true)
+                    Btn("Missed", { act.relay("missed", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, icon = "missed", small = true)
+                    Btn("Chat", { act.relay("wa", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, icon = "chat", small = true)
                 }
                 Txt("Until the bike link reads your phone’s own calls and chats, send them here by hand to test.", T.row.copy(fontSize = 13.5.sp, lineHeight = 21.sp), c.ink3, Modifier.padding(top = 12.dp))
             }
