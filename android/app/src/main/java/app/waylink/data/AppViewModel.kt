@@ -8,7 +8,10 @@ import app.waylink.core.AppState
 import app.waylink.core.Catalog
 import app.waylink.core.ChecklistItem
 import app.waylink.core.DAY_MS
+import app.waylink.core.Alerts
 import app.waylink.core.Fmt
+import app.waylink.core.LogEvent
+import app.waylink.core.NamedEvent
 import app.waylink.core.FuelEntry
 import app.waylink.core.fuelStats
 import app.waylink.core.addRide
@@ -323,6 +326,57 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun deleteTrip(id: String) { veh { v -> v.copy(trips = v.trips.filter { it.id != id }) }; toast("Ride deleted. The odometer is unchanged.") }
 
     override fun onCleared() { stopGps(); super.onCleared() }
+
+    // ---------- Alerts ----------
+    private fun logAlert(a: Alerts, kind: String, name: String, count: Boolean = true): Alerts {
+        val connected = count && _live.value.link == LinkState.CONNECTED
+        return a.copy(log = (listOf(LogEvent(kind, name, System.currentTimeMillis())) + a.log).take(50), sent = a.sent + if (connected) 1 else 0)
+    }
+
+    /** Sends a call or chat to the bike by hand, as a browser can't see the phone's own. */
+    fun relay(kind: String, nameIn: String) {
+        val name = nameIn.trim().take(32)
+        if (name.isEmpty()) { toast("Add a name first."); return }
+        val a = _state.value.settings.alerts
+        val linked = _live.value.link == LinkState.CONNECTED
+        val now = System.currentTimeMillis()
+        when (kind) {
+            "ring" -> {
+                if (!a.calls) { toast("Phone calls are switched off above."); return }
+                commit { it.copy(alerts = logAlert(it.alerts, "call", name)) }
+                toast(if (linked) "$name is ringing on the cluster." else "Saved. Link the bike to send it.")
+            }
+            "missed" -> {
+                if (!a.calls) { toast("Phone calls are switched off above."); return }
+                commit { it.copy(alerts = logAlert(it.alerts, "missed", name).let { x -> x.copy(missed = x.missed + NamedEvent(name, now)) }) }
+                toast(if (linked) "Missed call from $name sent." else "Saved. Link the bike to send it.")
+            }
+            "wa" -> {
+                if (!a.waMsgs) { toast("WhatsApp messages are switched off above."); return }
+                commit { it.copy(alerts = logAlert(it.alerts, "wa", name).let { x -> x.copy(wa = x.wa + NamedEvent(name, now)) }) }
+                toast(if (linked) "$name on the cluster for 6 s." else "Saved. Link the bike to send it.")
+            }
+        }
+    }
+
+    fun clearMissed() { commit { it.copy(alerts = it.alerts.copy(missed = emptyList())) }; toast("Missed calls cleared.") }
+    fun clearWa() { commit { it.copy(alerts = it.alerts.copy(wa = emptyList())) }; toast("WhatsApp alerts cleared.") }
+
+    fun toggleAlert(key: String) = commit { s ->
+        val a = s.settings.alerts
+        s.copy(settings = s.settings.copy(alerts = when (key) {
+            "calls" -> a.copy(calls = !a.calls)
+            "waCalls" -> a.copy(waCalls = !a.waCalls)
+            else -> a.copy(waMsgs = !a.waMsgs)
+        }))
+    }
+
+    /** A handlebar press from the simulated bike. */
+    fun press(kind: String) {
+        val label = if (kind == "tap") "Play / pause" else "Next track"
+        commit { it.copy(alerts = logAlert(it.alerts, "button", "${if (kind == "tap") "Tap" else "Long press"} · $label", count = false)) }
+        toast("Handlebar · $label")
+    }
 
     fun fmt() = Fmt(_state.value.country.locale)
 

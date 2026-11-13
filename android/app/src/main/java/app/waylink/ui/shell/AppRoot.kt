@@ -70,6 +70,8 @@ import app.waylink.ui.components.pressable
 import app.waylink.ui.fuel.FuelActions
 import app.waylink.ui.fuel.FuelScreen
 import app.waylink.ui.fuel.fuelSheet
+import app.waylink.ui.alerts.AlertsActions
+import app.waylink.ui.alerts.AlertsScreen
 import app.waylink.ui.garage.GarageList
 import app.waylink.ui.rides.RidesActions
 import app.waylink.ui.rides.RidesScreen
@@ -196,7 +198,21 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun open(id: String) = openSheet("trip-detail:$id")
                     override fun chart(page: Int) = vm.setRideChart(page)
                 }, tabBarHeight)
-                else -> Placeholder("Alerts", "Calls and what needs you", "Missed calls and WhatsApp alerts sent to the bike, plus overdue service and expiring papers.", tabBarHeight)
+                else -> AlertsScreen(s, live, object : AlertsActions {
+                    override fun go(target: String) {
+                        val (kind, rest) = target.substringBefore(':') to target.substringAfter(':')
+                        when (kind) {
+                            "sheet" -> openSheet(rest)
+                            "page" -> page = rest
+                            "tab" -> { page = null; tab = Tab.entries.firstOrNull { it.key == rest } ?: tab }
+                        }
+                    }
+                    override fun sheet(key: String) = openSheet(key)
+                    override fun help(key: String) = openSheet("help:$key")
+                    override fun toggle(key: String) = vm.toggleAlert(key)
+                    override fun relay(kind: String, name: String) = vm.relay(kind, name)
+                    override fun press(kind: String) = vm.press(kind)
+                }, tabBarHeight)
             }
         }
         TabBar(if (page == "logbook" || page == "fuel") Tab.TODAY else if (page == "profile") Tab.SETTINGS else tab, s, live, Modifier.align(Alignment.BottomCenter)) {
@@ -232,6 +248,18 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
             PairSheet(live, onSim = { vm.simOn(); nav.close() }, onSimOff = { vm.simOff(); nav.close() })
         }
         "sos" -> SheetSpec("Emergency SOS", "Medical ID") { SosSheet(s) }
+        "clear" -> {
+            val wa = arg == "clear-wa"
+            val n = if (wa) s.alerts.wa.size else s.alerts.missed.size
+            SheetSpec(if (wa) "Clear WhatsApp alerts?" else "Clear missed calls?", "Alerts") {
+                Spacer(Modifier.height(12.dp))
+                Txt("${app.waylink.core.plural(n, if (wa) "chat" else "call", if (wa) "chats" else "calls")} will be removed here and the count on your bike goes to zero. Your phone keeps its own history.", T.lead, W.c.ink2)
+                Spacer(Modifier.height(24.dp))
+                Btn("Clear", { if (wa) vm.clearWa() else vm.clearMissed(); nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.DANGER)
+                Spacer(Modifier.height(8.dp))
+                Btn("Keep them", nav::close, Modifier.fillMaxWidth(), kind = BtnKind.LINE)
+            }
+        }
         "help" -> HELP[arg]?.let { h ->
             SheetSpec(h.title, h.eyebrow) {
                 val c = W.c
