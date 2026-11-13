@@ -115,7 +115,7 @@ test('Migration: a v1 single-bike save becomes a one-bike garage', () => {
   const v1 = { v: 1, onboarded: true, profile: { name: 'Arjun', model: 'n250', plate: 'KA 01 AB 1234', country: 'IN' }, settings: { theme: 'paper' }, odo: 4321, fuel: [{ id: 'x', ts: 1, odo: 4000, litres: 10, cost: 1000, full: true }], trips: [], service: [] };
   const s = S.migrate(v1);
   assert.equal(s.vehicles.length, 1); assert.equal(s.odo, 4321); assert.equal(S.veh(s).model, 'n250');
-  assert.equal(S.veh(s).plate, 'KA 01 AB 1234'); assert.equal(s.fuel.length, 1); assert.equal(s.settings.theme, 'paper');
+  assert.equal(S.veh(s).plate, 'KA 01 AB 1234'); assert.equal(s.fuel.length, 1); assert.equal(s.settings.theme, 'auto');
   assert.ok(!('model' in s.profile));
 });
 

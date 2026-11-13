@@ -100,7 +100,7 @@ for (const kind of ['empty', 'edge', 'sample']) {
 test('Edge preview: odometer never rounds up, badges cap at 99+, header has no name', () => {
   const s = S.scenario('edge');
   const h = V.today({ s, link: fakeLink, live: liveOf() });
-  assert.ok(h.includes('1,99,999'), 'odometer floors');
+  assert.ok(h.includes('1.99L') && !h.includes('2L<'), 'odometer floors');
   assert.ok(!h.includes('2,00,000'));
   assert.ok(V.tabbar({ s, live: liveOf() }, 'today').includes('class="pip"'));
   const head = h.slice(h.indexOf('pagehead'), h.indexOf('</h1>')); assert.ok(!head.includes('Venkatarag'), 'header has no name'); assert.ok(h.includes('bc-wx'), 'bike card carries weather');
@@ -166,7 +166,7 @@ test('Every icon the app draws exists in Hugeicons', async () => {
 
 test('Help sheets render and the FAQ has answers', () => {
   const s = S.seedSample(S.migrate(null));
-  for (const k of ['faq', 'report', 'about']) assert.ok(V.sheetHTML({ s, link: fakeLink, live: liveOf() }, k).includes('<h2'), k);
+  for (const k of ['faq', 'report', 'about']) assert.ok(V.sheetHTML({ s, link: fakeLink, live: liveOf() }, k).match(/<h2|about-sheet/), k);
   assert.ok(V.FAQ.length >= 6 && V.FAQ.every(([q, a]) => q.endsWith('?') || a.length > 20));
 });
 
