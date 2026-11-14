@@ -8,6 +8,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -167,42 +172,133 @@ private fun SvcBody(s: AppState, id: String, vm: AppViewModel, nav: SheetNav) {
 @Composable
 private fun SvcEditBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNav) {
     val v = s.vehicle
+    val c = W.c
     val it = id?.let { x -> v.service.firstOrNull { y -> y.id == x } }
     val key = id ?: "new"
     var name by rememberSaveable(key) { mutableStateOf(it?.name ?: "") }
-    var everyKm by rememberSaveable(key) { mutableStateOf(if (it == null) "1000" else if (it.everyKm > 0) numText(it.everyKm) else "") }
+    var icon by rememberSaveable(key) { mutableStateOf(it?.icon ?: "wrench") }
+    // Due by distance, time, or whichever comes first.
+    var by by rememberSaveable(key) {
+        mutableStateOf(when { it == null -> "km"; it.everyKm > 0 && it.everyDays > 0 -> "both"; it.everyDays > 0 -> "time"; else -> "km" })
+    }
+    var everyKm by rememberSaveable(key) { mutableStateOf(if (it != null && it.everyKm > 0) numText(it.everyKm) else "1000") }
     var months by rememberSaveable(key) {
-        mutableStateOf(if (it != null && it.everyDays > 0) numText(Math.round(it.everyDays / 30.4 * 10) / 10.0) else "")
+        mutableStateOf(if (it != null && it.everyDays > 0) numText(Math.round(it.everyDays / 30.4 * 10) / 10.0) else "6")
     }
     var target by rememberSaveable(key) { mutableStateOf(numText(it?.targetKm)) }
     var lastKm by rememberSaveable(key) { mutableStateOf(numText(Math.round(it?.lastKm ?: v.odo).toDouble())) }
     var lastDate by rememberSaveable(key) { mutableLongStateOf(it?.lastDate ?: System.currentTimeMillis()) }
+    var first by rememberSaveable(key) { mutableStateOf(it?.firstKm != null || it?.firstDate != null) }
+    var firstKm by rememberSaveable(key) { mutableStateOf(numText(it?.firstKm ?: (Math.round(v.odo / 100.0) * 100.0 + 500))) }
+    var firstDate by rememberSaveable(key) { mutableLongStateOf(it?.firstDate ?: (System.currentTimeMillis() + 30L * 86_400_000)) }
     val digits = { x: String -> x.filter { ch -> ch.isDigit() }.take(7) }
     val decimal = { x: String -> x.filter { ch -> ch.isDigit() || ch == '.' }.take(5) }
+    val milestone = it?.milestone == true
+    val km = by != "time"
+    val time = by != "km"
 
     FormField("Name") { Input(name, { x -> name = x }, placeholder = "Clutch cable lube", label = "Name", maxLength = 40) }
-    if (it?.milestone == true) {
+    FormField("Icon") { IconGrid(icon) { x -> icon = x } }
+    if (milestone) {
         FormField("Next service at") { Input(target, { x -> target = digits(x) }, placeholder = "0", suffix = "km", label = "Next service at", keyboard = KeyboardType.Number) }
         Hint("Bajaj schedule: 500 km, 5,000 km, 10,000 km, then every 5,000.")
     } else {
-        Two(
-            { m -> FormField("Every", m) { Input(everyKm, { x -> everyKm = digits(x) }, placeholder = "0", suffix = "km", label = "Every, km", keyboard = KeyboardType.Number) } },
-            { m -> FormField("Or every", m) { Input(months, { x -> months = decimal(x) }, placeholder = "0", suffix = "months", label = "Or every, months", keyboard = KeyboardType.Decimal) } },
-        )
-        Hint("Leave one blank to go by distance or time alone.")
+        FormField("Due by") {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("km" to "Distance", "time" to "Time", "both" to "Both").forEach { (k, t) -> Chip(t, { by = k }, Modifier.weight(1f), on = by == k) }
+            }
+        }
+        if (km) FormField("Every") {
+            Stepper(everyKm, { x -> everyKm = digits(x) }, "km", "Every, km", step = 500.0, keyboard = KeyboardType.Number)
+        }
+        if (time) FormField(if (km) "Or every" else "Every") {
+            Stepper(months, { x -> months = decimal(x) }, "months", "Every, months", step = 1.0, keyboard = KeyboardType.Decimal)
+        }
+        if (km && time) Hint("Due at whichever comes first.")
     }
     Two(
         { m -> FormField("Last done at", m) { Input(lastKm, { x -> lastKm = digits(x) }, placeholder = "0", suffix = "km", label = "Last done at, km", keyboard = KeyboardType.Number) } },
         { m -> FormField("On", m) { DateField(lastDate, { d -> lastDate = d }, label = "Last done on", max = System.currentTimeMillis()) } },
     )
+    if (!milestone) {
+        Spacer(Modifier.height(18.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
+                Txt("Different first service", T.rowTitle, c.ink)
+                Txt("New parts often get an early first check.", T.rowSub, c.ink3)
+            }
+            app.waylink.ui.components.Switch(first, "Different first service", { first = !first })
+        }
+        if (first) {
+            if (km) FormField("First due at") {
+                Input(firstKm, { x -> firstKm = digits(x) }, placeholder = "0", suffix = "km", label = "First due at, km", keyboard = KeyboardType.Number)
+            }
+            if (time) FormField(if (km) "Or first due on" else "First due on") { DateField(firstDate, { d -> firstDate = d }, label = "First due on") }
+            Hint("After that, every interval as set above.")
+        }
+    }
     Spacer(Modifier.height(24.dp))
     Btn("Save", {
-        val err = vm.saveService(id, name, parseNum(everyKm) ?: 0.0, parseNum(months) ?: 0.0, parseNum(target), parseNum(lastKm) ?: 0.0, lastDate)
+        val ek = if (km) parseNum(everyKm) ?: 0.0 else 0.0
+        val em = if (time) parseNum(months) ?: 0.0 else 0.0
+        val err = vm.saveService(
+            id, name, ek, em, parseNum(target), parseNum(lastKm) ?: 0.0, lastDate, icon = icon,
+            firstKm = if (first && km) parseNum(firstKm) else null, firstDate = if (first && time) firstDate else null,
+        )
         if (err != null) vm.toast(err) else nav.close()
     }, Modifier.fillMaxWidth())
     if (id != null) {
         Spacer(Modifier.height(8.dp))
         Btn("Delete reminder", { vm.deleteService(id); nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.DANGER)
+    }
+}
+
+/** Five to a row; the picked one turns ink. */
+@Composable
+private fun IconGrid(picked: String, onPick: (String) -> Unit) {
+    val c = W.c
+    androidx.compose.foundation.layout.Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        app.waylink.core.SERVICE_ICONS.chunked(5).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { ic ->
+                    val on = ic == picked
+                    Box(
+                        Modifier.weight(1f).height(48.dp)
+                            .then(Modifier.clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp)))
+                            .background(if (on) c.ink else c.raised)
+                            .semantics { selected = on }
+                            .pressable(label = "Icon ${ic}", scale = 0.92f) { onPick(ic) },
+                        contentAlignment = Alignment.Center,
+                    ) { Ic(ic, size = 21.dp, tint = if (on) c.bg else c.ink2) }
+                }
+            }
+        }
+    }
+}
+
+/** A number with − and + either side. */
+@Composable
+private fun Stepper(value: String, onChange: (String) -> Unit, suffix: String, label: String, step: Double, keyboard: KeyboardType) {
+    val bump = { d: Double ->
+        val n = ((parseNum(value) ?: 0.0) + d).coerceAtLeast(0.0)
+        onChange(numText(Math.round(n / step) * step))
+    }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        StepBtn(false, "Less, $label") { bump(-step) }
+        Box(Modifier.weight(1f)) { Input(value, onChange, placeholder = "0", suffix = suffix, label = label, keyboard = keyboard) }
+        StepBtn(true, "More, $label") { bump(step) }
+    }
+}
+
+@Composable
+private fun StepBtn(plus: Boolean, label: String, onClick: () -> Unit) {
+    val c = W.c
+    Box(
+        Modifier.size(48.dp).clip(androidx.compose.foundation.shape.CircleShape).background(c.raised).pressable(label = label, scale = 0.9f, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (plus) Ic("plus", size = 18.dp, tint = c.ink)
+        else Box(Modifier.size(14.dp, 2.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(1.dp)).background(c.ink))
     }
 }
 

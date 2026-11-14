@@ -20,6 +20,8 @@ data class AppState(
     val active: String = "",
     /** Papers in the glovebox. The files stay in app storage, never in backups. */
     val glove: List<GloveDoc> = emptyList(),
+    /** Saved places (home, work, favourites), newest last. */
+    val places: List<Place> = emptyList(),
 ) {
     /** The vehicle being ridden now. */
     val vehicle: Vehicle get() = vehicles.firstOrNull { it.id == active } ?: vehicles.first()
@@ -89,6 +91,10 @@ data class Settings(
     val devFrames: Boolean = false,
     val allThemes: Boolean = false,
     val alerts: AlertSettings = AlertSettings(),
+    /** Where live turns come from: a NavSource key. */
+    val navSource: String = "gmaps",
+    /** Speed alert limit in km/h; 0 is off. */
+    val speedAlert: Int = 0,
 )
 
 @Serializable
@@ -151,6 +157,9 @@ data class ServiceItem(
     /** Periodic service follows Bajaj's milestones (500, 5,000, 10,000 km, then every 5,000). */
     val milestone: Boolean = false,
     val targetKm: Double? = null,
+    /** A different first service: due at this odometer, or on this date, instead of one interval after [lastKm]/[lastDate]. Cleared once done. */
+    val firstKm: Double? = null,
+    val firstDate: Long? = null,
 )
 
 @Serializable

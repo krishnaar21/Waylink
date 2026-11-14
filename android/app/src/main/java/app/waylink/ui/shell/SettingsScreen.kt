@@ -219,6 +219,13 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             ListRow("Keep the screen on", "While in ride mode", icon = "sparkles", trailing = { Switch(st.wakeLock, "Keep the screen on", { act.toggle("wakeLock") }) })
             Hairline(66.dp)
             ListRow("Street names on the bike", "Road name beside the arrow", icon = "eye", trailing = { Switch(st.streetNames, "Street names on the bike", { act.toggle("streetNames") }) })
+            // Reading another maps app's turns is Android-only; an iPhone build leaves the row out.
+            if (app.waylink.core.Platform.caps.readNavApps) {
+                Hairline(66.dp)
+                ListRow("Live turns from", "Which maps app the bike follows", icon = "nav", end = app.waylink.core.NavSource.of(st.navSource).name, onClick = { act.sheet("nav-source") })
+            }
+            Hairline(66.dp)
+            ListRow("Speed alert", "Buzz when you pass a speed", icon = "alert", end = if (st.speedAlert > 0) "${st.speedAlert} km/h" else "Off", onClick = { act.sheet("speed") })
         }
         }
 
@@ -229,6 +236,11 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
         SectionGap()
         SectionHead("Data & region", help = { act.help("backup") })
         ListCard {
+            val ctx = androidx.compose.ui.platform.LocalContext.current
+            val tick = app.waylink.ui.route.rememberResumeTick()
+            val need = androidx.compose.runtime.remember(tick, st.navSource) { app.waylink.ui.route.Perms.needed(ctx, s) }
+            ListRow("Permissions", "What Waylink can use", icon = "shield", end = if (need == 0) "All set" else "$need needed", onClick = { act.sheet("perms") })
+            Hairline(66.dp)
             ListRow("Country", "Currency and SOS", icon = "globe", end = s.country.name, onClick = { act.sheet("country") })
             Hairline(66.dp)
             ListRow("Backup & restore", "Save, move or bring back your data", icon = "down", onClick = { act.sheet("backup") })

@@ -412,6 +412,7 @@ internal fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, 
     linkSheet(key, s, live, vm, nav)?.let { return it }
     extraSheet(key, s, live, vm, nav, host)?.let { return it }
     app.waylink.ui.route.routeSheet(key, s, live, vm, nav)?.let { return it }
+    app.waylink.ui.route.navSheet(key, s, live, vm, nav, host)?.let { return it }
     val arg = key.substringAfter(':', "")
     return when (key.substringBefore(':')) {
         "garage" -> SheetSpec("Your bikes", "Garage") {

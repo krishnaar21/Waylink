@@ -183,6 +183,11 @@ fun serviceStatus(odo: Double, item: ServiceItem, now: Long = System.currentTime
         val span = if (dueKm <= 750) 500.0 else 5000.0
         remKm = dueKm - odo
         fracKm = 1 - remKm / span
+    } else if (item.firstKm != null) {
+        dueKm = item.firstKm
+        remKm = dueKm - odo
+        val span = (item.firstKm - item.lastKm).coerceAtLeast(max(item.everyKm, 1.0))
+        fracKm = 1 - remKm / span
     } else if (item.everyKm > 0) {
         dueKm = item.lastKm + item.everyKm
         remKm = dueKm - odo
@@ -191,7 +196,12 @@ fun serviceStatus(odo: Double, item: ServiceItem, now: Long = System.currentTime
     var dueDate: Long? = null
     var remDays: Int? = null
     var fracT = 0.0
-    if (item.everyDays > 0 && !item.milestone) {
+    if (item.firstDate != null && !item.milestone) {
+        dueDate = item.firstDate
+        remDays = ceil((dueDate - now).toDouble() / DAY_MS).toInt()
+        val span = (item.firstDate - item.lastDate).coerceAtLeast(max(item.everyDays.toLong(), 1L) * DAY_MS)
+        fracT = 1 - (dueDate - now).toDouble() / span
+    } else if (item.everyDays > 0 && !item.milestone) {
         dueDate = item.lastDate + item.everyDays * DAY_MS
         remDays = ceil((dueDate - now).toDouble() / DAY_MS).toInt()
         fracT = (now - item.lastDate).toDouble() / (item.everyDays * DAY_MS)
@@ -199,7 +209,7 @@ fun serviceStatus(odo: Double, item: ServiceItem, now: Long = System.currentTime
     val overdueKm = if (remKm != null && remKm < 0) -remKm else 0.0
     val overdueDays = if (remDays != null && remDays < 0) -remDays else 0
     val overdue = overdueKm > 0 || overdueDays > 0
-    val soonKm = remKm != null && item.everyKm > 0 && remKm <= max(50.0, if (item.milestone) 200.0 else 0.15 * item.everyKm)
+    val soonKm = remKm != null && (item.everyKm > 0 || item.firstKm != null) && remKm <= max(50.0, if (item.milestone) 200.0 else 0.15 * item.everyKm)
     val soonDays = remDays != null && remDays <= min(21.0, max(2.0, item.everyDays * 0.15))
     val status = when {
         overdue -> Due.OVERDUE
@@ -221,7 +231,7 @@ fun ServiceItem.markDone(odo: Double, now: Long = System.currentTimeMillis()): S
             else -> odo + 5000
         }
     } else targetKm
-    return copy(lastKm = odo, lastDate = now, targetKm = next)
+    return copy(lastKm = odo, lastDate = now, targetKm = next, firstKm = null, firstDate = null)
 }
 
 data class ServiceRow(val item: ServiceItem, val st: ServiceStatus)
@@ -334,3 +344,9 @@ fun dueSentence(st: ServiceStatus, f: Fmt, zone: ZoneId = ZoneId.systemDefault()
 
 /** Average km a day over the last 30 days of recorded rides, for back-dating a job. */
 fun kmPerDay(v: Vehicle, now: Long = System.currentTimeMillis()): Double = periodStats(v.trips, now - 30 * DAY_MS).km / 30
+
+/** Icons a custom reminder can wear, in picker order. All are in the app's icon set. */
+val SERVICE_ICONS = listOf(
+    "wrench", "chain", "drop", "brake", "gauge", "tire", "wind", "battery", "bolt", "fuel",
+    "thermo", "flask", "drops", "spec", "layers", "shield", "doc", "bike", "signal", "sparkles",
+)

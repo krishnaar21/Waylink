@@ -22,6 +22,7 @@ import app.waylink.core.TripMeter
 import app.waylink.core.Vehicle
 import app.waylink.core.kmPerDay
 import app.waylink.core.markDone
+import app.waylink.core.SERVICE_ICONS
 import app.waylink.core.uid
 import app.waylink.core.Sample
 import app.waylink.core.Vault
@@ -137,6 +138,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     }
 
     init {
+        // Live turns from Google Maps & co. (Android notification access).
+        viewModelScope.launch { NavFeed.turns.collect(::onLiveTurn) }
         refreshWeather(); sound.play(Sound.Fx.ENGINE_START)
         // A bike paired before links again by itself when the app opens, as the web app's restore().
         _state.value.vehicle.bike.id?.let { id ->
@@ -269,7 +272,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     }
 
     /** Adds a reminder (null id) or saves an edited one. Returns an error to show, or null. */
-    fun saveService(id: String?, name: String, everyKm: Double, everyMonths: Double, targetKm: Double?, lastKm: Double, lastDate: Long): String? {
+    fun saveService(
+        id: String?, name: String, everyKm: Double, everyMonths: Double, targetKm: Double?, lastKm: Double, lastDate: Long,
+        icon: String? = null, firstKm: Double? = null, firstDate: Long? = null,
+    ): String? {
         val old = id?.let(::item)
         val milestone = old?.milestone == true
         val every = Math.round(everyMonths.coerceAtLeast(0.0) * 30.4).toInt()
@@ -281,6 +287,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             everyDays = if (milestone) base.everyDays else every,
             targetKm = if (milestone) (targetKm ?: 0.0).coerceAtLeast(0.0) else base.targetKm,
             lastKm = lastKm.coerceAtLeast(0.0), lastDate = lastDate,
+            icon = icon?.takeIf { x -> x in SERVICE_ICONS } ?: base.icon,
+            // A first service only makes sense ahead of where the bike is now.
+            firstKm = if (milestone) null else firstKm?.takeIf { x -> x > lastKm.coerceAtLeast(0.0) && x < 10_000_000 },
+            firstDate = if (milestone) null else firstDate?.takeIf { x -> x > lastDate },
         )
         veh { v -> v.copy(service = if (old == null) v.service + it else v.service.map { x -> if (x.id == it.id) it else x }) }
         toast(if (old == null) "Reminder added." else "Saved.")
@@ -413,6 +423,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         val speed = maxOf(0, Math.round(kmh ?: 0.0).toInt())
         if (rec != null) rec = rec.copy(top = maxOf(rec.top, speed))
         _live.update { it.copy(speed = speed, rec = rec, gpsErr = false) }
+        checkSpeed(speed)
     }
 
     private fun r6(x: Double) = Math.round(x * 1e6) / 1e6
@@ -731,7 +742,90 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         _live.update { it.copy(nav = n.copy(stepMeters = m, totalMeters = maxOf(m, n.totalMeters + d))) }
     }
 
-    override fun endNav() { navJob?.cancel(); navJob = null; _live.update { it.copy(nav = null) } }
+    override fun endNav() {
+        val n = _live.value.nav
+        // Ending a live route here only stops following it; the maps app keeps guiding until it is closed there.
+        if (n?.mode == "maps") muted = NavFeed.turn.value?.first
+        navJob?.cancel(); navJob = null; _live.update { it.copy(nav = null) }
+    }
+
+    // ---------- Live turns from a navigation app ----------
+    /** A source the rider stopped following; it is heard again once that app's navigation ends and starts anew. */
+    private var muted: String? = null
+
+    private fun onLiveTurn(t: Pair<String, app.waylink.core.LiveTurn>?) {
+        val src = _state.value.settings.navSource
+        if (t == null) {
+            muted = null
+            if (_live.value.nav?.mode == "maps") { _live.update { it.copy(nav = null) }; toast("Navigation ended.") }
+            return
+        }
+        val (key, turn) = t
+        if (key != src || key == muted || !app.waylink.core.Platform.caps.readNavApps) return
+        val cur = _live.value.nav
+        if (cur != null && cur.mode != "maps") { navJob?.cancel(); navJob = null } // live turns win over a rehearsal
+        val now = System.currentTimeMillis()
+        val eta = turn.etaClock?.let { (h, m) ->
+            val z = java.time.ZonedDateTime.now().withHour(h).withMinute(m).withSecond(0)
+            (if (z.toInstant().toEpochMilli() < now - 3_600_000) z.plusDays(1) else z).toInstant().toEpochMilli()
+        } ?: turn.etaMin?.let { now + it * 60_000L } ?: cur?.takeIf { it.mode == "maps" }?.eta ?: (now + 10 * 60_000)
+        val total = turn.totalMeters ?: cur?.takeIf { it.mode == "maps" }?.totalMeters?.coerceAtLeast(turn.stepMeters) ?: turn.stepMeters
+        if (cur?.mode != "maps") { buzz(15); toast("Following ${app.waylink.core.NavSource.of(key).name}.") }
+        _live.update { it.copy(nav = Nav("maps", 0, turn.maneuver, turn.stepMeters, total, turn.street, turn.say, turn.exit, eta)) }
+    }
+
+    fun setNavSource(key: String) {
+        val k = app.waylink.core.NavSource.available().firstOrNull { it.key == key }?.key ?: return
+        sound.click(true)
+        commit { it.copy(settings = it.settings.copy(navSource = k)) }
+        if (_live.value.nav?.mode == "maps") _live.update { it.copy(nav = null) }
+        NavFeed.turn.value?.let(::onLiveTurn)
+    }
+
+    // ---------- Speed alert ----------
+    private var speeding = false
+    private var lastSpeedAlert = 0L
+
+    fun setSpeedAlert(kmh: Int) {
+        commit { it.copy(settings = it.settings.copy(speedAlert = app.waylink.core.SpeedAlert.clamp(kmh))) }
+        speeding = false
+    }
+
+    /** Over the limit: a firm double buzz and a horn note, then quiet until back under (and at most every 20 s). */
+    private fun checkSpeed(speed: Int) {
+        val limit = _state.value.settings.speedAlert
+        if (limit <= 0) { speeding = false; return }
+        if (app.waylink.core.SpeedAlert.under(speed, limit)) { speeding = false; return }
+        if (speeding || !app.waylink.core.SpeedAlert.over(speed, limit)) return
+        speeding = true
+        val now = System.currentTimeMillis()
+        if (now - lastSpeedAlert < 20_000) return
+        lastSpeedAlert = now
+        buzz(120, 80, 120)
+        sound.play(Sound.Fx.HORN)
+        toast("Over $limit km/h")
+    }
+
+    // ---------- Saved places ----------
+    fun savePlace(id: String?, name: String, kind: String, address: String, lat: Double?, lng: Double?): String? {
+        val n = name.trim().take(30)
+        if (n.isEmpty()) return "Give it a name."
+        if (address.isBlank() && (lat == null || lng == null)) return "Add an address, or pin where you are."
+        val k = if (kind in listOf("home", "work", "pin")) kind else "pin"
+        commit { s ->
+            // Only one Home and one Work: saving a new one moves the label.
+            val others = s.places.map { if (k != "pin" && it.kind == k && it.id != id) it.copy(kind = "pin") else it }
+            val p = app.waylink.core.Place(id = id ?: app.waylink.core.uid(), name = n, kind = k, lat = lat?.let(::r6), lng = lng?.let(::r6), address = address.trim().take(120), added = others.firstOrNull { it.id == id }?.added ?: System.currentTimeMillis())
+            s.copy(places = if (others.any { it.id == p.id }) others.map { if (it.id == p.id) p else it } else others + p)
+        }
+        toast(if (id == null) "Place saved." else "Saved.")
+        return null
+    }
+
+    fun deletePlace(id: String) { commit { s -> s.copy(places = s.places.filter { it.id != id }) }; toast("Place removed.") }
+
+    /** Pins where the phone is now, for the place sheet. */
+    fun placeHere(done: (lat: Double, lng: Double, label: String) -> Unit) = locateOnce({ lat, lon, place, _ -> done(lat, lon, place) }, ::toast)
 
     // ---------- Parked bike ----------
     /** Saves where the phone is now as the bike's parking spot. Location permission is asked by the screen first. */

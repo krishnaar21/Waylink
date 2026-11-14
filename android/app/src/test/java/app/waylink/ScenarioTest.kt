@@ -196,6 +196,60 @@ class ScenarioTest {
         assertEquals(20000.0, vm.state.value.vehicle.odo, 0.1)
     }
 
+    @Test fun customServiceItemWithAFirstService() {
+        val vm = vm()
+        vm.onboardSample()
+        val now = System.currentTimeMillis()
+        val odo = vm.state.value.vehicle.odo
+        assertNull(vm.saveService(null, "Valve check", 6000.0, 12.0, null, odo, now, icon = "spec", firstKm = odo + 1000, firstDate = now + 30L * 86_400_000))
+        val it = vm.state.value.vehicle.service.last()
+        assertEquals("spec", it.icon)
+        assertEquals(odo + 1000, it.firstKm!!, 0.5)
+        assertEquals(odo + 1000, app.waylink.core.serviceStatus(odo, it).dueKm!!, 0.5)
+        // A first service behind the odometer means nothing, and an unknown icon keeps the old one.
+        assertNull(vm.saveService(it.id, "Valve check", 6000.0, 0.0, null, odo, now, icon = "nope", firstKm = odo - 10))
+        val edited = vm.state.value.vehicle.service.last()
+        assertNull(edited.firstKm); assertEquals("spec", edited.icon)
+        vm.serviceDone(it.id)
+        assertNull(vm.state.value.vehicle.service.last().firstDate)
+    }
+
+    @Test fun liveTurnsPlacesAndSpeed() {
+        val vm = vm()
+        vm.onboardSample()
+        // A turn from Google Maps becomes the live route; another app's is ignored until it's the chosen one.
+        app.waylink.data.NavFeed.turn.value = "waze" to app.waylink.core.LiveTurn("TURN_LEFT", 300.0, "MG Road", "Turn left onto MG Road")
+        shadowOf(Looper.getMainLooper()).idle()
+        assertNull(vm.live.value.nav)
+        app.waylink.data.NavFeed.turn.value = "gmaps" to app.waylink.core.LiveTurn("TURN_RIGHT", 250.0, "Brigade Rd", "Turn right onto Brigade Rd", totalMeters = 4200.0, etaMin = 12)
+        shadowOf(Looper.getMainLooper()).idle()
+        val n = vm.live.value.nav
+        assertEquals("maps", n?.mode); assertEquals("TURN_RIGHT", n?.maneuver); assertEquals(4200.0, n!!.totalMeters, 0.1)
+        vm.endNav()
+        app.waylink.data.NavFeed.turn.value = "gmaps" to app.waylink.core.LiveTurn("TURN_LEFT", 120.0, "", "Turn left")
+        shadowOf(Looper.getMainLooper()).idle()
+        assertNull("stopped following stays stopped", vm.live.value.nav)
+        app.waylink.data.NavFeed.turn.value = null
+        shadowOf(Looper.getMainLooper()).idle()
+        vm.setNavSource("waze"); assertEquals("waze", vm.state.value.settings.navSource)
+        vm.setNavSource("nope"); assertEquals("waze", vm.state.value.settings.navSource)
+        vm.setNavSource("gmaps")
+
+        assertNotNull(vm.savePlace(null, " ", "home", "Somewhere", null, null))
+        assertNotNull(vm.savePlace(null, "Home", "home", "", null, null))
+        assertNull(vm.savePlace(null, "Home", "home", "12 Lavelle Rd", null, null))
+        assertNull(vm.savePlace(null, "New flat", "home", "", 12.97, 77.59))
+        val ps = vm.state.value.places
+        assertEquals(2, ps.size)
+        assertEquals("only one Home", 1, ps.count { it.kind == "home" })
+        vm.deletePlace(ps.first().id)
+        assertEquals(1, vm.state.value.places.size)
+
+        vm.setSpeedAlert(10); assertEquals(30, vm.state.value.settings.speedAlert)
+        vm.setSpeedAlert(80); assertEquals(80, vm.state.value.settings.speedAlert)
+        vm.setSpeedAlert(0); assertEquals(0, vm.state.value.settings.speedAlert)
+    }
+
     @Test fun alertsAndCalls() {
         val vm = vm()
         vm.onboardSample(); vm.simOn()
@@ -295,13 +349,16 @@ class ScenarioTest {
             keys += listOf("odo", "trip:A", "trip:B", "svc-edit:new", "rec:new", "fuel:new", "fuelprice", "vehicle:new", "vehicle:${v.id}",
                 "specs", "country", "pick-ridechart", "backup", "erase", "reset", "faq", "report", "about", "models", "support", "avatar",
                 "prof:about", "prof:licence", "prof:medical", "weather", "pick-brand", "pick-font", "pick-progress", "log", "protocol",
-                "pair-intro", "auto-ask", "pair", "parking", "glovebox", "doc:rc", "quick", "turn-test", "garage", "sos", "clear:clear-wa")
+                "pair-intro", "auto-ask", "pair", "parking", "glovebox", "doc:rc", "quick", "turn-test", "garage", "sos", "clear:clear-wa",
+                "nav-source", "place:new", "speed", "perms")
+            if (s.places.isEmpty()) vm.savePlace(null, "Home", "home", "12 Lavelle Rd", 12.97, 77.59)
+            vm.state.value.places.forEach { keys += "place:${it.id}" }
             v.service.take(3).forEach { keys += "svc:${it.id}"; keys += "svc-edit:${it.id}" }
             v.records.take(2).forEach { keys += "rec:${it.id}" }
             v.fuel.take(2).forEach { keys += "fuel:${it.id}" }
             v.trips.take(2).forEach { keys += "trip-detail:${it.id}"; keys += "trip-rename:${it.id}" }
             for (k in keys) {
-                val spec = buildSheet(k, s, vm.live.value, vm, nav, host) ?: continue
+                val spec = buildSheet(k, vm.state.value, vm.live.value, vm, nav, host) ?: continue
                 shown = "${kind ?: "sample"}/$k" to spec
                 try { compose.waitForIdle() } catch (e: Throwable) {
                     failures += "$k (${kind ?: "sample"}): $e @ ${e.stackTrace.take(6).joinToString(" < ")}"

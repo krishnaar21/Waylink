@@ -113,35 +113,37 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
     val ctx = LocalContext.current
     val f = remember(s.country.locale) { Fmt(s.country.locale) }
     var dest by rememberSaveable { mutableStateOf("") }
+    // The chosen maps app, or Google Maps when Waylink only rehearses (or on a phone that can't read other apps).
+    val src = app.waylink.core.NavSource.of(s.settings.navSource).let { if (it.readsNotifications) it else app.waylink.core.NavSource.of("gmaps") }
     val openMaps = {
         val d = dest.trim()
         if (d.isEmpty()) vm.toast("Where to?")
-        else {
-            // Google's cross-platform directions link; it opens the Maps app when installed.
-            val url = "https://www.google.com/maps/dir/?api=1&destination=" + Uri.encode(d) + "&travelmode=two-wheeler&dir_action=navigate"
-            try { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (e: Exception) { vm.toast("No app can open maps.") }
-        }
+        else if (!app.waylink.data.NavApps.go(ctx, src, d)) vm.toast("No app can open maps.")
     }
     Page(bottom) {
         PageHead("Route", "Turns on your bike")
         SectionHead("Where to?")
         // .sec-note: tucked 6 dp up under the heading, inset like it, 12 above the card
-        Txt("Plan the ride in Google Maps. Its turns show on your bike.", T.row.copy(lineHeight = 20.3.sp), c.ink3, Modifier.offset(y = (-6).dp).padding(horizontal = 14.dp))
+        Txt("Plan the ride in ${src.name}. Its turns show on your bike.", T.row.copy(lineHeight = 20.3.sp), c.ink3, Modifier.offset(y = (-6).dp).padding(horizontal = 14.dp))
         Spacer(Modifier.height(6.dp))
         Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp)) {
             Txt("Destination", T.eyebrow, c.ink3)
             Spacer(Modifier.height(8.dp))
             Input(dest, { dest = it }, placeholder = "Nandi Hills", label = "Destination", caps = KeyboardCapitalization.Words, maxLength = 120, imeAction = ImeAction.Go, onDone = openMaps)
             Spacer(Modifier.height(12.dp))
-            Btn("Open in Google Maps", openMaps, Modifier.fillMaxWidth(), icon = "map")
+            Btn("Open in ${src.name}", openMaps, Modifier.fillMaxWidth(), icon = "map")
         }
+
+        SectionGap()
+        SectionHead("Saved places")
+        PlacesCard(s, vm::toast, openSheet)
 
         SectionGap()
         SectionHead("How this works")
         // .howto: numbered steps in filled ink circles, 14 apart, 15/1.5 text
         Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             listOf(
-                "Plan the ride in Google Maps." to " It draws the map and gives voice directions on your phone.",
+                "Plan the ride in ${src.name}." to " It draws the map and gives voice directions on your phone.",
                 "Rehearse a route" to " to see how turns look on your bike’s display before you ride.",
                 "Test one turn" to " to check a single arrow and distance on the display.",
             ).forEachIndexed { i, (b, rest) ->
@@ -157,7 +159,8 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
                 }
             }
         }
-        Hint("Reading Google Maps’ turn alerts, so turns reach the bike by themselves, comes with Bluetooth pairing in a later build.")
+        Spacer(Modifier.height(12.dp))
+        LiveTurnsCard(s, openSheet)
 
         SectionGap()
         SectionHead("Rehearse a route", help = { openSheet("help:rehearse") })
@@ -244,7 +247,8 @@ private fun EnRoute(s: AppState, live: Live, n: Nav, vm: RouteActions, bottom: D
         tr.animateFloat(1f, 0.25f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(450), androidx.compose.animation.core.RepeatMode.Reverse), label = "a").value
     } else 1f
     Page(bottom) {
-        PageHead("En route", if (n.mode == "rehearse") "Rehearsing a route" else "Testing one turn", action = {
+        val srcName = app.waylink.core.NavSource.of(s.settings.navSource).name
+        PageHead("En route", when (n.mode) { "rehearse" -> "Rehearsing a route"; "maps" -> "Following $srcName"; else -> "Testing one turn" }, action = {
             Txt(if (linked) "On the bike" else "Phone only", T.rowSub.copy(fontWeight = FontWeight.Medium), if (linked) c.sageInk else c.ink3,
                 Modifier.clip(RoundedCornerShape(999.dp)).background(if (linked) c.tintSage else c.raised).padding(horizontal = 10.dp, vertical = 4.dp))
         })
@@ -279,6 +283,8 @@ private fun EnRoute(s: AppState, live: Live, n: Nav, vm: RouteActions, bottom: D
                 }
                 Chip("Next turn", vm::nextTurn, icon = "chev")
             }
+        } else if (n.mode == "maps") {
+            Hint("Turns come from $srcName as it guides. Change the route there.")
         } else {
             Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -292,7 +298,8 @@ private fun EnRoute(s: AppState, live: Live, n: Nav, vm: RouteActions, bottom: D
             }
         }
         Spacer(Modifier.height(16.dp))
-        Btn("End navigation", { vm.endNav(); vm.toast("Navigation ended.") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "x")
+        if (n.mode == "maps") Btn("Stop following", { vm.endNav(); vm.toast("Stopped. $srcName keeps guiding on the phone.") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "x")
+        else Btn("End navigation", { vm.endNav(); vm.toast("Navigation ended.") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "x")
         if (n.mode == "rehearse") {
             SectionGap()
             SectionHead("Turns")
