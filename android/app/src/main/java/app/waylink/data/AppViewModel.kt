@@ -824,6 +824,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     fun deletePlace(id: String) { commit { s -> s.copy(places = s.places.filter { it.id != id }) }; toast("Place removed.") }
 
+    /** Petrol pumps or hospitals near the phone: within 5 km, else 15 km. [done] gets the list, or null and why. */
+    fun findNearby(kind: Nearby.Kind, done: (List<Nearby.Spot>?, String?) -> Unit) = locateOnce({ lat, lon, _, _ ->
+        viewModelScope.launch {
+            val r = runCatching { Nearby.find(kind, lat, lon).ifEmpty { Nearby.find(kind, lat, lon, 15_000) } }
+            done(r.getOrNull(), if (r.isFailure) "Couldn’t reach the map service. Check your connection and try again." else null)
+        }
+    }, { done(null, it) })
+
     /** Pins where the phone is now, for the place sheet. */
     fun placeHere(done: (lat: Double, lng: Double, label: String) -> Unit) = locateOnce({ lat, lon, place, _ -> done(lat, lon, place) }, ::toast)
 

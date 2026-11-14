@@ -282,6 +282,16 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun glovebox() = openSheet("glovebox")
                     override fun weather() { if (live.weather !is app.waylink.data.Weather.State.Ready) vm.refreshWeather(); openSheet("weather") }
                     override fun readingsHelp() = openSheet("help:readings")
+                    override fun open(key: String) {
+                        when {
+                            key.startsWith("tab:") -> Tab.values().firstOrNull { it.key == key.drop(4) }?.let { tab = it }
+                            key.startsWith("page:") -> page = key.drop(5)
+                            key == "record" -> beginRec()
+                            key == "ride" -> vm.openRideMode(true)
+                            key == "weather" -> weather()
+                            else -> openSheet(key)
+                        }
+                    }
                 }, tabBarHeight)
                 "profile" -> ProfileScreen(s, back = { page = null }, sheet = openSheet, help = { openSheet("help:$it") }, bottom = tabBarHeight)
                 Tab.SETTINGS.key -> SettingsScreen(s, live, object : SettingsActions {
@@ -418,7 +428,7 @@ internal fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, 
         "garage" -> SheetSpec("Your bikes", "Garage") {
             GarageList(s, onPick = { vm.switchVehicle(it); nav.close() }, onAdd = { nav.open("vehicle:new") })
         }
-        "sos" -> SheetSpec("SOS", "Emergency · ${s.country.name}") { SosSheet(s, live) { nav.close(); host.page("profile") } }
+        "sos" -> SheetSpec("SOS", "Emergency · ${s.country.name}") { SosSheet(s, live, nearby = { nav.open("nearby:hospital") }) { nav.close(); host.page("profile") } }
         "clear" -> {
             val wa = arg == "clear-wa"
             val n = if (wa) s.alerts.wa.size else s.alerts.missed.size
@@ -559,7 +569,7 @@ private fun Placeholder(title: String, sub: String, what: String, bottom: androi
 }
 
 @Composable
-private fun SosSheet(s: AppState, @Suppress("UNUSED_PARAMETER") live: Live, profile: () -> Unit) {
+private fun SosSheet(s: AppState, @Suppress("UNUSED_PARAMETER") live: Live, nearby: () -> Unit, profile: () -> Unit) {
     // web sheet 'sos': a flat list of numbers to tap (the number big on the right), the emergency contact,
     // nearest hospitals, then the blood-group card that opens the profile.
     val c = W.c
@@ -586,8 +596,7 @@ private fun SosSheet(s: AppState, @Suppress("UNUSED_PARAMETER") live: Live, prof
         })
         else ListRow("Add an emergency contact", "Someone to call first", "heart", onClick = profile)
         Hairline(start = 66.dp)
-        val near = "https://www.google.com/maps/search/hospitals+near+me"
-        ListRow("Nearest hospitals", "Opens Google Maps", "hospital", onClick = { open(Intent(Intent.ACTION_VIEW, Uri.parse(near))) })
+        ListRow("Nearest hospitals", "Nearest first, tap to go", "hospital", onClick = nearby)
     }
     Spacer(Modifier.height(12.dp))
     Row(

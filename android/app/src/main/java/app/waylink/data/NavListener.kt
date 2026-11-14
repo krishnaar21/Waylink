@@ -84,6 +84,16 @@ object NavApps {
         runCatching { ctx.packageManager.getPackageInfo(p, 0) }.isSuccess
     }
 
+    /** A search in the chosen app around where the phone is ("petrol pump"), else Google's search page. */
+    fun search(ctx: Context, src: NavSource, what: String): Boolean {
+        val pkg = src.packages.firstOrNull { p -> runCatching { ctx.packageManager.getPackageInfo(p, 0) }.isSuccess }
+        val tries = buildList {
+            if (pkg != null && src.key != "waze") add(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=" + Uri.encode(what))).setPackage(pkg))
+            add(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/" + Uri.encode("$what near me"))))
+        }
+        return tries.any { i -> runCatching { ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess }
+    }
+
     /** Where to: [lat]/[lng] when known, else [query]. Two-wheeler mode in Google Maps. Returns false if nothing could open it. */
     fun go(ctx: Context, src: NavSource, query: String, lat: Double? = null, lng: Double? = null): Boolean {
         val where = if (lat != null && lng != null) "$lat,$lng" else query

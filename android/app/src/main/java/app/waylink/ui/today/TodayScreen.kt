@@ -117,6 +117,8 @@ interface TodayActions {
     fun readingsHelp()
     /** Leaves a developer preview state. */
     fun exitPreview() {}
+    /** A quick link: "tab:<key>", "page:<key>", "record", "ride", or a sheet key. */
+    fun open(key: String) {}
 }
 
 /** The Today tab, a faithful port of today() in web-v0/js/views.js. */
@@ -208,6 +210,10 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
             Tile("trips", "Rides", Tone.OK, "${v.trips.size} logged", List(6) { if (it < minOf(6, week)) Tone.NEUTRAL else null }, act::rides)
             Tile("folder", "Glovebox", null, "Empty", List(4) { null }, act::glovebox)
         }
+
+        Spacer(Modifier.height(18.dp))
+        SectionHead("Quick links")
+        QuickLinksGrid(s, live, f, act::open)
 
         Spacer(Modifier.height(24.dp))
         Txt("Everything stays on this phone. No account, no cloud.", T.note.copy(textAlign = TextAlign.Center), c.ink3, Modifier.fillMaxWidth())

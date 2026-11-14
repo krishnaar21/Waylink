@@ -255,6 +255,22 @@ class ScenarioTest {
         assertEquals("Brigade Road, Bengaluru, Karnataka", hits[0].label)
         assertEquals("MG Road 12", hits[1].title); assertEquals(12.97, hits[1].lat, 1e-6)
 
+        // Nearby: nearest first, ways use their centre, one place mapped twice shows once, phones are cleaned.
+        val spots = app.waylink.data.Nearby.parse(app.waylink.data.Nearby.Kind.HOSPITAL, """{"elements":[
+            {"type":"way","center":{"lat":12.99,"lon":77.60},"tags":{"amenity":"hospital","name":"Far Hospital"}},
+            {"type":"node","lat":12.971,"lon":77.594,"tags":{"amenity":"hospital","name":"Near Hospital","emergency":"yes","phone":"+91 80 1234 5678; 080 999"}},
+            {"type":"way","center":{"lat":12.9711,"lon":77.5941},"tags":{"amenity":"hospital","name":"Near Hospital"}},
+            {"type":"node","tags":{"name":"No place"}}]}""", 12.97, 77.59)
+        assertEquals(listOf("Near Hospital", "Far Hospital"), spots.map { it.name })
+        assertEquals("+918012345678", spots[0].phone); assertTrue(spots[0].emergency)
+        assertTrue(app.waylink.data.Nearby.query(app.waylink.data.Nearby.Kind.FUEL, 12.97123, 77.59, 5000).contains("around:5000,12.971,77.590"))
+
+        // Every quick link builds, with a subtitle.
+        val f = app.waylink.core.Fmt(vm.state.value.country.locale)
+        val links = app.waylink.ui.today.QuickLinks.ORDER.mapNotNull { app.waylink.ui.today.QuickLinks.build(it, vm.state.value, vm.live.value, f, 0) }
+        assertEquals(app.waylink.ui.today.QuickLinks.ORDER.size, links.size)
+        assertTrue(links.all { it.sub.isNotBlank() && it.go.isNotBlank() })
+
         vm.setSpeedAlert(10); assertEquals(30, vm.state.value.settings.speedAlert)
         vm.setSpeedAlert(80); assertEquals(80, vm.state.value.settings.speedAlert)
         vm.setSpeedAlert(0); assertEquals(0, vm.state.value.settings.speedAlert)
@@ -360,7 +376,7 @@ class ScenarioTest {
                 "specs", "country", "pick-ridechart", "backup", "erase", "reset", "faq", "report", "about", "models", "support", "avatar",
                 "prof:about", "prof:licence", "prof:medical", "weather", "pick-brand", "pick-font", "pick-progress", "log", "protocol",
                 "pair-intro", "auto-ask", "pair", "parking", "glovebox", "doc:rc", "quick", "turn-test", "garage", "sos", "clear:clear-wa",
-                "nav-source", "place:new", "speed", "perms")
+                "nav-source", "place:new", "speed", "perms", "nearby:fuel", "nearby:hospital")
             if (s.places.isEmpty()) vm.savePlace(null, "Home", "home", "12 Lavelle Rd", 12.97, 77.59)
             vm.state.value.places.forEach { keys += "place:${it.id}" }
             v.service.take(3).forEach { keys += "svc:${it.id}"; keys += "svc-edit:${it.id}" }
