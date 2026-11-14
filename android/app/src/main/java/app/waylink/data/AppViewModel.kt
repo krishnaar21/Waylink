@@ -1054,9 +1054,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             viewModelScope.launch { delay(12_000); once(null) }
             androidx.core.location.LocationManagerCompat.getCurrentLocation(
                 locations, provider, null as android.os.CancellationSignal?, androidx.core.content.ContextCompat.getMainExecutor(getApplication()),
-                androidx.core.util.Consumer<android.location.Location?> { once(it ?: locations.getLastKnownLocation(provider)) })
+                androidx.core.util.Consumer<android.location.Location?> { once(it ?: lastAny()) })
         } catch (e: Exception) { _live.update { it.copy(locating = false) }; fail("Couldn’t get your location.") }
     }
+
+    /** The newest fix any provider still holds, up to two hours old: indoors a fresh one may never come. */
+    @android.annotation.SuppressLint("MissingPermission")
+    private fun lastAny(): android.location.Location? = runCatching {
+        locations.getProviders(true).mapNotNull { p -> runCatching { locations.getLastKnownLocation(p) }.getOrNull() }
+            .filter { System.currentTimeMillis() - it.time < 2 * 3_600_000 }.maxByOrNull { it.time }
+    }.getOrNull()
 
     /** Town and state for a fix: the phone's own geocoder, else OpenStreetMap as on the web (coordinates rounded to ~100 m). */
     private fun placeOf(lat: Double, lon: Double): Pair<String, String> {

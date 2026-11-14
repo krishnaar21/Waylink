@@ -271,6 +271,12 @@ class ScenarioTest {
         assertEquals(app.waylink.ui.today.QuickLinks.ORDER.size, links.size)
         assertTrue(links.all { it.sub.isNotBlank() && it.go.isNotBlank() })
 
+        // OpenStreetMap search as the stand-in: only real petrol pumps, with English names when there are some.
+        val nom = app.waylink.data.Nearby.parseNominatim(app.waylink.data.Nearby.Kind.FUEL, """[
+            {"lat":"12.975","lon":"77.60","category":"amenity","type":"fuel","name":"HP","namedetails":{"name":"HP Petrol"},"extratags":{"brand":"HPCL","opening_hours":"24/7"}},
+            {"lat":"12.98","lon":"77.61","category":"shop","type":"car","name":"Fuel Motors"}]""", 12.97, 77.59)
+        assertEquals(1, nom.size); assertEquals("HP Petrol", nom[0].name); assertTrue(nom[0].open24)
+
         vm.setSpeedAlert(10); assertEquals(30, vm.state.value.settings.speedAlert)
         vm.setSpeedAlert(80); assertEquals(80, vm.state.value.settings.speedAlert)
         vm.setSpeedAlert(0); assertEquals(0, vm.state.value.settings.speedAlert)

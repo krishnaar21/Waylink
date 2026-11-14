@@ -43,11 +43,13 @@ import kotlin.math.roundToInt
  * to move one, move its key. [go] targets: "tab:<key>", "page:<key>", "record", "ride", else a sheet key.
  */
 object QuickLinks {
+    // Most used first: fuel and service every week, parking and pumps most rides, then the planning
+    // tiles, the paperwork, and the safety pair kept together at the end.
     val ORDER = listOf(
-        "ride", "record", "route", "places", "log-fuel", "pumps",
-        "hospitals", "sos", "parking", "service", "add-item", "visit",
-        "odo", "trip-a", "rides", "alerts", "papers", "weather",
-        "garage", "bike-link", "speed", "turn-test", "profile", "perms",
+        "log-fuel", "service", "parking",
+        "pumps", "weather", "places",
+        "speed", "papers", "visit",
+        "hospitals", "sos", "profile",
     )
 
     data class Link(val key: String, val icon: String, val title: String, val sub: String, val go: String, val dot: Boolean? = null)
@@ -64,7 +66,7 @@ object QuickLinks {
                 Platform.caps.readNavApps && NavSource.of(s.settings.navSource).readsNotifications -> "Turns from ${NavSource.of(s.settings.navSource).name}"
                 else -> "Plan a ride"
             }, "tab:route", live.nav?.let { true })
-            "places" -> Link(key, "home", "Places", if (s.places.isEmpty()) "Add home, work" else "${s.places.size} saved", "tab:route")
+            "places" -> Link(key, "home", "Saved places", if (s.places.isEmpty()) "Add home, work" else "${s.places.size} saved", "tab:route")
             "log-fuel" -> {
                 val fs = fuelStats(v)
                 Link(key, "fuel", "Log fuel", fs.range?.let { "≈${f.num(it)} km left" } ?: "Add a fill-up", "fuel:new", if (fs.range != null && fs.onReserve) false else null)

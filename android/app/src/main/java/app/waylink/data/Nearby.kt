@@ -26,7 +26,9 @@ object Nearby {
         val phone: String? = null, val emergency: Boolean = false, val open24: Boolean = false,
     )
 
-    private val SERVERS = listOf("https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter")
+    // Two public Overpass servers; either can be busy (429/504) or slow, so each gets a short leash.
+    private val SERVERS = listOf("https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter")
+    private const val UA = "Waylink/1.0 (Android; github.com/krishnaar21/Waylink)"
 
     fun query(kind: Kind, lat: Double, lng: Double, radius: Int): String {
         val at = "%.3f,%.3f".format(Locale.US, lat, lng)
@@ -34,28 +36,74 @@ object Nearby {
             Kind.FUEL -> listOf("""nwr["amenity"="fuel"](around:$radius,$at);""")
             Kind.HOSPITAL -> listOf("""nwr["amenity"="hospital"](around:$radius,$at);""", """nwr["amenity"="clinic"]["emergency"="yes"](around:$radius,$at);""")
         }
-        return "[out:json][timeout:15];(" + tags.joinToString("") + ");out center tags 60;"
+        return "[out:json][timeout:10];(" + tags.joinToString("") + ");out center tags 60;"
     }
 
-    /** Nearest first, at most 25. Throws when no server answers, so the screen can offer to retry. */
+    /** The last answer per kind for ten minutes, so opening the list again is instant and the servers are spared. */
+    private val cache = HashMap<String, Pair<Long, List<Spot>>>()
+
+    /**
+     * Nearest first, at most 25. Overpass first; when both its servers fail, OpenStreetMap's own search
+     * (Nominatim) within the same box. Throws only when nothing answers, so the screen can offer a retry.
+     */
     suspend fun find(kind: Kind, lat: Double, lng: Double, radius: Int = 5000): List<Spot> = withContext(Dispatchers.IO) {
+        val ck = "${kind.key}@${"%.2f,%.2f".format(Locale.US, lat, lng)}/$radius"
+        synchronized(cache) { cache[ck]?.takeIf { System.currentTimeMillis() - it.first < 600_000 }?.let { return@withContext it.second } }
         val body = "data=" + URLEncoder.encode(query(kind, lat, lng, radius), "UTF-8")
         var last: Exception? = null
+        var found: List<Spot>? = null
         for (server in SERVERS) {
             try {
-                val c = URL(server).openConnection() as HttpURLConnection
-                c.requestMethod = "POST"; c.doOutput = true
-                c.connectTimeout = 8000; c.readTimeout = 20000
-                c.setRequestProperty("User-Agent", "Waylink-Android")
-                c.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-                try {
-                    c.outputStream.use { it.write(body.toByteArray()) }
-                    if (c.responseCode != 200) { last = Exception("HTTP ${c.responseCode}"); continue }
-                    return@withContext parse(kind, c.inputStream.bufferedReader().use { it.readText() }, lat, lng)
-                } finally { c.disconnect() }
-            } catch (e: Exception) { last = e }
+                found = parse(kind, http(server, body), lat, lng)
+                break
+            } catch (e: Exception) { last = e; android.util.Log.w("Nearby", "$server: $e") }
         }
-        throw last ?: Exception("No answer")
+        if (found == null) found = try { nominatim(kind, lat, lng, radius) } catch (e: Exception) { android.util.Log.w("Nearby", "nominatim: $e"); null }
+        val out = found ?: throw (last ?: Exception("No answer"))
+        synchronized(cache) { cache[ck] = System.currentTimeMillis() to out }
+        out
+    }
+
+    private fun http(url: String, post: String? = null): String {
+        val c = URL(url).openConnection() as HttpURLConnection
+        try {
+            c.connectTimeout = 7000; c.readTimeout = 14000
+            c.setRequestProperty("User-Agent", UA); c.setRequestProperty("Accept", "application/json")
+            if (post != null) {
+                c.requestMethod = "POST"; c.doOutput = true
+                c.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+                c.outputStream.use { it.write(post.toByteArray()) }
+            }
+            val code = c.responseCode
+            if (code != 200) throw Exception("HTTP $code")
+            return c.inputStream.bufferedReader().use { it.readText() }
+        } finally { c.disconnect() }
+    }
+
+    /** OpenStreetMap search inside a box around the phone ("fuel", "hospital" are its own category words). */
+    private fun nominatim(kind: Kind, lat: Double, lng: Double, radius: Int): List<Spot> {
+        val dLat = radius / 111_000.0
+        val dLng = radius / (111_000.0 * Math.cos(Math.toRadians(lat)).coerceAtLeast(0.2))
+        val box = "%.4f,%.4f,%.4f,%.4f".format(Locale.US, lng - dLng, lat + dLat, lng + dLng, lat - dLat)
+        val word = if (kind == Kind.FUEL) "fuel" else "hospital"
+        val json = http("https://nominatim.openstreetmap.org/search?format=jsonv2&extratags=1&namedetails=1&accept-language=en&limit=30&bounded=1&viewbox=$box&q=$word")
+        return parseNominatim(kind, json, lat, lng)
+    }
+
+    fun parseNominatim(kind: Kind, json: String, lat: Double, lng: Double): List<Spot> {
+        val arr = org.json.JSONArray(json)
+        val els = org.json.JSONArray()
+        for (i in 0 until arr.length()) {
+            val o = arr.optJSONObject(i) ?: continue
+            val want = if (kind == Kind.FUEL) listOf("fuel") else listOf("hospital", "clinic")
+            if (o.optString("category") != "amenity" || o.optString("type") !in want) continue
+            val tags = (o.optJSONObject("extratags") ?: JSONObject())
+            val n = o.optJSONObject("namedetails")
+            val name = n?.optString("name:en")?.ifBlank { null } ?: n?.optString("name")?.ifBlank { null } ?: o.optString("name")
+            if (name.isNotBlank()) tags.put("name", name)
+            els.put(JSONObject().put("lat", o.optString("lat").toDoubleOrNull() ?: continue).put("lon", o.optString("lon").toDoubleOrNull() ?: continue).put("tags", tags))
+        }
+        return parse(kind, JSONObject().put("elements", els).toString(), lat, lng)
     }
 
     fun parse(kind: Kind, json: String, lat: Double, lng: Double): List<Spot> {

@@ -131,7 +131,7 @@ fun navSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetN
         "perms" -> SheetSpec("Permissions", "What Waylink can use") { PermsBody(s) }
         "nearby" -> {
             val k = app.waylink.data.Nearby.Kind.of(arg) ?: return null
-            SheetSpec("${k.title} nearby", "Nearest first") { NearbyBody(k, s, vm, host) }
+            SheetSpec("${k.title} nearby", "Nearest first") { NearbyBody(k, s, live, vm, host) }
         }
         else -> null
     }
@@ -418,7 +418,7 @@ fun PlacesCard(s: AppState, toast: (String) -> Unit, openSheet: (String) -> Unit
 }
 
 @Composable
-private fun NearbyBody(kind: app.waylink.data.Nearby.Kind, s: AppState, vm: AppViewModel, host: ExtraHost) {
+private fun NearbyBody(kind: app.waylink.data.Nearby.Kind, s: AppState, live: Live, vm: AppViewModel, host: ExtraHost) {
     val c = W.c
     val ctx = LocalContext.current
     // The chosen maps app, or Google Maps when Waylink only rehearses.
@@ -432,15 +432,20 @@ private fun NearbyBody(kind: app.waylink.data.Nearby.Kind, s: AppState, vm: AppV
     androidx.compose.runtime.LaunchedEffect(Unit) { load() }
     androidx.compose.runtime.LaunchedEffect(busy) { if (busy) { kotlinx.coroutines.delay(45_000); busy = false } }
     val list = spots
+    val failed = err != null || (list != null && list.isEmpty())
     Spacer(Modifier.height(8.dp))
     when {
-        list == null && err == null -> Txt(if (busy) "Looking around you…" else "Allow location to see what’s near.", T.sheetLead, c.ink2)
+        list == null && err == null -> Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(8.dp).clip(CircleShape).background(c.amber))
+            Spacer(Modifier.width(10.dp))
+            Txt(if (!busy) "Allow location to see what’s near you." else if (live.locating) "Finding where you are…" else "Looking for ${kind.one}s near you…", T.sheetLead, c.ink2)
+        }
         err != null -> {
             Txt(err ?: "", T.sheetLead, c.ink2)
             Spacer(Modifier.height(14.dp))
             Btn("Try again", { load() }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "refresh")
         }
-        list != null && list.isEmpty() -> Txt("No ${kind.one}s found within 15 km on OpenStreetMap.", T.sheetLead, c.ink2)
+        list != null && list.isEmpty() -> Txt("No ${kind.one}s found within 15 km on OpenStreetMap. Your maps app may know more.", T.sheetLead, c.ink2)
         list != null -> {
             ListCard(flat = true) {
                 list.forEachIndexed { i, p ->
@@ -460,6 +465,7 @@ private fun NearbyBody(kind: app.waylink.data.Nearby.Kind, s: AppState, vm: AppV
         }
     }
     Spacer(Modifier.height(16.dp))
-    Btn("Search in ${src.name}", { if (!NavApps.search(ctx, src, kind.search)) vm.toast("No app can open maps.") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "map")
+    // When the list can't help, the maps app's own search is the main way on.
+    Btn("Search in ${src.name}", { if (!NavApps.search(ctx, src, kind.search)) vm.toast("No app can open maps.") }, Modifier.fillMaxWidth(), kind = if (failed) BtnKind.INK else BtnKind.LINE, icon = "map")
     Hint("From OpenStreetMap, so a few may be missing. Tap one to navigate there${if (kind == app.waylink.data.Nearby.Kind.HOSPITAL) ". In an emergency, call 112 first" else ""}.")
 }
