@@ -1,5 +1,7 @@
 package app.waylink.ui.today
 
+import app.waylink.ui.components.fitScrollX
+import app.waylink.ui.components.fitScrollY
 import android.content.Context
 import android.os.BatteryManager
 import androidx.compose.animation.core.RepeatMode
@@ -138,7 +140,7 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
     androidx.compose.runtime.SideEffect { head.title = LocalDate.now().dayOfWeek.getDisplayName(JTextStyle.FULL, Locale.ENGLISH); head.end = sos }
     Box(Modifier.fillMaxSize()) {
     Column(
-        Modifier.fillMaxWidth().rise().verticalScroll(scroll)
+        Modifier.fillMaxWidth().rise().verticalScroll(scroll, enabled = scroll.maxValue > 0)
             .windowInsetsPadding(WindowInsets.statusBars)
             .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = bottomPadding + 90.dp),
@@ -168,7 +170,7 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
         Spacer(Modifier.height(if (good) 34.dp else 22.dp))
         SectionHead(if (urgent.isNotEmpty()) "Do these first" else "Coming up") { LinkText("See all", act::logbook) }
         Row(
-            Modifier.bleed(20).horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 8.dp),
+            Modifier.bleed(20).fitScrollX().padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             val shown = (urgent.ifEmpty { list }).take(4)
@@ -193,7 +195,7 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
         Spacer(Modifier.height(34.dp))
         SectionHead("Shortcuts")
         Row(
-            Modifier.bleed(20).horizontalScroll(rememberScrollState()).padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 16.dp),
+            Modifier.bleed(20).fitScrollX().padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             val week = periodStats(v.trips, weekStart()).rides
@@ -242,7 +244,7 @@ private fun BikeCard(s: AppState, live: Live, f: Fmt, good: Boolean, okCount: In
             Modifier.fillMaxWidth().pressable(label = "Switch vehicle", onClick = act::garage).padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            BikeArt(Modifier.size(96.dp), 16.dp)
+            BikeArt(Modifier.size(96.dp), 16.dp, s.vehicle.colour)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Txt(vehicleTitle(s), T.cardTitle, c.ink, Modifier.padding(end = 36.dp), maxLines = 1)

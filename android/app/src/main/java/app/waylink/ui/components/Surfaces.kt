@@ -172,7 +172,7 @@ fun Sheet(
                     }
                     Box(Modifier.fillMaxWidth().height(1.dp).background(if (scroll.value > 0) c.line else Color.Transparent))
                 }
-                Column(Modifier.weight(1f, fill = false).verticalScroll(scroll).padding(start = 24.dp, end = 24.dp, bottom = 24.dp), content = content)
+                Column(Modifier.weight(1f, fill = false).verticalScroll(scroll, enabled = scroll.maxValue > 0).padding(start = 24.dp, end = 24.dp, bottom = 24.dp), content = content)
             }
         }
     }
@@ -180,8 +180,11 @@ fun Sheet(
 
 /** The one Waylink bike picture, or the rider's own photo later. Sits on --bg with a soft ground shadow. */
 @Composable
-fun BikeArt(modifier: Modifier, radius: androidx.compose.ui.unit.Dp) {
+fun BikeArt(modifier: Modifier, radius: androidx.compose.ui.unit.Dp, colour: String? = null) {
     val c = W.c
+    // The bike's body (tank and tail) takes the vehicle's colour: a shading layer tinted by it, then the highlights.
+    val paint = colour?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
+    val tint by androidx.compose.animation.animateColorAsState(paint ?: Color(0xFFB3261E), androidx.compose.animation.core.tween(250), label = "paint")
     Box(modifier.clip(RoundedCornerShape(radius)).background(c.bg), contentAlignment = Alignment.Center) {
         Box(
             Modifier.fillMaxWidth(0.64f).height(6.dp).align(Alignment.BottomCenter).offset(y = (-8).dp)
@@ -190,11 +193,13 @@ fun BikeArt(modifier: Modifier, radius: androidx.compose.ui.unit.Dp) {
                     RoundedCornerShape(50),
                 ),
         )
-        Image(
-            painterResource(R.drawable.rider_street), null,
-            Modifier.fillMaxSize().padding(start = 6.dp, end = 6.dp, top = 8.dp, bottom = 10.dp),
-            contentScale = ContentScale.Fit, alignment = Alignment.BottomCenter,
-        )
+        val m = Modifier.fillMaxSize().padding(start = 6.dp, end = 6.dp, top = 8.dp, bottom = 10.dp)
+        Image(painterResource(R.drawable.rider_street), null, m, contentScale = ContentScale.Fit, alignment = Alignment.BottomCenter)
+        if (paint != null) {
+            Image(painterResource(R.drawable.rider_paint), null, m, contentScale = ContentScale.Fit, alignment = Alignment.BottomCenter,
+                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(tint, androidx.compose.ui.graphics.BlendMode.Modulate))
+            Image(painterResource(R.drawable.rider_paint_hi), null, m, contentScale = ContentScale.Fit, alignment = Alignment.BottomCenter)
+        }
     }
 }
 

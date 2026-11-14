@@ -76,7 +76,7 @@ fun Page(bottom: Dp, content: @Composable ColumnScope.() -> Unit) {
     Box(Modifier.fillMaxSize()) {
         CompositionLocalProvider(LocalSticky provides head) {
             Column(
-                Modifier.fillMaxSize().imePadding().rise().verticalScroll(scroll)
+                Modifier.fillMaxSize().imePadding().rise().verticalScroll(scroll, enabled = scroll.maxValue > 0) // nothing to scroll: no drag, no stretch
                     .windowInsetsPadding(WindowInsets.statusBars).windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = bottom + 90.dp), // .view: 150 below, less the tab bar
                 content = content,

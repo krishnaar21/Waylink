@@ -1,5 +1,7 @@
 package app.waylink.ui.shell
 
+import app.waylink.ui.components.fitScrollX
+import app.waylink.ui.components.fitScrollY
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.drawBehind
@@ -289,14 +291,8 @@ private fun VehicleBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNa
     var colour by rememberSaveable(key) { mutableStateOf(v?.colour ?: Catalog.COLOURS[s.vehicles.size % Catalog.COLOURS.size].first) }
     var picking by remember { mutableStateOf(false) }
     Spacer(Modifier.height(16.dp))
-    // The picked body colour washes the art's backdrop, so a swatch tap shows straight away.
-    val wash by androidx.compose.animation.animateColorAsState(Color(android.graphics.Color.parseColor(colour)), androidx.compose.animation.core.tween(250), label = "wash")
-    Box(Modifier.fillMaxWidth().height(150.dp)) {
-        BikeArt(Modifier.fillMaxSize(), 20.dp)
-        Box(Modifier.matchParentSize().clip(RoundedCornerShape(20.dp)).background(
-            androidx.compose.ui.graphics.Brush.verticalGradient(listOf(wash.copy(alpha = 0.10f), wash.copy(alpha = 0.32f))),
-        ))
-    }
+    // The bike in the picture wears the picked colour as soon as a swatch is tapped.
+    BikeArt(Modifier.fillMaxWidth().height(150.dp), 20.dp, colour)
     FormField("Model") { Select(modelName(s, Catalog.model(model)), { picking = !picking }, label = "Model") }
     AnimatedVisibility(picking) {
         Column(Modifier.padding(top = 8.dp).fillMaxWidth().card(20.dp, c.raised)) {
@@ -315,7 +311,7 @@ private fun VehicleBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNa
     FormField("Odometer") { Input(odo, { x -> odo = x.filter { it.isDigit() || it == '.' }.take(9) }, placeholder = "0", suffix = "km", label = "Odometer", keyboard = KeyboardType.Decimal) }
     FormField("Colour · " + (Catalog.COLOURS.firstOrNull { it.first == colour }?.second ?: "")) {
         // .swatch: 36 dp dots; the picked one gets an ink ring 4 dp out and a white check (.swatch .selmark)
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth().fitScrollX().padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Catalog.COLOURS.forEach { (hex, label) ->
                 val on = hex == colour
                 val col = Color(android.graphics.Color.parseColor(hex))
@@ -597,7 +593,7 @@ private fun ProfMedical(s: AppState, vm: AppViewModel, nav: SheetNav) {
     var iceName by rememberSaveable { mutableStateOf(p.iceName) }
     var icePhone by rememberSaveable { mutableStateOf(p.icePhone) }
     FormField("Blood group") {
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.fillMaxWidth().fitScrollX(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Catalog.BLOOD_GROUPS.forEach { b -> Chip(b.ifEmpty { "Not set" }, { blood = b }, on = blood == b) }
         }
     }

@@ -1,5 +1,7 @@
 package app.waylink.ui.onboarding
 
+import app.waylink.ui.components.fitScrollX
+import app.waylink.ui.components.fitScrollY
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.layout.requiredSize
@@ -216,7 +218,7 @@ private fun StepPage(
 ) {
     val c = W.c
     Column(
-        Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState())
+        Modifier.fillMaxSize().imePadding().fitScrollY()
             .windowInsetsPadding(WindowInsets.statusBars).windowInsetsPadding(WindowInsets.navigationBars)
             .padding(start = 24.dp, end = 24.dp, bottom = 42.dp),
     ) {
@@ -280,8 +282,8 @@ private fun AboutYou(s: AppState, onBack: () -> Unit, onSkip: () -> Unit, onSave
     Box(Modifier.fillMaxSize()) {
         StepPage("Step 2 of 3", "About you", "For your profile and the SOS screen. All optional, and it stays on this phone.", onBack, onSkip) {
             Row(
-                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(top = 4.dp, bottom = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                Modifier.fillMaxWidth().fitScrollX().padding(top = 4.dp, bottom = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 (1..11).map { "a$it" }.forEach { k ->
                     val on = avatar == k
@@ -289,7 +291,7 @@ private fun AboutYou(s: AppState, onBack: () -> Unit, onSkip: () -> Unit, onSave
                     val k2 = androidx.compose.animation.core.animateFloatAsState(if (on) 1f else 0.9f, androidx.compose.animation.core.tween(200, easing = app.waylink.ui.theme.Spring), label = "av").value
                     val img = androidx.compose.animation.core.animateFloatAsState(if (on) 0.95f else 0.82f, androidx.compose.animation.core.tween(200, easing = app.waylink.ui.theme.Spring), label = "avImg").value
                     Box(
-                        Modifier.size(72.dp).semantics { selected = on }.pressable(label = "Rider ${k.drop(1)}") { avatar = k },
+                        Modifier.size(68.dp).semantics { selected = on }.pressable(label = "Rider ${k.drop(1)}") { avatar = k },
                         contentAlignment = Alignment.Center,
                     ) {
                         Box(

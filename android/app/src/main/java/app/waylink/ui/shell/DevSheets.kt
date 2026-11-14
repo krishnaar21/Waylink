@@ -1,5 +1,7 @@
 package app.waylink.ui.shell
 
+import app.waylink.ui.components.fitScrollX
+import app.waylink.ui.components.fitScrollY
 import androidx.compose.foundation.Image
 import androidx.compose.ui.unit.em
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -428,7 +430,7 @@ private fun WeatherBody(w: Weather.State, d: Weather.Data?, vm: AppViewModel, ho
     Spacer(Modifier.height(20.dp))
     Txt("Next 12 hours", T.eyebrow, c.ink3)
     Row(
-        Modifier.padding(top = 10.dp).fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 4.dp),
+        Modifier.padding(top = 10.dp).fillMaxWidth().fitScrollX().padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         val hf = remember { SimpleDateFormat("h a", Locale.ENGLISH) }

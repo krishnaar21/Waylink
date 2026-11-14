@@ -1,5 +1,7 @@
 package app.waylink.ui.components
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -323,3 +325,11 @@ fun Modifier.swipeSides(minDx: Dp, ratio: Float = 1.3f, maxMs: Long = Long.MAX_V
         if (kotlin.math.abs(dx) >= minDx.toPx() && kotlin.math.abs(dx) >= kotlin.math.abs(dy) * ratio && lastT - t0 <= maxMs) onSwipe(if (dx < 0) 1 else -1)
     }
 }
+
+/** Scrolls sideways only when the row is wider than its room: a row that fits never drags or stretches. */
+@Composable
+fun Modifier.fitScrollX(): Modifier { val s = androidx.compose.foundation.rememberScrollState(); return this.horizontalScroll(s, enabled = s.maxValue > 0) }
+
+/** Scrolls only when the content is taller than its room: a page that fits never drags or stretches. */
+@Composable
+fun Modifier.fitScrollY(): Modifier { val s = androidx.compose.foundation.rememberScrollState(); return this.verticalScroll(s, enabled = s.maxValue > 0) }
