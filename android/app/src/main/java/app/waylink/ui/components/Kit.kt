@@ -68,6 +68,14 @@ import java.time.ZoneId
 
 /* Shared pieces for the inner pages and sheets: page scaffold, lists, chips, checks, date fields. */
 
+/**
+ * How far a page may run past the screen and still not scroll. The last 90 dp of every page is empty room under
+ * the tab bar, so an overflow within ~72 dp only spills blank space (less the tab bar's fade); scrolling it would
+ * just collapse the header for nothing.
+ */
+@Composable
+fun nearFitPx(): Int = with(androidx.compose.ui.platform.LocalDensity.current) { 72.dp.roundToPx() }
+
 /** A scrolling page under the status bar with the tab bar's room at the bottom. Its [PageHead] sticks, small, once it scrolls. */
 @Composable
 fun Page(bottom: Dp, content: @Composable ColumnScope.() -> Unit) {
@@ -76,7 +84,7 @@ fun Page(bottom: Dp, content: @Composable ColumnScope.() -> Unit) {
     Box(Modifier.fillMaxSize()) {
         CompositionLocalProvider(LocalSticky provides head) {
             Column(
-                Modifier.fillMaxSize().imePadding().rise().verticalScroll(scroll, enabled = scroll.maxValue > 0) // nothing to scroll: no drag, no stretch
+                Modifier.fillMaxSize().imePadding().rise().verticalScroll(scroll, enabled = scroll.maxValue > app.waylink.ui.components.nearFitPx())
                     .windowInsetsPadding(WindowInsets.statusBars).windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = bottom + 90.dp), // .view: 150 below, less the tab bar
                 content = content,

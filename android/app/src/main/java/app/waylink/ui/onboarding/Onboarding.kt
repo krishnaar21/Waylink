@@ -65,6 +65,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -282,7 +283,13 @@ private fun AboutYou(s: AppState, onBack: () -> Unit, onSkip: () -> Unit, onSave
     Box(Modifier.fillMaxSize()) {
         StepPage("Step 2 of 3", "About you", "For your profile and the SOS screen. All optional, and it stays on this phone.", onBack, onSkip) {
             Row(
-                Modifier.fillMaxWidth().fitScrollX().padding(top = 4.dp, bottom = 6.dp),
+                // .onb-avs { margin: 0 -24px; padding: 0 24px }: the row runs edge to edge, so circles slide off the
+                // screen's edge instead of being cut at the page margin, and the first one still lines up with the text.
+                Modifier.layout { m, cs ->
+                    val bleed = 24.dp.roundToPx()
+                    val p = m.measure(cs.copy(minWidth = cs.maxWidth + 2 * bleed, maxWidth = cs.maxWidth + 2 * bleed))
+                    layout(cs.maxWidth, p.height) { p.place(-bleed, 0) }
+                }.fitScrollX().padding(top = 4.dp, bottom = 6.dp, start = 21.dp, end = 21.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 (1..11).map { "a$it" }.forEach { k ->

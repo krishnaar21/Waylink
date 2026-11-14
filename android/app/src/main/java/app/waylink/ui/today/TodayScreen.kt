@@ -140,7 +140,7 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
     androidx.compose.runtime.SideEffect { head.title = LocalDate.now().dayOfWeek.getDisplayName(JTextStyle.FULL, Locale.ENGLISH); head.end = sos }
     Box(Modifier.fillMaxSize()) {
     Column(
-        Modifier.fillMaxWidth().rise().verticalScroll(scroll, enabled = scroll.maxValue > 0)
+        Modifier.fillMaxWidth().rise().verticalScroll(scroll, enabled = scroll.maxValue > app.waylink.ui.components.nearFitPx())
             .windowInsetsPadding(WindowInsets.statusBars)
             .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = bottomPadding + 90.dp),
