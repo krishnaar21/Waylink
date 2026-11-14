@@ -285,15 +285,19 @@ private fun AboutYou(s: AppState, onBack: () -> Unit, onSkip: () -> Unit, onSave
             ) {
                 (1..11).map { "a$it" }.forEach { k ->
                     val on = avatar == k
+                    // .onb-av, a touch bigger (66 vs 58): .9 scale off, accent ring and .95 art when picked
+                    val k2 = androidx.compose.animation.core.animateFloatAsState(if (on) 1f else 0.9f, androidx.compose.animation.core.tween(200, easing = app.waylink.ui.theme.Spring), label = "av").value
+                    val img = androidx.compose.animation.core.animateFloatAsState(if (on) 0.95f else 0.82f, androidx.compose.animation.core.tween(200, easing = app.waylink.ui.theme.Spring), label = "avImg").value
                     Box(
-                        Modifier.size(56.dp).semantics { selected = on }.pressable(label = "Rider ${k.drop(1)}") { avatar = k },
+                        Modifier.size(72.dp).semantics { selected = on }.pressable(label = "Rider ${k.drop(1)}") { avatar = k },
                         contentAlignment = Alignment.Center,
                     ) {
                         Box(
-                            Modifier.size(52.dp).clip(CircleShape).background(Color.White)
-                                .then(if (on) Modifier.border(2.5.dp, c.ink, CircleShape) else Modifier),
+                            Modifier.size(66.dp).graphicsLayer { scaleX = k2; scaleY = k2 }
+                                .then(if (on) Modifier.border(2.5.dp, c.accent, CircleShape) else Modifier)
+                                .padding(if (on) 4.dp else 0.dp).clip(CircleShape).background(Color.White),
                             contentAlignment = Alignment.Center,
-                        ) { Image(painterResource(avatarRes(k)), null, Modifier.size(43.dp)) }
+                        ) { Image(painterResource(avatarRes(k)), null, Modifier.fillMaxSize().graphicsLayer { scaleX = img; scaleY = img }) }
                     }
                 }
             }

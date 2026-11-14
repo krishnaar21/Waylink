@@ -243,8 +243,9 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     push -> (slideInHorizontally(tween(450, easing = app.waylink.ui.theme.Spring)) { (it * 0.26f).toInt() } +
                         fadeIn(tween(450, easing = app.waylink.ui.theme.Spring), initialAlpha = 0.2f)) togetherWith fadeOut(tween(90))
                     // .view.fade-in: fadeIn .3s ease, up from 6 px (tabs, and back from a page)
-                    else -> (fadeIn(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(0.25f, 0.1f, 0.25f, 1f))) +
-                        slideInVertically(tween(300, easing = androidx.compose.animation.core.CubicBezierEasing(0.25f, 0.1f, 0.25f, 1f))) { it / 140 }) togetherWith fadeOut(tween(90))
+                    // A touch quicker than web's .3 s and starting part-visible, so a tab tap reads as instant.
+                    else -> (fadeIn(tween(200, easing = androidx.compose.animation.core.CubicBezierEasing(0.25f, 0.1f, 0.25f, 1f)), initialAlpha = 0.25f) +
+                        slideInVertically(tween(200, easing = androidx.compose.animation.core.CubicBezierEasing(0.25f, 0.1f, 0.25f, 1f))) { it / 140 }) togetherWith fadeOut(tween(60))
                 }
             },
             label = "screen",
@@ -333,11 +334,16 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         }
         val shownTab = if (page == "logbook" || page == "fuel") Tab.TODAY else if (page == "profile") Tab.SETTINGS else tab
         var skipTap by remember { mutableStateOf(0L) }
-        TabBar(shownTab, s, live, Modifier.align(Alignment.BottomCenter), onSwipe = { dir ->
+        // The tapped tab lights up on the very next frame; the screen swaps one frame later, so a heavy
+        // screen never holds back the feedback under the finger.
+        var tapTab by remember { mutableStateOf<Tab?>(null) }
+        LaunchedEffect(tapTab) { tapTab?.let { androidx.compose.runtime.withFrameNanos { }; page = null; tab = it; tapTab = null } }
+        TabBar(tapTab ?: shownTab, s, live, Modifier.align(Alignment.BottomCenter), onSwipe = { dir ->
             skipTap = android.os.SystemClock.uptimeMillis()
-            Tab.entries.getOrNull(shownTab.ordinal + dir)?.let { vm.uiSwipe(dir); page = null; tab = it }
+            Tab.entries.getOrNull(shownTab.ordinal + dir)?.let { vm.uiSwipe(dir); tapTab = it }
         }) {
-            if (android.os.SystemClock.uptimeMillis() - skipTap > 400) { page = null; tab = it }
+            if (android.os.SystemClock.uptimeMillis() - skipTap > 400 && it != shownTab) tapTab = it
+            else if (page != null && it == shownTab) page = null
         }
         // .live-pill: while a ride records (or a route runs), a dark pill in the page header shows km and time;
         // tap it to go to Rides (or Route). Hidden on the tab that already shows it, on inner pages and in ride mode.
@@ -397,7 +403,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
 private val PAGES = setOf("logbook", "fuel", "profile")
 
 /** Every sheet the app can show, by key ("svc:<id>", "help:reminders", "garage"). */
-private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetNav, host: ExtraHost): SheetSpec? {
+internal fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetNav, host: ExtraHost): SheetSpec? {
     logbookSheet(key, s, vm, nav)?.let { return it }
     fuelSheet(key, s, vm, nav)?.let { return it }
     rideSheet(key, s, live, vm, nav)?.let { return it }

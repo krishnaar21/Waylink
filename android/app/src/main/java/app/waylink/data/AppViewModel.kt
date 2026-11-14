@@ -202,7 +202,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     }
 
     fun saveBike(model: String, plate: String, odo: Double, country: String) = commit { s ->
-        val v = newVehicle(model = model, plate = plate.trim().uppercase().take(13), odo = odo.coerceIn(0.0, 999_999.0))
+        val v = newVehicle(model = model, plate = plate.trim().uppercase().take(13), odo = odo.coerceIn(0.0, 9_999_999.9))
         s.copy(vehicles = listOf(v), active = v.id, profile = s.profile.copy(country = Catalog.country(country).code))
     }
 
@@ -883,7 +883,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     // ---------- Vehicles ----------
     /** Adds a vehicle ([id] null) or edits one. Returns an error to show, or null. */
     fun saveVehicle(id: String?, model: String, nickname: String, plate: String, odo: Double?, colour: String): String? {
-        if (odo == null || odo < 0 || odo >= 1_000_000) return "Enter the odometer in km."
+        if (odo == null || odo < 0 || odo >= 10_000_000) return "Add the odometer reading." // web: any reading ≥ 0; the cap only stops typos
         val m = Catalog.model(model).id
         val col = Catalog.COLOURS.firstOrNull { it.first == colour }?.first ?: Catalog.COLOURS[0].first
         val nick = nickname.trim().take(20)

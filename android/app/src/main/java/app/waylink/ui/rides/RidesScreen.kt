@@ -217,7 +217,11 @@ fun RidesScreen(s: AppState, live: Live, act: RidesActions, bottom: Dp) {
                 Txt("Your first ride shows up here, route and all.", T.row.copy(fontSize = 14.5.sp, textAlign = TextAlign.Center), c.ink3)
             }
         } else Column(Modifier.fillMaxWidth().card(20.dp).padding(4.dp)) {
-            v.trips.forEachIndexed { i, t ->
+            // Every ride is listed (as on web), but only the first screenful composes on the frame the tab opens;
+            // the rest join a batch per frame, so opening Rides with hundreds of rides stays instant.
+            var shown by remember { mutableStateOf(if (app.waylink.ui.theme.Motion.still) Int.MAX_VALUE else 12) }
+            LaunchedEffect(v.trips.size) { while (shown < v.trips.size) { androidx.compose.runtime.withFrameNanos { }; shown += 24 } }
+            v.trips.take(shown).forEachIndexed { i, t ->
                 if (i > 0) Hairline(start = 96.dp)
                 Row(
                     Modifier.fillMaxWidth().pressable(label = "${t.title}, ${dMed(t.start)}") { act.open(t.id) }.padding(12.dp),

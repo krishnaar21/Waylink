@@ -289,7 +289,14 @@ private fun VehicleBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNa
     var colour by rememberSaveable(key) { mutableStateOf(v?.colour ?: Catalog.COLOURS[s.vehicles.size % Catalog.COLOURS.size].first) }
     var picking by remember { mutableStateOf(false) }
     Spacer(Modifier.height(16.dp))
-    BikeArt(Modifier.fillMaxWidth().height(150.dp), 20.dp)
+    // The picked body colour washes the art's backdrop, so a swatch tap shows straight away.
+    val wash by androidx.compose.animation.animateColorAsState(Color(android.graphics.Color.parseColor(colour)), androidx.compose.animation.core.tween(250), label = "wash")
+    Box(Modifier.fillMaxWidth().height(150.dp)) {
+        BikeArt(Modifier.fillMaxSize(), 20.dp)
+        Box(Modifier.matchParentSize().clip(RoundedCornerShape(20.dp)).background(
+            androidx.compose.ui.graphics.Brush.verticalGradient(listOf(wash.copy(alpha = 0.10f), wash.copy(alpha = 0.32f))),
+        ))
+    }
     FormField("Model") { Select(modelName(s, Catalog.model(model)), { picking = !picking }, label = "Model") }
     AnimatedVisibility(picking) {
         Column(Modifier.padding(top = 8.dp).fillMaxWidth().card(20.dp, c.raised)) {
@@ -306,16 +313,23 @@ private fun VehicleBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNa
         { m -> FormField("Number plate", m) { Input(plate, { plate = it.uppercase() }, placeholder = "KA 05 MX 2481", label = "Number plate", caps = KeyboardCapitalization.Characters, maxLength = 13) } },
     )
     FormField("Odometer") { Input(odo, { x -> odo = x.filter { it.isDigit() || it == '.' }.take(9) }, placeholder = "0", suffix = "km", label = "Odometer", keyboard = KeyboardType.Decimal) }
-    FormField("Colour") {
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    FormField("Colour · " + (Catalog.COLOURS.firstOrNull { it.first == colour }?.second ?: "")) {
+        // .swatch: 36 dp dots; the picked one gets an ink ring 4 dp out and a white check (.swatch .selmark)
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Catalog.COLOURS.forEach { (hex, label) ->
                 val on = hex == colour
                 val col = Color(android.graphics.Color.parseColor(hex))
                 Box(
-                    Modifier.size(40.dp).semantics { selected = on }.pressable(label = label, role = Role.RadioButton) { colour = hex }
-                        .then(if (on) Modifier.border(2.dp, c.ink, CircleShape) else Modifier).padding(4.dp).clip(CircleShape).background(col)
-                        .border(1.dp, c.line, CircleShape),
-                )
+                    Modifier.size(46.dp).semantics { selected = on }.pressable(label = label, role = Role.RadioButton, scale = 0.9f) { colour = hex },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (on) Box(Modifier.size(44.dp).border(1.5.dp, c.ink, CircleShape))
+                    Box(Modifier.size(36.dp).clip(CircleShape).background(col).border(1.dp, Color.Black.copy(alpha = 0.08f), CircleShape), contentAlignment = Alignment.Center) {
+                        if (on) Box(Modifier.size(20.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.95f)), contentAlignment = Alignment.Center) {
+                            Ic("check", size = 12.dp, tint = Color(0xFF161514))
+                        }
+                    }
+                }
             }
         }
     }

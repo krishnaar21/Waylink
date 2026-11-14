@@ -28,6 +28,11 @@ jobs:
         run: ./gradlew :core:test --stacktrace
       - name: Build the debug APK
         run: ./gradlew :app:assembleDebug --stacktrace
+      # Every flow on the real view model and app: onboarding, simulated bike, rides, route, fuel, service,
+      # alerts, garage, settings, backup, previews, all tabs by tap and every sheet on sample and edge data.
+      - name: Run real-world scenarios
+        continue-on-error: true
+        run: ./gradlew :app:testDebugUnitTest --tests 'app.waylink.ScenarioTest' --stacktrace
       # Pictures of each screen at the web app's phone size, for side-by-side checks against web-v0.
       - name: Render screen pictures
         continue-on-error: true
