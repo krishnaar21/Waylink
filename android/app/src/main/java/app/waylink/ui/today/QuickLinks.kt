@@ -164,6 +164,7 @@ fun QuickLinksGrid(s: AppState, live: Live, f: Fmt, chosen: String, choose: (Str
     }
 }
 
+@Composable
 private fun Modifier.tap(l: QuickLinks.Link, go: (String) -> Unit) = this.pressable(label = "${l.title}, ${l.sub}") { go(l.go) }
 
 @Composable
