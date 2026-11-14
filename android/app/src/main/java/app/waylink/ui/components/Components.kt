@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
@@ -137,9 +138,10 @@ fun Modifier.pressable(enabled: Boolean = true, label: String? = null, role: Rol
     val src = remember { MutableInteractionSource() }
     val pressed by src.collectIsPressedAsState()
     // :active { transform: scale(…) } with transition .18s var(--spring)
-    val k by androidx.compose.animation.core.animateFloatAsState(if (pressed) scale else 1f, androidx.compose.animation.core.tween(180, easing = app.waylink.ui.theme.Spring), label = "press")
+    val k = androidx.compose.animation.core.animateFloatAsState(if (pressed) scale else 1f, androidx.compose.animation.core.tween(180, easing = app.waylink.ui.theme.Spring), label = "press")
+    // The scale is read in the layer block, so a press only redraws the layer and never re-records its content.
     return this
-        .scale(k)
+        .graphicsLayer { val v = k.value; scaleX = v; scaleY = v }
         .clickable(src, indication = null, enabled = enabled, role = role, onClick = onClick)
         .then(if (label != null) Modifier.semantics { contentDescription = label } else Modifier)
 }

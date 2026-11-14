@@ -142,37 +142,37 @@ fun Sheet(
                     .clickable(remember { MutableInteractionSource() }, indication = null) {}
                     .windowInsetsPadding(WindowInsets.navigationBars),
             ) {
-                // The grab handle stays put; the title and its sub scroll with the content, so a long sheet reads as one
-                // page. Back and close stay pinned at the top right of the sheet.
-                Box(
+                // The grab handle, title and sub stay put as one header block; only the content scrolls under it.
+                // Drag the header down to close. A hairline appears under it once the content has scrolled.
+                val scroll = rememberScrollState()
+                Column(
                     Modifier.fillMaxWidth().draggable(
                         dragState, Orientation.Vertical,
                         onDragStopped = { if (drag > with(density) { 120.dp.toPx() }) onClose(); drag = 0f },
-                    ).padding(top = 10.dp, bottom = 2.dp),
-                    contentAlignment = Alignment.Center,
+                    ),
                 ) {
-                    Box(Modifier.width(36.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(c.segOff))
-                }
-                Box(Modifier.fillMaxWidth().weight(1f, fill = false)) {
-                    Column(Modifier.verticalScroll(rememberScrollState())) {
-                        // .sheet-head: min 42 tall, padding 2 16 8 24 (16 with a back button), 10 apart; title 24/1.1
-                        Row(
-                            Modifier.fillMaxWidth().padding(start = if (onBack != null) 16.dp else 24.dp, end = 16.dp, top = 2.dp, bottom = if (sub != null) 2.dp else 8.dp).heightIn(min = 42.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            if (onBack != null) {
-                                CircleBtn("back", "Back", onBack, size = 36.dp, flat = true, iconSize = 17.dp)
-                                Spacer(Modifier.width(10.dp))
-                            }
-                            Txt(title, T.sheetTitle.copy(lineHeight = 26.4.sp), c.ink, Modifier.weight(1f).semantics { heading() }, maxLines = 3)
-                            Spacer(Modifier.width(46.dp)) // room for the pinned close button
-                        }
-                        // .sheet-sub: 15 ink-3, sits right under the title
-                        if (sub != null) Txt(sub, T.subtitle, c.ink3, Modifier.padding(start = 24.dp, end = 24.dp, bottom = 6.dp))
-                        Column(Modifier.padding(start = 24.dp, end = 24.dp, bottom = 24.dp), content = content)
+                    Box(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp), contentAlignment = Alignment.Center) {
+                        Box(Modifier.width(36.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(c.segOff))
                     }
-                    CircleBtn("x", "Close", onClose, Modifier.align(Alignment.TopEnd).padding(top = 5.dp, end = 16.dp), size = 36.dp, flat = true, iconSize = 17.dp)
+                    // .sheet-head: min 42 tall, padding 2 16 8 24 (16 with a back button), 10 apart; title 24/1.1; sub 15 ink-3 right under it
+                    Row(
+                        Modifier.fillMaxWidth().padding(start = if (onBack != null) 16.dp else 24.dp, end = 16.dp, top = 2.dp, bottom = 10.dp).heightIn(min = 42.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (onBack != null) {
+                            CircleBtn("back", "Back", onBack, size = 36.dp, flat = true, iconSize = 17.dp)
+                            Spacer(Modifier.width(10.dp))
+                        }
+                        Column(Modifier.weight(1f).semantics(mergeDescendants = true) { heading() }) {
+                            Txt(title, T.sheetTitle.copy(lineHeight = 26.4.sp), c.ink, maxLines = 2)
+                            if (sub != null) Txt(sub, T.subtitle.copy(fontSize = 14.sp, lineHeight = 19.sp), c.ink3, Modifier.padding(top = 2.dp), maxLines = 2)
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        CircleBtn("x", "Close", onClose, size = 36.dp, flat = true, iconSize = 17.dp)
+                    }
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(if (scroll.value > 0) c.line else Color.Transparent))
                 }
+                Column(Modifier.weight(1f, fill = false).verticalScroll(scroll).padding(start = 24.dp, end = 24.dp, bottom = 24.dp), content = content)
             }
         }
     }

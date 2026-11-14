@@ -342,7 +342,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         // .live-pill: while a ride records (or a route runs), a dark pill in the page header shows km and time;
         // tap it to go to Rides (or Route). Hidden on the tab that already shows it, on inner pages and in ride mode.
         val pRec = live.rec; val pNav = live.nav
-        val pillOn = (pNav != null || pRec != null) && !live.rideMode && page == null &&
+        val pillOn = (pNav != null || pRec != null) && !live.rideMode && page == null && stack.isEmpty() &&
             !(if (pNav != null) tab == Tab.ROUTE else tab == Tab.RIDES || tab == Tab.TODAY)
         androidx.compose.animation.AnimatedVisibility(
             pillOn, Modifier.align(Alignment.TopEnd),

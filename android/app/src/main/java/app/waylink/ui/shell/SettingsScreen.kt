@@ -493,12 +493,28 @@ private fun ThemePreview(key: String, on: Boolean, modifier: Modifier) {
             )
             .clip(shape).background(bg).border(1.dp, c.line, shape),
     ) {
-        androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
-            val w = maxWidth; val h = maxHeight
-            Box(Modifier.offset(w * 0.14f, h * 0.13f).size(w * 0.34f, h * 0.07f).clip(RoundedCornerShape(3.dp)).background(ink.copy(alpha = 0.7f)))
-            Box(Modifier.offset(w * 0.14f, h * 0.30f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card).border(0.5.dp, Color.Black.copy(alpha = 0.06f), RoundedCornerShape(6.dp)))
-            Box(Modifier.offset(w * 0.14f, h * 0.53f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card).border(0.5.dp, Color.Black.copy(alpha = 0.06f), RoundedCornerShape(6.dp)))
-            Box(Modifier.offset(w * 0.14f, h * 0.81f).size(w * 0.40f, h * 0.09f).clip(RoundedCornerShape(99.dp)).background(c.accent))
+        MiniPage(Modifier.fillMaxSize(), card, ink, c.accent)
+        // Auto follows the phone: Paper on the left, Paper dark cut in on a diagonal from the right.
+        if (key == "auto") {
+            val dk = app.waylink.ui.theme.THEMES.firstOrNull { it[0] == "sketchdark" }
+            if (dk != null) MiniPage(
+                Modifier.fillMaxSize().clip(androidx.compose.foundation.shape.GenericShape { sz, _ ->
+                    moveTo(sz.width * 0.62f, 0f); lineTo(sz.width, 0f); lineTo(sz.width, sz.height); lineTo(sz.width * 0.38f, sz.height); close()
+                }).background(hex(dk[2])),
+                hex(dk[3]), hex(dk[4]), c.accent,
+            )
         }
+    }
+}
+
+/** The tiny page inside a theme tile: a title bar, two cards and an accent pill (.tp u, i, i, b). */
+@Composable
+private fun MiniPage(modifier: Modifier, card: Color, ink: Color, accent: Color) {
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
+        val w = maxWidth; val h = maxHeight
+        Box(Modifier.offset(w * 0.14f, h * 0.13f).size(w * 0.34f, h * 0.07f).clip(RoundedCornerShape(3.dp)).background(ink.copy(alpha = 0.7f)))
+        Box(Modifier.offset(w * 0.14f, h * 0.30f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card).border(0.5.dp, Color.Black.copy(alpha = 0.06f), RoundedCornerShape(6.dp)))
+        Box(Modifier.offset(w * 0.14f, h * 0.53f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card).border(0.5.dp, Color.Black.copy(alpha = 0.06f), RoundedCornerShape(6.dp)))
+        Box(Modifier.offset(w * 0.14f, h * 0.81f).size(w * 0.40f, h * 0.09f).clip(RoundedCornerShape(99.dp)).background(accent))
     }
 }

@@ -116,7 +116,7 @@ private fun ColumnScope.BikeSheet(s: AppState, live: Live, vm: AppViewModel, nav
 private fun ColumnScope.PickSheet(live: Live, vm: AppViewModel, nav: SheetNav, startAll: Boolean) {
     val c = W.c
     val ctx = LocalContext.current
-    var all by rememberSaveable { mutableStateOf(startAll) }
+    val all = startAll
     var granted by remember { mutableStateOf(BikeLink.hasPermissions(ctx)) }
     var denied by remember { mutableStateOf(false) }
     var on by remember { mutableStateOf(vm.btEnabled()) }
@@ -163,11 +163,8 @@ private fun ColumnScope.PickSheet(live: Live, vm: AppViewModel, nav: SheetNav, s
         else if (live.found.isEmpty()) ListRow("No bike found", "Ignition on? Then search again.", "btSearch", chevron = false)
     }
     Spacer(Modifier.height(20.dp))
-    if (!scanning) {
-        Btn("Search again", { vm.pair(all) }, Modifier.fillMaxWidth(), icon = "btSearch")
-        Spacer(Modifier.height(8.dp))
-    }
-    Btn(if (all) "Show bikes only" else "Show all devices", { vm.stopScan(); all = !all }, Modifier.fillMaxWidth(), kind = BtnKind.LINE)
+    // Listing every device stays in Developer › Pair from all devices, as in v0; riders only see bikes.
+    if (!scanning) Btn("Search again", { vm.pair(all) }, Modifier.fillMaxWidth(), icon = "btSearch")
 }
 
 @Composable

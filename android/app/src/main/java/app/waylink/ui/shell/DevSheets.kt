@@ -34,6 +34,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -81,7 +83,7 @@ fun devSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetN
     "weather" -> {
         val w = live.weather
         val d = when (w) { is Weather.State.Ready -> w.data; is Weather.State.Loading -> w.last; else -> null }
-        val title = when { d != null -> null; w is Weather.State.Error -> "Weather offline"; w is Weather.State.Need -> "Weather for your ride"; else -> "Loading" }
+        val title = when { d != null -> null; w is Weather.State.Error -> "Weather offline"; w is Weather.State.Need -> "Weather for your ride"; else -> "Weather" }
         SheetSpec(title ?: "Weather", if (d != null) d.place.ifBlank { "Near you" } else null) { WeatherBody(w, d, vm, host) }
     }
     "pick-brand", "pick-icons" -> SheetSpec("Icons", "Appearance") { BrandPicker(s, vm) }
@@ -377,6 +379,7 @@ private fun ProtocolBody() {
 @Composable
 private fun WeatherBody(w: Weather.State, d: Weather.Data?, vm: AppViewModel, host: ExtraHost) {
     val c = W.c
+    if (d == null && w !is Weather.State.Need && w !is Weather.State.Error) { WeatherSkeleton(); return }
     if (d == null) {
         Spacer(Modifier.height(8.dp))
         Txt(when (w) {
@@ -452,5 +455,32 @@ private fun WeatherBody(w: Weather.State, d: Weather.Data?, vm: AppViewModel, ho
         Spacer(Modifier.width(8.dp))
         Txt("Showing ${d.place.ifBlank { "your location" }}", T.row.copy(fontSize = 13.5.sp), c.ink3, Modifier.weight(1f), maxLines = 1)
         Txt("Change", T.row.copy(fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold), c.ink)
+    }
+}
+
+/** The weather sheet's shape while the first reading loads: the same blocks, softly pulsing, so the sheet opens full size. */
+@Composable
+private fun WeatherSkeleton() {
+    val c = W.c
+    val a = if (app.waylink.ui.theme.Motion.still) 1f else androidx.compose.animation.core.rememberInfiniteTransition(label = "sk")
+        .animateFloat(1f, 0.45f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(900), androidx.compose.animation.core.RepeatMode.Reverse), label = "sk").value
+    val fill = c.inkA(0.07f * a)
+    @Composable fun bar(w: androidx.compose.ui.unit.Dp, h: androidx.compose.ui.unit.Dp, r: androidx.compose.ui.unit.Dp = 8.dp, m: Modifier = Modifier) =
+        Box(m.width(w).height(h).clip(RoundedCornerShape(r)).background(fill))
+    Column(Modifier.fillMaxWidth().semantics { contentDescription = "Loading the weather" }) {
+        Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            bar(44.dp, 44.dp, 12.dp)
+            Spacer(Modifier.width(16.dp))
+            Column { bar(96.dp, 52.dp, 10.dp); Spacer(Modifier.height(8.dp)); bar(130.dp, 18.dp) }
+        }
+        Box(Modifier.padding(top = 16.dp).fillMaxWidth().height(44.dp).clip(RoundedCornerShape(12.dp)).background(fill))
+        Box(Modifier.padding(top = 16.dp).fillMaxWidth().height(104.dp).clip(RoundedCornerShape(20.dp)).background(fill))
+        Spacer(Modifier.height(20.dp))
+        bar(110.dp, 14.dp, 4.dp)
+        Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            repeat(5) { bar(58.dp, 112.dp, 16.dp) }
+        }
+        Box(Modifier.padding(top = 24.dp).fillMaxWidth().height(40.dp).clip(RoundedCornerShape(12.dp)).background(fill))
+        Spacer(Modifier.height(30.dp))
     }
 }

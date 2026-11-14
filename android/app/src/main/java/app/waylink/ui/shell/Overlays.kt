@@ -102,7 +102,26 @@ fun RideMode(s: AppState, live: Live, onSettings: () -> Unit = {}, onLeave: () -
     BackHandler { }
     val rec = live.rec
     val trip = if (rec != null) f.num(rec.km, 1) else f.num(v.tripA.km, 1)
-    Box(Modifier.fillMaxSize().background(c.bg).clickable(remember { MutableInteractionSource() }, indication = null) {}) {
+    // Press and hold anywhere for a second to leave, so a bump on the road doesn't close it. Light ticks while it fills.
+    val hold = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val vib = remember { vibrator(ctx) }
+    Box(
+        Modifier.fillMaxSize().background(c.bg).pointerInput(Unit) {
+            detectTapGestures(onPress = {
+                val j = scope.launch {
+                    hold.animateTo(1f, tween(1000, easing = LinearEasing))
+                    tick(vib, 40, 200)
+                    onLeave()
+                }
+                val ticks = scope.launch { while (hold.value < 1f) { tick(vib, 12, 90); delay(120) } }
+                tryAwaitRelease()
+                ticks.cancel(); j.cancel()
+                scope.launch { hold.animateTo(0f, tween(200)) }
+            })
+        },
+    ) {
         Column(
             Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(start = 24.dp, end = 24.dp, top = 42.dp, bottom = 180.dp), // .rm-page: --top + 2, 24, --bottom + 168
@@ -161,7 +180,7 @@ fun RideMode(s: AppState, live: Live, onSettings: () -> Unit = {}, onLeave: () -
                 .semantics { role = Role.Button }.clickable(remember { MutableInteractionSource() }, indication = null, onClick = onSettings)
                 .padding(horizontal = 8.dp, vertical = 6.dp),
         )
-        Box(Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(bottom = 16.dp)) { HoldToLeave(onLeave) }
+        Box(Modifier.align(Alignment.BottomCenter).windowInsetsPadding(WindowInsets.safeDrawing).padding(bottom = 16.dp)) { HoldToLeave(hold.value, onLeave) }
     }
 }
 
@@ -266,37 +285,15 @@ private fun RmBars(bars: Int?, low: Boolean) {
     }
 }
 
-/** Press and hold for a second to leave, so a bump on the road doesn't close it. */
+/** The ring that fills while you hold anywhere on ride mode; TalkBack can still activate it directly. */
 @Composable
-private fun HoldToLeave(onLeave: () -> Unit) {
+private fun HoldToLeave(p: Float, onLeave: () -> Unit) {
     val c = W.c
-    val p = remember { Animatable(0f) }
-    val scope = rememberCoroutineScope()
-    val view = androidx.compose.ui.platform.LocalView.current
     Column(
         Modifier.semantics {
             role = Role.Button
             contentDescription = "Leave ride mode"
             onClick { onLeave(); true }
-        }.pointerInput(Unit) {
-            detectTapGestures(onPress = {
-                val j = scope.launch {
-                    p.animateTo(1f, tween(1000, easing = LinearEasing))
-                    view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
-                    onLeave()
-                }
-                // Light ticks while the ring fills, so the hold can be felt through gloves.
-                val ticks = scope.launch {
-                    while (true) {
-                        view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
-                        delay(110)
-                    }
-                }
-                tryAwaitRelease()
-                ticks.cancel()
-                j.cancel()
-                scope.launch { p.animateTo(0f, tween(200)) }
-            })
         }.padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -308,11 +305,26 @@ private fun HoldToLeave(onLeave: () -> Unit) {
             val k = size.width / 26f
             val tl = Offset(2f * k, 2f * k); val sz = Size(22f * k, 22f * k)
             drawCircle(off, radius = 11f * k, style = Stroke(2f * k))
-            drawArc(ink, -90f, 360f * p.value, false, tl, sz, style = Stroke(2f * k))
+            drawArc(ink, -90f, 360f * p, false, tl, sz, style = Stroke(2f * k))
             drawCircle(dot, radius = 4f * k)
         }
         Spacer(Modifier.height(8.dp))
-        Txt("Hold to leave", T.rowSub.copy(fontSize = 13.5.sp), c.ink3)
+        Txt("Hold anywhere to leave", T.rowSub.copy(fontSize = 13.5.sp), c.ink3)
+    }
+}
+
+private fun vibrator(ctx: android.content.Context): android.os.Vibrator? = runCatching {
+    if (android.os.Build.VERSION.SDK_INT >= 31)
+        (ctx.getSystemService(android.content.Context.VIBRATOR_MANAGER_SERVICE) as? android.os.VibratorManager)?.defaultVibrator
+    else @Suppress("DEPRECATION") (ctx.getSystemService(android.content.Context.VIBRATOR_SERVICE) as? android.os.Vibrator)
+}.getOrNull()?.takeIf { it.hasVibrator() }
+
+/** A short buzz through the vibrator itself; touch haptics are often off in system settings, this still reaches the hand. */
+private fun tick(v: android.os.Vibrator?, ms: Long, amp: Int) {
+    v ?: return
+    runCatching {
+        if (android.os.Build.VERSION.SDK_INT >= 26) v.vibrate(android.os.VibrationEffect.createOneShot(ms, if (v.hasAmplitudeControl()) amp else android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+        else @Suppress("DEPRECATION") v.vibrate(ms)
     }
 }
 

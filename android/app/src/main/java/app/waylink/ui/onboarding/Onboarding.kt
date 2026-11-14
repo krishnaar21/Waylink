@@ -198,7 +198,10 @@ private fun Intro(onSkip: () -> Unit, onDone: () -> Unit, onSample: () -> Unit) 
             }
             Spacer(Modifier.height(12.dp))
             val last = pager.currentPage == SLIDES.lastIndex || pager.targetPage == SLIDES.lastIndex
-            Btn(if (last) "Set up my bike" else "Next", { if (last) onDone() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } }, Modifier.fillMaxWidth())
+            // A fresh button for each label: on some phones the old one stayed blank after its text changed until touched.
+            androidx.compose.runtime.key(last) {
+                Btn(if (last) "Set up my bike" else "Next", { if (last) onDone() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } }, Modifier.fillMaxWidth())
+            }
             Spacer(Modifier.height(10.dp))
             LinkText("Explore with sample data", onSample, Modifier.align(Alignment.CenterHorizontally), style = T.body.copy(fontSize = 14.5.sp), color = c.ink3)
             Spacer(Modifier.height(36.dp))
