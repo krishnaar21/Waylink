@@ -125,7 +125,7 @@ fun navSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetN
         "place" -> {
             val p = s.places.firstOrNull { it.id == arg }
             if (arg != "new" && p == null) return null
-            SheetSpec(if (p == null) "New place" else p.name, "Saved places") { PlaceBody(p, vm, nav, host) }
+            SheetSpec(if (p == null) "New place" else p.name, "Saved places") { PlaceBody(s, p, vm, nav, host) }
         }
         "speed" -> SheetSpec("Speed alert", "Riding") { SpeedBody(s, vm) }
         "perms" -> SheetSpec("Permissions", "What Waylink can use") { PermsBody(s) }
@@ -177,15 +177,31 @@ private fun StatusLine(ok: Boolean, text: String) {
 }
 
 @Composable
-private fun PlaceBody(p: Place?, vm: AppViewModel, nav: SheetNav, host: ExtraHost) {
+private fun PlaceBody(s: AppState, p: Place?, vm: AppViewModel, nav: SheetNav, host: ExtraHost) {
     val c = W.c
+    val ctx = LocalContext.current
     val key = p?.id ?: "new"
     var name by rememberSaveable(key) { mutableStateOf(p?.name ?: "") }
     var kind by rememberSaveable(key) { mutableStateOf(p?.kind ?: "pin") }
     var address by rememberSaveable(key) { mutableStateOf(p?.address ?: "") }
     var lat by rememberSaveable(key) { mutableStateOf(p?.lat) }
     var lng by rememberSaveable(key) { mutableStateOf(p?.lng) }
+    // The address text the saved spot belongs to; typing something else lets go of it.
+    var spotFor by rememberSaveable(key) { mutableStateOf(if (p?.lat != null) p.address else null) }
     var busy by remember { mutableStateOf(false) }
+    var hits by remember { mutableStateOf<List<app.waylink.data.PlaceSearch.Hit>>(emptyList()) }
+    var searching by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(busy) { if (busy) { kotlinx.coroutines.delay(20_000); busy = false } }
+    // Suggestions while typing: a short pause first, so a search goes out per word, not per letter.
+    androidx.compose.runtime.LaunchedEffect(address) {
+        val q = address.trim()
+        if (q.length < 3 || q == spotFor) { hits = emptyList(); searching = false; return@LaunchedEffect }
+        kotlinx.coroutines.delay(450)
+        searching = true
+        val near = s.profile.weatherAt
+        hits = app.waylink.data.PlaceSearch.search(ctx, q, near?.lat ?: s.vehicle.parking?.lat, near?.lon ?: s.vehicle.parking?.lng)
+        searching = false
+    }
 
     FormField("Name") { Input(name, { name = it }, placeholder = "Chai stop", label = "Name", caps = KeyboardCapitalization.Words, maxLength = 30) }
     FormField("Kind") {
@@ -198,28 +214,51 @@ private fun PlaceBody(p: Place?, vm: AppViewModel, nav: SheetNav, host: ExtraHos
             }
         }
     }
-    FormField("Address") { Input(address, { address = it }, placeholder = "MG Road, Bengaluru", label = "Address", caps = KeyboardCapitalization.Words, maxLength = 120) }
+    FormField("Address") {
+        Input(address, { x ->
+            address = x
+            if (spotFor != null && x.trim() != spotFor) { lat = null; lng = null; spotFor = null }
+        }, placeholder = "Search a place or address", label = "Address", caps = KeyboardCapitalization.Words, maxLength = 120)
+    }
+    if (hits.isNotEmpty()) {
+        Spacer(Modifier.height(8.dp))
+        ListCard(flat = true) {
+            hits.forEachIndexed { i, h ->
+                if (i > 0) Hairline(66.dp)
+                ListRow(h.title, h.detail.ifEmpty { null }, icon = "pin", chevron = false, onClick = {
+                    address = h.label; lat = h.lat; lng = h.lng; spotFor = h.label; hits = emptyList()
+                    if (name.isBlank()) name = h.title.take(30)
+                })
+            }
+        }
+    } else if (searching) {
+        Txt("Searching…", T.rowSub, c.ink3, Modifier.padding(top = 8.dp, start = 4.dp))
+    }
     Spacer(Modifier.height(12.dp))
     val pinned = lat != null && lng != null
     if (pinned) {
         Row(Modifier.fillMaxWidth().card(16.dp).padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Ic("pin", size = 18.dp, tint = c.accent)
+            Ic("check", size = 18.dp, tint = c.sageInk)
             Spacer(Modifier.width(10.dp))
-            Txt("Pinned · %.5f, %.5f".format(java.util.Locale.ROOT, lat, lng), T.plate.copy(fontSize = 12.5.sp), c.ink2, Modifier.weight(1f))
-            Txt("Clear", T.link, c.ink2, Modifier.pressable(label = "Clear pin") { lat = null; lng = null })
+            Column(Modifier.weight(1f)) {
+                Txt("Exact spot saved", T.rowTitle.copy(fontSize = 14.sp), c.ink)
+                Txt("%.5f, %.5f".format(java.util.Locale.ROOT, lat, lng), T.plate.copy(fontSize = 11.5.sp), c.ink3)
+            }
+            Txt("Clear", T.link, c.ink2, Modifier.pressable(label = "Clear exact spot") { lat = null; lng = null; spotFor = null })
         }
     } else {
-        Btn(if (busy) "Finding you…" else "Pin where I am", {
+        Btn(if (busy) "Finding you…" else "Use my current location", {
             if (!busy) host.withLocation {
                 busy = true
                 vm.placeHere { la, ln, label ->
                     busy = false; lat = la; lng = ln
                     if (address.isBlank() && label.isNotBlank()) address = label
+                    spotFor = address.trim()
                 }
             }
         }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "pin")
     }
-    Hint("An address is searched in your maps app. A pin goes straight there.")
+    Hint(if (pinned) "Navigation goes straight to this spot." else "Pick a suggestion, or use where you are now, so navigation goes straight there. A typed address is searched in your maps app.")
     Spacer(Modifier.height(24.dp))
     Btn("Save", {
         val err = vm.savePlace(p?.id, name, kind, address, lat, lng)
@@ -323,19 +362,19 @@ fun LiveTurnsCard(s: AppState, openSheet: (String) -> Unit) {
     val src = NavSource.of(s.settings.navSource)
     val allowed = remember(tick) { NavFeed.allowed(ctx) }
     val (state, ok) = when {
-        !src.readsNotifications -> "Off. Rehearse and test turns only." to null
-        !allowed -> "Needs notification access" to false
-        else -> "Ready. Start navigating in ${src.name}." to true
+        !src.readsNotifications -> "Off · Waylink only" to null
+        !allowed -> "${src.name} · Needs access" to false
+        else -> "${src.name} · Ready" to true
     }
     Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 18.dp, vertical = 16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconTile("nav", size = 40.dp)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Txt(if (src.readsNotifications) "Live turns from ${src.name}" else "Live turns", T.rowTitle, c.ink)
+                Txt("Live turns", T.rowTitle, c.ink, maxLines = 1)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (ok != null) { Box(Modifier.size(7.dp).clip(CircleShape).background(if (ok) c.sage else c.amber)); Spacer(Modifier.width(7.dp)) }
-                    Txt(state, T.rowSub, c.ink3)
+                    Txt(state, T.rowSub, c.ink3, maxLines = 1)
                 }
             }
             Chip("Change", { openSheet("nav-source") })

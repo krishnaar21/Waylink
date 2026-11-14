@@ -245,6 +245,16 @@ class ScenarioTest {
         vm.deletePlace(ps.first().id)
         assertEquals(1, vm.state.value.places.size)
 
+        // Place suggestions: named places first, then the area; a street address reads as one; bad coordinates go.
+        val hits = app.waylink.data.PlaceSearch.parsePhoton("""{"features":[
+            {"geometry":{"coordinates":[77.6101,12.9756]},"properties":{"name":"Brigade Road","city":"Bengaluru","state":"Karnataka"}},
+            {"geometry":{"coordinates":[77.6101,12.9756]},"properties":{"name":"Brigade Road","city":"Bengaluru","state":"Karnataka"}},
+            {"geometry":{"coordinates":[77.59,12.97]},"properties":{"street":"MG Road","housenumber":"12","city":"Bengaluru"}},
+            {"geometry":{"coordinates":[200,12.97]},"properties":{"name":"Nowhere"}}]}""")
+        assertEquals(2, hits.size)
+        assertEquals("Brigade Road, Bengaluru, Karnataka", hits[0].label)
+        assertEquals("MG Road 12", hits[1].title); assertEquals(12.97, hits[1].lat, 1e-6)
+
         vm.setSpeedAlert(10); assertEquals(30, vm.state.value.settings.speedAlert)
         vm.setSpeedAlert(80); assertEquals(80, vm.state.value.settings.speedAlert)
         vm.setSpeedAlert(0); assertEquals(0, vm.state.value.settings.speedAlert)
