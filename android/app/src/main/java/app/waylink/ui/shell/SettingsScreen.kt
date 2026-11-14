@@ -219,6 +219,8 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             ListRow("Keep the screen on", "While in ride mode", icon = "sparkles", trailing = { Switch(st.wakeLock, "Keep the screen on", { act.toggle("wakeLock") }) })
             Hairline(66.dp)
             ListRow("Street names on the bike", "Road name beside the arrow", icon = "eye", trailing = { Switch(st.streetNames, "Street names on the bike", { act.toggle("streetNames") }) })
+            Hairline(66.dp)
+            ListRow("Music from the handlebar", "Tap plays or pauses, hold skips", icon = "volume", trailing = { Switch(st.handlebarMedia, "Music from the handlebar", { act.toggle("handlebarMedia") }) })
             // Reading another maps app's turns is Android-only; an iPhone build leaves the row out.
             if (app.waylink.core.Platform.caps.readNavApps) {
                 Hairline(66.dp)

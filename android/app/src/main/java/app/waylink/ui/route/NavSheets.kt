@@ -469,3 +469,43 @@ private fun NearbyBody(kind: app.waylink.data.Nearby.Kind, s: AppState, live: Li
     Btn("Search in ${src.name}", { if (!NavApps.search(ctx, src, kind.search)) vm.toast("No app can open maps.") }, Modifier.fillMaxWidth(), kind = if (failed) BtnKind.INK else BtnKind.LINE, icon = "map")
     Hint("From OpenStreetMap, so a few may be missing. Tap one to navigate there${if (kind == app.waylink.data.Nearby.Kind.HOSPITAL) ". In an emergency, call 112 first" else ""}.")
 }
+
+/** What stops turns or calls reaching the bike, worst first; null when nothing does. Key is the sheet that fixes it. */
+data class Attention(val text: String, val key: String)
+
+fun attentionOf(ctx: Context, s: AppState, live: Live): Attention? {
+    val v = s.vehicle
+    if (!live.simulated && Platform.caps.bluetooth && v.bike.id != null) {
+        val bt = runCatching { (ctx.getSystemService(Context.BLUETOOTH_SERVICE) as? android.bluetooth.BluetoothManager)?.adapter?.isEnabled }.getOrNull()
+        if (bt == false) return Attention("Bluetooth is off", "pair")
+    }
+    val need = Perms.needed(ctx, s)
+    if (need > 0) return Attention(if (need == 1) "1 permission needed" else "$need permissions needed", "perms")
+    val online = runCatching {
+        val cm = ctx.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        cm.getNetworkCapabilities(cm.activeNetwork)?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+    }.getOrDefault(true)
+    if (!online) return Attention("Offline · weather and search wait", "")
+    return null
+}
+
+/** A small amber chip under a page title when something needs the rider; tap to fix it. */
+@Composable
+fun AttentionChip(s: AppState, live: Live, open: (String) -> Unit) {
+    val c = W.c
+    val ctx = LocalContext.current
+    val tick = rememberResumeTick()
+    var beat by remember { mutableIntStateOf(0) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(10_000); beat++ } }
+    val a = remember(tick, beat, s.settings.navSource, live.simulated, s.vehicle.bike.id) { attentionOf(ctx, s, live) } ?: return
+    Row(
+        Modifier.padding(top = 14.dp).clip(RoundedCornerShape(999.dp)).background(c.tintAmber)
+            .then(if (a.key.isEmpty()) Modifier else Modifier.pressable(label = "${a.text}. Fix it") { open(a.key) }).padding(horizontal = 12.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Ic("alert", size = 15.dp, tint = c.ink)
+        Spacer(Modifier.width(7.dp))
+        Txt(a.text, T.rowSub.copy(fontSize = 13.sp), c.ink, maxLines = 1)
+        if (a.key.isNotEmpty()) { Spacer(Modifier.width(6.dp)); Ic("chev", size = 13.dp, tint = c.ink3) }
+    }
+}

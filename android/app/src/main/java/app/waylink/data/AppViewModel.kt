@@ -561,7 +561,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         }
         val label = if (kind == "tap") "Play / pause" else "Next track"
         commit { it.copy(alerts = logAlert(it.alerts, "button", "${if (kind == "tap") "Tap" else "Long press"} · $label", count = false)) }
-        toast("Handlebar · $label")
+        // The phone's music follows the handlebar, when the rider has that on.
+        if (_state.value.settings.handlebarMedia) {
+            val ctx = getApplication<Application>()
+            val playing = PhoneStatus.musicActive(ctx)
+            PhoneStatus.media(ctx, next = kind != "tap")
+            buzz(10)
+            toast(if (kind == "tap") (if (playing) "Paused" else "Playing") else "Next track")
+        } else toast("Handlebar · $label")
     }
 
     fun fmt() = Fmt(_state.value.country.locale)
@@ -652,9 +659,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
                 if (now - beat >= app.waylink.core.Protocol.HEARTBEAT_MS) {
                     beat = now
                     val call = l.call
-                    pushFrame("Status", app.waylink.core.Protocol.generalV2(l.battery ?: 80,
+                    // The phone's real battery, signal and volume, every heartbeat.
+                    val ph = PhoneStatus.read(getApplication())
+                    pushFrame("Status", app.waylink.core.Protocol.generalV2(ph.battery ?: l.battery ?: 80,
                         if (call == null) 0 else if (call.ringing) app.waylink.core.Protocol.Call.INCOMING else app.waylink.core.Protocol.Call.ACTIVE,
-                        call?.name, _state.value.alerts.missed.size))
+                        call?.name, _state.value.alerts.missed.size, volumeLevel = ph.volume, signalBars = ph.bars ?: 4, phoneModel = ph.model))
+                    _live.update { it.copy(battery = ph.battery ?: it.battery) }
                 }
                 l.nav?.let { n ->
                     val eta = java.time.Instant.ofEpochMilli(n.eta).atZone(java.time.ZoneId.systemDefault())
@@ -948,6 +958,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "autoRecord" -> st.copy(autoRecord = !st.autoRecord)
             "wakeLock" -> st.copy(wakeLock = !st.wakeLock)
             "streetNames" -> st.copy(streetNames = !st.streetNames)
+            "handlebarMedia" -> st.copy(handlebarMedia = !st.handlebarMedia)
             "sounds" -> st.copy(sounds = !st.sounds)
             "devFrames" -> st.copy(devFrames = !st.devFrames)
             "allThemes" -> st.copy(allThemes = !st.allThemes)

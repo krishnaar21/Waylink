@@ -4,6 +4,7 @@
 
     <!-- Weather only: the city name goes to Open-Meteo. Nothing else leaves the phone. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Short taps of vibration on toggles and events, like the web app's navigator.vibrate. -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Bluetooth to the bike's cluster: "nearby devices" on Android 12+, the older pair on 11 and below. -->

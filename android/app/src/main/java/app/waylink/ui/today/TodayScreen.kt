@@ -157,6 +157,7 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
             }
             CircleBtn("sos", "Emergency SOS", act::sos, Modifier.padding(top = 11.dp), tint = c.red)
         }
+        app.waylink.ui.route.AttentionChip(s, live) { act.open(it) }
         // .preview-bar sits 26 under the header and 14 above the bike card
         live.scenario?.let { Spacer(Modifier.height(26.dp)); app.waylink.ui.components.PreviewBar(it, act::exitPreview) }
 

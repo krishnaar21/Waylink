@@ -78,6 +78,8 @@ data class Settings(
     val autoAsked: Boolean = false,
     val wakeLock: Boolean = true,
     val streetNames: Boolean = false,
+    /** Handlebar tap plays or pauses the phone's music, a long press skips (when no call is showing). */
+    val handlebarMedia: Boolean = true,
     val simulated: Boolean = false,
     val rideChart: Int = 0,
     val progress: String = "gauge",

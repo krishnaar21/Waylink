@@ -122,6 +122,8 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
     }
     Page(bottom) {
         PageHead("Route", "Turns on your bike")
+        AttentionChip(s, live, openSheet)
+        Spacer(Modifier.height(6.dp))
         SectionHead("Where to?")
         // .sec-note: tucked 6 dp up under the heading, inset like it, 12 above the card
         Txt("Plan the ride in ${src.name}. Its turns show on your bike.", T.row.copy(lineHeight = 20.3.sp), c.ink3, Modifier.offset(y = (-6).dp).padding(horizontal = 14.dp))

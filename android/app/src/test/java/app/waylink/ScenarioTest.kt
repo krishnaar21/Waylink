@@ -277,6 +277,16 @@ class ScenarioTest {
             {"lat":"12.98","lon":"77.61","category":"shop","type":"car","name":"Fuel Motors"}]""", 12.97, 77.59)
         assertEquals(1, nom.size); assertEquals("HP Petrol", nom[0].name); assertTrue(nom[0].open24)
 
+        // Handlebar music: on by default, a press goes to the phone's player; off, it's only logged.
+        assertTrue(vm.state.value.settings.handlebarMedia)
+        vm.press("tap"); vm.press("long")
+        vm.toggleSetting("handlebarMedia"); assertTrue(!vm.state.value.settings.handlebarMedia)
+        vm.press("tap")
+        val ph = app.waylink.data.PhoneStatus.read(ApplicationProvider.getApplicationContext())
+        assertTrue(ph.volume in 0..15)
+        // Location isn't granted in the test, so the chip asks for it.
+        assertEquals("perms", app.waylink.ui.route.attentionOf(ApplicationProvider.getApplicationContext(), vm.state.value, vm.live.value)?.key)
+
         vm.setSpeedAlert(10); assertEquals(30, vm.state.value.settings.speedAlert)
         vm.setSpeedAlert(80); assertEquals(80, vm.state.value.settings.speedAlert)
         vm.setSpeedAlert(0); assertEquals(0, vm.state.value.settings.speedAlert)

@@ -121,6 +121,11 @@ fun FuelScreen(s: AppState, act: FuelActions, bottom: Dp) {
                     (if (fs.sinceFull != null) " · ${f.num(fs.sinceFull)} km since full" else ""),
                 T.eyebrow.copy(fontSize = 14.sp), c.ink3,
             )
+            // Where reserve starts, and how far it lasts at this bike's own mileage.
+            if (fs.reserve > 0) Txt(
+                "Reserve below ${f.num(fs.reserve, 1)} L" + (fs.avg?.let { ", about ${f.num(fs.reserve * it)} km" } ?: ""),
+                T.eyebrow.copy(fontSize = 14.sp), if (fs.onReserve) c.red else c.ink3, Modifier.padding(top = 4.dp),
+            )
         }
         Spacer(Modifier.height(12.dp))
         Btn("Log fuel", { act.sheet("fuel:new") }, Modifier.fillMaxWidth(), icon = "fuel")
@@ -151,6 +156,12 @@ fun FuelScreen(s: AppState, act: FuelActions, bottom: Dp) {
             Kv("Last 30 days", "${plural(fs.last30.count, "fill", "fills")} · ${f.num(fs.last30.litres, 1)} L · $cur${f.num(fs.last30.cost)}")
             Hairline()
             Kv("All fuel", cur + f.num(fs.totalSpent))
+            Hairline()
+            // Total cost of ownership: fuel plus every workshop visit's bill.
+            val service = v.records.sumOf { it.cost }
+            Kv("Service & repairs", cur + f.num(service))
+            Hairline()
+            Kv("Total to run", cur + f.num(fs.totalSpent + service))
             Hairline()
             Kv("Price per litre", cur + f.num(fuelPriceOf(s), 2), edit = true) { act.sheet("fuelprice") }
         }
