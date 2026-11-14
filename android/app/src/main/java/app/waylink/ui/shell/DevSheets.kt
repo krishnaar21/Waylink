@@ -93,7 +93,7 @@ fun devSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetN
         Spacer(Modifier.height(8.dp))
         Txt("Pair once and Waylink reconnects by itself whenever the ignition is on. Turns, callers and the time then show on your display.", T.sheetLead, W.c.ink2)
         Spacer(Modifier.height(20.dp))
-        Btn("Pair your bike", { nav.open("pair") }, Modifier.fillMaxWidth(), icon = "bt")
+        Btn("Pair your bike", { nav.open("pick") }, Modifier.fillMaxWidth(), icon = "bt")
         Spacer(Modifier.height(8.dp))
         Btn("Try the simulated bike", { vm.simOn(); nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "bolt")
         Spacer(Modifier.height(8.dp))

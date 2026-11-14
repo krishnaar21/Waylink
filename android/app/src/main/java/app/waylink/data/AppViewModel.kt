@@ -38,8 +38,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/** What the bike link is doing. Real Bluetooth arrives in a later build; the simulated bike works now. */
-enum class LinkState { IDLE, CONNECTED }
+/** What the bike link is doing (web link.state): idle, looking for bikes, linking, linked, or retrying after a drop. */
+enum class LinkState { IDLE, SCANNING, CONNECTING, CONNECTED, RECONNECTING }
 
 data class Live(
     val link: LinkState = LinkState.IDLE,
@@ -76,6 +76,10 @@ data class Live(
     /** The last frame built for the bike: its name and bytes (web link.lastFrame), and how many went out. */
     val lastFrame: Pair<String, ByteArray>? = null,
     val frameCount: Int = 0,
+    /** Bikes seen by the last Bluetooth scan, strongest signal first. */
+    val found: List<FoundBike> = emptyList(),
+    /** The cluster's Bluetooth name while a real bike is linked or linking. */
+    val linkName: String? = null,
     /** A sheet to open as soon as the main screens are up (e.g. "pair" after onboarding). */
     val ask: String? = null,
     /** A Settings section to scroll to and flash (web goto-riding), or null. */
@@ -111,7 +115,31 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     /** The web's sound effects; follows the "Sound effects" switch. */
     val sound = Sound(app).also { it.enabled = _state.value.settings.sounds }
 
-    init { refreshWeather(); sound.play(Sound.Fx.ENGINE_START) }
+    /** The real Bluetooth link. Its states only show while the simulated bike is off. */
+    private val link: BikeLink by lazy {
+        BikeLink(
+            app, viewModelScope,
+            onState = { st, _ ->
+                if (!_live.value.simulated) {
+                    val was = _live.value.link
+                    _live.update { it.copy(link = st, linkName = link.deviceName, engine = if (st == LinkState.CONNECTED) it.engine else null) }
+                    if (st == LinkState.CONNECTED && was != LinkState.CONNECTED) onRealLinked()
+                    if (was == LinkState.CONNECTED && st == LinkState.RECONNECTING) { sound.click(false); toast("Bike went quiet. Retrying.") }
+                }
+            },
+            onLog = ::logLink,
+            onFound = { f -> _live.update { it.copy(found = f) } },
+            onButton = { kind -> press(kind) },
+        )
+    }
+
+    init {
+        refreshWeather(); sound.play(Sound.Fx.ENGINE_START)
+        // A bike paired before links again by itself when the app opens, as the web app's restore().
+        _state.value.vehicle.bike.id?.let { id ->
+            if (BikeLink.hasPermissions(app) && link.enabled) viewModelScope.launch { delay(1200); if (_live.value.link == LinkState.IDLE) link.connect(id, _state.value.vehicle.bike.name) }
+        }
+    }
 
     private fun load(): AppState = try {
         if (file.baseFile.exists()) Vault.decode(String(file.readFully(), Charsets.UTF_8)) else freshState()
@@ -191,7 +219,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     fun finishOnboarding(simulated: Boolean, pair: Boolean = false) {
         commit { it.copy(onboarded = true) }
         if (simulated) simOn()
-        if (pair) _live.update { it.copy(ask = "pair") }
+        if (pair) _live.update { it.copy(ask = "pick") }
     }
 
     fun clearAsk() = _live.update { it.copy(ask = null) }
@@ -410,7 +438,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     fun renameTrip(id: String, title: String) = veh { v -> v.copy(trips = v.trips.map { if (it.id == id) it.copy(title = title.trim().take(60).ifEmpty { it.title }) else it }) }
     fun deleteTrip(id: String) { veh { v -> v.copy(trips = v.trips.filter { it.id != id }) }; toast("Ride deleted. The odometer is unchanged.") }
 
-    override fun onCleared() { stopGps(); sound.release(); super.onCleared() }
+    override fun onCleared() { stopGps(); sound.release(); runCatching { link.stopScan() }; super.onCleared() }
 
     // ---------- Alerts ----------
     private fun logAlert(a: Alerts, kind: String, name: String, count: Boolean = true): Alerts {
@@ -502,7 +530,64 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     fun fmt() = Fmt(_state.value.country.locale)
 
     // ---------- Link ----------
+    /** Can this phone pair at all, and is Bluetooth on? */
+    fun btSupported() = link.supported
+    fun btEnabled() = link.enabled
+
+    /** Look for bikes (web pair()); [showAll] lists every device nearby, for clusters that don't advertise the service. */
+    fun pair(showAll: Boolean = false) {
+        if (!link.supported) { toast("This phone has no Bluetooth LE. Try the simulated bike."); return }
+        if (!link.enabled) { toast("Turn on Bluetooth first."); return }
+        if (_live.value.simulated) quietSimOff()
+        link.scan(showAll)
+    }
+
+    fun stopScan() { link.stopScan(); if (_live.value.link == LinkState.SCANNING) _live.update { it.copy(link = LinkState.IDLE) } }
+
+    /** The rider picked a bike from the list: remember it on this vehicle and link. */
+    fun connectTo(b: FoundBike) {
+        commit { it.updateVehicle { v -> v.copy(bike = app.waylink.core.PairedBike(b.address, b.name)) } }
+        link.connect(b.address, b.name)
+    }
+
+    fun reconnect() {
+        val bike = _state.value.vehicle.bike
+        if (bike.id == null) { pair(false); return }
+        if (!link.enabled) { toast("Turn on Bluetooth first."); return }
+        if (_live.value.simulated) quietSimOff()
+        link.connect(bike.id, bike.name)
+    }
+
+    /** Cancel, Stop or Disconnect (web cancel-link / disconnect). */
+    fun disconnect() {
+        if (_live.value.simulated) { simOff(); return }
+        streamJob?.cancel()
+        link.disconnect()
+        sound.click(false)
+        ensureGeo()
+    }
+
+    /** Forget this bike: unlink and drop its address from the vehicle. */
+    fun forgetBike() {
+        if (_live.value.simulated) quietSimOff() else link.forget()
+        streamJob?.cancel()
+        commit { it.updateVehicle { v -> v.copy(bike = app.waylink.core.PairedBike()) } }
+        _live.update { it.copy(link = LinkState.IDLE, linkName = null) }
+        toast("Bike forgotten. Pair it again any time.")
+    }
+
+    private fun onRealLinked() {
+        buzz(15); sound.click(true)
+        logLink("Linked. Status every 5 s, turns every 0.8 s")
+        startStream()
+        toast("Linked to ${link.deviceName}.")
+        ensureGeo()
+    }
+
+    private fun quietSimOff() { streamJob?.cancel(); _live.update { it.copy(link = LinkState.IDLE, simulated = false, engine = null) } }
+
     fun simOn() {
+        if (!_live.value.simulated && _live.value.link != LinkState.IDLE) link.disconnect()
         if (_live.value.link != LinkState.CONNECTED) { buzz(15); sound.click(true) }
         logLink("Simulated cluster: started"); logLink("Linked. Status every 5 s, turns every 0.8 s")
         _live.update { it.copy(link = LinkState.CONNECTED, simulated = true, engine = 83, speed = 0) }
@@ -513,8 +598,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     // The frames the cluster would get, built by the real protocol code, so "Show Bluetooth messages" has something to show.
     private var streamJob: Job? = null
-    private fun pushFrame(label: String, bytes: ByteArray) =
+    private fun pushFrame(label: String, bytes: ByteArray) {
+        // A real cluster gets the bytes too; the simulated one only shows them.
+        if (!_live.value.simulated) link.write(when (label) { "Turn" -> "tbt"; "Missed call" -> "missedCall"; "WhatsApp" -> "alerts"; else -> "general" }, bytes)
         _live.update { it.copy(frames = (it.frames + "$label · ${app.waylink.core.Protocol.hex(bytes)}").takeLast(6), lastFrame = label to bytes, frameCount = it.frameCount + 1) }
+    }
     private fun startStream() {
         streamJob?.cancel()
         streamJob = viewModelScope.launch {

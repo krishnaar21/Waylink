@@ -268,6 +268,9 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun garage() = openSheet("garage")
                     override fun sos() = openSheet("sos")
                     override fun pair() = openSheet("pair")
+                    override fun pairNew() = openSheet("pair-intro")
+                    override fun reconnect() = vm.reconnect()
+                    override fun cancelLink() = vm.disconnect()
                     override fun ride() = vm.openRideMode(true)
                     override fun logbook() { page = "logbook" }
                     override fun service(id: String) = openSheet("svc:$id")
@@ -293,7 +296,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                         "onboarding" -> vm.showOnboarding(true)
                         "splash" -> vm.showSplash()
                         "loading" -> vm.showLoading()
-                        "pair-all" -> openSheet("pair")
+                        "pair-all" -> openSheet("pick-all")
                         // Android has no cached web build to fetch; reloading the screen keeps every bit of data.
                         "refresh" -> { vm.showLoading("Refreshing"); hostActivity?.recreate(); Unit }
                         else -> Unit
@@ -400,15 +403,13 @@ private fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, n
     rideSheet(key, s, live, vm, nav)?.let { return it }
     settingsSheet(key, s, live, vm, nav)?.let { return it }
     devSheet(key, s, live, vm, nav, host)?.let { return it }
+    linkSheet(key, s, live, vm, nav)?.let { return it }
     extraSheet(key, s, live, vm, nav, host)?.let { return it }
     app.waylink.ui.route.routeSheet(key, s, live, vm, nav)?.let { return it }
     val arg = key.substringAfter(':', "")
     return when (key.substringBefore(':')) {
         "garage" -> SheetSpec("Your bikes", "Garage") {
             GarageList(s, onPick = { vm.switchVehicle(it); nav.close() }, onAdd = { nav.open("vehicle:new") })
-        }
-        "pair" -> SheetSpec("Link your bike", "Bluetooth") {
-            PairSheet(live, onSim = { vm.simOn(); nav.close() }, onSimOff = { vm.simOff(); nav.close() }, onLog = { nav.open("log") })
         }
         "sos" -> SheetSpec("SOS", "Emergency · ${s.country.name}") { SosSheet(s, live) { nav.close(); host.page("profile") } }
         "clear" -> {
@@ -547,28 +548,6 @@ private fun Placeholder(title: String, sub: String, what: String, bottom: androi
             Spacer(Modifier.height(6.dp))
             Txt(what, T.sheetLead, c.ink2)
         }
-    }
-}
-
-@Composable
-private fun PairSheet(live: Live, onSim: () -> Unit, onSimOff: () -> Unit, onLog: () -> Unit = {}) {
-    val c = W.c
-    Spacer(Modifier.height(12.dp))
-    if (live.link == LinkState.CONNECTED) {
-        Txt("The simulated cluster is linked. Readings and the ride button behave as if a bike were there.", T.sheetLead, c.ink2)
-        Spacer(Modifier.height(20.dp))
-        Btn("Unlink the simulated bike", onSimOff, Modifier.fillMaxWidth(), kind = BtnKind.LINE)
-    } else {
-        Txt("Real pairing with the Bluetooth cluster arrives in the next Android build. Until then, the simulated bike shows how everything works.", T.sheetLead, c.ink2)
-        Spacer(Modifier.height(20.dp))
-        Btn("Try the simulated bike", onSim, Modifier.fillMaxWidth(), icon = "bolt")
-    }
-    // .divider + .sheet-row: the connection log, one tap away
-    Spacer(Modifier.height(20.dp))
-    app.waylink.ui.components.Hairline()
-    Row(Modifier.fillMaxWidth().pressable(label = "Connection log", scale = 1f, onClick = onLog).padding(vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Txt("Connection log", T.body.copy(fontSize = 16.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), c.ink, Modifier.weight(1f))
-        Ic("chev", size = 16.dp, tint = c.ink3)
     }
 }
 

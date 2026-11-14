@@ -116,7 +116,7 @@ object Sample {
     }
 
     /** A wandering GPS track, the same pseudo-random walk as the web app. */
-    private fun squiggle(start: Pair<Double, Double>, km: Double, seed: Int, startTs: Long, min: Int): List<List<Double>> {
+    internal fun squiggle(start: Pair<Double, Double>, km: Double, seed: Int, startTs: Long, min: Int): List<List<Double>> {
         var r = seed * 9301L + 49297L
         fun rnd(): Double { r = (r * 9301 + 49297) % 233280; return r / 233280.0 }
         val n = 40
@@ -153,26 +153,74 @@ fun scenarioState(kind: String, base: AppState, now: Long = System.currentTimeMi
     val v0 = newVehicle(model = "dominar400", nickname = "Long-distance tourer", plate = "22 BH 1234 AA", odo = 199999.9, colour = "#E9E6DF", now = now)
     val v = v0.copy(
         tripA = TripMeter(9999.9, now - 400 * day), tripB = TripMeter(0.0, now),
-        fuel = listOf(
+        fuel = edgeFuel(now) + listOf(
             FuelEntry(ts = now - 40 * day, odo = 199400.0, litres = 13.0, cost = 1338.0, full = true),
             FuelEntry(ts = now - 30 * day, odo = 199402.0, litres = 0.4, cost = 41.0, full = false),
             FuelEntry(ts = now - 20 * day, odo = 199760.0, litres = 12.6, cost = 99999.0, full = true),
             FuelEntry(ts = now - 2 * day, odo = 199995.0, litres = 1.1, cost = 113.0, full = false),
         ),
         service = defaultServiceItems(150000.0, now - 900 * day) + ServiceItem(kind = "custom", name = "Steering bearings and swingarm re-grease", icon = "wrench", everyKm = 1.0, everyDays = 1, lastKm = 0.0, lastDate = now - 999 * day),
-        records = listOf(ServiceRecord(date = now - 10 * day, odo = 199900.0, title = "Engine rebuild after a long Western Ghats road trip", workshop = "Sri Venkateshwara Motorcycle Works", cost = 1234567.0)),
+        records = listOf(ServiceRecord(date = now - 10 * day, odo = 199900.0, title = "Engine rebuild after a long Western Ghats road trip", workshop = "Sri Venkateshwara Motorcycle Works", cost = 1234567.0)) +
+            List(24) { i -> ServiceRecord(date = now - (40 + i * 30) * day, odo = 199000.0 - i * 6000, title = if (i % 5 == 0) "Full service, chain-sprocket kit, brake pads front and rear, coolant flush" else "Service ${24 - i}", workshop = if (i % 3 == 0) "Sri Venkateshwara Motorcycle Works and Spares, Kunnumpuram" else "Bajaj Probiking", cost = 1850.0 + i * 1375.0) },
         checklist = List(6) { i -> ChecklistItem(text = if (i == 0) "A very long mechanic note that keeps going to check how the list wraps on small screens without breaking the layout" else "Item ${i + 1}", done = i % 2 == 0) },
-        trips = listOf(
-            Trip(n = 9999, start = now - 3_600_000, end = now - 3_500_000, km = 0.1, sec = 60.0, top = 3.0, avg = 6.0, title = "A", pts = listOf(listOf(12.97, 77.59, (now - 3_600_000).toDouble()))),
-            Trip(n = 9998, start = now - 5 * day, end = now - 4 * day, km = 1240.6, sec = 86000.0, top = 162.0, avg = 52.0, title = "Bengaluru to Leh in one go, a ride with a title long enough to wrap twice"),
-        ),
+        trips = edgeTrips(now),
         rideNo = 9999, parking = Parking(34.1526, 77.5771, now - 40 * day),
     )
+    // More bikes with long names and big readings, for the garage list and switcher.
+    val v2 = newVehicle(model = "ns200", nickname = "Grandfather's old commuter that still starts first kick", plate = "TN 09 BZ 9999", odo = 1_234_567.8, colour = "#B3261E", now = now)
+        .copy(trips = edgeTrips(now, 120, 3), rideNo = 120, tripA = TripMeter(12345.6, now - 90 * day))
+    val v3 = newVehicle(model = "dominar400", nickname = "", plate = "", odo = 0.0, now = now)
     return f.copy(
-        profile = profile, vehicles = listOf(v), active = v.id,
+        profile = profile, vehicles = listOf(v, v2, v3), active = v.id,
         alerts = Alerts(
             missed = List(128) { i -> NamedEvent(if (i == 127) "Dr. Venkataraghavan Subramaniam" else "Rohan", now - i * 60_000L) },
             wa = List(12) { NamedEvent("Priya 🌸", now) }, sent = 99999,
         ),
     )
+}
+
+/**
+ * A year and a half of riding for the edge preview: hundreds of rides, from a 100 m hop to multi-day
+ * 4,000 km tours, so lists, charts and counts all fill up and long numbers show where they shorten.
+ */
+private fun edgeTrips(now: Long, count: Int = 420, seed: Int = 1): List<Trip> {
+    val day = 86_400_000L
+    var r = seed * 7919L + 104729L
+    fun rnd(): Double { r = (r * 9301 + 49297) % 233280; return r / 233280.0 }
+    val titles = listOf(
+        "Office to home", "Home to office", "Bengaluru to Leh in one go, a ride with a title long enough to wrap twice",
+        "Nandi Hills sunrise", "Western Ghats loop via Agumbe, Sringeri and Kudremukh", "A", "Chai run",
+    )
+    val out = mutableListOf<Trip>()
+    var t = now - 3_600_000L
+    for (i in 0 until count) {
+        val x = rnd()
+        val km = when {
+            i == 0 -> 0.1
+            x < 0.55 -> 2 + rnd() * 20
+            x < 0.85 -> 25 + rnd() * 180
+            x < 0.97 -> 250 + rnd() * 900
+            else -> 1500 + rnd() * 2600
+        }
+        val avg = 18 + rnd() * 60
+        val sec = (km / avg * 3600).coerceAtLeast(60.0)
+        val title = if (i < titles.size) titles[i] else titles[(rnd() * titles.size).toInt()]
+        out += Trip(
+            n = count - i + (if (seed == 1) 9579 else 0), start = t, end = t + (sec * 1000).toLong(), km = Math.round(km * 10) / 10.0, sec = sec,
+            top = Math.round(avg * (1.3 + rnd() * 0.9)).toDouble(), avg = avg, title = title,
+            pts = if (i < 40) Sample.squiggle(12.97 to 77.59, km.coerceAtMost(400.0), i + 1, t, (sec / 60).toInt().coerceAtLeast(1)) else emptyList(),
+        )
+        // Gaps of a few hours to a few days, with a quiet month now and then.
+        t -= ((0.2 + rnd() * 2.6) * day).toLong() + (if (rnd() < 0.03) 30 * day else 0L)
+    }
+    return out
+}
+
+/** Fill-ups every week or so for a year, with odd litres and prices. */
+private fun edgeFuel(now: Long): List<FuelEntry> {
+    val day = 86_400_000L
+    return List(60) { i ->
+        val litres = listOf(13.0, 12.62, 0.4, 9.87, 11.5)[i % 5]
+        FuelEntry(ts = now - (45 + i * 6) * day, odo = 199300.0 - i * 330, litres = litres, cost = Math.round(litres * (98.4 + i * 0.35)).toDouble(), full = i % 5 != 2)
+    }
 }

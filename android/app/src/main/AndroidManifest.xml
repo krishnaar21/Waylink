@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Weather only: the city name goes to Open-Meteo. Nothing else leaves the phone. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Short taps of vibration on toggles and events, like the web app's navigator.vibrate. -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Bluetooth to the bike's cluster: "nearby devices" on Android 12+, the older pair on 11 and below. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" tools:targetApi="s" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
     <!-- Recording rides and saving where you parked, only when you ask. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />

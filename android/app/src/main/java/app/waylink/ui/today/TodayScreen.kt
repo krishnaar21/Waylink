@@ -99,6 +99,10 @@ interface TodayActions {
     fun garage()
     fun sos()
     fun pair()
+    /** Start pairing straight away: the pick list, or the "No bike linked" intro (web pair-intro). */
+    fun pairNew() = pair()
+    fun reconnect() = pair()
+    fun cancelLink() = pair()
     fun ride()
     fun logbook()
     fun service(id: String)
@@ -264,13 +268,25 @@ private fun Hairline() = Box(Modifier.fillMaxWidth().height(1.dp).background(W.c
 /** The compact link row inside the bike card (connCard in the web app). */
 @Composable
 private fun ConnRow(s: AppState, live: Live, good: Boolean, okCount: Int, act: TodayActions) {
+    // web connCard, compact: title and line by link state; the button is Ride, Pair, Connect, or Cancel/Stop.
     val c = W.c
-    val connected = live.link == LinkState.CONNECTED
+    val st = live.link
+    val connected = st == LinkState.CONNECTED
+    val known = s.vehicle.bike.id != null
     val name = vehicleTitle(s)
-    val title = if (connected) "Connected" else "No bike linked"
-    val sub = if (connected) "$name · simulated" else "Pair once, then it’s automatic"
+    val (title, sub) = when (st) {
+        LinkState.CONNECTED -> "Connected" to (if (live.simulated) "$name · simulated" else "$name · ${live.linkName ?: s.vehicle.bike.name ?: "Bike cluster"}")
+        LinkState.CONNECTING -> "Connecting" to "Linking with $name"
+        LinkState.SCANNING -> "Pick your bike" to "Choose it in the Bluetooth list"
+        LinkState.RECONNECTING -> "Searching" to "Switch on the ignition. It links by itself."
+        LinkState.IDLE -> if (known) "Not connected" to "$name · paired" else "No bike linked" to "Pair once, then it’s automatic"
+    }
+    val busy = st == LinkState.CONNECTING || st == LinkState.SCANNING || st == LinkState.RECONNECTING
     val t = if (good) "Road ready" else title
-    val sb = if (good) (if (!connected) title else "$title · $sub") else sub
+    val sb = if (good) (if (st == LinkState.IDLE) title else "$title · $sub") else sub
+    // .dot.a.pulse while linking or searching
+    val pulse = if (busy && !app.waylink.ui.theme.Motion.still) androidx.compose.animation.core.rememberInfiniteTransition(label = "cc")
+        .animateFloat(1f, 0.35f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(800), androidx.compose.animation.core.RepeatMode.Reverse), label = "cc").value else 1f
     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Row(Modifier.weight(1f).pressable(label = "Bike link details", onClick = act::pair), verticalAlignment = Alignment.CenterVertically) {
             IconTile(
@@ -278,7 +294,7 @@ private fun ConnRow(s: AppState, live: Live, good: Boolean, okCount: Int, act: T
                 bg = if (good) c.tintSage else c.inkA(0.06f), tint = if (good) c.sageInk else c.ink2,
             ) {
                 Box(Modifier.align(Alignment.BottomEnd).offset(4.dp, 4.dp).size(15.dp).clip(CircleShape).background(c.card), contentAlignment = Alignment.Center) {
-                    Dot(if (connected) c.sage else c.ink4, size = 11.dp)
+                    Dot(if (connected) c.sage else if (busy) c.amber.copy(alpha = pulse) else c.ink4, size = 11.dp)
                 }
             }
             Spacer(Modifier.width(12.dp))
@@ -288,8 +304,12 @@ private fun ConnRow(s: AppState, live: Live, good: Boolean, okCount: Int, act: T
             }
         }
         Spacer(Modifier.width(10.dp))
-        if (connected) Btn("Ride", act::ride, kind = BtnKind.ACCENT, icon = "speed", small = true, compact = true)
-        else Btn("Pair", act::pair, kind = BtnKind.INK, icon = "bt", small = true, compact = true)
+        when {
+            connected -> Btn("Ride", act::ride, kind = BtnKind.ACCENT, icon = "speed", small = true, compact = true)
+            busy -> Btn(if (st == LinkState.CONNECTING) "Cancel" else "Stop", act::cancelLink, kind = BtnKind.LINE, small = true, compact = true)
+            known -> Btn("Connect", act::reconnect, kind = BtnKind.INK, icon = "bt", small = true, compact = true)
+            else -> Btn("Pair", act::pairNew, kind = BtnKind.INK, icon = "bt", small = true, compact = true)
+        }
     }
 }
 

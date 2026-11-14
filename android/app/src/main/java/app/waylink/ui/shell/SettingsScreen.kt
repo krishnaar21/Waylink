@@ -100,6 +100,8 @@ val RIDE_CHARTS = listOf("Calendar", "Km per week", "Km by weekday")
 /** Bluetooth state in a word, as on the vehicle card. */
 fun connText(s: AppState, live: Live) = when {
     live.link == LinkState.CONNECTED -> if (live.simulated) "Simulated" else "Connected"
+    live.link == LinkState.CONNECTING -> "Connecting"
+    live.link == LinkState.SCANNING || live.link == LinkState.RECONNECTING -> "Searching"
     s.vehicle.bike.id != null -> "Paired"
     else -> "Not paired"
 }
