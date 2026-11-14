@@ -76,6 +76,10 @@ data class Live(
     /** The last frame built for the bike: its name and bytes (web link.lastFrame), and how many went out. */
     val lastFrame: Pair<String, ByteArray>? = null,
     val frameCount: Int = 0,
+    /** A sheet to open as soon as the main screens are up (e.g. "pair" after onboarding). */
+    val ask: String? = null,
+    /** A Settings section to scroll to and flash (web goto-riding), or null. */
+    val focus: String? = null,
 )
 
 data class Call(val name: String, val ringing: Boolean, val since: Long)
@@ -184,10 +188,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         refreshWeather()
     }
 
-    fun finishOnboarding(simulated: Boolean) {
+    fun finishOnboarding(simulated: Boolean, pair: Boolean = false) {
         commit { it.copy(onboarded = true) }
         if (simulated) simOn()
+        if (pair) _live.update { it.copy(ask = "pair") }
     }
+
+    fun clearAsk() = _live.update { it.copy(ask = null) }
+
+    /** The ride mode hint "Auto-open · Settings › Riding": leave ride mode and show that section. */
+    fun gotoRiding() = _live.update { it.copy(rideMode = false, focus = "riding") }
+
+    fun clearFocus() = _live.update { it.copy(focus = null) }
 
     // ---------- Garage ----------
     fun switchVehicle(id: String) {

@@ -272,6 +272,7 @@ private fun HoldToLeave(onLeave: () -> Unit) {
     val c = W.c
     val p = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+    val view = androidx.compose.ui.platform.LocalView.current
     Column(
         Modifier.semantics {
             role = Role.Button
@@ -281,9 +282,18 @@ private fun HoldToLeave(onLeave: () -> Unit) {
             detectTapGestures(onPress = {
                 val j = scope.launch {
                     p.animateTo(1f, tween(1000, easing = LinearEasing))
+                    view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
                     onLeave()
                 }
+                // Light ticks while the ring fills, so the hold can be felt through gloves.
+                val ticks = scope.launch {
+                    while (true) {
+                        view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+                        delay(110)
+                    }
+                }
                 tryAwaitRelease()
+                ticks.cancel()
                 j.cancel()
                 scope.launch { p.animateTo(0f, tween(200)) }
             })

@@ -33,6 +33,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -101,8 +105,9 @@ fun connText(s: AppState, live: Live) = when {
 }
 
 /** The Settings tab, a port of settings() in web-v0/js/views.js. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp) {
+fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, onFocused: () -> Unit = {}) {
     val c = W.c
     val f = remember(s.country.locale) { Fmt(s.country.locale) }
     val v = s.vehicle
@@ -178,6 +183,31 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp) {
         }
 
         SectionGap()
+        // #sec-riding: the ride mode hint lands here (goto-riding): scrolled into view, then a 1.6 s accent ring (secFlash).
+        val riding = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+        val flash = remember { androidx.compose.animation.core.Animatable(0f) }
+        LaunchedEffect(live.focus) {
+            if (live.focus != "riding") return@LaunchedEffect
+            kotlinx.coroutines.delay(450)
+            // A taller rect than the section, so it lands near the middle of the screen rather than at an edge.
+            launch { riding.bringIntoView(androidx.compose.ui.geometry.Rect(0f, -600f, 1f, 1400f)) }
+            flash.snapTo(1f)
+            kotlinx.coroutines.delay(960)
+            flash.animateTo(0f, androidx.compose.animation.core.tween(640))
+            onFocused() // last: clearing the key earlier would cancel this effect
+        }
+        Column(
+            Modifier.bringIntoViewRequester(riding).drawBehind {
+                if (flash.value > 0f) {
+                    val r = 3.dp.toPx() / 2
+                    drawRoundRect(
+                        c.accent.copy(alpha = 0.45f * flash.value), androidx.compose.ui.geometry.Offset(-r, -r),
+                        androidx.compose.ui.geometry.Size(size.width + 2 * r, size.height + 2 * r), androidx.compose.ui.geometry.CornerRadius(20.dp.toPx() + r),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(3.dp.toPx()),
+                    )
+                }
+            },
+        ) {
         SectionHead("Riding", help = { act.help("riding") })
         ListCard {
             ListRow("Open ride mode by itself", "Above 15 km/h", icon = "speed", trailing = { Switch(st.autoRide, "Open ride mode by itself", { act.toggle("autoRide") }) })
@@ -187,6 +217,7 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp) {
             ListRow("Keep the screen on", "While in ride mode", icon = "sparkles", trailing = { Switch(st.wakeLock, "Keep the screen on", { act.toggle("wakeLock") }) })
             Hairline(66.dp)
             ListRow("Street names on the bike", "Road name beside the arrow", icon = "eye", trailing = { Switch(st.streetNames, "Street names on the bike", { act.toggle("streetNames") }) })
+        }
         }
 
         SectionGap()
@@ -450,14 +481,21 @@ private fun ThemePreview(key: String, on: Boolean, modifier: Modifier) {
     val shape = RoundedCornerShape(14.dp)
     Box(
         modifier
-            .then(if (on) Modifier.border(2.dp, c.accent, RoundedCornerShape(18.dp)).padding(4.dp) else Modifier.shadow(3.dp, shape, ambientColor = Color(0x59000000), spotColor = Color(0x59000000)))
+            // .themeopt.on .tp: box-shadow 0 0 0 2px var(--bg), 0 0 0 4px var(--accent). The ring sits outside the tile, which keeps its size.
+            .then(
+                if (on) Modifier.drawBehind {
+                    val g = 1.dp.toPx(); val r = 3.dp.toPx()
+                    drawRoundRect(c.bg, androidx.compose.ui.geometry.Offset(-g, -g), androidx.compose.ui.geometry.Size(size.width + 2 * g, size.height + 2 * g), androidx.compose.ui.geometry.CornerRadius(15.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx()))
+                    drawRoundRect(c.accent, androidx.compose.ui.geometry.Offset(-r, -r), androidx.compose.ui.geometry.Size(size.width + 2 * r, size.height + 2 * r), androidx.compose.ui.geometry.CornerRadius(17.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx()))
+                } else Modifier.shadow(3.dp, shape, ambientColor = Color(0x59000000), spotColor = Color(0x59000000)),
+            )
             .clip(shape).background(bg).border(1.dp, c.line, shape),
     ) {
         androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxSize()) {
             val w = maxWidth; val h = maxHeight
             Box(Modifier.offset(w * 0.14f, h * 0.13f).size(w * 0.34f, h * 0.07f).clip(RoundedCornerShape(3.dp)).background(ink.copy(alpha = 0.7f)))
-            Box(Modifier.offset(w * 0.14f, h * 0.30f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card))
-            Box(Modifier.offset(w * 0.14f, h * 0.53f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card))
+            Box(Modifier.offset(w * 0.14f, h * 0.30f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card).border(0.5.dp, Color.Black.copy(alpha = 0.06f), RoundedCornerShape(6.dp)))
+            Box(Modifier.offset(w * 0.14f, h * 0.53f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card).border(0.5.dp, Color.Black.copy(alpha = 0.06f), RoundedCornerShape(6.dp)))
             Box(Modifier.offset(w * 0.14f, h * 0.81f).size(w * 0.40f, h * 0.09f).clip(RoundedCornerShape(99.dp)).background(c.accent))
         }
     }

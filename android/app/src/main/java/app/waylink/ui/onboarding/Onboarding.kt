@@ -103,6 +103,8 @@ interface OnboardingActions {
     fun saveBike(model: String, plate: String, odo: Double, country: String)
     fun saveAboutYou(avatar: String, name: String, city: String, blood: String, iceName: String, icePhone: String)
     fun finish(simulated: Boolean)
+    /** Finish and go straight to pairing (web onb-finish "pair"). */
+    fun finishAndPair() = finish(false)
 }
 
 private val SLIDES = listOf(
@@ -124,7 +126,7 @@ fun Onboarding(s: AppState, act: OnboardingActions) {
             0 -> Intro(onSkip = { step = 1 }, onDone = { step = 1 }, onSample = act::sample)
             1 -> YourBike(s, onBack = { step = 0 }, onSkip = { step = 3 }, onSample = act::sample) { m, p, o, c -> act.saveBike(m, p, o, c); step = 3 }
             3 -> AboutYou(s, onBack = { step = 1 }, onSkip = { step = 2 }) { a, n, ci, b, iN, iP -> act.saveAboutYou(a, n, ci, b, iN, iP); step = 2 }
-            else -> LinkBike(onBack = { step = 3 }, onFinish = act::finish)
+            else -> LinkBike(onBack = { step = 3 }, onFinish = act::finish, onPair = act::finishAndPair)
         }
     }
 }
@@ -172,7 +174,7 @@ private fun Intro(onSkip: () -> Unit, onDone: () -> Unit, onSample: () -> Unit) 
             ) { RideAnim() }
         }
         Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars).windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 24.dp)) {
-            Top({ Logo(27f) }, "Skip", onSkip)
+            Top({ Logo(26f) }, "Skip", onSkip)
             Spacer(Modifier.weight(1f))
             HorizontalPager(pager, Modifier.fillMaxWidth().height(130.dp)) { i ->
                 val (e, t, d) = SLIDES[i]
@@ -195,7 +197,7 @@ private fun Intro(onSkip: () -> Unit, onDone: () -> Unit, onSample: () -> Unit) 
                 }
             }
             Spacer(Modifier.height(12.dp))
-            val last = pager.currentPage == SLIDES.lastIndex
+            val last = pager.currentPage == SLIDES.lastIndex || pager.targetPage == SLIDES.lastIndex
             Btn(if (last) "Set up my bike" else "Next", { if (last) onDone() else scope.launch { pager.animateScrollToPage(pager.currentPage + 1) } }, Modifier.fillMaxWidth())
             Spacer(Modifier.height(10.dp))
             LinkText("Explore with sample data", onSample, Modifier.align(Alignment.CenterHorizontally), style = T.body.copy(fontSize = 14.5.sp), color = c.ink3)
@@ -314,7 +316,7 @@ private fun AboutYou(s: AppState, onBack: () -> Unit, onSkip: () -> Unit, onSave
 }
 
 @Composable
-private fun LinkBike(onBack: () -> Unit, onFinish: (Boolean) -> Unit) {
+private fun LinkBike(onBack: () -> Unit, onFinish: (Boolean) -> Unit, onPair: () -> Unit) {
     val c = W.c
     Column(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars).windowInsetsPadding(WindowInsets.navigationBars).padding(horizontal = 24.dp),
@@ -342,7 +344,10 @@ private fun LinkBike(onBack: () -> Unit, onFinish: (Boolean) -> Unit) {
             }
         }
         Spacer(Modifier.weight(1f))
-        Btn("Try the simulated bike", { onFinish(true) }, Modifier.fillMaxWidth(), icon = "bolt")
+        // .onb-foot: Pair your bike (ink), then the simulated bike as a line button 8 below.
+        Btn("Pair your bike", onPair, Modifier.fillMaxWidth(), icon = "bt")
+        Spacer(Modifier.height(8.dp))
+        Btn("Try the simulated bike", { onFinish(true) }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "bolt")
         Spacer(Modifier.height(12.dp))
         LinkText("I’ll do this later", { onFinish(false) }, style = T.body.copy(fontSize = 14.5.sp), color = c.ink3)
         Spacer(Modifier.height(30.dp))

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
@@ -57,6 +58,12 @@ import app.waylink.ui.theme.W
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/** Per-letter right margins in em (.wl-loop .rest i.ty0..ty4): a|y, y|l, l|i, i|n, n|k. */
+private val KERN = floatArrayOf(-0.012f, 0.004f, 0.028f, 0.024f, 0.012f, 0f)
+
+/** #wl-taper: the mask that cuts the W's first stroke into a tapered tip. */
+private val TAPER = floatArrayOf(-20f, -20f, 6f, -20f, 6f, 44f, 3.8f, 48.5f, 2.1f, 52.5f, 0.9f, 56f, 0.2f, 59f, -0.1f, 61.5f, -20f, 61.5f)
+
 private const val LOOP_PATH = "M2.5 44C3 64 12 80 25 80C37 80 42 64 46 50C48.8 40.5 54.5 31 54 22C53.6 13.5 39 12.5 38.6 22C38.2 31 43.4 40.5 46.8 50C51 64 58 80 71 80C84 80 90 56 91.5 26L91.5 14"
 
 /**
@@ -77,13 +84,17 @@ fun LoopWordmark(fontSize: Float = 38f, modifier: Modifier = Modifier, animate: 
     }
     val style = TextStyle(fontFamily = Body, fontWeight = FontWeight.Bold, fontSize = fontSize.sp, letterSpacing = 0.em, lineHeight = fontSize.sp)
     val overshoot = CubicBezierEasing(.2f, 1.3f, .4f, 1f)
-    Row(modifier.semantics { contentDescription = "Waylink" }, verticalAlignment = Alignment.Bottom) {
-        Canvas(Modifier.size((fontSize * 0.98f).sp.toDp(), fontSize.sp.toDp()).offset(y = (fontSize * 0.2f).sp.toDp())) {
+    // .wl-loop is a baseline flex row: the w's box bottom sits on the text baseline, then drops .2em (translateY).
+    Row(modifier.semantics { contentDescription = "Waylink" }) {
+        Canvas(Modifier.alignBy { it.measuredHeight }.size((fontSize * 0.98f).sp.toDp(), fontSize.sp.toDp()).offset(y = (fontSize * 0.2f).sp.toDp())) {
             val s = size.height / 100f
             val p = draw.value
             val drawn = if (p >= 1f) path else Path().also { out -> PathMeasure().apply { setPath(path, false) }.let { it.getSegment(0f, it.length * p, out, true) } }
             if (p > 0f) scale(s, s, pivot = androidx.compose.ui.geometry.Offset.Zero) {
-                drawPath(drawn, c.accent, style = Stroke(width = 11f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                val taper = Path().apply { moveTo(TAPER[0], TAPER[1]); for (j in 2 until TAPER.size step 2) lineTo(TAPER[j], TAPER[j + 1]); close() }
+                androidx.compose.ui.graphics.drawscope.clipPath(taper, androidx.compose.ui.graphics.ClipOp.Difference) {
+                drawPath(drawn, c.accent, style = Stroke(width = 12f, cap = StrokeCap.Butt, join = StrokeJoin.Miter))
+                }
             }
         }
         Spacer(Modifier.width((fontSize * 0.035f).sp.toDp()))
@@ -92,12 +103,12 @@ fun LoopWordmark(fontSize: Float = 38f, modifier: Modifier = Modifier, animate: 
             val e = overshoot.transform(t)
             Txt(
                 ch.toString(), style, c.ink,
-                Modifier.graphicsLayer {
+                Modifier.alignBy(androidx.compose.ui.layout.LastBaseline).layout { m, cs -> val pl = m.measure(cs); layout((pl.width + (fontSize * KERN[i]).sp.roundToPx()).coerceAtLeast(0), pl.height) { pl.place(0, 0) } }.graphicsLayer {
                     // tyRise: from .45em lower, squashed to (.85, .6) and transparent; opaque by 45 %.
                     alpha = (t / 0.45f).coerceIn(0f, 1f)
                     translationY = (1f - e) * 0.45f * fontSize * density * fontScale
                     scaleX = 0.85f + 0.15f * e; scaleY = 0.6f + 0.4f * e
-                    transformOrigin = TransformOrigin(0.5f, 1f)
+                    transformOrigin = TransformOrigin(0.5f, 0.85f)
                 },
             )
         }

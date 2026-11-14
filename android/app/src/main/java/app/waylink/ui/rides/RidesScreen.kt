@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -52,6 +53,7 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -79,6 +81,7 @@ import app.waylink.core.weekStart
 import app.waylink.data.Live
 import app.waylink.ui.components.BigValue
 import app.waylink.ui.components.Btn
+import app.waylink.ui.components.BtnKind
 import app.waylink.ui.components.Hairline
 import app.waylink.ui.components.Ic
 import app.waylink.ui.components.Page
@@ -135,7 +138,7 @@ fun RidesScreen(s: AppState, live: Live, act: RidesActions, bottom: Dp) {
                     Txt("${f.num(live.speed)} km/h now · top ${f.num(r.top)}", T.row, c.ink2, Modifier.padding(bottom = 4.dp))
                 }
                 Spacer(Modifier.height(16.dp))
-                Btn("End ride", act::endRide, Modifier.fillMaxWidth(), icon = "stop")
+                Btn("End ride", act::endRide, Modifier.fillMaxWidth(), kind = BtnKind.ACCENT, icon = "stop")
             }
         } else {
             Row(Modifier.fillMaxWidth().padding(top = 2.dp).card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -280,7 +283,16 @@ private fun Charts(ch: RideCharts, at: Int, onPage: (Int) -> Unit, f: Fmt) {
     val c = W.c
     val pager = rememberPagerState(initialPage = at.coerceIn(0, 2)) { 3 }
     LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect { if (it != at) onPage(it) } }
-    HorizontalPager(pager, Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) { p ->
+    // Every chart page takes the height of the tallest one, so the card doesn't grow and shrink as you swipe:
+    // an invisible stack of all three sets the height, and the pager fills it.
+    Box(Modifier.fillMaxWidth()) {
+    Box(Modifier.fillMaxWidth().padding(horizontal = 20.dp).alpha(0f).clearAndSetSemantics {}) {
+        for (p in 0..2) Column(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth().padding(bottom = 12.dp)) { Txt(RC_NAMES[p], T.rowSub.copy(fontWeight = FontWeight.SemiBold), c.ink3); if (p == 0) Legend() }
+            when (p) { 0 -> Calendar(ch); 1 -> Weekly(ch, f); else -> Weekdays(ch, f) }
+        }
+    }
+    HorizontalPager(pager, Modifier.matchParentSize(), verticalAlignment = Alignment.Top) { p ->
         Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
             Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Txt(RC_NAMES[p], T.rowSub.copy(fontWeight = FontWeight.SemiBold), c.ink3, Modifier.weight(1f))
@@ -300,6 +312,7 @@ private fun Charts(ch: RideCharts, at: Int, onPage: (Int) -> Unit, f: Fmt) {
                 )
             }
         }
+    }
     }
     // Page dots
     Row(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.Center) {
@@ -384,7 +397,7 @@ private fun Calendar(ch: RideCharts) {
 }
 
 @Composable
-private fun Weekly(ch: RideCharts, f: Fmt) {
+private fun Weekly(ch: RideCharts, f: Fmt) = Column(Modifier.fillMaxWidth()) {
     val c = W.c
     val wMax = ch.bars.maxOf { it.km }
     Row(Modifier.fillMaxWidth().height(150.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -402,7 +415,7 @@ private fun Weekly(ch: RideCharts, f: Fmt) {
                 ch.bars.forEachIndexed { i, b ->
                     val now = i == 11
                     Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom) {
-                        if (b.km > 0 && (b.km == wMax || now)) Txt(f.num(b.km, if (b.km < 100) 1 else 0), T.rowSub.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold, lineHeight = 13.sp), c.ink2, Modifier.padding(bottom = 3.dp), maxLines = 1)
+                        if (b.km > 0 && (b.km == wMax || now)) Txt(f.num(b.km, if (b.km < 100) 1 else 0), T.rowSub.copy(fontSize = 11.sp, fontWeight = FontWeight.SemiBold, lineHeight = 13.sp), c.ink2, Modifier.wrapContentWidth(unbounded = true).padding(bottom = 3.dp), maxLines = 1)
                         if (b.km > 0) Box(
                             Modifier.fillMaxWidth(0.72f).widthIn(max = 16.dp).fillMaxHeight(max(0.03f, min(1f, (b.km / ch.nice).toFloat())))
                                 .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)).background(if (now) c.accent else lerp(c.segOff, c.accent, 0.45f)),
@@ -414,8 +427,8 @@ private fun Weekly(ch: RideCharts, f: Fmt) {
     }
     Row(Modifier.fillMaxWidth().padding(start = 36.dp, top = 6.dp)) {
         ch.bars.forEachIndexed { i, b ->
-            Box(Modifier.weight(1f)) {
-                if (i % 3 == 0 || i == 11) Txt(if (i == 11) "Now" else "${b.start.dayOfMonth} ${monShort(b.start.monthValue)}", T.rowSub.copy(fontSize = 11.sp, lineHeight = 13.sp), c.ink3, maxLines = 1, modifier = Modifier.widthIn(min = 44.dp))
+            Box(Modifier.weight(1f), contentAlignment = if (i == 11) Alignment.TopEnd else Alignment.TopStart) {
+                if (i % 3 == 0 || i == 11) Txt(if (i == 11) "Now" else "${b.start.dayOfMonth} ${monShort(b.start.monthValue)}", T.rowSub.copy(fontSize = 11.sp, lineHeight = 13.sp), c.ink3, maxLines = 1, modifier = Modifier.wrapContentWidth(if (i == 11) Alignment.End else Alignment.Start, unbounded = true))
             }
         }
     }

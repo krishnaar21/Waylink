@@ -230,7 +230,7 @@ private fun NeedRow(x: InboxItem, onClick: () -> Unit) {
     val c = W.c
     val hot = x.tone == "red"
     Row(Modifier.fillMaxWidth().rowPress(label = x.title, onClick = onClick).padding(horizontal = 16.dp, vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
-        IconTile(x.icon, size = 44.dp, radius = 13.dp, iconSize = 24.dp, bg = if (hot) c.tintRed else c.inkA(0.06f), tint = if (hot) c.red else c.ink2)
+        IconTile(x.icon, size = 44.dp, radius = 13.dp, iconSize = 24.dp, bg = c.inkA(0.06f), tint = c.ink2) // neutral tiles; the Overdue pill carries the colour
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Txt(x.title, T.body.copy(lineHeight = 22.4.sp), c.ink, maxLines = 2)

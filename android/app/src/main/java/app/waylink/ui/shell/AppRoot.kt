@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.clickable
 import android.net.Uri
@@ -126,6 +127,7 @@ fun AppRoot(vm: AppViewModel) {
                     override fun saveAboutYou(avatar: String, name: String, city: String, blood: String, iceName: String, icePhone: String) =
                         vm.saveAboutYou(avatar, name, city, blood, iceName, icePhone)
                     override fun finish(simulated: Boolean) = vm.finishOnboarding(simulated)
+                    override fun finishAndPair() = vm.finishOnboarding(false, pair = true)
                 })
                 else {
                     Main(s, live, vm)
@@ -222,6 +224,8 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         kotlinx.coroutines.delay(2600) // after the launch splash
         if (stack.isEmpty() && page == null) { prefs.edit().putString("pair-nudge", day).apply(); openSheet("pair-intro") }
     }
+    // A sheet asked for from outside the tabs, e.g. "Pair your bike" at the end of onboarding.
+    LaunchedEffect(live.ask) { live.ask?.let { kotlinx.coroutines.delay(350); openSheet(it); vm.clearAsk() } }
     // The screen stays on while a ride records, so GPS keeps flowing.
     val view = LocalView.current
     val awake = live.rec != null || (live.rideMode && s.settings.wakeLock)
@@ -296,7 +300,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     }
                     override fun scenario(key: String?) = vm.setScenario(key)
                     override fun click(on: Boolean) = vm.uiClick(on)
-                }, tabBarHeight)
+                }, tabBarHeight, onFocused = vm::clearFocus)
                 Tab.ROUTE.key -> app.waylink.ui.route.RouteScreen(s, live, vm, openSheet, tabBarHeight)
                 Tab.RIDES.key -> RidesScreen(s, live, object : RidesActions {
                     override fun record() = beginRec()
@@ -332,6 +336,20 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         }) {
             if (android.os.SystemClock.uptimeMillis() - skipTap > 400) { page = null; tab = it }
         }
+        // .live-pill: while a ride records (or a route runs), a dark pill in the page header shows km and time;
+        // tap it to go to Rides (or Route). Hidden on the tab that already shows it, on inner pages and in ride mode.
+        val rec = live.rec; val nav = live.nav
+        val pillOn = (nav != null || rec != null) && !live.rideMode && page == null &&
+            !(if (nav != null) tab == Tab.ROUTE else tab == Tab.RIDES || tab == Tab.TODAY)
+        androidx.compose.animation.AnimatedVisibility(
+            pillOn, Modifier.align(Alignment.TopEnd),
+            enter = fadeIn(tween(220)) + androidx.compose.animation.scaleIn(tween(350, easing = app.waylink.ui.theme.Spring), initialScale = 0.8f),
+            exit = fadeOut(tween(160)),
+        ) {
+            LivePill(live, Modifier.windowInsetsPadding(WindowInsets.statusBars).padding(top = 22.dp, end = if (tab == Tab.TODAY) 72.dp else 20.dp)) {
+                page = null; tab = if (nav != null) Tab.ROUTE else Tab.RIDES
+            }
+        }
         // Quick actions on Today, like the web's + button.
         androidx.compose.animation.AnimatedVisibility(
             page == null && tab == Tab.TODAY, Modifier.align(Alignment.BottomEnd),
@@ -365,7 +383,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         }
 
         androidx.compose.animation.AnimatedVisibility(live.rideMode, enter = fadeIn(tween(220)), exit = fadeOut(tween(200))) {
-            RideMode(s, live, onSettings = { vm.openRideMode(false); page = null; tab = Tab.SETTINGS }) { vm.openRideMode(false) }
+            RideMode(s, live, onSettings = { vm.gotoRiding(); page = null; tab = Tab.SETTINGS }) { vm.openRideMode(false) }
         }
         androidx.compose.animation.AnimatedVisibility(live.call != null, enter = fadeIn(tween(200)), exit = fadeOut(tween(200))) {
             CallOverlay(live, vm::answerCall, vm::declineCall, vm::endCall)
@@ -568,7 +586,7 @@ private fun SosSheet(s: AppState, @Suppress("UNUSED_PARAMETER") live: Live, prof
     Txt("Tap to call. If it doesn’t dial, the number is right there.", T.sheetLead, c.ink2)
     Spacer(Modifier.height(16.dp))
     @Composable
-    fun tel(n: String, t: String, d: String, ic: String) = ListRow(t, d, ic, danger = true, chevron = false, onClick = { dial(n) }, trailing = {
+    fun tel(n: String, t: String, d: String, ic: String) = ListRow(t, d, ic, chevron = false, onClick = { dial(n) }, trailing = {
         Txt(n, T.big(24f), c.ink, Modifier.padding(start = 10.dp), maxLines = 1)
     })
     ListCard(flat = true) {
@@ -576,7 +594,10 @@ private fun SosSheet(s: AppState, @Suppress("UNUSED_PARAMETER") live: Live, prof
         tel(co.sos, "Emergency", "All services", "siren"); Hairline(start = 66.dp)
         tel(co.police, "Police", "Police help", "shield"); Hairline(start = 66.dp)
         tel(co.rsa, "Highway help", "Roadside assistance", "wrench"); Hairline(start = 66.dp)
-        if (p.icePhone.isNotEmpty()) tel(p.icePhone, p.iceName.ifEmpty { "Emergency contact" }, "Your emergency contact", "heart")
+        // A contact's number is long: it goes under the name instead of crowding it, with a call button at the end.
+        if (p.icePhone.isNotEmpty()) ListRow(p.iceName.ifEmpty { "Emergency contact" }, p.icePhone + " · your emergency contact", "heart", chevron = false, onClick = { dial(p.icePhone) }, trailing = {
+            Box(Modifier.padding(start = 10.dp).size(36.dp).clip(CircleShape).background(c.ink), contentAlignment = Alignment.Center) { Ic("phone", size = 17.dp, tint = c.bg) }
+        })
         else ListRow("Add an emergency contact", "Someone to call first", "heart", onClick = profile)
         Hairline(start = 66.dp)
         val near = "https://www.google.com/maps/search/hospitals+near+me"
@@ -595,5 +616,28 @@ private fun SosSheet(s: AppState, @Suppress("UNUSED_PARAMETER") live: Live, prof
         }
         Spacer(Modifier.width(12.dp))
         Ic("chev", size = 16.dp, tint = c.ink4)
+    }
+}
+
+@Composable
+private fun LivePill(live: Live, modifier: Modifier, onClick: () -> Unit) {
+    val c = W.c
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) { while (true) { kotlinx.coroutines.delay(1000); now = System.currentTimeMillis() } }
+    val f = remember { app.waylink.core.Fmt() }
+    val rec = live.rec; val nav = live.nav
+    val blink = androidx.compose.animation.core.rememberInfiniteTransition(label = "pill")
+    val a by blink.animateFloat(initialValue = 1f, targetValue = 0.25f, animationSpec = androidx.compose.animation.core.infiniteRepeatable(tween(700), androidx.compose.animation.core.RepeatMode.Reverse), label = "dot")
+    Row(
+        modifier.height(32.dp).shadow(8.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x73000000), spotColor = Color(0x73000000))
+            .clip(RoundedCornerShape(16.dp)).background(c.ink).pressable(label = if (nav != null) "Back to the route" else "Back to the ride", onClick = onClick)
+            .padding(start = 9.dp, end = 12.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (rec != null) Box(Modifier.size(8.dp).graphicsLayer { alpha = if (app.waylink.ui.theme.Motion.still) 1f else a }.clip(CircleShape).background(c.accent))
+        val text = if (nav != null) { val (v, u) = app.waylink.core.distText(nav.stepMeters, f); "$v $u" }
+            else if (rec != null) "${f.num(rec.km, 1)} km · ${app.waylink.core.clock((now - rec.start) / 1000.0)}" else ""
+        if (nav != null) app.waylink.ui.route.TurnArrow(app.waylink.core.Maneuvers.of(nav.maneuver).glyph, Modifier.size(16.dp, 20.dp), exit = nav.exit)
+        Txt(text, T.rowSub.copy(fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"), c.bg, maxLines = 1)
     }
 }

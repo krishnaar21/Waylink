@@ -33,7 +33,7 @@ private fun variable(res: Int) = FontFamily(listOf(400, 500, 600, 700).map { w -
 
 /**
  * Settings > Fonts (web FONTS and BODY_FONTS): title face with its tracking, and body face.
- * "System" titles keep the Geist look this app has always had. Read through getters, so a change restyles everything.
+ * "System" titles use the phone's own face in bold, as v0 does with system-ui. Read through getters, so a change restyles everything.
  */
 object Fonts {
     /** key, label, family, letter spacing (em). */
@@ -45,9 +45,12 @@ object Fonts {
         "garamond" -> one(R.font.garamond_title)
         "crimson" -> one(R.font.crimson_title)
         "fraunces" -> one(R.font.fraunces_title)
-        else -> GEIST
+        "geist" -> GEIST
+        else -> FontFamily.Default // web "system": the phone's own face (Roboto on Android), bold
     }
-    fun titleTracking(k: String): Float = when (k) { "onest" -> -0.035f; "garamond", "crimson" -> -0.01f; "fraunces" -> -0.02f; else -> -0.04f }
+    fun titleTracking(k: String): Float = when (k) { "onest" -> -0.035f; "garamond", "crimson" -> -0.01f; "fraunces" -> -0.02f; "geist" -> -0.04f; else -> -0.025f }
+    /** web --dw: system titles are 700, the rest 600 (Garamond and Crimson files carry their own weight). */
+    fun titleWeight(k: String): FontWeight = if (k == "system") FontWeight.Bold else FontWeight.SemiBold
     fun bodyFamily(k: String): FontFamily = when (k) { "atkinson" -> variable(R.font.atkinson_body); "public" -> variable(R.font.public_body); else -> FontFamily.Default }
 
     var title by mutableStateOf("system")
@@ -56,6 +59,7 @@ object Fonts {
     val display: FontFamily get() = cache.getOrPut("t:$title") { titleFamily(title) }
     val sans: FontFamily get() = cache.getOrPut("b:$body") { bodyFamily(body) }
     val dls get() = titleTracking(title).em
+    val dw get() = titleWeight(title)
 }
 
 val Display: FontFamily get() = Fonts.display
@@ -65,14 +69,14 @@ private val tight = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeight
 
 object T {
     /** Page titles: "Friday", "Settings". */
-    val title get() = TextStyle(fontFamily = Display, fontWeight = FontWeight.SemiBold, fontSize = 30.sp, letterSpacing = Fonts.dls, lineHeight = 33.6.sp)
+    val title get() = TextStyle(fontFamily = Display, fontWeight = Fonts.dw, fontSize = 30.sp, letterSpacing = Fonts.dls, lineHeight = 33.6.sp)
     /** Onboarding step titles. */
     val onbTitle get() = title.copy(fontSize = 32.sp, lineHeight = 35.8.sp)
     val slideTitle get() = title.copy(fontSize = 28.sp, lineHeight = 32.2.sp)
     val sheetTitle get() = title.copy(fontSize = 24.sp, lineHeight = 25.2.sp)
     val verdict get() = title.copy(fontSize = 28.sp, lineHeight = 29.4.sp)
     /** Big readings; size set per use. */
-    fun big(size: Float) = TextStyle(fontFamily = Display, fontWeight = FontWeight.SemiBold, fontSize = size.sp, letterSpacing = Fonts.dls, lineHeight = size.sp, lineHeightStyle = tight)
+    fun big(size: Float) = TextStyle(fontFamily = Display, fontWeight = Fonts.dw, fontSize = size.sp, letterSpacing = Fonts.dls, lineHeight = size.sp, lineHeightStyle = tight)
     val cardTitle get() = title.copy(fontSize = 21.sp, lineHeight = 24.sp)
     val tileTitle get() = title.copy(fontSize = 18.sp, lineHeight = 19.8.sp)
 
