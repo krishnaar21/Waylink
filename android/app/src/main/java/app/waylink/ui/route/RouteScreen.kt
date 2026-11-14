@@ -1,0 +1,469 @@
+package app.waylink.ui.route
+
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.border
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import app.waylink.core.AppState
+import app.waylink.core.Fmt
+import app.waylink.core.Maneuvers
+import app.waylink.core.Rehearsal
+import app.waylink.core.distText
+import app.waylink.core.tShort
+import app.waylink.data.AppViewModel
+import app.waylink.data.LinkState
+import androidx.compose.ui.text.withStyle
+import app.waylink.data.Live
+import app.waylink.data.Nav
+import app.waylink.ui.components.Btn
+import app.waylink.ui.components.BtnKind
+import app.waylink.ui.components.Chip
+import app.waylink.ui.components.FormField
+import app.waylink.ui.components.Hairline
+import app.waylink.ui.components.Hint
+import app.waylink.ui.components.Ic
+import app.waylink.ui.components.Input
+import app.waylink.ui.components.ListCard
+import app.waylink.ui.components.ListRow
+import app.waylink.ui.components.Page
+import app.waylink.ui.components.PageHead
+import app.waylink.ui.components.SectionGap
+import app.waylink.ui.components.SectionHead
+import app.waylink.ui.components.Switch
+import app.waylink.ui.components.Txt
+import app.waylink.ui.components.card
+import app.waylink.ui.components.pressable
+import app.waylink.ui.logbook.SheetNav
+import app.waylink.ui.logbook.SheetSpec
+import app.waylink.ui.theme.Serif
+import app.waylink.ui.theme.T
+import app.waylink.ui.theme.W
+
+/** What the Route tab can do. The view model implements it. */
+interface RouteActions {
+    fun toast(text: String)
+    fun toggleSetting(key: String)
+    fun startRehearsal()
+    fun sendTurn()
+    fun setNavSpeed(x: Int)
+    fun nextTurn()
+    fun setNavDistance(m: Double)
+    fun endNav()
+    /** The slider's throttle blip. */
+    fun uiTick(p: Float) {}
+}
+
+/** The Route tab, a port of route() in web-v0/js/views.js. */
+@Composable
+fun RouteScreen(s: AppState, live: Live, vm: RouteActions, openSheet: (String) -> Unit, bottom: Dp) {
+    val n = live.nav
+    if (n != null) EnRoute(s, live, n, vm, bottom) else Planner(s, live, vm, openSheet, bottom)
+}
+
+@Composable
+private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (String) -> Unit, bottom: Dp) {
+    val c = W.c
+    val ctx = LocalContext.current
+    val f = remember(s.country.locale) { Fmt(s.country.locale) }
+    var dest by rememberSaveable { mutableStateOf("") }
+    // The chosen maps app, or Google Maps when Waylink only rehearses (or on a phone that can't read other apps).
+    val src = app.waylink.core.NavSource.of(s.settings.navSource).let { if (it.readsNotifications) it else app.waylink.core.NavSource.of("gmaps") }
+    val openMaps = {
+        val d = dest.trim()
+        if (d.isEmpty()) vm.toast("Where to?")
+        else if (!app.waylink.data.NavApps.go(ctx, src, d)) vm.toast("No app can open maps.")
+    }
+    Page(bottom) {
+        PageHead("Route", "Turns on your bike")
+        AttentionChip(s, live, openSheet)
+        Spacer(Modifier.height(6.dp))
+        SectionHead("Where to?")
+        // .sec-note: tucked 6 dp up under the heading, inset like it, 12 above the card
+        Txt("Plan the ride in ${src.name}. Its turns show on your bike.", T.row.copy(lineHeight = 20.3.sp), c.ink3, Modifier.offset(y = (-6).dp).padding(horizontal = 14.dp))
+        Spacer(Modifier.height(6.dp))
+        Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp)) {
+            Txt("Destination", T.eyebrow, c.ink3)
+            Spacer(Modifier.height(8.dp))
+            Input(dest, { dest = it }, placeholder = "Nandi Hills", label = "Destination", caps = KeyboardCapitalization.Words, maxLength = 120, imeAction = ImeAction.Go, onDone = openMaps)
+            Spacer(Modifier.height(12.dp))
+            Btn("Open in ${src.name}", openMaps, Modifier.fillMaxWidth(), icon = "map")
+        }
+
+        SectionGap()
+        SectionHead("Saved places")
+        PlacesCard(s, vm::toast, openSheet)
+
+        SectionGap()
+        SectionHead("How this works")
+        // .howto: numbered steps in filled ink circles, 14 apart, 15/1.5 text
+        Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            listOf(
+                "Plan the ride in ${src.name}." to " It draws the map and gives voice directions on your phone.",
+                "Rehearse a route" to " to see how turns look on your bike’s display before you ride.",
+                "Test one turn" to " to check a single arrow and distance on the display.",
+            ).forEachIndexed { i, (b, rest) ->
+                Row {
+                    Box(Modifier.padding(top = 1.dp).size(24.dp).clip(CircleShape).background(c.ink), contentAlignment = Alignment.Center) {
+                        Txt("${i + 1}", T.chip.copy(fontSize = 12.5.sp, lineHeight = 12.5.sp), c.bg)
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Txt(androidx.compose.ui.text.buildAnnotatedString {
+                        pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.SemiBold, color = c.ink)); append(b); pop()
+                        append(rest)
+                    }, T.row.copy(fontSize = 15.sp, lineHeight = 22.5.sp), c.ink2)
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        LiveTurnsCard(s, openSheet)
+
+        SectionGap()
+        SectionHead("Rehearse a route", help = { openSheet("help:rehearse") })
+        Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp)) {
+            Txt(Rehearsal.NAME, T.title.copy(fontSize = 24.sp, lineHeight = 36.sp), c.ink)
+            Spacer(Modifier.height(8.dp))
+            Txt("${f.num(Rehearsal.totalMeters / 1000, 1)} km · ${Rehearsal.STEPS.size} turns · NH 44", T.row, c.ink2)
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Rehearsal.STEPS.forEach { st -> TurnArrow(Maneuvers.of(st.maneuver).glyph, Modifier.size(24.dp, 30.dp), faint = 0.25f, sw = 9f) }
+            }
+            Spacer(Modifier.height(16.dp))
+            Btn("Start rehearsal", vm::startRehearsal, Modifier.fillMaxWidth(), kind = BtnKind.ACCENT, icon = "play")
+        }
+
+        SectionGap()
+        SectionHead("Test one turn", help = { openSheet("help:testturn") })
+        val t = live.turn
+        val sel = Maneuvers.of(t.maneuver)
+        val rb = sel.glyph.startsWith("roundabout")
+        // .tt-card: 12 padding, 12 gap; 48 dp arrow tile in ink 6 %, title 16 semibold, "Change" 14 semibold
+        Column(Modifier.fillMaxWidth().card(20.dp).padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                Modifier.fillMaxWidth().pressable(label = "Change the turn") { openSheet("turn-test") },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.size(48.dp).clip(RoundedCornerShape(12.dp)).background(c.inkA(0.06f)), contentAlignment = Alignment.Center) {
+                    TurnArrow(sel.glyph, Modifier.size(30.dp), exit = if (rb) t.exit else 0, faint = 0.3f, sw = 9f)
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Txt(sel.label, T.body.copy(fontWeight = FontWeight.SemiBold), c.ink, maxLines = 1)
+                    Txt("${f.num(t.m)} m" + (if (rb) " · exit ${t.exit}" else "") + (if (t.street.isNotBlank()) " · ${t.street}" else ""), T.rowSub, c.ink3, maxLines = 1)
+                }
+                Spacer(Modifier.width(12.dp))
+                Txt("Change", T.row.copy(fontWeight = FontWeight.SemiBold), c.ink2)
+                Spacer(Modifier.width(2.dp))
+                Ic("chev", size = 15.dp, tint = c.ink2)
+            }
+            Btn("Send to bike", vm::sendTurn, Modifier.fillMaxWidth(), kind = BtnKind.ACCENT)
+        }
+
+        SectionGap()
+        SectionHead("Display", help = { openSheet("help:display") })
+        ListCard {
+            ListRow("Street names on the bike", "Road name beside the arrow", icon = "eye", trailing = { Switch(s.settings.streetNames, "Street names on the bike", { vm.toggleSetting("streetNames") }) })
+        }
+        if (s.settings.devFrames) FrameCard(live)
+    }
+}
+
+/** Developer: the last Bluetooth message in hex, the arrow id and checksum in bold (web frameCard). */
+@Composable
+private fun FrameCard(live: Live) {
+    val c = W.c
+    val (name, b) = live.lastFrame ?: return
+    SectionGap()
+    SectionHead("Last Bluetooth message · ${b.size} bytes", right = { Txt(name, T.eyebrow, c.ink3) })
+    Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
+        val hex = app.waylink.core.Protocol.hex(b).split(' ')
+        val text = androidx.compose.ui.text.buildAnnotatedString {
+            hex.forEachIndexed { i, h ->
+                if (i > 0) append(' ')
+                if ((i == 1 && b.size == 48) || i == b.size - 1) withStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.Bold, color = c.ink)) { append(h) } else append(h)
+            }
+        }
+        Txt(text, androidx.compose.ui.text.TextStyle(fontFamily = app.waylink.ui.theme.Mono, fontSize = 12.sp, lineHeight = 19.sp), c.ink2)
+        app.waylink.ui.components.Hint(if (live.link == LinkState.CONNECTED) "${live.frameCount} frames sent this session." else "Not linked. Frames are built, not sent.")
+    }
+}
+
+@Composable
+private fun EnRoute(s: AppState, live: Live, n: Nav, vm: RouteActions, bottom: Dp) {
+    val c = W.c
+    val f = remember(s.country.locale) { Fmt(s.country.locale) }
+    val man = Maneuvers.of(n.maneuver)
+    val (dv, du) = distText(n.stepMeters, f)
+    val (tv, tu) = distText(n.totalMeters, f)
+    val linked = live.link == LinkState.CONNECTED
+    // Under 100 m the bike blinks the arrow; the phone does the same.
+    val blink = n.stepMeters < 100
+    val pulse = if (blink) {
+        val tr = androidx.compose.animation.core.rememberInfiniteTransition(label = "blink")
+        tr.animateFloat(1f, 0.25f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(450), androidx.compose.animation.core.RepeatMode.Reverse), label = "a").value
+    } else 1f
+    Page(bottom) {
+        val srcName = app.waylink.core.NavSource.of(s.settings.navSource).name
+        PageHead("En route", when (n.mode) { "rehearse" -> "Rehearsing a route"; "maps" -> "Following $srcName"; else -> "Testing one turn" }, action = {
+            Txt(if (linked) "On the bike" else "Phone only", T.rowSub.copy(fontWeight = FontWeight.Medium), if (linked) c.sageInk else c.ink3,
+                Modifier.clip(RoundedCornerShape(999.dp)).background(if (linked) c.tintSage else c.raised).padding(horizontal = 10.dp, vertical = 4.dp))
+        })
+        Column(Modifier.fillMaxWidth().card(24.dp).padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(92.dp).clip(RoundedCornerShape(22.dp)).background(c.raised), contentAlignment = Alignment.Center) {
+                    TurnArrow(man.glyph, Modifier.size(64.dp, 78.dp).alpha(pulse), exit = n.exit)
+                }
+                Spacer(Modifier.width(18.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Txt(dv, T.big(44f), c.ink, maxLines = 1)
+                        Txt(" $du", Serif.copy(fontSize = 22.sp), c.ink2, Modifier.padding(bottom = 4.dp))
+                    }
+                    Txt(n.say.ifEmpty { man.label }, T.body.copy(fontSize = 16.5.sp, lineHeight = 22.sp), c.ink, maxLines = 2)
+                }
+            }
+            Hairline()
+            Spacer(Modifier.height(4.dp))
+            Kv("Arrive at", tShort(n.eta))
+            Kv("Distance left", "$tv $tu")
+            Txt(
+                if (s.settings.streetNames) "The bike shows the arrow, distances, arrival time and street." else "Street names stay on your phone. The bike shows the arrow, distances and arrival time.",
+                T.row.copy(fontSize = 13.5.sp), c.ink3, Modifier.padding(top = 6.dp),
+            )
+        }
+        Spacer(Modifier.height(16.dp))
+        if (n.mode == "rehearse") {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(1, 4, 16).forEach { x -> Chip("×$x", { vm.setNavSpeed(x) }, on = live.navSpeed == x) }
+                }
+                Chip("Next turn", vm::nextTurn, icon = "chev")
+            }
+        } else if (n.mode == "maps") {
+            Hint("Turns come from $srcName as it guides. Change the route there.")
+        } else {
+            Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Txt("Distance to turn", T.eyebrow, c.ink3, Modifier.weight(1f))
+                    Txt("${f.num(Math.round(n.stepMeters).toDouble())} m", T.plate.copy(fontSize = 13.sp), c.ink2)
+                }
+                Spacer(Modifier.height(12.dp))
+                Slider(n.stepMeters.toFloat() / 3000f, { vm.uiTick(it); vm.setNavDistance(Math.round(it * 300) * 10.0) }, "Distance to turn")
+                Scale()
+                Hint("Under 100 m, the bike blinks the arrow.")
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        if (n.mode == "maps") Btn("Stop following", { vm.endNav(); vm.toast("Stopped. $srcName keeps guiding on the phone.") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "x")
+        else Btn("End navigation", { vm.endNav(); vm.toast("Navigation ended.") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "x")
+        if (n.mode == "rehearse") {
+            SectionGap()
+            SectionHead("Turns")
+            ListCard {
+                Rehearsal.STEPS.forEachIndexed { i, st ->
+                    if (i > 0) Hairline(66.dp)
+                    val done = i < n.idx
+                    val now = i == n.idx
+                    Row(Modifier.fillMaxWidth().alpha(if (done) 0.45f else 1f).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(if (now) c.accent.copy(alpha = 0.12f) else c.bg), contentAlignment = Alignment.Center) {
+                            TurnArrow(Maneuvers.of(st.maneuver).glyph, Modifier.size(22.dp, 28.dp), exit = 0, faint = 0.25f, sw = 10f)
+                        }
+                        Spacer(Modifier.width(14.dp))
+                        Column(Modifier.weight(1f)) {
+                            Txt(st.say, T.body.copy(fontSize = 15.sp, fontWeight = if (now) FontWeight.SemiBold else FontWeight.Normal), c.ink, maxLines = 2)
+                            val (v, u) = distText(st.m, f)
+                            Txt("$v $u", T.row, c.ink3)
+                        }
+                    }
+                }
+            }
+        }
+        if (s.settings.devFrames) FrameCard(live)
+    }
+}
+
+@Composable
+private fun Kv(k: String, v: String) {
+    val c = W.c
+    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Txt(k, T.row.copy(fontSize = 15.sp), c.ink3, Modifier.weight(1f))
+        Txt(v, T.row.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium), c.ink)
+    }
+}
+
+/** .range-scale: a ruler (major ticks every sixth, minor every thirtieth) over 0 · 1.5 km · 3 km in 10 sp mono. */
+@Composable
+private fun Scale() {
+    val c = W.c
+    Box(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+        androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(10.dp)) {
+            val minor = c.ink4; val major = c.ink3
+            for (i in 0..30) { val x = (size.width - 1.dp.toPx()) * i / 30; drawRect(minor, androidx.compose.ui.geometry.Offset(x, 2.dp.toPx()), androidx.compose.ui.geometry.Size(1.dp.toPx(), 6.dp.toPx())) }
+            for (i in 0..6) { val x = (size.width - 1.5.dp.toPx()) * i / 6; drawRect(major, androidx.compose.ui.geometry.Offset(x, 0f), androidx.compose.ui.geometry.Size(1.5.dp.toPx(), 10.dp.toPx())) }
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 14.dp)) {
+            val st = app.waylink.ui.theme.T.plate.copy(fontSize = 10.sp, letterSpacing = 0.sp, lineHeight = 14.sp)
+            Txt("0", st, c.ink3)
+            Spacer(Modifier.weight(1f))
+            Txt("1.5 km", st, c.ink3)
+            Spacer(Modifier.weight(1f))
+            Txt("3 km", st, c.ink3)
+        }
+    }
+}
+
+/**
+ * .range: a 6 dp track, ink up to the value and seg-off after it, under a 28 × 22 pill thumb (soft vertical
+ * gradient, two grip lines, inset highlight, layered shadow) that swells to 1.1 × 1.14 while held. Drag or tap anywhere.
+ */
+@Composable
+fun Slider(value: Float, onChange: (Float) -> Unit, label: String) {
+    val c = W.c
+    val cb by rememberUpdatedState(onChange)
+    val v = value.coerceIn(0f, 1f)
+    var held by remember { mutableStateOf(false) }
+    val sx by androidx.compose.animation.core.animateFloatAsState(if (held) 1.1f else 1f, androidx.compose.animation.core.tween(200, easing = app.waylink.ui.theme.Spring), label = "thx")
+    val sy by androidx.compose.animation.core.animateFloatAsState(if (held) 1.14f else 1f, androidx.compose.animation.core.tween(200, easing = app.waylink.ui.theme.Spring), label = "thy")
+    val dark = c.dark
+    BoxWithConstraints(
+        Modifier.fillMaxWidth().height(32.dp)
+            .semantics {
+                contentDescription = label
+                progressBarRangeInfo = ProgressBarRangeInfo(v, 0f..1f, 300)
+                setProgress { cb(it.coerceIn(0f, 1f)); true }
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = { held = true; tryAwaitRelease(); held = false }) { cb(((it.x - 14.dp.toPx()) / (size.width - 28.dp.toPx())).coerceIn(0f, 1f)) }
+            }
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(onDragStart = { held = true }, onDragEnd = { held = false }, onDragCancel = { held = false }) { ch, _ ->
+                    cb(((ch.position.x - 14.dp.toPx()) / (size.width - 28.dp.toPx())).coerceIn(0f, 1f))
+                }
+            },
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        val w = maxWidth
+        val fillTo = 14.dp + (w - 28.dp) * v
+        Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(c.segOff))
+        Box(Modifier.width(fillTo).height(6.dp).clip(RoundedCornerShape(3.dp)).background(c.ink))
+        Box(
+            Modifier.offset(x = (w - 28.dp) * v).size(28.dp, 22.dp)
+                .graphicsLayer { scaleX = sx; scaleY = sy }
+                .shadow(4.dp, RoundedCornerShape(9.dp), ambientColor = Color.Black.copy(alpha = 0.3f), spotColor = Color.Black.copy(alpha = 0.3f))
+                .clip(RoundedCornerShape(9.dp))
+                .background(androidx.compose.ui.graphics.Brush.verticalGradient(
+                    0f to Color.White, 0.55f to (if (dark) Color(0xFFEDEAE4) else Color(0xFFF7F5F1)), 1f to (if (dark) Color(0xFFD2CEC6) else Color(0xFFE4E0D9)),
+                ))
+                .border(0.5.dp, Color.Black.copy(alpha = 0.14f), RoundedCornerShape(9.dp))
+                .drawBehind {
+                    val px = size.width / 28f
+                    val top = (size.height - 13 * px) / 2; val h = 13 * px
+                    // the inset top highlight, then the two grips, each a dark line with a bright edge
+                    drawRect(Color.White.copy(alpha = 0.9f), androidx.compose.ui.geometry.Offset(9 * px, 0f), androidx.compose.ui.geometry.Size(10 * px, px))
+                    for (x0 in listOf(10f, 15.2f)) {
+                        drawRect(Color.Black.copy(alpha = 0.34f), androidx.compose.ui.geometry.Offset(x0 * px, top), androidx.compose.ui.geometry.Size(2 * px, h))
+                        drawRect(Color.White.copy(alpha = 0.95f), androidx.compose.ui.geometry.Offset((x0 + 2) * px, top), androidx.compose.ui.geometry.Size(0.8f * px, h))
+                    }
+                },
+        )
+    }
+}
+
+/** "turn-test": pick a turn, slide its distance, add a street, send it. */
+fun routeSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetNav): SheetSpec? {
+    if (key != "turn-test") return null
+    return SheetSpec("Test one turn", "Route") {
+        val c = W.c
+        val f = Fmt(s.country.locale)
+        val t = live.turn
+        val sel = Maneuvers.of(t.maneuver)
+        Maneuvers.GROUPS.forEach { (g, keys) ->
+            Txt(g, T.rowTitle, c.ink, Modifier.padding(top = 20.dp, bottom = 8.dp))
+            keys.map(Maneuvers::of).chunked(4).forEach { row ->
+                Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    row.forEach { m ->
+                        val on = m.key == sel.key
+                        Column(
+                            Modifier.weight(1f).clip(RoundedCornerShape(14.dp)).background(if (on) c.ink.copy(alpha = 0.08f) else c.raised)
+                                .then(if (on) Modifier.background(c.accent.copy(alpha = 0.06f)) else Modifier)
+                                .pressable(label = m.label) { vm.setTurn(t.copy(maneuver = m.key)) }.padding(vertical = 10.dp, horizontal = 4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            TurnArrow(m.glyph, Modifier.size(28.dp, 34.dp), faint = 0.3f, sw = 9f)
+                            Spacer(Modifier.height(6.dp))
+                            Txt(m.label, T.rowSub.copy(fontSize = 11.5.sp, lineHeight = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal), if (on) c.ink else c.ink2, maxLines = 2)
+                        }
+                    }
+                    repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Column(Modifier.fillMaxWidth().card(20.dp, c.raised).padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Txt("Distance", T.eyebrow, c.ink3, Modifier.weight(1f))
+                Txt("${f.num(t.m)} m", T.plate.copy(fontSize = 13.sp), c.ink2)
+            }
+            Spacer(Modifier.height(12.dp))
+            Slider(t.m / 3000f, { vm.uiTick(it); vm.setTurn(t.copy(m = Math.round(it * 300) * 10)) }, "Distance")
+            Scale()
+            if (sel.glyph.startsWith("roundabout")) {
+                Txt("Roundabout exit", T.eyebrow, c.ink3, Modifier.padding(top = 16.dp, bottom = 8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    (1..7).forEach { e -> Chip("$e", { vm.setTurn(t.copy(exit = e)) }, on = t.exit == e) }
+                }
+            }
+            FormField("Street · ${t.street.length}/31") {
+                Input(t.street, { vm.setTurn(t.copy(street = it)) }, placeholder = "Outer Ring Road", label = "Street", caps = KeyboardCapitalization.Words, maxLength = 31)
+            }
+        }
+        Spacer(Modifier.height(20.dp))
+        Btn("Send to bike", { nav.close(); vm.sendTurn() }, Modifier.fillMaxWidth(), kind = BtnKind.ACCENT)
+    }
+}

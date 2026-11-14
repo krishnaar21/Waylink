@@ -1,0 +1,124 @@
+package app.waylink
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import app.waylink.core.AppState
+import app.waylink.core.Sample
+import app.waylink.core.freshState
+import app.waylink.data.Live
+import app.waylink.ui.alerts.AlertsScreen
+import app.waylink.ui.components.grain
+import app.waylink.ui.fuel.FuelScreen
+import app.waylink.ui.logbook.LogbookScreen
+import app.waylink.ui.rides.RidesScreen
+import app.waylink.ui.route.RouteScreen
+import app.waylink.ui.shell.ProfileScreen
+import app.waylink.ui.shell.SettingsScreen
+import app.waylink.ui.shell.Tab
+import app.waylink.ui.shell.TabBar
+import app.waylink.ui.theme.W
+import app.waylink.ui.theme.WaylinkTheme
+import app.waylink.ui.today.TodayScreen
+import com.github.takahirom.roborazzi.captureRoboImage
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import java.lang.reflect.Proxy
+
+/**
+ * Renders each screen with the sample data at the web app's 390 dp phone width (1 px per dp), so the
+ * pictures can be laid next to web-v0 screenshots. Run: ./gradlew :app:recordRoborazziDebug
+ */
+@RunWith(AndroidJUnit4::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+@Config(sdk = [34], qualifiers = "w390dp-h1900dp-mdpi")
+class ScreenshotTest {
+    init { app.waylink.ui.theme.Motion.still = true }
+
+    private val sample: AppState = Sample.seed(freshState()).copy(onboarded = true)
+    private val live = Live()
+
+    /** Every action does nothing: these are pictures. */
+    private inline fun <reified T> noop(): T =
+        Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, _, _ -> null } as T
+
+    private fun shot(name: String, theme: String = "auto", tab: Tab? = null, content: @Composable () -> Unit) =
+        captureRoboImage("build/shots/$name.png") {
+            WaylinkTheme(theme, sample.settings.accent) {
+                Box(Modifier.fillMaxSize().background(W.c.bg).grain()) {
+                    content()
+                    if (tab != null) TabBar(tab, sample, live, Modifier.align(Alignment.BottomCenter)) {}
+                }
+            }
+        }
+
+    @Test fun today() = shot("today", tab = Tab.TODAY) { TodayScreen(sample, live, noop(), 80.dp) }
+    @Test fun todayDark() = shot("today-dark", "sketchdark", Tab.TODAY) { TodayScreen(sample, live, noop(), 80.dp) }
+    @Test fun logbook() = shot("logbook", tab = Tab.TODAY) { LogbookScreen(sample, noop(), 80.dp) }
+    @Test fun fuel() = shot("fuel", tab = Tab.TODAY) { FuelScreen(sample, noop(), 80.dp) }
+    @Test fun trips() = shot("trips", tab = Tab.RIDES) { RidesScreen(sample, live, noop(), 80.dp) }
+    @Test fun route() = shot("route", tab = Tab.ROUTE) { RouteScreen(sample, live, noop(), {}, 80.dp) }
+    @Test fun alerts() = shot("alerts", tab = Tab.ALERTS) { AlertsScreen(sample, live, noop(), 80.dp) }
+    @Test fun settings() = shot("settings", tab = Tab.SETTINGS) { SettingsScreen(sample, live, noop(), 80.dp) }
+    @Test fun settingsDark() = shot("settings-dark", "sketchdark", Tab.SETTINGS) { SettingsScreen(sample, live, noop(), 80.dp) }
+    // A phone-sized box: the shared 1900 dp canvas would push the slide text and buttons off the bottom.
+    @Test fun onboarding() = shot("onboarding") { Box(Modifier.height(844.dp)) { app.waylink.ui.onboarding.Onboarding(freshState(), noop()) } }
+    @Test fun splash() = shot("splash") { Box(Modifier.height(844.dp)) { app.waylink.ui.components.Splash(1) {} } }
+    @Test fun loading() = shot("loading") { Box(Modifier.height(844.dp)) { app.waylink.ui.components.LoadingScreen("Loading your garage") } }
+    /** Other looks: the road progress style, Glow icons, every theme listed, Bluetooth frames on Route. */
+    @Test fun todayRoad() {
+        val alt = sample.copy(settings = sample.settings.copy(progress = "road", icons = "duo"))
+        captureRoboImage("build/shots/today-road.png") {
+            WaylinkTheme("auto", alt.settings.accent, progress = "road", icons = "duo") {
+                Box(Modifier.fillMaxSize().background(W.c.bg).grain()) { TodayScreen(alt, live, noop(), 80.dp) }
+            }
+        }
+    }
+    @Test fun settingsAll() {
+        val alt = sample.copy(settings = sample.settings.copy(allThemes = true, devFrames = true, font = "fraunces", bodyFont = "atkinson"))
+        captureRoboImage("build/shots/settings-allthemes.png") {
+            WaylinkTheme("obsidian", alt.settings.accent, "fraunces", "atkinson", icons = "fill") {
+                Box(Modifier.fillMaxSize().background(W.c.bg).grain()) { SettingsScreen(alt, live.copy(scenario = "edge"), noop(), 80.dp) }
+            }
+        }
+    }
+    @Test fun routeFrames() {
+        val alt = sample.copy(settings = sample.settings.copy(devFrames = true))
+        val frame = app.waylink.core.Protocol.tbtFrame(2, 350.0, 12_400.0, 4, 35, false, 0, "MG Road")
+        shot("route-frames", tab = Tab.ROUTE) { RouteScreen(alt, live.copy(lastFrame = "Turn" to frame, frameCount = 42), noop(), {}, 80.dp) }
+    }
+    @Test fun profile() = shot("profile", tab = Tab.SETTINGS) { ProfileScreen(sample, {}, {}, {}, 80.dp) }
+
+    /** Developer preview states: a brand-new rider and the edge cases, for every tab, plus ride mode. */
+    private fun states(kind: String) {
+        val st = app.waylink.core.scenarioState(kind, sample)
+        val lv = live.copy(scenario = kind)
+        fun one(n: String, tab: Tab, body: @Composable () -> Unit) = captureRoboImage("build/shots/$kind-$n.png") {
+            WaylinkTheme("auto", st.settings.accent) {
+                Box(Modifier.fillMaxSize().background(W.c.bg).grain()) {
+                    body()
+                    TabBar(tab, st, lv, Modifier.align(Alignment.BottomCenter)) {}
+                }
+            }
+        }
+        one("today", Tab.TODAY) { TodayScreen(st, lv, noop(), 80.dp) }
+        one("route", Tab.ROUTE) { RouteScreen(st, lv, noop(), {}, 80.dp) }
+        one("rides", Tab.RIDES) { RidesScreen(st, lv, noop(), 80.dp) }
+        one("alerts", Tab.ALERTS) { AlertsScreen(st, lv, noop(), 80.dp) }
+        one("settings", Tab.SETTINGS) { SettingsScreen(st, lv, noop(), 80.dp) }
+        one("fuel", Tab.TODAY) { FuelScreen(st, noop(), 80.dp) }
+        one("logbook", Tab.TODAY) { LogbookScreen(st, noop(), 80.dp) }
+        one("profile", Tab.SETTINGS) { ProfileScreen(st, {}, {}, {}, 80.dp) }
+    }
+    @Test fun emptyStates() = states("empty")
+    @Test fun edgeStates() = states("edge")
+    @Test fun rideMode() = shot("ride-mode") { Box(Modifier.height(844.dp)) { app.waylink.ui.shell.RideMode(sample, live.copy(speed = 62, battery = 100)) {} } }
+}

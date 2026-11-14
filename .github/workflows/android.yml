@@ -1,0 +1,73 @@
+# Builds the Android app, runs the shared-core tests, and attaches a debug APK you can install.
+name: Android
+# Pushes only: a pull request from this repo already shows the push run as its check,
+# so a second pull_request run would just double the work (and the emails).
+on:
+  push:
+    paths: ['android/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+permissions:
+  contents: write   # to publish the APK as a pre-release on pushes
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Test the shared core
+        run: ./gradlew :core:test --stacktrace
+      - name: Build the debug APK
+        run: ./gradlew :app:assembleDebug --stacktrace
+      # Every flow on the real view model and app: onboarding, simulated bike, rides, route, fuel, service,
+      # alerts, garage, settings, backup, previews, all tabs by tap and every sheet on sample and edge data.
+      - name: Run real-world scenarios
+        continue-on-error: true
+        run: ./gradlew :app:testDebugUnitTest --tests 'app.waylink.ScenarioTest' --stacktrace
+      # Pictures of each screen at the web app's phone size, for side-by-side checks against web-v0.
+      - name: Render screen pictures
+        continue-on-error: true
+        run: ./gradlew :app:recordRoborazziDebug --stacktrace --continue || echo "::warning::Some screen pictures failed to render"; (cd app/build/shots && zip -q ../../../screens.zip *.png)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: waylink-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      # Puts the APK on the Releases page so it can be installed straight from a phone.
+      # One rolling pre-release, "android-preview", always holds the latest build of a pushed branch.
+      - name: Publish the APK as a pre-release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          short=$(git rev-parse --short HEAD)
+          cp android/app/build/outputs/apk/debug/app-debug.apk waylink-debug.apk
+          notes="Debug build of the Android app from \`${GITHUB_REF_NAME}\` at ${short}, built $(date -u +'%d %b %Y %H:%M') UTC.
+
+          Install: open this page on your Android phone, tap **waylink-debug.apk**, and allow installs from your browser when asked.
+          New builds install over this one. It is a debug build signed with a shared test key, not a store release."
+          gh release delete android-preview --yes 2>/dev/null || true
+          # Leftover drafts from an earlier run whose tag went missing ("untagged-…") are removed too.
+          gh api "repos/${GITHUB_REPOSITORY}/releases?per_page=100" \
+            --jq '.[] | select(.draft and (.tag_name | startswith("untagged-"))) | .id' |
+            while read -r id; do gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/${id}" || true; done
+          # Move the tag ourselves first, so the release never waits on GitHub to create it
+          # (when that raced with the delete, the release was left as an untagged draft).
+          git tag -f android-preview "$GITHUB_SHA"
+          git push -f origin refs/tags/android-preview
+          files="waylink-debug.apk"
+          if [ -f android/screens.zip ]; then files="$files android/screens.zip"; fi
+          gh release create android-preview $files \
+            --prerelease --verify-tag \
+            --title "Android preview (${GITHUB_REF_NAME} · ${short})" --notes "$notes"

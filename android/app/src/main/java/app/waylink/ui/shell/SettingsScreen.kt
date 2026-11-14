@@ -1,0 +1,534 @@
+package app.waylink.ui.shell
+
+import androidx.compose.animation.AnimatedVisibility
+import app.waylink.ui.components.rowPress
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.em
+import androidx.compose.foundation.layout.widthIn
+import app.waylink.core.AppState
+import app.waylink.core.Catalog
+import app.waylink.core.Fmt
+import app.waylink.core.modelName
+import app.waylink.core.needsYou
+import app.waylink.core.shortName
+import app.waylink.core.vehicleTitle
+import app.waylink.data.LinkState
+import app.waylink.data.Live
+import app.waylink.ui.components.Avatar
+import app.waylink.ui.components.BikeArt
+import app.waylink.ui.components.CircleBtn
+import app.waylink.ui.components.Hairline
+import app.waylink.ui.components.Ic
+import app.waylink.ui.components.ListCard
+import app.waylink.ui.components.ListRow
+import app.waylink.ui.components.Page
+import app.waylink.ui.components.PageHead
+import app.waylink.ui.components.SectionGap
+import app.waylink.ui.components.SectionHead
+import app.waylink.ui.components.Switch
+import app.waylink.ui.components.Txt
+import app.waylink.ui.components.card
+import app.waylink.ui.components.pressable
+import app.waylink.ui.theme.Accent
+import app.waylink.ui.theme.Serif
+import app.waylink.ui.theme.T
+import app.waylink.ui.theme.W
+
+/** What Settings can do. Sheet keys follow the web app ("vehicle:<id>", "specs", "backup"). */
+interface SettingsActions {
+    fun sheet(key: String)
+    fun page(key: String)
+    fun help(key: String)
+    fun toggle(key: String)
+    fun theme(key: String)
+    fun accent(key: String)
+    fun sim(on: Boolean)
+    fun soon(what: String)
+    /** Developer actions: "onboarding", "splash", "loading", "pair-all". */
+    fun dev(key: String)
+    /** Preview states: null for my data, "empty" or "edge". */
+    fun scenario(key: String?)
+    /** The switch click sound, for local toggles like the Look disclosure. */
+    fun click(on: Boolean)
+}
+
+val RIDE_CHARTS = listOf("Calendar", "Km per week", "Km by weekday")
+
+/** Bluetooth state in a word, as on the vehicle card. */
+fun connText(s: AppState, live: Live) = when {
+    live.link == LinkState.CONNECTED -> if (live.simulated) "Simulated" else "Connected"
+    live.link == LinkState.CONNECTING -> "Connecting"
+    live.link == LinkState.SCANNING || live.link == LinkState.RECONNECTING -> "Searching"
+    s.vehicle.bike.id != null -> "Paired"
+    else -> "Not paired"
+}
+
+/** The Settings tab, a port of settings() in web-v0/js/views.js. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, onFocused: () -> Unit = {}) {
+    val c = W.c
+    val f = remember(s.country.locale) { Fmt(s.country.locale) }
+    val v = s.vehicle
+    val st = s.settings
+    val conn = connText(s, live)
+    Page(bottom) { androidx.compose.runtime.CompositionLocalProvider(app.waylink.ui.components.LocalBigRowIcons provides true) {
+        PageHead("Settings", "Profile, bikes and look")
+        live.scenario?.let { app.waylink.ui.components.PreviewBar(it, { act.scenario(null) }); Spacer(Modifier.height(12.dp)) }
+        ProfileCard(s) { act.page("profile") }
+
+        SectionGap()
+        SectionHead("Garage", right = { if (s.vehicles.size > 1) Txt("Switch", T.link, c.ink2, Modifier.pressable(label = "Switch vehicle") { act.sheet("garage") }) })
+        Column(Modifier.fillMaxWidth().card(20.dp)) {
+            Box {
+                Row(
+                    Modifier.fillMaxWidth().pressable(label = "Switch vehicle") { act.sheet("garage") }.padding(start = 12.dp, end = 58.dp, top = 12.dp, bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // .art.card-art 96 × 96, radius 16; .vc-name 20/23 semibold; .vc-line 14 ink-2; eyebrow 13.5 ink-3
+                    BikeArt(Modifier.size(96.dp), 16.dp, s.vehicle.colour, s.vehicle.photo)
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Txt(vehicleTitle(s), T.cardTitle.copy(fontSize = 20.sp, lineHeight = 23.sp), c.ink, maxLines = 2)
+                        Spacer(Modifier.height(3.dp))
+                        Txt((if (v.nickname.isNotBlank()) modelName(s, s.model) + " · " else "") + v.plate.ifBlank { "No plate" }, T.row, c.ink2, maxLines = 1)
+                        Spacer(Modifier.height(8.dp))
+                        Txt("${f.short(v.odo)} km · $conn", T.eyebrow, c.ink3, maxLines = 1)
+                    }
+                }
+                // .vcard .edit: 36 dp, flat ink 6 %, 42 down and 14 in from the corner
+                CircleBtn("edit", "Edit vehicle", { act.sheet("vehicle:${v.id}") }, Modifier.align(Alignment.TopEnd).padding(top = 42.dp, end = 14.dp), size = 36.dp, flat = true, iconSize = 15.dp)
+            }
+            Hairline()
+            ListRow("Spec sheet", "Oil, tyres, chain, plugs", icon = "spec", onClick = { act.sheet("specs") })
+            Hairline(66.dp)
+            ListRow("Odometer", "Correct it if it drifts", icon = "gauge", end = "${f.num(Math.floor(v.odo))} km", onClick = { act.sheet("odo") })
+            Hairline(66.dp)
+            ListRow("Bluetooth", "Pair and check the link", icon = "bt", end = conn, onClick = { act.sheet("pair") })
+        }
+
+        // .support-card: card, 44 dp heart tile in ink 7 %, bold title, ink-2 line.
+        Spacer(Modifier.height(30.dp))
+        Row(
+            Modifier.fillMaxWidth().card(20.dp).pressable(label = "Support Waylink") { act.sheet("support") }.padding(start = 14.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(14.dp)).background(c.inkA(0.07f)), contentAlignment = Alignment.Center) {
+                Ic("love", size = 22.dp, tint = c.ink)
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(Modifier.weight(1f)) {
+                Txt("Support Waylink", T.body.copy(fontSize = 16.5.sp, lineHeight = 24.75.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold), c.ink)
+                Spacer(Modifier.height(2.dp))
+                Txt("Chip in if it helps", T.row, c.ink2)
+            }
+            Spacer(Modifier.width(14.dp))
+            Ic("chev", size = 18.dp, tint = c.ink3)
+        }
+
+        SectionGap()
+        SectionHead("Records & safety", help = { act.help("papers") })
+        ListCard {
+            val due = needsYou(v)
+            ListRow("Logbook", "Reminders and visits", icon = "wrench", end = if (due > 0) "$due due" else "All good", onClick = { act.page("logbook") })
+            Hairline(66.dp)
+            ListRow("Fuel", "Fill-ups and petrol price", icon = "fuel", end = "${v.fuel.size} fills", onClick = { act.page("fuel") })
+            Hairline(66.dp)
+            val docs = s.glove.count { it.slot.startsWith(v.id + ":") || it.slot.startsWith("rider:") }
+            ListRow("Digital glovebox", "RC, insurance, PUC, licence", icon = "folder", end = "$docs", onClick = { act.sheet("glovebox") })
+            Hairline(66.dp)
+            val park = v.parking
+            ListRow("Parked bike", "Find your way back to it", icon = "pin", end = if (park != null) f.ago(park.ts) else "Not saved", onClick = { act.sheet("parking") })
+        }
+
+        SectionGap()
+        // #sec-riding: the ride mode hint lands here (goto-riding): scrolled into view, then a 1.6 s accent ring (secFlash).
+        val riding = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+        val flash = remember { androidx.compose.animation.core.Animatable(0f) }
+        LaunchedEffect(live.focus) {
+            if (live.focus != "riding") return@LaunchedEffect
+            kotlinx.coroutines.delay(450)
+            // A taller rect than the section, so it lands near the middle of the screen rather than at an edge.
+            launch { riding.bringIntoView(androidx.compose.ui.geometry.Rect(0f, -600f, 1f, 1400f)) }
+            flash.snapTo(1f)
+            kotlinx.coroutines.delay(960)
+            flash.animateTo(0f, androidx.compose.animation.core.tween(640))
+            onFocused() // last: clearing the key earlier would cancel this effect
+        }
+        Column(
+            Modifier.bringIntoViewRequester(riding).drawBehind {
+                if (flash.value > 0f) {
+                    val r = 3.dp.toPx() / 2
+                    drawRoundRect(
+                        c.accent.copy(alpha = 0.45f * flash.value), androidx.compose.ui.geometry.Offset(-r, -r),
+                        androidx.compose.ui.geometry.Size(size.width + 2 * r, size.height + 2 * r), androidx.compose.ui.geometry.CornerRadius(20.dp.toPx() + r),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(3.dp.toPx()),
+                    )
+                }
+            },
+        ) {
+        SectionHead("Riding", help = { act.help("riding") })
+        ListCard {
+            ListRow("Open ride mode by itself", "Above 15 km/h", icon = "speed", trailing = { Switch(st.autoRide, "Open ride mode by itself", { act.toggle("autoRide") }) })
+            Hairline(66.dp)
+            ListRow("Record rides by themselves", "When the bike links", icon = "route", trailing = { Switch(st.autoRecord, "Record rides by themselves", { act.toggle("autoRecord") }) })
+            Hairline(66.dp)
+            ListRow("Keep the screen on", "While in ride mode", icon = "sparkles", trailing = { Switch(st.wakeLock, "Keep the screen on", { act.toggle("wakeLock") }) })
+            Hairline(66.dp)
+            ListRow("Street names on the bike", "Road name beside the arrow", icon = "eye", trailing = { Switch(st.streetNames, "Street names on the bike", { act.toggle("streetNames") }) })
+            Hairline(66.dp)
+            ListRow("Music from the handlebar", "Tap plays or pauses, hold skips", icon = "volume", trailing = { Switch(st.handlebarMedia, "Music from the handlebar", { act.toggle("handlebarMedia") }) })
+            // Reading another maps app's turns is Android-only; an iPhone build leaves the row out.
+            if (app.waylink.core.Platform.caps.readNavApps) {
+                Hairline(66.dp)
+                ListRow("Live turns from", "Which maps app the bike follows", icon = "nav", end = app.waylink.core.NavSource.of(st.navSource).name, onClick = { act.sheet("nav-source") })
+            }
+            Hairline(66.dp)
+            ListRow("Speed alert", "Buzz when you pass a speed", icon = "alert", end = if (st.speedAlert > 0) "${st.speedAlert} km/h" else "Off", onClick = { act.sheet("speed") })
+        }
+        }
+
+        SectionGap()
+        SectionHead("Look & sound")
+        LookCard(s, act)
+
+        SectionGap()
+        SectionHead("Data & region", help = { act.help("backup") })
+        ListCard {
+            val ctx = androidx.compose.ui.platform.LocalContext.current
+            val tick = app.waylink.ui.route.rememberResumeTick()
+            val need = androidx.compose.runtime.remember(tick, st.navSource) { app.waylink.ui.route.Perms.needed(ctx, s) }
+            ListRow("Permissions", "What Waylink can use", icon = "shield", end = if (need == 0) "All set" else "$need needed", onClick = { act.sheet("perms") })
+            Hairline(66.dp)
+            ListRow("Country", "Currency and SOS", icon = "globe", end = s.country.name, onClick = { act.sheet("country") })
+            Hairline(66.dp)
+            ListRow("Backup & restore", "Save, move or bring back your data", icon = "down", onClick = { act.sheet("backup") })
+            Hairline(66.dp)
+            ListRow(if (s.sample) "Erase sample data" else "Erase everything", icon = "trash", danger = true, onClick = { act.sheet("erase") })
+            Hairline(66.dp)
+            ListRow("Reset the app", "Like a fresh install", icon = "refresh", danger = true, onClick = { act.sheet("reset") })
+        }
+
+        SectionGap()
+        SectionHead("Help & about")
+        ListCard {
+            ListRow("Questions and answers", "Pairing, fuel, weather, privacy", icon = "info", onClick = { act.sheet("faq") })
+            Hairline(66.dp)
+            ListRow("Report a problem", "Copy your app details and tell us", icon = "flag", onClick = { act.sheet("report") })
+            Hairline(66.dp)
+            ListRow("About Waylink", "Version $APP_VERSION, credits and licences", icon = "heart", onClick = { act.sheet("about") })
+            Hairline(66.dp)
+            ListRow("Refresh the app", "Latest version, data kept", icon = "refresh", onClick = { act.dev("refresh") })
+        }
+
+        SectionGap()
+        SectionHead("Developer", help = { act.help("developer") })
+        ListCard {
+            val simOn = live.simulated && live.link == LinkState.CONNECTED
+            ListRow("Show onboarding", "Preview first launch", icon = "flag", onClick = { act.dev("onboarding") })
+            Hairline(66.dp)
+            ListRow("Show the splash screen", "The logo animation. Tap to close.", icon = "sparkles", onClick = { act.dev("splash") })
+            Hairline(66.dp)
+            ListRow("Show the loading screen", "Turn signs while something loads", icon = "refresh", onClick = { act.dev("loading") })
+            Hairline(66.dp)
+            ListRow("Simulated bike", "Try it all without a bike", icon = "bolt", trailing = { Switch(simOn, "Simulated bike", { act.sim(!simOn) }) })
+            Hairline(66.dp)
+            ListRow("Show all themes", "Light, Dark and Navy besides Paper", icon = "sparkles", trailing = { Switch(st.allThemes, "Show all themes", { act.toggle("allThemes") }) })
+            Hairline(66.dp)
+            ListRow("Show Bluetooth messages", "Raw bytes on the Route tab", icon = "btMsgs", trailing = { Switch(st.devFrames, "Show Bluetooth messages", { act.toggle("devFrames") }) })
+            Hairline(66.dp)
+            ListRow("Pair from all devices", "If your bike isn’t listed", icon = "bt", onClick = { act.dev("pair-all") })
+            Hairline(66.dp)
+            ListRow("Connection log", "Each step of the Bluetooth link", icon = "list", end = "${live.linkLog.size}", onClick = { act.sheet("log") })
+            Hairline(66.dp)
+            ListRow("Protocol", "Service, frames and timings", icon = "protocol", onClick = { act.sheet("protocol") })
+        }
+        // Preview states: a made-up garage, the real one is put aside and comes back on Exit.
+        Spacer(Modifier.height(12.dp))
+        Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Txt("Preview states", T.msT, c.ink, Modifier.weight(1f))
+                Txt("Your data is safe", T.eyebrow, c.ink3)
+            }
+            Spacer(Modifier.height(12.dp))
+            SegPills(listOf("real" to "My data", "empty" to "Empty", "edge" to "Edge cases"), live.scenario ?: "real") { act.scenario(it.takeIf { k -> k != "real" }) }
+            app.waylink.ui.components.Hint("Empty shows a brand-new rider. Edge cases shows long names, huge numbers and everything overdue. Nothing is saved while previewing.")
+        }
+
+        // footer.about: 36 + 15vh down, the Loop wordmark (web brandOf() is always "loop"), version in the body face, legal line
+        val vh = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp
+        Spacer(Modifier.height(36.dp + (vh * 0.15f).dp))
+        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            app.waylink.ui.components.LoopWordmark(24f, animate = false)
+            Spacer(Modifier.height(4.dp))
+            Txt("Version $APP_VERSION · MIT licence", T.rowSub.copy(fontSize = 13.5.sp, lineHeight = 20.sp), c.ink3)
+            Spacer(Modifier.height(8.dp))
+            Txt("Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.", T.rowSub.copy(fontSize = 12.5.sp, lineHeight = 18.75.sp, textAlign = TextAlign.Center), c.ink4, Modifier.widthIn(max = 250.dp))
+        }
+    } }
+}
+
+/** .seg pills: the chosen one filled with ink, the rest outlined on raised paper. */
+@Composable
+fun SegPills(items: List<Pair<String, String>>, on: String, onPick: (String) -> Unit) {
+    val c = W.c
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items.forEach { (k, l) ->
+            val sel = k == on
+            Box(
+                Modifier.weight(1f).height(38.dp).clip(CircleShape).background(if (sel) c.ink else c.raised)
+                    .then(if (sel) Modifier else Modifier.border(1.dp, c.line, CircleShape))
+                    .semantics { selected = sel }.pressable(label = l, role = Role.RadioButton) { onPick(k) },
+                contentAlignment = Alignment.Center,
+            ) { Txt(l, T.row.copy(fontSize = 13.5.sp, fontWeight = if (sel) androidx.compose.ui.text.font.FontWeight.Medium else androidx.compose.ui.text.font.FontWeight.Normal), if (sel) c.bg else c.ink2, maxLines = 1) }
+        }
+    }
+}
+
+const val APP_VERSION = "1.0"
+
+/** The profile card (.profile-card): avatar, name, and the emergency info folded underneath (.pc-more). */
+@Composable
+private fun ProfileCard(s: AppState, onOpen: () -> Unit) {
+    val c = W.c
+    val p = s.profile
+    val rows = listOfNotNull(
+        p.blood.takeIf { it.isNotBlank() }?.let { Triple("drop", "Blood", it) },
+        p.iceName.takeIf { it.isNotBlank() }?.let { Triple("phone", "Emergency contact", it) },
+        p.medical.takeIf { it.isNotBlank() }?.let { Triple("hospital", "Medical notes", it) },
+    )
+    var open by rememberSaveable { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().card(20.dp)) {
+        Row(Modifier.fillMaxWidth().pressable(label = "Your profile", onClick = onOpen).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Avatar(p.avatar, photo = p.photo)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Txt(shortName(p.name).ifEmpty { "Add your name" }, T.cardTitle.copy(lineHeight = 24.15.sp), c.ink, maxLines = 1)
+                Txt(if (rows.isNotEmpty()) "Rider profile" else "Licence, blood group, emergency contact", T.row, c.ink3, maxLines = if (rows.isNotEmpty()) 1 else 2)
+            }
+            Spacer(Modifier.width(12.dp))
+            Ic("chev", size = 16.dp, tint = c.ink3)
+        }
+        if (rows.isNotEmpty()) {
+            val sum = listOfNotNull(
+                p.blood.takeIf { it.isNotBlank() }?.let { "Blood $it" },
+                "ICE".takeIf { p.iceName.isNotBlank() },
+                "Medical".takeIf { p.medical.isNotBlank() },
+            ).joinToString(" · ")
+            // summary chevron points down, and up when open (rotate 90 → -90 over .2s)
+            val turn by animateFloatAsState(if (open) -90f else 90f, androidx.compose.animation.core.tween(200), label = "pc")
+            Hairline()
+            Row(
+                Modifier.fillMaxWidth().rowPress(label = "Emergency info") { open = !open }.padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Ic("shield", size = 17.dp, tint = c.ink3)
+                Spacer(Modifier.width(10.dp))
+                Txt("Emergency info", T.row.copy(fontSize = 14.5.sp, lineHeight = 21.75.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), c.ink)
+                Spacer(Modifier.width(10.dp))
+                Txt(sum, T.rowSub, c.ink3, Modifier.weight(1f), maxLines = 1)
+                Spacer(Modifier.width(10.dp))
+                Ic("chev", Modifier.rotate(turn), size = 17.dp, tint = c.ink3)
+            }
+            // .pc-grid: two columns of soft cells, medical notes full width
+            AnimatedVisibility(open) {
+                Column(Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val (wide, half) = rows.partition { it.second == "Medical notes" }
+                    half.chunked(2).forEach { pair ->
+                        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            pair.forEach { PcCell(it, Modifier.weight(1f).fillMaxHeight()) }
+                            if (pair.size == 1) Spacer(Modifier.weight(1f))
+                        }
+                    }
+                    wide.forEach { PcCell(it, Modifier.fillMaxWidth()) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PcCell(row: Triple<String, String, String>, modifier: Modifier) {
+    val c = W.c
+    Column(modifier.clip(RoundedCornerShape(12.dp)).background(c.inkA(0.04f)).padding(horizontal = 12.dp, vertical = 10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Ic(row.first, size = 14.dp, tint = c.ink3)
+            Spacer(Modifier.width(6.dp))
+            Txt(row.second, T.rowSub.copy(fontSize = 12.sp, lineHeight = 18.sp), c.ink3, maxLines = 1)
+        }
+        Spacer(Modifier.height(4.dp))
+        Txt(row.third, T.row.copy(fontSize = 14.5.sp, lineHeight = 19.6.sp), c.ink)
+    }
+}
+
+/** Themes, accents, and the "Sound, icons & fonts" disclosure (.themecard, .tc-more). */
+@Composable
+private fun LookCard(s: AppState, act: SettingsActions) {
+    val c = W.c
+    Column(Modifier.fillMaxWidth().card(20.dp)) {
+        Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 20.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                app.waylink.ui.theme.THEMES.filter { s.settings.allThemes || it[0] in listOf("auto", "sketch", "sketchdark") }.forEach { t ->
+                    val key = t[0]; val label = t[1]; val sub = t[5]
+                    val on = s.settings.theme == key
+                    Column(
+                        Modifier.weight(1f).semantics { selected = on }.pressable(label = label, role = Role.RadioButton, scale = 0.95f) { act.theme(key) },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        ThemePreview(key, on, Modifier.fillMaxWidth().aspectRatio(1.25f))
+                        Spacer(Modifier.height(8.dp))
+                        Txt(label, T.row.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), if (on) c.ink else c.ink2, maxLines = 1)
+                        Spacer(Modifier.height(2.dp))
+                        Txt(sub, T.rowSub.copy(fontSize = 12.sp, lineHeight = 18.sp), c.ink3, maxLines = 1)
+                    }
+                }
+            }
+            Spacer(Modifier.height(24.dp))
+            Txt("Accent", T.eyebrow, c.ink3)
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Accent.entries.forEach { a ->
+                    val on = s.settings.accent == a.key
+                    val col = if (c.dark) a.dark else a.light
+                    // .accentopt .dot: 32 dp glossy dot with a white inner ring; on, it shrinks to .92 inside a 1.5 dp accent ring
+                    val k by animateFloatAsState(if (on) 0.92f else 1f, androidx.compose.animation.core.tween(200, easing = app.waylink.ui.theme.Spring), label = "acc")
+                    val density = androidx.compose.ui.platform.LocalDensity.current.density
+                    Box(
+                        Modifier.size(46.dp).semantics { selected = on }.pressable(label = a.label, role = Role.RadioButton, scale = 0.9f) { act.accent(a.key) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (on) Box(Modifier.size(36.dp).border(1.5.dp, col, CircleShape))
+                        Box(
+                            Modifier.size(32.dp).graphicsLayer { scaleX = k; scaleY = k }
+                                .shadow(if (on) 0.dp else 1.5.dp, CircleShape).clip(CircleShape)
+                                .background(col)
+                                .background(androidx.compose.ui.graphics.Brush.radialGradient(
+                                    0f to Color.White.copy(alpha = 0.45f), 0.55f to Color.White.copy(alpha = 0f),
+                                    center = androidx.compose.ui.geometry.Offset(32f * 0.32f * density, 32f * 0.28f * density), radius = 32f * density,
+                                ))
+                                .border(2.dp, Color.White.copy(alpha = if (on) 0.7f else 0.55f), CircleShape),
+                        )
+                    }
+                }
+            }
+        }
+        Hairline()
+        var open by rememberSaveable { mutableStateOf(false) }
+        val turn by animateFloatAsState(if (open) -90f else 90f, androidx.compose.animation.core.tween(200), label = "tc")
+        Row(
+            Modifier.fillMaxWidth().rowPress(label = "Sound, icons & fonts") { open = !open; act.click(open) }.padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Txt("Sound, icons & fonts", T.body.copy(fontSize = 15.sp, lineHeight = 22.5.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), c.ink, Modifier.weight(1f), maxLines = 1)
+            Ic("chev", Modifier.rotate(turn), size = 16.dp, tint = c.ink3)
+        }
+        AnimatedVisibility(open) {
+            val st = s.settings
+            Column {
+                Hairline()
+                ListRow("Sound effects", if (st.sounds) "Engine start, clicks, revs" else "Off. The app stays silent", icon = "volume", trailing = { Switch(st.sounds, "Sound effects", { act.toggle("sounds") }) })
+                Hairline(66.dp)
+                val appIcon = app.waylink.data.AppIcon.STYLES.firstOrNull { it.first == st.iconStyle }?.second ?: "Classic"
+                val look = app.waylink.ui.theme.Looks.ICONS.firstOrNull { it.first == st.icons }?.second ?: "Line"
+                ListRow("Icons", icon = "sparkles", end = "$appIcon · $look", onClick = { act.sheet("pick-brand") })
+                Hairline(66.dp)
+                val title = app.waylink.ui.theme.Fonts.TITLE_NAMES[st.font] ?: "System"
+                val body = app.waylink.ui.theme.Fonts.BODIES.firstOrNull { it.first == st.bodyFont }?.second ?: "System"
+                ListRow("Fonts", icon = "font", end = "$title · $body", onClick = { act.sheet("pick-font") })
+                Hairline(66.dp)
+                ListRow("Ride chart", icon = "trips", end = RIDE_CHARTS[st.rideChart.coerceIn(0, 2)], onClick = { act.sheet("pick-ridechart") })
+                Hairline(66.dp)
+                ListRow("Progress style", icon = "progress", end = app.waylink.ui.theme.Looks.PROGRESS.firstOrNull { it.first == st.progress }?.second ?: "Fuel gauge", onClick = { act.sheet("pick-progress") })
+            }
+        }
+    }
+}
+
+/** .themeopt .tp: a tiny page in the theme's colours, a title bar, two cards and an accent pill. */
+@Composable
+private fun ThemePreview(key: String, on: Boolean, modifier: Modifier) {
+    val c = W.c
+    val t = app.waylink.ui.theme.THEMES.firstOrNull { it[0] == key } ?: app.waylink.ui.theme.THEMES[0]
+    fun hex(h: String) = Color(android.graphics.Color.parseColor(h))
+    val bg = hex(t[2]); val card = hex(t[3]); val ink = hex(t[4])
+    val shape = RoundedCornerShape(14.dp)
+    Box(
+        modifier
+            // .themeopt.on .tp: box-shadow 0 0 0 2px var(--bg), 0 0 0 4px var(--accent). The ring sits outside the tile, which keeps its size.
+            .then(
+                if (on) Modifier.drawBehind {
+                    val g = 1.dp.toPx(); val r = 3.dp.toPx()
+                    drawRoundRect(c.bg, androidx.compose.ui.geometry.Offset(-g, -g), androidx.compose.ui.geometry.Size(size.width + 2 * g, size.height + 2 * g), androidx.compose.ui.geometry.CornerRadius(15.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx()))
+                    drawRoundRect(c.accent, androidx.compose.ui.geometry.Offset(-r, -r), androidx.compose.ui.geometry.Size(size.width + 2 * r, size.height + 2 * r), androidx.compose.ui.geometry.CornerRadius(17.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx()))
+                } else Modifier.shadow(3.dp, shape, ambientColor = Color(0x59000000), spotColor = Color(0x59000000)),
+            )
+            .clip(shape).background(bg).border(1.dp, c.line, shape),
+    ) {
+        MiniPage(Modifier.fillMaxSize(), card, ink, c.accent)
+        // Auto follows the phone: Paper on the left, Paper dark cut in on a diagonal from the right.
+        if (key == "auto") {
+            val dk = app.waylink.ui.theme.THEMES.firstOrNull { it[0] == "sketchdark" }
+            if (dk != null) MiniPage(
+                Modifier.fillMaxSize().clip(androidx.compose.foundation.shape.GenericShape { sz, _ ->
+                    moveTo(sz.width * 0.62f, 0f); lineTo(sz.width, 0f); lineTo(sz.width, sz.height); lineTo(sz.width * 0.38f, sz.height); close()
+                }).background(hex(dk[2])),
+                hex(dk[3]), hex(dk[4]), c.accent,
+            )
+        }
+    }
+}
+
+/** The tiny page inside a theme tile: a title bar, two cards and an accent pill (.tp u, i, i, b). */
+@Composable
+private fun MiniPage(modifier: Modifier, card: Color, ink: Color, accent: Color) {
+    androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
+        val w = maxWidth; val h = maxHeight
+        Box(Modifier.offset(w * 0.14f, h * 0.13f).size(w * 0.34f, h * 0.07f).clip(RoundedCornerShape(3.dp)).background(ink.copy(alpha = 0.7f)))
+        Box(Modifier.offset(w * 0.14f, h * 0.30f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card).border(0.5.dp, Color.Black.copy(alpha = 0.06f), RoundedCornerShape(6.dp)))
+        Box(Modifier.offset(w * 0.14f, h * 0.53f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card).border(0.5.dp, Color.Black.copy(alpha = 0.06f), RoundedCornerShape(6.dp)))
+        Box(Modifier.offset(w * 0.14f, h * 0.81f).size(w * 0.40f, h * 0.09f).clip(RoundedCornerShape(99.dp)).background(accent))
+    }
+}

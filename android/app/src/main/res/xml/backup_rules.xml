@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The rider's data is kept in Android's own backup, like the web app's export file. -->
+<full-backup-content>
+    <include domain="file" path="waylink-state.json" />
+</full-backup-content>

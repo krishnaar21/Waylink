@@ -1,0 +1,262 @@
+package app.waylink.ui.today
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import app.waylink.core.AppState
+import app.waylink.core.Due
+import app.waylink.core.Fmt
+import app.waylink.core.NavSource
+import app.waylink.core.Platform
+import app.waylink.core.fuelStats
+import app.waylink.core.sortedService
+import app.waylink.core.verdictOf
+import app.waylink.data.LinkState
+import app.waylink.data.Live
+import app.waylink.data.Weather
+import app.waylink.ui.components.IconTile
+import app.waylink.ui.components.Txt
+import app.waylink.ui.components.card
+import app.waylink.ui.components.pressable
+import app.waylink.ui.theme.T
+import app.waylink.ui.theme.W
+import kotlin.math.roundToInt
+
+/**
+ * Quick links on Today, a grid of every place worth one tap. To drop a tile, take its key out of [ORDER];
+ * to move one, move its key. [go] targets: "tab:<key>", "page:<key>", "record", "ride", else a sheet key.
+ */
+object QuickLinks {
+    // Most used first: fuel and service every week, parking and pumps most rides, then the planning
+    // tiles, the paperwork, and the safety pair kept together at the end.
+    val ORDER = listOf(
+        "log-fuel", "service", "parking",
+        "pumps", "weather", "places",
+        "speed", "papers", "visit",
+        "hospitals", "sos", "profile",
+    )
+
+    data class Link(val key: String, val icon: String, val title: String, val sub: String, val go: String, val dot: Boolean? = null)
+
+    /** The tile for [key] with its live subtitle, or null when it doesn't apply on this phone. */
+    fun build(key: String, s: AppState, live: Live, f: Fmt, needPerms: Int): Link? {
+        val v = s.vehicle
+        return when (key) {
+            "ride" -> Link(key, "speed", "Ride mode", if (live.link == LinkState.CONNECTED) "Bike linked" else "Big, glanceable", "ride")
+            "record" -> live.rec?.let { Link(key, "stop", "Recording", "${f.num(it.km, 1)} km so far", "tab:trips", true) }
+                ?: Link(key, "play", "Record ride", "Log this ride", "record")
+            "route" -> Link(key, "route", "Route", when {
+                live.nav != null -> "En route"
+                Platform.caps.readNavApps && NavSource.of(s.settings.navSource).readsNotifications -> "Turns from ${NavSource.of(s.settings.navSource).name}"
+                else -> "Plan a ride"
+            }, "tab:route", live.nav?.let { true })
+            "places" -> Link(key, "home", "Saved places", if (s.places.isEmpty()) "Add home, work" else "${s.places.size} saved", "tab:route")
+            "log-fuel" -> {
+                val fs = fuelStats(v)
+                Link(key, "fuel", "Log fuel", fs.range?.let { "≈${f.num(it)} km left" } ?: "Add a fill-up", "fuel:new", if (fs.range != null && fs.onReserve) false else null)
+            }
+            "pumps" -> Link(key, "fuel", "Petrol pumps", "Nearest first", "nearby:fuel")
+            "hospitals" -> Link(key, "hospital", "Hospitals", "Nearest first", "nearby:hospital")
+            "sos" -> Link(key, "sos", "SOS", "Emergency · ${s.country.name}", "sos")
+            "parking" -> Link(key, "parking", "Parked bike", v.parking?.let { "Saved ${f.ago(it.ts)}" } ?: "Save the spot", "parking")
+            "service" -> {
+                val vd = verdictOf(sortedService(v))
+                Link(key, "wrench", "Service", if (vd.over + vd.soon > 0) "${vd.over + vd.soon} need care" else "All in order", "page:logbook",
+                    if (vd.over > 0) false else if (vd.soon > 0) null else true)
+            }
+            "add-item" -> Link(key, "plus", "Service item", "Add a reminder", "svc-edit:new")
+            "visit" -> Link(key, "doc", "Workshop visit", "Log what was done", "rec:new")
+            "odo" -> Link(key, "gauge", "Odometer", "${f.num(Math.round(v.odo).toDouble())} km", "odo")
+            "trip-a" -> Link(key, "progress", "Trip A", "${f.num(v.tripA.km, 1)} km", "trip:A")
+            "rides" -> Link(key, "trips", "Rides", "${v.trips.size} logged", "tab:trips")
+            "alerts" -> {
+                val n = s.alerts.missed.size + s.alerts.wa.size
+                Link(key, "alerts", "Alerts", if (n > 0) "$n new" else "All clear", "tab:alerts", if (n > 0) false else null)
+            }
+            "papers" -> {
+                val n = s.glove.count { it.slot.startsWith(v.id) || it.slot.startsWith("rider:") }
+                Link(key, "folder", "Papers", if (n > 0) "$n saved" else "RC, insurance, PUC", "glovebox")
+            }
+            "weather" -> Link(key, "wxPart", "Weather", (live.weather as? Weather.State.Ready)?.data?.let { "${it.temp.roundToInt()}° · ${it.place}" } ?: "Next hours", "weather")
+            "garage" -> Link(key, "garage", "Garage", if (s.vehicles.size == 1) "1 vehicle" else "${s.vehicles.size} vehicles", "garage")
+            "bike-link" -> if (!Platform.caps.bluetooth) null else Link(key, "bt", "Bike link", when (live.link) {
+                LinkState.CONNECTED -> "Connected"; LinkState.IDLE -> if (v.bike.id != null) "Paired" else "Pair once"; else -> "Linking…"
+            }, "pair", if (live.link == LinkState.CONNECTED) true else null)
+            "speed" -> Link(key, "alert", "Speed alert", if (s.settings.speedAlert > 0) "${s.settings.speedAlert} km/h" else "Off", "speed")
+            "turn-test" -> Link(key, "turnRight", "Test a turn", "Check the arrow", "turn-test")
+            "profile" -> Link(key, "user", "Rider", "Blood group, contacts", "page:profile")
+            "perms" -> Link(key, "shield", "Permissions", if (needPerms == 0) "All set" else "$needPerms needed", "perms", if (needPerms > 0) false else null)
+            else -> null
+        }
+    }
+}
+
+/** The four layouts Krishna is choosing between; swipe the tile area, or tap a name, then "Use this". */
+val LAYOUTS = listOf("cards" to "Cards", "icons" to "Icons", "list" to "List", "pills" to "Pills")
+
+/** Groups for the list layout, by what the rider is doing. */
+private val GROUPS = listOf(
+    "Riding" to listOf("log-fuel", "pumps", "parking", "weather", "places", "speed"),
+    "Bike & papers" to listOf("service", "visit", "papers"),
+    "Safety" to listOf("hospitals", "sos", "profile"),
+)
+
+@Composable
+fun QuickLinksGrid(s: AppState, live: Live, f: Fmt, chosen: String, choose: (String) -> Unit, go: (String) -> Unit) {
+    val c = W.c
+    val ctx = LocalContext.current
+    val tick = app.waylink.ui.route.rememberResumeTick()
+    val need = remember(tick, s.settings.navSource) { app.waylink.ui.route.Perms.needed(ctx, s) }
+    val links = QuickLinks.ORDER.mapNotNull { QuickLinks.build(it, s, live, f, need) }
+    val start = LAYOUTS.indexOfFirst { it.first == chosen }.coerceAtLeast(0)
+    val pager = androidx.compose.foundation.pager.rememberPagerState(start) { LAYOUTS.size }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    Column {
+        // Layout names: the shown one in ink, the one in use with a check.
+        Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            LAYOUTS.forEachIndexed { i, (k, name) ->
+                val on = pager.currentPage == i
+                Row(
+                    Modifier.clip(RoundedCornerShape(999.dp)).background(if (on) c.ink else c.inkA(0.06f))
+                        .pressable(label = "$name layout", scale = 0.94f) { scope.launch { pager.animateScrollToPage(i) } }
+                        .padding(horizontal = 11.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (k == chosen) { app.waylink.ui.components.Ic("check", size = 12.dp, tint = if (on) c.bg else c.ink2); Spacer(Modifier.width(4.dp)) }
+                    Txt(name, T.rowSub.copy(fontSize = 12.5.sp, lineHeight = 15.sp), if (on) c.bg else c.ink2, maxLines = 1)
+                }
+            }
+            Spacer(Modifier.weight(1f))
+            val shown = LAYOUTS[pager.currentPage].first
+            if (shown != chosen) Txt("Use this", T.link, c.accent, Modifier.pressable(label = "Use the ${LAYOUTS[pager.currentPage].second} layout") { choose(shown) })
+        }
+        androidx.compose.foundation.pager.HorizontalPager(
+            pager, Modifier.fillMaxWidth().animateContentSize(), verticalAlignment = Alignment.Top, pageSpacing = 16.dp,
+        ) { p ->
+            when (LAYOUTS[p].first) {
+                "cards" -> CardsLayout(links, go)
+                "icons" -> IconsLayout(links, go)
+                "list" -> ListLayout(links, go)
+                else -> PillsLayout(links, go)
+            }
+        }
+    }
+}
+
+@Composable
+private fun Modifier.tap(l: QuickLinks.Link, go: (String) -> Unit) = this.pressable(label = "${l.title}, ${l.sub}") { go(l.go) }
+
+@Composable
+private fun DotOn(l: QuickLinks.Link, modifier: Modifier = Modifier) {
+    val c = W.c
+    if (l.dot != null) Box(modifier.size(8.dp).clip(CircleShape).background(if (l.dot) c.sage else c.red))
+}
+
+/** Two big cards to a row: icon, title, live line. */
+@Composable
+private fun CardsLayout(links: List<QuickLinks.Link>, go: (String) -> Unit) {
+    val c = W.c
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        links.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { l ->
+                    Row(Modifier.weight(1f).height(76.dp).card(18.dp).tap(l, go).padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box { IconTile(l.icon, size = 38.dp, radius = 12.dp, iconSize = 19.dp, bg = c.inkA(0.07f)); DotOn(l, Modifier.align(Alignment.TopEnd)) }
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Txt(l.title, T.rowTitle.copy(fontSize = 14.5.sp, lineHeight = 19.sp), c.ink, maxLines = 1)
+                            Txt(l.sub, T.rowSub.copy(fontSize = 12.5.sp, lineHeight = 17.sp), c.ink3, maxLines = 1)
+                        }
+                    }
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/** Four round icons to a row with a short name, like a phone's home screen. */
+@Composable
+private fun IconsLayout(links: List<QuickLinks.Link>, go: (String) -> Unit) {
+    val c = W.c
+    Column(Modifier.fillMaxWidth().card(22.dp).padding(vertical = 16.dp, horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        links.chunked(4).forEach { row ->
+            Row {
+                row.forEach { l ->
+                    Column(Modifier.weight(1f).tap(l, go), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box {
+                            Box(Modifier.size(52.dp).clip(CircleShape).background(c.inkA(0.07f)), contentAlignment = Alignment.Center) { app.waylink.ui.components.Ic(l.icon, size = 23.dp, tint = c.ink) }
+                            DotOn(l, Modifier.align(Alignment.TopEnd).padding(2.dp))
+                        }
+                        Spacer(Modifier.height(7.dp))
+                        Txt(l.title, T.rowSub.copy(fontSize = 12.sp, lineHeight = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center), c.ink2, maxLines = 1)
+                    }
+                }
+                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+/** Grouped rows with the live line on the right. */
+@Composable
+private fun ListLayout(links: List<QuickLinks.Link>, go: (String) -> Unit) {
+    val by = links.associateBy { it.key }
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        GROUPS.forEach { (name, keys) ->
+            val rows = keys.mapNotNull { by[it] }
+            if (rows.isEmpty()) return@forEach
+            Column {
+                Txt(name, T.eyebrow, W.c.ink3, Modifier.padding(start = 6.dp, bottom = 8.dp))
+                app.waylink.ui.components.ListCard {
+                    rows.forEachIndexed { i, l ->
+                        if (i > 0) app.waylink.ui.components.Hairline(66.dp)
+                        app.waylink.ui.components.ListRow(l.title, null, icon = l.icon, end = l.sub, onClick = { go(l.go) })
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Pills that wrap: quickest to scan, takes the least room. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun PillsLayout(links: List<QuickLinks.Link>, go: (String) -> Unit) {
+    val c = W.c
+    androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        links.forEach { l ->
+            Row(
+                Modifier.clip(RoundedCornerShape(999.dp)).background(c.card).border(1.dp, c.line, RoundedCornerShape(999.dp))
+                    .tap(l, go).padding(start = 8.dp, end = 14.dp, top = 7.dp, bottom = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.size(28.dp).clip(CircleShape).background(c.inkA(0.07f)), contentAlignment = Alignment.Center) { app.waylink.ui.components.Ic(l.icon, size = 15.dp, tint = c.ink) }
+                Spacer(Modifier.width(8.dp))
+                Txt(l.title, T.rowTitle.copy(fontSize = 13.5.sp, lineHeight = 17.sp), c.ink, maxLines = 1)
+                if (l.dot != null) { Spacer(Modifier.width(6.dp)); DotOn(l) }
+            }
+        }
+    }
+}
