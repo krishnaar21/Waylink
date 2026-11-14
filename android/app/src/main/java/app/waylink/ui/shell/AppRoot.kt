@@ -338,16 +338,16 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         }
         // .live-pill: while a ride records (or a route runs), a dark pill in the page header shows km and time;
         // tap it to go to Rides (or Route). Hidden on the tab that already shows it, on inner pages and in ride mode.
-        val rec = live.rec; val nav = live.nav
-        val pillOn = (nav != null || rec != null) && !live.rideMode && page == null &&
-            !(if (nav != null) tab == Tab.ROUTE else tab == Tab.RIDES || tab == Tab.TODAY)
+        val pRec = live.rec; val pNav = live.nav
+        val pillOn = (pNav != null || pRec != null) && !live.rideMode && page == null &&
+            !(if (pNav != null) tab == Tab.ROUTE else tab == Tab.RIDES || tab == Tab.TODAY)
         androidx.compose.animation.AnimatedVisibility(
             pillOn, Modifier.align(Alignment.TopEnd),
             enter = fadeIn(tween(220)) + androidx.compose.animation.scaleIn(tween(350, easing = app.waylink.ui.theme.Spring), initialScale = 0.8f),
             exit = fadeOut(tween(160)),
         ) {
             LivePill(live, Modifier.windowInsetsPadding(WindowInsets.statusBars).padding(top = 22.dp, end = if (tab == Tab.TODAY) 72.dp else 20.dp)) {
-                page = null; tab = if (nav != null) Tab.ROUTE else Tab.RIDES
+                page = null; tab = if (pNav != null) Tab.ROUTE else Tab.RIDES
             }
         }
         // Quick actions on Today, like the web's + button.

@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.semantics.contentDescription
@@ -92,7 +93,7 @@ fun LoopWordmark(fontSize: Float = 38f, modifier: Modifier = Modifier, animate: 
             val drawn = if (p >= 1f) path else Path().also { out -> PathMeasure().apply { setPath(path, false) }.let { it.getSegment(0f, it.length * p, out, true) } }
             if (p > 0f) scale(s, s, pivot = androidx.compose.ui.geometry.Offset.Zero) {
                 val taper = Path().apply { moveTo(TAPER[0], TAPER[1]); for (j in 2 until TAPER.size step 2) lineTo(TAPER[j], TAPER[j + 1]); close() }
-                androidx.compose.ui.graphics.drawscope.clipPath(taper, androidx.compose.ui.graphics.ClipOp.Difference) {
+                clipPath(taper, androidx.compose.ui.graphics.ClipOp.Difference) {
                 drawPath(drawn, c.accent, style = Stroke(width = 12f, cap = StrokeCap.Butt, join = StrokeJoin.Miter))
                 }
             }
