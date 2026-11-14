@@ -48,6 +48,8 @@ data class Live(
     val engine: Int? = null,
     val battery: Int? = null,
     val weather: Weather.State = Weather.State.Idle,
+    /** "Use my location" is looking (fuel rate or weather). */
+    val locating: Boolean = false,
     val toast: Toast? = null,
     /** A ride being recorded, or null. */
     val rec: Rec? = null,
@@ -96,7 +98,7 @@ data class Nav(
 data class TurnTest(val maneuver: String = "TURN_RIGHT", val m: Int = 250, val exit: Int = 2, val street: String = "")
 
 /** A ride in progress: [pts] are [lat, lng, epoch ms]. */
-data class Rec(val start: Long, val km: Double = 0.0, val top: Int = 0, val pts: List<List<Double>> = emptyList())
+data class Rec(val start: Long, val km: Double = 0.0, val top: Int = 0, val pts: List<List<Double>> = emptyList(), val auto: Boolean = false)
 
 data class Toast(val text: String, val id: Long = System.nanoTime())
 
@@ -124,6 +126,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
                     val was = _live.value.link
                     _live.update { it.copy(link = st, linkName = link.deviceName, engine = if (st == LinkState.CONNECTED) it.engine else null) }
                     if (st == LinkState.CONNECTED && was != LinkState.CONNECTED) onRealLinked()
+                    if (was == LinkState.CONNECTED && st != LinkState.CONNECTED) onLinkLost(idle = st == LinkState.IDLE)
                     if (was == LinkState.CONNECTED && st == LinkState.RECONNECTING) { sound.click(false); toast("Bike went quiet. Retrying.") }
                 }
             },
@@ -414,18 +417,41 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     private fun r6(x: Double) = Math.round(x * 1e6) / 1e6
 
-    fun startRecording() {
+    fun startRecording(auto: Boolean = false) {
         if (_live.value.rec != null) return
-        if (!_live.value.simulated && !hasLocation()) { toast("Allow location to record rides, or use the simulated bike."); return }
+        if (!_live.value.simulated && !hasLocation()) { if (!auto) toast("Allow location to record rides, or use the simulated bike."); return }
+        autoStopJob?.cancel()
         lastFix = null
         sound.play(Sound.Fx.REV_UP)
-        _live.update { it.copy(rec = Rec(System.currentTimeMillis())) }
+        _live.update { it.copy(rec = Rec(System.currentTimeMillis(), auto = auto)) }
         ensureGeo()
-        toast("Recording. Ride safe.")
+        if (!auto) toast("Recording. Ride safe.")
+    }
+
+    // ---------- What happens when the bike links or goes quiet (web link 'state' listener) ----------
+    private var autoStopJob: Job? = null
+
+    /** Linked: with "Record rides by themselves" on, a ride starts recording. */
+    private fun onLinked() {
+        autoStopJob?.cancel(); autoStopJob = null
+        if (_state.value.settings.autoRecord && _live.value.rec == null) startRecording(auto = true)
+    }
+
+    /**
+     * The link dropped: where the phone last was becomes the parking spot, and a ride that started by itself
+     * stops by itself, at once when the bike was switched off, or after 30 s if it only went quiet.
+     */
+    private fun onLinkLost(idle: Boolean) {
+        lastFix?.let { (lat, lng, _) -> veh { it.copy(parking = app.waylink.core.Parking(r6(lat), r6(lng), System.currentTimeMillis())) } }
+        if (_live.value.rec?.auto == true) {
+            autoStopJob?.cancel()
+            autoStopJob = viewModelScope.launch { delay(if (idle) 0 else 30_000); if (_live.value.rec?.auto == true) stopRecording(true) }
+        }
     }
 
     fun stopRecording(keep: Boolean) {
         val r = _live.value.rec ?: return
+        autoStopJob?.cancel(); autoStopJob = null
         _live.update { it.copy(rec = null) }
         sound.play(Sound.Fx.ENGINE_OFF)
         if (keep && r.km >= 0.1) {
@@ -581,6 +607,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         logLink("Linked. Status every 5 s, turns every 0.8 s")
         startStream()
         toast("Linked to ${link.deviceName}.")
+        onLinked()
         ensureGeo()
     }
 
@@ -593,6 +620,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         _live.update { it.copy(link = LinkState.CONNECTED, simulated = true, engine = 83, speed = 0) }
         startStream()
         toast("Simulated cluster linked.")
+        onLinked()
         ensureGeo()
     }
 
@@ -627,7 +655,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         }
     }
 
-    fun simOff() { streamJob?.cancel(); sound.click(false); logLink("Disconnected"); _live.update { it.copy(link = LinkState.IDLE, simulated = false, engine = null) }; ensureGeo() }
+    fun simOff() {
+        val was = _live.value.link == LinkState.CONNECTED
+        streamJob?.cancel(); sound.click(false); logLink("Disconnected"); _live.update { it.copy(link = LinkState.IDLE, simulated = false, engine = null) }
+        if (was) onLinkLost(idle = true)
+        ensureGeo()
+    }
 
     // ---------- Route ----------
     private var navJob: Job? = null
@@ -862,13 +895,101 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         }
     }
 
+    /** A bike photo for the vehicle sheet (web veh-photo): scaled to 960 px on its long side, kept until saved. */
+    fun importVehiclePhoto(uri: android.net.Uri, done: (String) -> Unit) {
+        val ctx = getApplication<Application>()
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val out = runCatching {
+                val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                ctx.contentResolver.openInputStream(uri)?.use { android.graphics.BitmapFactory.decodeStream(it, null, bounds) }
+                var sample = 1
+                while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 960) sample *= 2
+                val src = ctx.contentResolver.openInputStream(uri)?.use {
+                    android.graphics.BitmapFactory.decodeStream(it, null, android.graphics.BitmapFactory.Options().apply { inSampleSize = sample })
+                } ?: return@runCatching null
+                val k = minOf(1f, 960f / maxOf(src.width, src.height))
+                val small = if (k < 1f) android.graphics.Bitmap.createScaledBitmap(src, (src.width * k).toInt(), (src.height * k).toInt(), true) else src
+                val f = File(ctx.filesDir, "bike-${System.currentTimeMillis()}.jpg")
+                f.outputStream().use { small.compress(android.graphics.Bitmap.CompressFormat.JPEG, 86, it) }
+                f.absolutePath
+            }.getOrNull()
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { if (out == null) toast("Couldn’t open that picture") else done(out) }
+        }
+    }
+
     fun setAvatar(key: String) { if (Regex("^a([1-9]|1[01])$").matches(key)) commit { it.copy(profile = it.profile.copy(avatar = key, photo = null)) } }
 
     fun saveProfileAbout(name: String, phone: String, email: String, city: String) {
         val oldCity = _state.value.profile.city
         commit { it.copy(profile = it.profile.copy(name = name.trim().take(30), phone = phone.trim().take(20), email = email.trim().take(60), city = city.trim().take(24))) }
-        if (city.trim() != oldCity) refreshWeather()
+        if (city.trim() != oldCity) {
+            commit { it.copy(profile = it.profile.copy(weatherAt = null)) } // a new city wins over an old location fix
+            refreshWeather()
+        }
     }
+
+    // ---------- "Use my location" (web wx-locate, fuel-locate) ----------
+    /** One location fix, then the place it's in (town and state), or null with a reason. Location must be allowed. */
+    @android.annotation.SuppressLint("MissingPermission")
+    private fun locateOnce(done: (lat: Double, lon: Double, place: String, state: String) -> Unit, fail: (String) -> Unit) {
+        if (!hasLocation()) { fail("Location is off. Allow it, or add your city in Profile."); return }
+        _live.update { it.copy(locating = true) }
+        val finish: (android.location.Location?) -> Unit = { loc ->
+            if (loc == null) { _live.update { it.copy(locating = false) }; fail("Couldn’t get a fix. Try again outdoors, or add your city in Profile.") }
+            else viewModelScope.launch {
+                val (place, state) = withContext(Dispatchers.IO) { placeOf(loc.latitude, loc.longitude) }
+                _live.update { it.copy(locating = false) }
+                done(loc.latitude, loc.longitude, place, state)
+            }
+        }
+        try {
+            val provider = listOf(android.location.LocationManager.NETWORK_PROVIDER, android.location.LocationManager.GPS_PROVIDER).firstOrNull { locations.isProviderEnabled(it) }
+            if (provider == null) { _live.update { it.copy(locating = false) }; fail("Location is off. Switch it on, or add your city in Profile."); return }
+            val recent = locations.getLastKnownLocation(provider)?.takeIf { System.currentTimeMillis() - it.time < 10 * 60_000 }
+            if (recent != null) { finish(recent); return }
+            var settled = false
+            val once: (android.location.Location?) -> Unit = { l -> if (!settled) { settled = true; finish(l) } }
+            viewModelScope.launch { delay(12_000); once(null) }
+            androidx.core.location.LocationManagerCompat.getCurrentLocation(
+                locations, provider, null as android.os.CancellationSignal?, androidx.core.content.ContextCompat.getMainExecutor(getApplication()),
+                androidx.core.util.Consumer<android.location.Location?> { once(it ?: locations.getLastKnownLocation(provider)) })
+        } catch (e: Exception) { _live.update { it.copy(locating = false) }; fail("Couldn’t get your location.") }
+    }
+
+    /** Town and state for a fix: the phone's own geocoder, else OpenStreetMap as on the web (coordinates rounded to ~100 m). */
+    private fun placeOf(lat: Double, lon: Double): Pair<String, String> {
+        try {
+            if (android.location.Geocoder.isPresent()) {
+                @Suppress("DEPRECATION")
+                val a = android.location.Geocoder(getApplication(), java.util.Locale.ENGLISH).getFromLocation(lat, lon, 1)?.firstOrNull()
+                if (a != null) return (a.locality ?: a.subAdminArea ?: a.adminArea ?: "") to (a.adminArea ?: "")
+            }
+        } catch (e: Exception) { }
+        return try {
+            val c = java.net.URL("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&accept-language=en&lat=${"%.3f".format(java.util.Locale.US, lat)}&lon=${"%.3f".format(java.util.Locale.US, lon)}")
+                .openConnection() as java.net.HttpURLConnection
+            c.connectTimeout = 8000; c.readTimeout = 8000; c.setRequestProperty("User-Agent", "Waylink-Android"); c.setRequestProperty("Accept", "application/json")
+            val a = org.json.JSONObject(c.inputStream.bufferedReader().use { it.readText() }).optJSONObject("address") ?: return "" to ""
+            val place = listOf("city", "town", "village", "state_district", "county").firstNotNullOfOrNull { k -> a.optString(k).ifBlank { null } } ?: ""
+            place to a.optString("state")
+        } catch (e: Exception) { "" to "" }
+    }
+
+    /** Weather where the phone is: kept until the profile city changes. */
+    fun weatherHere() = locateOnce({ lat, lon, place, _ ->
+        commit { it.copy(profile = it.profile.copy(weatherAt = app.waylink.core.WeatherAt(Math.round(lat * 1000) / 1000.0, Math.round(lon * 1000) / 1000.0, place))) }
+        refreshWeather()
+    }, ::toast)
+
+    /** The state petrol rate where the phone is (India), used for every bike. */
+    fun fuelHere() = locateOnce({ _, _, place, state ->
+        val hit = app.waylink.core.FuelPrices.lookup(state, place)
+        if (hit == null) { toast("Couldn’t match your area to a state rate. Enter your pump price."); return@locateOnce }
+        commit { s -> s.copy(profile = s.profile.copy(fuelArea = app.waylink.core.FuelArea(hit.state, place.ifBlank { hit.state }, System.currentTimeMillis()))) }
+        val p = hit.price
+        if (p != null) { commit { s -> s.copy(vehicles = s.vehicles.map { it.copy(fuelPrice = p) }) }; toast("Petrol in ${hit.state}: ${_state.value.country.cur}${fmt().num(p, 2)} a litre.") }
+        else toast("No rate for ${hit.state} yet. Enter your pump price.")
+    }, ::toast)
 
     fun saveLicence(no: String, expiry: Long?) =
         commit { it.copy(profile = it.profile.copy(licenceNo = no.trim().uppercase().take(20), licenceExpiry = expiry)) }
@@ -882,18 +1003,21 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     // ---------- Vehicles ----------
     /** Adds a vehicle ([id] null) or edits one. Returns an error to show, or null. */
-    fun saveVehicle(id: String?, model: String, nickname: String, plate: String, odo: Double?, colour: String): String? {
+    fun saveVehicle(id: String?, model: String, nickname: String, plate: String, odo: Double?, colour: String, photo: String? = id?.let { x -> _state.value.vehicles.firstOrNull { it.id == x }?.photo }): String? {
         if (odo == null || odo < 0 || odo >= 10_000_000) return "Add the odometer reading." // web: any reading ≥ 0; the cap only stops typos
         val m = Catalog.model(model).id
         val col = Catalog.COLOURS.firstOrNull { it.first == colour }?.first ?: Catalog.COLOURS[0].first
         val nick = nickname.trim().take(20)
         val pl = plate.trim().uppercase().take(13)
         if (id == null) {
-            val v = newVehicle(model = m, nickname = nick, plate = pl, odo = odo, colour = col)
+            val v = newVehicle(model = m, nickname = nick, plate = pl, odo = odo, colour = col).copy(photo = photo)
             commit { it.copy(vehicles = it.vehicles + v, active = v.id) }
             toast("Added to your garage.")
         } else {
-            commit { s -> s.updateVehicle(id) { it.copy(model = m, nickname = nick, plate = pl, odo = Math.round(odo * 10) / 10.0, colour = col) } }
+            val old = _state.value.vehicles.firstOrNull { it.id == id }?.photo
+            commit { s -> s.updateVehicle(id) { it.copy(model = m, nickname = nick, plate = pl, odo = Math.round(odo * 10) / 10.0, colour = col, photo = photo) } }
+            val dir = getApplication<Application>().filesDir.absolutePath
+            if (old != null && old != photo && old.startsWith(dir)) runCatching { File(old).delete() }
             toast("Saved.")
         }
         return null
@@ -938,10 +1062,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     // ---------- Weather ----------
     fun refreshWeather() {
         val city = _state.value.profile.city
-        if (city.isBlank()) { _live.update { it.copy(weather = Weather.State.Need) }; return }
+        val at = _state.value.profile.weatherAt
+        if (city.isBlank() && at == null) { _live.update { it.copy(weather = Weather.State.Need) }; return }
         _live.update { it.copy(weather = Weather.State.Loading((it.weather as? Weather.State.Ready)?.data)) }
         viewModelScope.launch {
-            val r = withContext(Dispatchers.IO) { Weather.fetch(city) }
+            val r = withContext(Dispatchers.IO) { if (at != null) Weather.fetchAt(at.lat, at.lon, at.place) else Weather.fetch(city) }
             _live.update { it.copy(weather = r) }
         }
     }

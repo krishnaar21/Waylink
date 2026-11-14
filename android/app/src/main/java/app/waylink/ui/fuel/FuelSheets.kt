@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -143,9 +144,20 @@ private fun PriceBody(s: AppState, vm: AppViewModel, nav: SheetNav) {
                     else Chip("Use", { vm.useFuelPrice(fp); text = two(fp) })
                 }
             } else Txt(
-                if (found != null) "No rate for ${found.state} yet. Enter the pump price below." else "Add your city in Profile to see the petrol rate where you ride.",
+                if (found != null) "No rate for ${found.state} yet. Enter the pump price below." else "Add your city in Profile, or use your location, to see the petrol rate where you ride.",
                 T.row.copy(fontSize = 14.sp), c.ink2,
             )
+            // web fuel-locate: find the state from where the phone is, and use its rate
+            val locating = vm.live.collectAsState().value.locating
+            val ask = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()) { r ->
+                if (r.values.any { it }) vm.fuelHere() else vm.toast("Location is off. Allow it, or add your city in Profile.")
+            }
+            Spacer(Modifier.height(12.dp))
+            Btn(if (locating) "Finding you…" else if (found != null) "Update from my location" else "Use my location", {
+                if (locating) return@Btn
+                if (vm.hasLocation()) vm.fuelHere()
+                else ask.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION))
+            }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, small = true, icon = "pin")
         }
     }
     FormField("Your price") { Input(text, { text = decimal(it, 8) }, placeholder = "0", suffix = cur, label = "Your price", keyboard = KeyboardType.Decimal) }

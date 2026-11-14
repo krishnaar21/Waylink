@@ -50,6 +50,19 @@ object Weather {
         State.Error("Couldn’t reach the weather service.")
     }
 
+    /** Weather at a location fix, from "Use my location". Coordinates are rounded to about 1 km before they're sent. */
+    fun fetchAt(lat: Double, lon: Double, place: String): State = try {
+        val la = Math.round(lat * 100) / 100.0; val lo = Math.round(lon * 100) / 100.0
+        val j = JSONObject(get(
+            "https://api.open-meteo.com/v1/forecast?latitude=$la&longitude=$lo&timeformat=unixtime&forecast_hours=13" +
+                "&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day" +
+                "&hourly=temperature_2m,precipitation_probability,weather_code,is_day",
+        ))
+        State.Ready(parse(j, place.ifBlank { "Near you" }))
+    } catch (e: Exception) {
+        State.Error("Couldn’t reach the weather service.")
+    }
+
     fun parse(j: JSONObject, place: String, now: Long = System.currentTimeMillis()): Data {
         val cur = j.getJSONObject("current")
         val h = j.optJSONObject("hourly")

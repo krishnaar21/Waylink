@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -385,12 +386,20 @@ private fun WeatherBody(w: Weather.State, d: Weather.Data?, vm: AppViewModel, ho
     if (d == null) {
         Spacer(Modifier.height(8.dp))
         Txt(when (w) {
-            is Weather.State.Need -> "Add your city in Profile to see rain, heat and wind for your ride."
+            is Weather.State.Need -> "Add your city in Profile, or share your location, to see rain, heat and wind for your ride."
             is Weather.State.Error -> w.msg.ifBlank { "Couldn’t reach the weather service." }
             else -> "Checking the sky…"
         }, T.sheetLead, c.ink2)
         if (w is Weather.State.Error) { Spacer(Modifier.height(16.dp)); Btn("Try again", vm::refreshWeather, Modifier.fillMaxWidth(), icon = "refresh") }
-        if (w is Weather.State.Need || w is Weather.State.Error) { Spacer(Modifier.height(16.dp)); Btn("Set city", { host.page("profile") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, small = true, icon = "profile") }
+        if (w is Weather.State.Need || w is Weather.State.Error) {
+            // .btns: "Use my location" beside "Set city"
+            val locating = vm.live.collectAsState().value.locating
+            Spacer(Modifier.height(16.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Btn(if (locating) "Finding you…" else "Use my location", { if (!locating) host.withLocation { vm.weatherHere() } }, Modifier.weight(1f), kind = BtnKind.LINE, small = true, icon = "pin")
+                Btn("Set city", { host.page("profile") }, Modifier.weight(1f), kind = BtnKind.LINE, small = true, icon = "profile")
+            }
+        }
         return
     }
     val (cond, ic) = Weather.wmo(d.code, d.day)

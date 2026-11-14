@@ -129,7 +129,7 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // .art.card-art 96 × 96, radius 16; .vc-name 20/23 semibold; .vc-line 14 ink-2; eyebrow 13.5 ink-3
-                    BikeArt(Modifier.size(96.dp), 16.dp, s.vehicle.colour)
+                    BikeArt(Modifier.size(96.dp), 16.dp, s.vehicle.colour, s.vehicle.photo)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Txt(vehicleTitle(s), T.cardTitle.copy(fontSize = 20.sp, lineHeight = 23.sp), c.ink, maxLines = 2)

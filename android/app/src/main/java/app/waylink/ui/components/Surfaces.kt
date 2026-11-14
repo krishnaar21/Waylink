@@ -180,8 +180,14 @@ fun Sheet(
 
 /** The one Waylink bike picture, or the rider's own photo later. Sits on --bg with a soft ground shadow. */
 @Composable
-fun BikeArt(modifier: Modifier, radius: androidx.compose.ui.unit.Dp, colour: String? = null) {
+fun BikeArt(modifier: Modifier, radius: androidx.compose.ui.unit.Dp, colour: String? = null, photo: String? = null) {
     val c = W.c
+    // A rider's own photo wins over the drawing (web vehicleArt).
+    val pic = rememberPhoto(photo)
+    if (pic != null) {
+        Image(pic, null, modifier.clip(RoundedCornerShape(radius)).background(c.bg), contentScale = ContentScale.Crop)
+        return
+    }
     // The bike's body (tank and tail) takes the vehicle's colour: a shading layer tinted by it, then the highlights.
     val paint = colour?.let { runCatching { Color(android.graphics.Color.parseColor(it)) }.getOrNull() }
     val tint by androidx.compose.animation.animateColorAsState(paint ?: Color(0xFFB3261E), androidx.compose.animation.core.tween(250), label = "paint")

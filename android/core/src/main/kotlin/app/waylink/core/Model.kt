@@ -50,6 +50,8 @@ data class Profile(
     val since: Long = 0,
     /** Where the petrol rate comes from, set by "Use my location". */
     val fuelArea: FuelArea? = null,
+    /** Weather from "Use my location": wins over [city] until the city changes. */
+    val weatherAt: WeatherAt? = null,
 )
 
 /** A paper in the glovebox: [slot] is "<vehicle id>:rc|insurance|puc|other" or "rider:licence". */
@@ -58,6 +60,9 @@ data class GloveDoc(val slot: String, val name: String, val type: String, val ad
 
 @Serializable
 data class FuelArea(val state: String, val place: String = "", val ts: Long = 0)
+
+@Serializable
+data class WeatherAt(val lat: Double, val lon: Double, val place: String = "")
 
 @Serializable
 data class Settings(

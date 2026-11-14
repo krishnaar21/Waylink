@@ -244,7 +244,7 @@ private fun BikeCard(s: AppState, live: Live, f: Fmt, good: Boolean, okCount: In
             Modifier.fillMaxWidth().pressable(label = "Switch vehicle", onClick = act::garage).padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            BikeArt(Modifier.size(96.dp), 16.dp, s.vehicle.colour)
+            BikeArt(Modifier.size(96.dp), 16.dp, s.vehicle.colour, s.vehicle.photo)
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Txt(vehicleTitle(s), T.cardTitle, c.ink, Modifier.padding(end = 36.dp), maxLines = 1)

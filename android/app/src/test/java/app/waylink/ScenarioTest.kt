@@ -53,7 +53,10 @@ class ScenarioTest {
     private fun idle(ms: Long = 0) = shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(ms))
 
     private inline fun <reified T> noop(): T =
-        Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, _, _ -> null } as T
+        Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { self, m, a ->
+            // Compose compares parameters, so the stand-in answers equals/hashCode like a real object.
+            when (m.name) { "equals" -> self === a?.getOrNull(0); "hashCode" -> System.identityHashCode(self); "toString" -> "noop"; else -> null }
+        } as T
 
     @Test fun onboardingWithSimulatedBike() {
         val vm = vm()
@@ -109,6 +112,29 @@ class ScenarioTest {
         assertEquals("Evening loop", vm.state.value.vehicle.trips.first { it.id == t.id }.title)
         vm.deleteTrip(t.id)
         assertEquals(before, vm.state.value.vehicle.trips.size)
+    }
+
+    @Test fun ridesRecordThemselvesAndTheBikeParks() {
+        val vm = vm()
+        vm.onboardSample()
+        vm.toggleSetting("autoRecord")
+        vm.simOn()
+        assertTrue("linking starts a ride by itself", vm.live.value.rec?.auto == true)
+        repeat(3) { Thread.sleep(1000); idle(1000) }
+        vm.simOff()
+        idle(100)
+        assertNull("switching the bike off ends the ride", vm.live.value.rec)
+        assertNotNull("the bike's spot is saved as it goes quiet", vm.state.value.vehicle.parking)
+    }
+
+    @Test fun vehiclePhotoSavesAndClears() {
+        val vm = vm()
+        vm.onboardSample()
+        val v = vm.state.value.vehicle
+        assertNull(vm.saveVehicle(v.id, v.model, v.nickname, v.plate, v.odo, v.colour, "/nonexistent/bike.jpg"))
+        assertEquals("/nonexistent/bike.jpg", vm.state.value.vehicle.photo)
+        assertNull(vm.saveVehicle(v.id, v.model, v.nickname, v.plate, v.odo, v.colour, null))
+        assertNull(vm.state.value.vehicle.photo)
     }
 
     @Test fun tooShortARideIsNotKept() {

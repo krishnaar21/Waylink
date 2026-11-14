@@ -290,9 +290,11 @@ private fun VehicleBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNa
     var odo by rememberSaveable(key) { mutableStateOf(v?.odo?.let { if (it % 1 == 0.0) it.toLong().toString() else it.toString() } ?: "") }
     var colour by rememberSaveable(key) { mutableStateOf(v?.colour ?: Catalog.COLOURS[s.vehicles.size % Catalog.COLOURS.size].first) }
     var picking by remember { mutableStateOf(false) }
+    var photo by rememberSaveable(key) { mutableStateOf(v?.photo) }
+    val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) vm.importVehiclePhoto(uri) { photo = it } }
     Spacer(Modifier.height(16.dp))
     // The bike in the picture wears the picked colour as soon as a swatch is tapped.
-    BikeArt(Modifier.fillMaxWidth().height(150.dp), 20.dp, colour)
+    BikeArt(Modifier.fillMaxWidth().height(150.dp), 20.dp, colour, photo)
     FormField("Model") { Select(modelName(s, Catalog.model(model)), { picking = !picking }, label = "Model") }
     AnimatedVisibility(picking) {
         Column(Modifier.padding(top = 8.dp).fillMaxWidth().card(20.dp, c.raised)) {
@@ -329,9 +331,18 @@ private fun VehicleBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNa
             }
         }
     }
+    // .field Photo: add or replace a picture of your own bike, or go back to the drawing
+    FormField("Photo") {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Btn(if (photo != null) "Replace" else "Add photo", {
+                pickPhoto.launch(androidx.activity.result.PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            }, kind = BtnKind.LINE, small = true, icon = "camera")
+            if (photo != null) Btn("Remove", { photo = null }, kind = BtnKind.GHOST, small = true)
+        }
+    }
     Spacer(Modifier.height(24.dp))
     Btn(if (id == null) "Add to garage" else "Save", {
-        val err = vm.saveVehicle(id, model, nick, plate, parseNum(odo), colour)
+        val err = vm.saveVehicle(id, model, nick, plate, parseNum(odo), colour, photo)
         if (err != null) vm.toast(err) else nav.close()
     }, Modifier.fillMaxWidth())
     if (id != null && s.vehicles.size > 1) {

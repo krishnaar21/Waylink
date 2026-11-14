@@ -49,7 +49,7 @@ fun GarageList(s: AppState, onPick: (String) -> Unit, onAdd: () -> Unit) {
                     .padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                BikeArt(Modifier.size(width = 92.dp, height = 60.dp), 12.dp, v.colour)
+                BikeArt(Modifier.size(width = 92.dp, height = 60.dp), 12.dp, v.colour, v.photo)
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Txt(vehicleTitle(s, v), T.body.copy(lineHeight = T.row.lineHeight), c.ink, maxLines = 1)
