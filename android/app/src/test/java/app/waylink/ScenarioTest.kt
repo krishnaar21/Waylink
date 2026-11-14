@@ -251,6 +251,7 @@ class ScenarioTest {
         val vm = vm()
         vm.onboardSample()
         val keys = mutableListOf<String>()
+        val failures = mutableListOf<String>()
         val nav = noop<SheetNav>(); val host = noop<ExtraHost>()
         // A compose test sets its content once, so the sheet shown is swapped through state.
         var shown by androidx.compose.runtime.mutableStateOf<Pair<String, app.waylink.ui.logbook.SheetSpec>?>(null)
@@ -276,8 +277,12 @@ class ScenarioTest {
             for (k in keys) {
                 val spec = buildSheet(k, s, vm.live.value, vm, nav, host) ?: continue
                 shown = "${kind ?: "sample"}/$k" to spec
-                try { compose.waitForIdle() } catch (e: Throwable) { throw AssertionError("sheet $k (${kind ?: "sample"}) failed", e) }
+                try { compose.waitForIdle() } catch (e: Throwable) {
+                    failures += "$k (${kind ?: "sample"}): $e @ ${e.stackTrace.take(6).joinToString(" < ")}"
+                    shown = null; runCatching { compose.waitForIdle() }
+                }
             }
         }
+        assertTrue("sheets that failed:\n" + failures.joinToString("\n"), failures.isEmpty())
     }
 }
