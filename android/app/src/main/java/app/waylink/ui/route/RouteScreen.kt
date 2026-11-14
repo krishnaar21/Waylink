@@ -33,6 +33,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.foundation.border
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -324,24 +328,40 @@ private fun Kv(k: String, v: String) {
     }
 }
 
+/** .range-scale: a ruler (major ticks every sixth, minor every thirtieth) over 0 · 1.5 km · 3 km in 10 sp mono. */
 @Composable
 private fun Scale() {
     val c = W.c
-    Row(Modifier.fillMaxWidth().padding(top = 6.dp)) {
-        Txt("0", T.rowSub, c.ink4)
-        Spacer(Modifier.weight(1f))
-        Txt("1.5 km", T.rowSub, c.ink4)
-        Spacer(Modifier.weight(1f))
-        Txt("3 km", T.rowSub, c.ink4)
+    Box(Modifier.fillMaxWidth().padding(top = 2.dp)) {
+        androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(10.dp)) {
+            val minor = c.ink4; val major = c.ink3
+            for (i in 0..30) { val x = (size.width - 1.dp.toPx()) * i / 30; drawRect(minor, androidx.compose.ui.geometry.Offset(x, 2.dp.toPx()), androidx.compose.ui.geometry.Size(1.dp.toPx(), 6.dp.toPx())) }
+            for (i in 0..6) { val x = (size.width - 1.5.dp.toPx()) * i / 6; drawRect(major, androidx.compose.ui.geometry.Offset(x, 0f), androidx.compose.ui.geometry.Size(1.5.dp.toPx(), 10.dp.toPx())) }
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 14.dp)) {
+            val st = app.waylink.ui.theme.T.plate.copy(fontSize = 10.sp, letterSpacing = 0.sp, lineHeight = 14.sp)
+            Txt("0", st, c.ink3)
+            Spacer(Modifier.weight(1f))
+            Txt("1.5 km", st, c.ink3)
+            Spacer(Modifier.weight(1f))
+            Txt("3 km", st, c.ink3)
+        }
     }
 }
 
-/** .range: a 4 dp track filled to [value] (0..1) with a round thumb. Drag or tap anywhere on it. */
+/**
+ * .range: a 6 dp track, ink up to the value and seg-off after it, under a 28 × 22 pill thumb (soft vertical
+ * gradient, two grip lines, inset highlight, layered shadow) that swells to 1.1 × 1.14 while held. Drag or tap anywhere.
+ */
 @Composable
 fun Slider(value: Float, onChange: (Float) -> Unit, label: String) {
     val c = W.c
     val cb by rememberUpdatedState(onChange)
     val v = value.coerceIn(0f, 1f)
+    var held by remember { mutableStateOf(false) }
+    val sx by androidx.compose.animation.core.animateFloatAsState(if (held) 1.1f else 1f, androidx.compose.animation.core.tween(200, easing = app.waylink.ui.theme.Spring), label = "thx")
+    val sy by androidx.compose.animation.core.animateFloatAsState(if (held) 1.14f else 1f, androidx.compose.animation.core.tween(200, easing = app.waylink.ui.theme.Spring), label = "thy")
+    val dark = c.dark
     BoxWithConstraints(
         Modifier.fillMaxWidth().height(32.dp)
             .semantics {
@@ -349,14 +369,40 @@ fun Slider(value: Float, onChange: (Float) -> Unit, label: String) {
                 progressBarRangeInfo = ProgressBarRangeInfo(v, 0f..1f, 300)
                 setProgress { cb(it.coerceIn(0f, 1f)); true }
             }
-            .pointerInput(Unit) { detectTapGestures { cb((it.x / size.width).coerceIn(0f, 1f)) } }
-            .pointerInput(Unit) { detectHorizontalDragGestures { ch, _ -> cb((ch.position.x / size.width).coerceIn(0f, 1f)) } },
+            .pointerInput(Unit) {
+                detectTapGestures(onPress = { held = true; tryAwaitRelease(); held = false }) { cb(((it.x - 14.dp.toPx()) / (size.width - 28.dp.toPx())).coerceIn(0f, 1f)) }
+            }
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures(onDragStart = { held = true }, onDragEnd = { held = false }, onDragCancel = { held = false }) { ch, _ ->
+                    cb(((ch.position.x - 14.dp.toPx()) / (size.width - 28.dp.toPx())).coerceIn(0f, 1f))
+                }
+            },
         contentAlignment = Alignment.CenterStart,
     ) {
         val w = maxWidth
-        Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(c.inkA(0.12f)))
-        Box(Modifier.fillMaxWidth(v).height(4.dp).clip(CircleShape).background(c.ink))
-        Box(Modifier.offset(x = (w - 24.dp) * v).size(24.dp).shadow(3.dp, CircleShape).clip(CircleShape).background(c.card))
+        val fillTo = 14.dp + (w - 28.dp) * v
+        Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp)).background(c.segOff))
+        Box(Modifier.width(fillTo).height(6.dp).clip(RoundedCornerShape(3.dp)).background(c.ink))
+        Box(
+            Modifier.offset(x = (w - 28.dp) * v).size(28.dp, 22.dp)
+                .graphicsLayer { scaleX = sx; scaleY = sy }
+                .shadow(4.dp, RoundedCornerShape(9.dp), ambientColor = Color.Black.copy(alpha = 0.3f), spotColor = Color.Black.copy(alpha = 0.3f))
+                .clip(RoundedCornerShape(9.dp))
+                .background(androidx.compose.ui.graphics.Brush.verticalGradient(
+                    0f to Color.White, 0.55f to (if (dark) Color(0xFFEDEAE4) else Color(0xFFF7F5F1)), 1f to (if (dark) Color(0xFFD2CEC6) else Color(0xFFE4E0D9)),
+                ))
+                .border(0.5.dp, Color.Black.copy(alpha = 0.14f), RoundedCornerShape(9.dp))
+                .drawBehind {
+                    val px = size.width / 28f
+                    val top = (size.height - 13 * px) / 2; val h = 13 * px
+                    // the inset top highlight, then the two grips, each a dark line with a bright edge
+                    drawRect(Color.White.copy(alpha = 0.9f), androidx.compose.ui.geometry.Offset(9 * px, 0f), androidx.compose.ui.geometry.Size(10 * px, px))
+                    for (x0 in listOf(10f, 15.2f)) {
+                        drawRect(Color.Black.copy(alpha = 0.34f), androidx.compose.ui.geometry.Offset(x0 * px, top), androidx.compose.ui.geometry.Size(2 * px, h))
+                        drawRect(Color.White.copy(alpha = 0.95f), androidx.compose.ui.geometry.Offset((x0 + 2) * px, top), androidx.compose.ui.geometry.Size(0.8f * px, h))
+                    }
+                },
+        )
     }
 }
 

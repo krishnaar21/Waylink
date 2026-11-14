@@ -120,7 +120,8 @@ class CoreTest {
               "rideNo":1,"parking":null,"bike":{"id":null,"name":null}}],"active":"v1"}}"""
         val s = Vault.import(web)
         assertEquals("Krishna", s.profile.name)
-        assertEquals("auto", s.settings.theme, "web-only themes fall back to Auto")
+        assertEquals("amoled", s.settings.theme, "every theme Android has survives a restore")
+        assertEquals("auto", Vault.normalise(s.copy(settings = s.settings.copy(theme = "neon"))).settings.theme, "unknown themes fall back to Auto")
         assertEquals(4321.5, s.vehicle.odo)
         assertEquals("Pulsar N250 / F250", s.model.name)
         assertEquals(1, s.vehicle.trips.size)

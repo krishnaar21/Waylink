@@ -56,12 +56,12 @@ object Vault {
         return normalise(s).copy(onboarded = true, glove = emptyList())
     }
 
-    /** Keeps state valid: a vehicle always exists, the active one is real, the theme is one Android offers. */
+    /** Keeps state valid: a vehicle always exists, the active one is real, the theme is one Android has (the three extra ones live behind Developer › All themes). */
     fun normalise(s: AppState): AppState {
         var out = s
         if (out.vehicles.isEmpty()) { val v = newVehicle(); out = out.copy(vehicles = listOf(v), active = v.id) }
         if (out.vehicles.none { it.id == out.active }) out = out.copy(active = out.vehicles.first().id)
-        if (out.settings.theme !in setOf("auto", "sketch", "sketchdark")) out = out.copy(settings = out.settings.copy(theme = "auto"))
+        if (out.settings.theme !in setOf("auto", "paper", "obsidian", "amoled", "sketch", "sketchdark")) out = out.copy(settings = out.settings.copy(theme = "auto"))
         if (!Regex("^a([1-9]|1[01])$").matches(out.profile.avatar)) out = out.copy(profile = out.profile.copy(avatar = "a1"))
         return out
     }
