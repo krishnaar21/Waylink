@@ -784,6 +784,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         _live.update { it.copy(nav = Nav("maps", 0, turn.maneuver, turn.stepMeters, total, turn.street, turn.say, turn.exit, eta)) }
     }
 
+    fun setTileLayout(key: String) {
+        if (key !in listOf("cards", "icons", "list", "pills")) return
+        commit { it.copy(settings = it.settings.copy(tileLayout = key)) }
+    }
+
     fun setNavSource(key: String) {
         val k = app.waylink.core.NavSource.available().firstOrNull { it.key == key }?.key ?: return
         sound.click(true)

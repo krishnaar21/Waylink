@@ -214,7 +214,7 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
 
         Spacer(Modifier.height(18.dp))
         SectionHead("Quick links")
-        QuickLinksGrid(s, live, f, act::open)
+        QuickLinksGrid(s, live, f, s.settings.tileLayout, { act.open("layout:$it") }, act::open)
 
         Spacer(Modifier.height(24.dp))
         Txt("Everything stays on this phone. No account, no cloud.", T.note.copy(textAlign = TextAlign.Center), c.ink3, Modifier.fillMaxWidth())

@@ -1,6 +1,11 @@
 package app.waylink.ui.today
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -107,33 +112,150 @@ object QuickLinks {
     }
 }
 
-/** Three to a row. */
+/** The four layouts Krishna is choosing between; swipe the tile area, or tap a name, then "Use this". */
+val LAYOUTS = listOf("cards" to "Cards", "icons" to "Icons", "list" to "List", "pills" to "Pills")
+
+/** Groups for the list layout, by what the rider is doing. */
+private val GROUPS = listOf(
+    "Riding" to listOf("log-fuel", "pumps", "parking", "weather", "places", "speed"),
+    "Bike & papers" to listOf("service", "visit", "papers"),
+    "Safety" to listOf("hospitals", "sos", "profile"),
+)
+
 @Composable
-fun QuickLinksGrid(s: AppState, live: Live, f: Fmt, go: (String) -> Unit) {
+fun QuickLinksGrid(s: AppState, live: Live, f: Fmt, chosen: String, choose: (String) -> Unit, go: (String) -> Unit) {
+    val c = W.c
     val ctx = LocalContext.current
     val tick = app.waylink.ui.route.rememberResumeTick()
     val need = remember(tick, s.settings.navSource) { app.waylink.ui.route.Perms.needed(ctx, s) }
     val links = QuickLinks.ORDER.mapNotNull { QuickLinks.build(it, s, live, f, need) }
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        links.chunked(3).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                row.forEach { l -> QuickTile(l, Modifier.weight(1f)) { go(l.go) } }
-                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+    val start = LAYOUTS.indexOfFirst { it.first == chosen }.coerceAtLeast(0)
+    val pager = androidx.compose.foundation.pager.rememberPagerState(start) { LAYOUTS.size }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    Column {
+        // Layout names: the shown one in ink, the one in use with a check.
+        Row(Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            LAYOUTS.forEachIndexed { i, (k, name) ->
+                val on = pager.currentPage == i
+                Row(
+                    Modifier.clip(RoundedCornerShape(999.dp)).background(if (on) c.ink else c.inkA(0.06f))
+                        .pressable(label = "$name layout", scale = 0.94f) { scope.launch { pager.animateScrollToPage(i) } }
+                        .padding(horizontal = 11.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (k == chosen) { app.waylink.ui.components.Ic("check", size = 12.dp, tint = if (on) c.bg else c.ink2); Spacer(Modifier.width(4.dp)) }
+                    Txt(name, T.rowSub.copy(fontSize = 12.5.sp, lineHeight = 15.sp), if (on) c.bg else c.ink2, maxLines = 1)
+                }
+            }
+            Spacer(Modifier.weight(1f))
+            val shown = LAYOUTS[pager.currentPage].first
+            if (shown != chosen) Txt("Use this", T.link, c.accent, Modifier.pressable(label = "Use the ${LAYOUTS[pager.currentPage].second} layout") { choose(shown) })
+        }
+        androidx.compose.foundation.pager.HorizontalPager(
+            pager, Modifier.fillMaxWidth().animateContentSize(), verticalAlignment = Alignment.Top, pageSpacing = 16.dp,
+        ) { p ->
+            when (LAYOUTS[p].first) {
+                "cards" -> CardsLayout(links, go)
+                "icons" -> IconsLayout(links, go)
+                "list" -> ListLayout(links, go)
+                else -> PillsLayout(links, go)
             }
         }
     }
 }
 
+private fun Modifier.tap(l: QuickLinks.Link, go: (String) -> Unit) = this.pressable(label = "${l.title}, ${l.sub}") { go(l.go) }
+
 @Composable
-private fun QuickTile(l: QuickLinks.Link, modifier: Modifier, onClick: () -> Unit) {
+private fun DotOn(l: QuickLinks.Link, modifier: Modifier = Modifier) {
     val c = W.c
-    Column(modifier.height(104.dp).card(18.dp).pressable(label = "${l.title}, ${l.sub}", onClick = onClick).padding(12.dp)) {
-        Box {
-            IconTile(l.icon, size = 34.dp, radius = 11.dp, iconSize = 18.dp, bg = c.inkA(0.07f))
-            if (l.dot != null) Box(Modifier.align(Alignment.TopEnd).padding(top = 1.dp).size(9.dp).clip(CircleShape).background(if (l.dot) c.sage else c.red))
+    if (l.dot != null) Box(modifier.size(8.dp).clip(CircleShape).background(if (l.dot) c.sage else c.red))
+}
+
+/** Two big cards to a row: icon, title, live line. */
+@Composable
+private fun CardsLayout(links: List<QuickLinks.Link>, go: (String) -> Unit) {
+    val c = W.c
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        links.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                row.forEach { l ->
+                    Row(Modifier.weight(1f).height(76.dp).card(18.dp).tap(l, go).padding(horizontal = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Box { IconTile(l.icon, size = 38.dp, radius = 12.dp, iconSize = 19.dp, bg = c.inkA(0.07f)); DotOn(l, Modifier.align(Alignment.TopEnd)) }
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Txt(l.title, T.rowTitle.copy(fontSize = 14.5.sp, lineHeight = 19.sp), c.ink, maxLines = 1)
+                            Txt(l.sub, T.rowSub.copy(fontSize = 12.5.sp, lineHeight = 17.sp), c.ink3, maxLines = 1)
+                        }
+                    }
+                }
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
         }
-        Spacer(Modifier.weight(1f))
-        Txt(l.title, T.rowTitle.copy(fontSize = 14.sp, lineHeight = 18.sp), c.ink, maxLines = 1)
-        Txt(l.sub, T.rowSub.copy(fontSize = 12.sp, lineHeight = 16.sp), c.ink3, maxLines = 1)
+    }
+}
+
+/** Four round icons to a row with a short name, like a phone's home screen. */
+@Composable
+private fun IconsLayout(links: List<QuickLinks.Link>, go: (String) -> Unit) {
+    val c = W.c
+    Column(Modifier.fillMaxWidth().card(22.dp).padding(vertical = 16.dp, horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        links.chunked(4).forEach { row ->
+            Row {
+                row.forEach { l ->
+                    Column(Modifier.weight(1f).tap(l, go), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box {
+                            Box(Modifier.size(52.dp).clip(CircleShape).background(c.inkA(0.07f)), contentAlignment = Alignment.Center) { app.waylink.ui.components.Ic(l.icon, size = 23.dp, tint = c.ink) }
+                            DotOn(l, Modifier.align(Alignment.TopEnd).padding(2.dp))
+                        }
+                        Spacer(Modifier.height(7.dp))
+                        Txt(l.title, T.rowSub.copy(fontSize = 12.sp, lineHeight = 15.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center), c.ink2, maxLines = 1)
+                    }
+                }
+                repeat(4 - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+/** Grouped rows with the live line on the right. */
+@Composable
+private fun ListLayout(links: List<QuickLinks.Link>, go: (String) -> Unit) {
+    val by = links.associateBy { it.key }
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        GROUPS.forEach { (name, keys) ->
+            val rows = keys.mapNotNull { by[it] }
+            if (rows.isEmpty()) return@forEach
+            Column {
+                Txt(name, T.eyebrow, W.c.ink3, Modifier.padding(start = 6.dp, bottom = 8.dp))
+                app.waylink.ui.components.ListCard {
+                    rows.forEachIndexed { i, l ->
+                        if (i > 0) app.waylink.ui.components.Hairline(66.dp)
+                        app.waylink.ui.components.ListRow(l.title, null, icon = l.icon, end = l.sub, onClick = { go(l.go) })
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Pills that wrap: quickest to scan, takes the least room. */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun PillsLayout(links: List<QuickLinks.Link>, go: (String) -> Unit) {
+    val c = W.c
+    androidx.compose.foundation.layout.FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        links.forEach { l ->
+            Row(
+                Modifier.clip(RoundedCornerShape(999.dp)).background(c.card).border(1.dp, c.line, RoundedCornerShape(999.dp))
+                    .tap(l, go).padding(start = 8.dp, end = 14.dp, top = 7.dp, bottom = 7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.size(28.dp).clip(CircleShape).background(c.inkA(0.07f)), contentAlignment = Alignment.Center) { app.waylink.ui.components.Ic(l.icon, size = 15.dp, tint = c.ink) }
+                Spacer(Modifier.width(8.dp))
+                Txt(l.title, T.rowTitle.copy(fontSize = 13.5.sp, lineHeight = 17.sp), c.ink, maxLines = 1)
+                if (l.dot != null) { Spacer(Modifier.width(6.dp)); DotOn(l) }
+            }
+        }
     }
 }

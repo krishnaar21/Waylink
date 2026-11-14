@@ -289,6 +289,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                             key == "record" -> beginRec()
                             key == "ride" -> vm.openRideMode(true)
                             key == "weather" -> weather()
+                            key.startsWith("layout:") -> vm.setTileLayout(key.drop(7))
                             else -> openSheet(key)
                         }
                     }
