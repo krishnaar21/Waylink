@@ -552,10 +552,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     fun reconnect() {
         val bike = _state.value.vehicle.bike
-        if (bike.id == null) { pair(false); return }
+        val id = bike.id ?: run { pair(false); return }
         if (!link.enabled) { toast("Turn on Bluetooth first."); return }
         if (_live.value.simulated) quietSimOff()
-        link.connect(bike.id, bike.name)
+        link.connect(id, bike.name)
     }
 
     /** Cancel, Stop or Disconnect (web cancel-link / disconnect). */
