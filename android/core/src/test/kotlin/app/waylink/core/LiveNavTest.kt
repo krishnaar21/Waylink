@@ -70,4 +70,20 @@ class LiveNavTest {
         val byDate = ServiceItem(kind = "custom", name = "Insurance", everyDays = 365, lastDate = now, firstDate = now + 10 * DAY_MS)
         assertEquals(10, serviceStatus(0.0, byDate, now).remDays)
     }
+
+    @Test fun newerGoogleMapsCards() {
+        // Distance and instruction share the title; the short text has the distance; progress is the route in metres.
+        val t = assertNotNull(NavParse.parse("200 m · Turn right toward NH 48", null, "Arrive 11:56 am", short = "200 m", progress = 338, progressMax = 1723))
+        assertEquals("TURN_RIGHT", t.maneuver); assertEquals(200.0, t.stepMeters); assertEquals(1385.0, t.totalMeters)
+        assertEquals("NH 48", t.street); assertEquals(11 to 56, t.etaClock); assertEquals("Turn right toward NH 48", t.say)
+        // Only a street: the arrow carries over from the last card.
+        val n = assertNotNull(NavParse.parse("150 m · Rua Principal", null, short = null, prev = t))
+        assertEquals("TURN_RIGHT", n.maneuver); assertEquals(150.0, n.stepMeters); assertEquals("Rua Principal", n.street)
+        assertEquals("Rerouting…", NavParse.parse("Rerouting…", null, prev = t)?.say)
+        assertNull(NavParse.parse("Rerouting…", null))
+        // Setting off: no distance to a turn yet, so the whole route stands in.
+        val d = assertNotNull(NavParse.parse("Head southwest on Main Rd", null, "Arrive 12:55 pm", progress = 0, progressMax = 23708))
+        assertEquals("STRAIGHT", d.maneuver); assertEquals(23708.0, d.stepMeters)
+        assertEquals("DESTINATION_REACHED", NavParse.parse("You have arrived", null, prev = t)?.maneuver)
+    }
 }

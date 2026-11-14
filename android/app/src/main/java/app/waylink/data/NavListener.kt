@@ -35,22 +35,29 @@ class NavListener : NotificationListenerService() {
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         val src = NavSource.forPackage(sbn.packageName) ?: return
-        if (NavFeed.turn.value?.first == src.key && isGuidance(sbn.notification)) NavFeed.turn.value = null
+        if (NavFeed.turn.value?.first == src.key && isGuidance(sbn.notification, sbn.packageName)) NavFeed.turn.value = null
     }
 
     private fun read(sbn: StatusBarNotification) {
         val src = NavSource.forPackage(sbn.packageName) ?: return
         val n = sbn.notification ?: return
-        if (!isGuidance(n)) return
+        if (!isGuidance(n, sbn.packageName)) return
         val ex = n.extras ?: return
         fun cs(k: String) = ex.getCharSequence(k)?.toString()
-        val turn = NavParse.parse(cs(Notification.EXTRA_TITLE), cs(Notification.EXTRA_TEXT), cs(Notification.EXTRA_SUB_TEXT), cs(Notification.EXTRA_BIG_TEXT)) ?: return
+        fun int(k: String) = if (ex.containsKey(k)) ex.getInt(k) else null
+        // The last turn from this app fills in what a card leaves out (a street-only title, "Rerouting…").
+        val prev = NavFeed.turn.value?.takeIf { it.first == src.key }?.second
+        val turn = NavParse.parse(
+            cs(Notification.EXTRA_TITLE), cs(Notification.EXTRA_TEXT), cs(Notification.EXTRA_SUB_TEXT), cs(Notification.EXTRA_BIG_TEXT),
+            // Read by key: the short critical text is new in Android 16, progress is metres of the route.
+            short = cs("android.shortCriticalText"), progress = int(Notification.EXTRA_PROGRESS), progressMax = int(Notification.EXTRA_PROGRESS_MAX), prev = prev,
+        ) ?: return
         NavFeed.turn.value = src.key to turn
     }
 
-    /** The turn-by-turn card: marked as navigation, or at least ongoing (older app versions). */
-    private fun isGuidance(n: Notification?): Boolean =
-        n != null && (n.category == Notification.CATEGORY_NAVIGATION || (n.flags and Notification.FLAG_ONGOING_EVENT) != 0)
+    /** The turn-by-turn card: marked as navigation, or at least ongoing (older versions of the other apps). Google Maps always marks it. */
+    private fun isGuidance(n: Notification?, pkg: String): Boolean =
+        n != null && (n.category == Notification.CATEGORY_NAVIGATION || (pkg != "com.google.android.apps.maps" && (n.flags and Notification.FLAG_ONGOING_EVENT) != 0))
 }
 
 /** The latest turn per source, and whether Android has the listener running. */

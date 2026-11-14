@@ -76,26 +76,46 @@ object NavParse {
         "km" -> n * 1000; "mi" -> n * 1609.344; "ft" -> n * 0.3048; "yd" -> n * 0.9144; else -> n
     }
 
-    fun parse(title: String?, text: String?, sub: String? = null, big: String? = null): LiveTurn? {
+    /**
+     * [short] is Android's short critical text (Google Maps puts the distance to the turn there), [progress] and
+     * [progressMax] its route progress in metres. [prev] is the last turn read from the same app: a field that
+     * doesn't parse keeps its value, so "150 m · Rua Principal" keeps the arrow and "Rerouting…" keeps the turn.
+     */
+    fun parse(
+        title: String?, text: String?, sub: String? = null, big: String? = null,
+        short: String? = null, progress: Int? = null, progressMax: Int? = null, prev: LiveTurn? = null,
+    ): LiveTurn? {
         val fields = listOfNotNull(title, text, big, sub).map { it.trim() }.filter { it.isNotEmpty() }
         if (fields.isEmpty()) return null
         val all = fields.joinToString(" · ")
+        if (REROUTE.containsMatchIn(all)) return prev?.copy(say = "Rerouting…")
         val dists = fields.flatMap { f -> DIST.findAll(f).map { meters(it.groupValues[1].replace(',', '.').toDouble(), it.groupValues[2]) }.toList() }
-        // The instruction is the field with turn words in it, else the longest that isn't just numbers.
-        val say = fields.firstOrNull { WORDS.containsMatchIn(it) } ?: fields.filter { DIST.replace(it, "").trim().length > 3 }.maxByOrNull { it.length } ?: return null
-        val step = dists.firstOrNull() ?: return null
-        val total = dists.drop(1).maxOrNull()
-        val (man, exit) = maneuverOf(say)
-        val street = streetOf(say)
+        val worded = fields.firstOrNull { WORDS.containsMatchIn(it) }
+        // Nothing that reads as a turn: a "Navigation is running" card, or another of the app's notifications.
+        if (worded == null && dists.isEmpty()) return null
+        val say = worded ?: fields.filter { DIST.replace(it, "").trim().length > 3 }.maxByOrNull { it.length } ?: fields.first()
+        val left = progressMax?.let { m -> progress?.let { p -> if (m > 0) (m - p).coerceAtLeast(0).toDouble() else null } }
+        val shortM = short?.let { DIST.find(it) }?.let { meters(it.groupValues[1].replace(',', '.').toDouble(), it.groupValues[2]) }
+        // Distances in the title/text come first; the sub-text's are what's left of the route.
+        val headD = listOfNotNull(title, text, big).flatMap { f -> DIST.findAll(f).map { meters(it.groupValues[1].replace(',', '.').toDouble(), it.groupValues[2]) }.toList() }
+        val step = shortM ?: headD.firstOrNull() ?: prev?.stepMeters ?: left ?: dists.firstOrNull() ?: return null
+        val total = left ?: dists.filter { it > step }.maxOrNull() ?: prev?.totalMeters
+        val (man0, exit0) = maneuverOf(say)
+        val directed = worded != null
+        val (man, exit) = if (directed) man0 to exit0 else (prev?.maneuver ?: man0) to (prev?.exit ?: exit0)
+        val clean = cleanSay(say)
+        val street = streetOf(say).ifEmpty { if (!directed) clean.take(31) else "" }
         val eta = sub?.let { CLOCK.find(it) }?.let { m ->
             var h = m.groupValues[1].toInt(); val min = m.groupValues[2].toInt()
             val ap = m.groupValues[3].lowercase().replace(".", "")
             if (ap == "pm" && h < 12) h += 12 else if (ap == "am" && h == 12) h = 0
             if (h in 0..23 && min in 0..59) h to min else null
-        }
-        val mins = (sub ?: all).let { MINS.find(it) }?.let { (it.groupValues[1].toIntOrNull() ?: 0) * 60 + it.groupValues[2].toInt() }
-        return LiveTurn(man, step, street, cleanSay(say), exit, total, mins, eta)
+        } ?: prev?.etaClock
+        val mins = (sub ?: all).let { MINS.find(it) }?.let { (it.groupValues[1].toIntOrNull() ?: 0) * 60 + it.groupValues[2].toInt() } ?: prev?.etaMin
+        return LiveTurn(man, step, street, if (directed) clean else (prev?.say ?: clean), exit, total, mins, eta)
     }
+
+    private val REROUTE = Regex("""\b(rerouting|recalculating)""", RegexOption.IGNORE_CASE)
 
     private val WORDS = Regex("""\b(turn|left|right|straight|continue|head|keep|merge|fork|ramp|exit|roundabout|rotary|u-?turn|arriv|destination|ferry)""", RegexOption.IGNORE_CASE)
 
