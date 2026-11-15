@@ -219,10 +219,11 @@ class ScenarioTest {
         vm.onboardSample()
         // Search on Today finds screens by everyday words; every word must match.
         val st = vm.state.value
-        assertTrue(app.waylink.ui.today.searchHits(st, "petrol").any { it.go == "fuel:new" })
-        assertEquals("glovebox", app.waylink.ui.today.searchHits(st, "insurance").first().go)
-        assertTrue(app.waylink.ui.today.searchHits(st, "zzqx").isEmpty())
-        assertTrue(app.waylink.ui.today.searchHits(st, "  ").isEmpty())
+        val hits = { q: String -> app.waylink.core.Finder.search(st, q).flatMap { g -> g.hits.map { it.go } } }
+        assertTrue(hits("petrol").contains("fuel:new"))
+        assertEquals("parking", hits("where did I park").first())
+        assertTrue(hits("zzqx").isEmpty())
+
         // A turn from Google Maps becomes the live route; another app's is ignored until it's the chosen one.
         app.waylink.data.NavFeed.turn.value = "waze" to app.waylink.core.LiveTurn("TURN_LEFT", 300.0, "MG Road", "Turn left onto MG Road")
         shadowOf(Looper.getMainLooper()).idle()
@@ -407,12 +408,19 @@ class ScenarioTest {
                 "nav-source", "place:new", "speed", "perms", "nearby:fuel", "nearby:hospital", "help:brim", "route-howto", "cluster:all", "cluster:turn", "cluster:call")
             if (s.places.isEmpty()) vm.savePlace(null, "Home", "home", "12 Lavelle Rd", 12.97, 77.59)
             vm.state.value.places.forEach { keys += "place:${it.id}" }
+            // Every sheet search can open.
+            val st = vm.state.value
+            val searched = (app.waylink.core.Finder.SUGGESTIONS.map { it.first } + listOf("service", "fuel", "papers", "settings", "places", "rides", "help", "visit", "insurance", "bike"))
+                .flatMap { q -> app.waylink.core.Finder.search(st, q).flatMap { g -> g.hits.map { it.go } } }
+                .filter { k -> listOf("tab:", "page:", "place-go:").none { k.startsWith(it) } && k !in listOf("record", "ride", "weather") }.distinct()
+            keys += searched
             v.service.take(3).forEach { keys += "svc:${it.id}"; keys += "svc-edit:${it.id}" }
             v.records.take(2).forEach { keys += "rec:${it.id}" }
             v.fuel.take(2).forEach { keys += "fuel:${it.id}" }
             v.trips.take(2).forEach { keys += "trip-detail:${it.id}"; keys += "trip-rename:${it.id}" }
             for (k in keys) {
-                val spec = buildSheet(k, vm.state.value, vm.live.value, vm, nav, host) ?: continue
+                val spec = buildSheet(k, vm.state.value, vm.live.value, vm, nav, host)
+                if (spec == null) { if (k in searched) failures += "$k: search opens it but no sheet answers"; continue }
                 shown = "${kind ?: "sample"}/$k" to spec
                 try { compose.waitForIdle() } catch (e: Throwable) {
                     failures += "$k (${kind ?: "sample"}): $e @ ${e.stackTrace.take(6).joinToString(" < ")}"
