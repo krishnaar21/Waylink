@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -277,7 +278,7 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             val simOn = live.simulated && live.link == LinkState.CONNECTED
             // One item for the three full-screen previews.
             ListRow("Show a screen", "First launch, the logo, loading, or the thank-you sheet", icon = "sparkles", trailing = {})
-            Row(Modifier.fillMaxWidth().padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 app.waylink.ui.components.Chip("Onboarding", { act.dev("onboarding") })
                 app.waylink.ui.components.Chip("Splash", { act.dev("splash") })
                 app.waylink.ui.components.Chip("Loading", { act.dev("loading") })
