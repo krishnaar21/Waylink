@@ -115,9 +115,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     val state: StateFlow<AppState> = _state.asStateFlow()
     /** Google Play support products; a ₹100+ purchase unlocks the Paper themes. */
     val billing = Billing(app,
-        onSupporter = { ad -> viewModelScope.launch {
+        onSupporter = { ad, early -> viewModelScope.launch {
             val st = _state.value.settings
-            if (!st.supporter || (ad && !st.adFree)) commit { it.copy(settings = it.settings.copy(supporter = true, adFree = st.adFree || ad)) }
+            if (!st.supporter || (ad && !st.adFree) || (early && !st.supporterPlus))
+                commit { it.copy(settings = it.settings.copy(supporter = true, adFree = st.adFree || ad, supporterPlus = st.supporterPlus || early)) }
         } },
         onMessage = { m -> viewModelScope.launch { toast(m) } })
     private val _live = MutableStateFlow(Live())
@@ -986,6 +987,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "devUnlocked" -> st.copy(devUnlocked = !st.devUnlocked)
             "supporter" -> st.copy(supporter = !st.supporter)
             "adFree" -> st.copy(adFree = !st.adFree)
+            "supporterPlus" -> st.copy(supporterPlus = !st.supporterPlus)
             "adRides" -> st.copy(adRides = !st.adRides)
             "adLists" -> st.copy(adLists = !st.adLists)
             else -> st

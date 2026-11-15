@@ -299,10 +299,11 @@ class ScenarioTest {
         vm.toggleSetting("supporter"); vm.setTheme("sketch"); assertEquals("sketch", vm.state.value.settings.theme)
         assertEquals("sketchdark", app.waylink.ui.theme.resolveTheme("auto", true, true))
         vm.setTheme(before); vm.toggleSetting("supporter")
-        // Support tiers: ₹120 is themes only, ₹220 (suggested) and up also turn ads off.
+        // Support tiers: ₹120 themes, ₹220 (suggested) adds no ads, ₹520 adds early access and priority support.
         val tiers = app.waylink.data.Support.TIERS
-        assertEquals(listOf(120, 220, 500, 1000), tiers.map { it.price })
+        assertEquals(listOf(120, 220, 520), tiers.map { it.price })
         assertTrue(!tiers[0].adFree && tiers.drop(1).all { it.adFree })
+        assertTrue(tiers.single { it.early }.price == 520)
         assertEquals(220, tiers[app.waylink.data.Support.SUGGESTED].price)
 
         // Handlebar music: on by default, a press goes to the phone's player; off, it's only logged.

@@ -88,6 +88,8 @@ data class Settings(
     val supporter: Boolean = false,
     /** Gave ₹220 or more: no ads. */
     val adFree: Boolean = false,
+    /** Supporter+ (₹520): early access to new features, future premium features and priority support. */
+    val supporterPlus: Boolean = false,
     /** Developer previews of placeholder ads: a banner under Rides, and a row inside Fuel and Service history. */
     val adRides: Boolean = false,
     val adLists: Boolean = false,

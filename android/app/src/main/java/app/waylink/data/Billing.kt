@@ -17,17 +17,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * One-time support products sold through Google Play. Prices are final, GST included. Every tier unlocks the
- * Paper themes; ₹220 and up also turn ads off. ₹220 is the suggested amount, and bigger tiers are for riders who
- * want to give more. The product ids here must match the in-app products created in Play Console.
+ * One-time support products sold through Google Play. Prices are final, GST included. ₹120 unlocks the Paper
+ * themes, ₹220 (suggested) also turns ads off, and ₹520 adds early access, future premium features and priority support. The product ids here must match the in-app products created in Play Console.
  */
 object Support {
-    data class Tier(val id: String, val price: Int, val icon: String, val line: String, val adFree: Boolean)
+    data class Tier(val id: String, val price: Int, val icon: String, val name: String, val perks: List<String>, val adFree: Boolean, val early: Boolean)
     val TIERS = listOf(
-        Tier("themes_120", 120, "palette", "The Paper themes", adFree = false),
-        Tier("support_220", 220, "coffee", "Paper themes and no ads", adFree = true),
-        Tier("support_500", 500, "fuel", "All of it, plus petrol for test rides", adFree = true),
-        Tier("support_1000", 1000, "wrench", "All of it, plus a month of upkeep", adFree = true),
+        Tier("themes_120", 120, "palette", "Themes", listOf("The Paper themes"), adFree = false, early = false),
+        Tier("support_220", 220, "love", "Supporter", listOf("The Paper themes", "No ads"), adFree = true, early = false),
+        Tier("supporter_plus_520", 520, "sparkles", "Supporter+", listOf("The Paper themes", "No ads", "Early access to new features", "Future premium features", "Priority support"), adFree = true, early = true),
     )
     /** Preselected on the Support sheet. */
     const val SUGGESTED = 1
@@ -37,9 +35,9 @@ object Support {
 /**
  * Google Play Billing for the support products. Purchases are one-time and not consumed, so they come back
  * on a reinstall or a new phone ([restore]). There is no server: the purchase is checked on the phone, which
- * is enough for a cosmetic unlock. [onSupporter] runs with adFree = true or false when Play reports an owned product.
+ * is enough for a cosmetic unlock. [onSupporter] runs with what the owned products unlock.
  */
-class Billing(context: Context, private val onSupporter: (adFree: Boolean) -> Unit, private val onMessage: (String) -> Unit) {
+class Billing(context: Context, private val onSupporter: (adFree: Boolean, early: Boolean) -> Unit, private val onMessage: (String) -> Unit) {
     private val _prices = MutableStateFlow<Map<String, String>>(emptyMap())
     /** Play's tax-inclusive price per product id, once Play has answered. */
     val prices: StateFlow<Map<String, String>> = _prices.asStateFlow()
@@ -126,16 +124,17 @@ class Billing(context: Context, private val onSupporter: (adFree: Boolean) -> Un
         val c = client ?: return false
         var unlocks = false
         var adFree = false
+        var early = false
         val mine = mutableSetOf<String>()
         purchases.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }.forEach { p ->
             if (!p.isAcknowledged) {
                 c.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(p.purchaseToken).build()) {}
             }
-            p.products.forEach { id -> mine += id; Support.tier(id)?.let { t -> unlocks = true; if (t.adFree) adFree = true } }
+            p.products.forEach { id -> mine += id; Support.tier(id)?.let { t -> unlocks = true; if (t.adFree) adFree = true; if (t.early) early = true } }
         }
         _owned.value = _owned.value + mine
         if (purchases.any { it.purchaseState == Purchase.PurchaseState.PENDING }) onMessage("Your payment is pending. Your unlocks turn on once it clears.")
-        if (unlocks) onSupporter(adFree)
+        if (unlocks) onSupporter(adFree, early)
         return unlocks
     }
 
