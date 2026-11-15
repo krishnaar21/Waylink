@@ -443,6 +443,7 @@ private fun ReportBody(s: AppState, live: Live, vm: AppViewModel) {
         "Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
         "Device: ${Build.MANUFACTURER} ${Build.MODEL}",
         "Theme: ${s.settings.theme}, ${s.settings.accent}",
+        "Support: " + when { s.settings.supporterPlus -> "Supporter+ (priority)"; s.settings.adFree -> "Supporter"; s.settings.supporter -> "Themes"; else -> "None" },
     ).joinToString("\n")
     fun full() = (body.trim().ifEmpty { "(Describe what happened)" }) + "\n\n---\n" + info
     fun go(i: Intent) = try { ctx.startActivity(i) } catch (e: Exception) { vm.toast("No app can open that.") }
