@@ -107,7 +107,7 @@ data class Toast(val text: String, val id: Long = System.nanoTime())
  * Holds the app's state and saves it to a JSON file on this phone (same shape as the web app's
  * localStorage), with a short delay so quick taps write once.
  */
-const val PAPER_LOCKED = "Paper is a premium theme made for supporters. It unlocks when you support Waylink with ₹100 or more."
+const val PAPER_LOCKED = "Paper is a premium theme made for supporters. It unlocks when you support Waylink with ${app.waylink.ui.theme.SUPPORTER_PRICE_TEXT}."
 
 class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.route.RouteActions {
     private val file = AtomicFile(File(app.filesDir, "waylink-state.json"))

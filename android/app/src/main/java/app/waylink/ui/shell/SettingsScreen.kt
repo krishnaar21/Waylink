@@ -282,7 +282,7 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
                 app.waylink.ui.components.Chip("Loading", { act.dev("loading") })
             }
             Hairline(66.dp)
-            ListRow("Supporter", "Unlocks Paper, as if you paid ₹100", icon = "love", trailing = { Switch(st.supporter, "Supporter", { act.toggle("supporter") }) })
+            ListRow("Supporter", "Unlocks Paper, as if you’d paid", icon = "love", trailing = { Switch(st.supporter, "Supporter", { act.toggle("supporter") }) })
             Hairline(66.dp)
             ListRow("Simulated bike", "Try it all without a bike", icon = "bolt", trailing = { Switch(simOn, "Simulated bike", { act.sim(!simOn) }) })
             Hairline(66.dp)
