@@ -200,6 +200,8 @@ fun FuelScreen(s: AppState, act: FuelActions, bottom: Dp) {
                     if (k != null) BigValue(f.num(k, 1), "km/L", 26f) else BigValue(f.num(e.litres, 1), "L", 26f)
                 }
             }
+            // Fewer than four entries: the ad goes at the end, so the slot still shows.
+            if (ads && entries.size <= 3) { Hairline(start = 0.dp); app.waylink.ui.components.AdRow(3) }
         }
     }
 }

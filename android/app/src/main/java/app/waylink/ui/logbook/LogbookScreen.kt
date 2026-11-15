@@ -131,6 +131,7 @@ fun LogbookScreen(s: AppState, act: LogbookActions, bottom: Dp) {
                         }
                     }
                 }
+                if (ads && v.records.size <= 3) { Hairline(start = 0.dp); app.waylink.ui.components.AdRow(2, start = 16.dp) }
             }
             Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 12.dp)) {
                 Txt("Spent on service", T.row, c.ink3, Modifier.weight(1f))

@@ -107,7 +107,7 @@ data class Toast(val text: String, val id: Long = System.nanoTime())
  * Holds the app's state and saves it to a JSON file on this phone (same shape as the web app's
  * localStorage), with a short delay so quick taps write once.
  */
-const val PAPER_LOCKED = "Paper is a premium theme made for supporters. Unlock it from ${app.waylink.ui.theme.SUPPORTER_PRICE_TEXT} in Settings, Support Waylink."
+const val PAPER_LOCKED = "Paper themes are made for supporters, as a token of thanks."
 
 class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.route.RouteActions {
     private val file = AtomicFile(File(app.filesDir, "waylink-state.json"))
@@ -120,7 +120,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             if (!st.supporter || (ad && !st.adFree) || (early && !st.supporterPlus))
                 commit { it.copy(settings = it.settings.copy(supporter = true, adFree = st.adFree || ad, supporterPlus = st.supporterPlus || early)) }
         } },
-        onMessage = { m -> viewModelScope.launch { toast(m) } })
+        onMessage = { m -> viewModelScope.launch { toast(m) } },
+        onThanks = { id -> viewModelScope.launch { _live.update { it.copy(ask = "thanks:$id") } } })
     private val _live = MutableStateFlow(Live())
     val live: StateFlow<Live> = _live.asStateFlow()
     private var saveJob: Job? = null

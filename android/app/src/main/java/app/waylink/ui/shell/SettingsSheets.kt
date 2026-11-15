@@ -31,6 +31,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.draw.shadow
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -207,7 +209,12 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
                 }
             }
         }
-        "support" -> SheetSpec("Support Waylink", null) { SupportBody(vm, nav) }
+        "support" -> SheetSpec("Support Waylink", null) { SupportBody(vm, nav, arg.toIntOrNull()) }
+        "paper" -> SheetSpec("Paper themes", "For supporters") { PaperLockedBody(nav) }
+        "thanks" -> {
+            val t = app.waylink.data.Support.tier(arg) ?: return null
+            SheetSpec("Thank you", t.name) { ThanksBody(t, vm, nav) }
+        }
         "avatar" -> SheetSpec("Your picture", "Profile") {
             // .av-grid: eleven riders and a Photo tile, four to a row. The picked one grows (1.12) with an accent ring,
             // the rest sit at .9 with their face at .8.
@@ -499,11 +506,11 @@ private fun AboutBody(nav: SheetNav) {
 }
 
 @Composable
-private fun SupportBody(vm: AppViewModel, nav: SheetNav) {
+private fun SupportBody(vm: AppViewModel, nav: SheetNav, pick: Int? = null) {
     val c = W.c
     val ctx = LocalContext.current
     val tiers = app.waylink.data.Support.TIERS
-    var amt by rememberSaveable { mutableIntStateOf(app.waylink.data.Support.SUGGESTED) }
+    var amt by rememberSaveable { mutableIntStateOf(pick ?: app.waylink.data.Support.SUGGESTED) }
     val tier = tiers[amt.coerceIn(0, tiers.size - 1)]
     val prices by vm.billing.prices.collectAsStateWithLifecycle()
     val owned by vm.billing.owned.collectAsStateWithLifecycle()
@@ -511,7 +518,7 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav) {
     LaunchedEffect(Unit) { vm.billing.start() }
     fun go(i: Intent) = try { ctx.startActivity(i) } catch (e: Exception) { vm.toast("No app can open that.") }
     Spacer(Modifier.height(15.dp))
-    Txt("Waylink is free, with no ads and no tracking. If it makes your rides easier, you can chip in towards new features and upkeep. Pick what suits you. Prices include GST.", T.sheetLead, c.ink2)
+    Txt("Waylink is free and never tracks you. If it makes your rides easier, pick a plan: Themes unlocks the Paper looks, Supporter also removes ads, and Supporter+ adds early access, future premium features and priority support. Prices include GST. Payments go through Google Play, so Waylink never sees your payment details.", T.sheetLead, c.ink2)
     Spacer(Modifier.height(20.dp))
     // Web .give: card paper with a hairline ring, neutral icon square, the amount in the display face, a segmented amount picker.
     Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
@@ -564,15 +571,85 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav) {
     Txt("Free ways to help", T.eyebrow, c.ink3)
     Spacer(Modifier.height(8.dp))
     ListCard {
-        ListRow("Star it on GitHub", "Helps other riders find it", icon = "sparkles", onClick = { go(Intent(Intent.ACTION_VIEW, Uri.parse(REPO_URL))) })
-        Hairline(66.dp)
         ListRow("Share Waylink", "Send the link to a riding group", icon = "copy", onClick = {
             go(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Waylink: turns, calls and bike care for your Pulsar. $REPO_URL") }, "Share Waylink"))
         })
         Hairline(66.dp)
         ListRow("Report a problem or idea", "Every report makes it better", icon = "flag", onClick = { nav.open("report") })
     }
-    Hint("Payments go through Google Play, with GST added. Waylink never sees your payment details.")
+}
+
+/** Shown when a Paper theme is tapped without the unlock: two Paper pages fanned out, a thank-you note, and a way to Support. */
+@Composable
+private fun PaperLockedBody(nav: SheetNav) {
+    val c = W.c
+    Spacer(Modifier.height(18.dp))
+    Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(24.dp)).background(c.inkA(0.04f)), contentAlignment = Alignment.Center) {
+        PaperCard(Color(0xFF1E1B17), Color(0xFF2A2621), Color(0xFFEDE5D6), Modifier.offset(x = 34.dp, y = 6.dp).graphicsLayer { rotationZ = 8f })
+        PaperCard(Color(0xFFEEE7DA), Color(0xFFF7F1E6), Color(0xFF2A2620), Modifier.offset(x = (-34).dp, y = (-4).dp).graphicsLayer { rotationZ = -7f })
+        Box(
+            Modifier.offset(y = 52.dp).size(44.dp).clip(CircleShape).background(c.accent),
+            contentAlignment = Alignment.Center,
+        ) { Ic("love", size = 22.dp, tint = c.onAccent) }
+    }
+    Spacer(Modifier.height(20.dp))
+    Txt("Made for supporters", T.tileTitle.copy(fontSize = 22.sp), c.ink)
+    Spacer(Modifier.height(6.dp))
+    Txt("Paper and Paper dark are warm, hand-made looks, kept as a token of thanks for riders who support Waylink.", T.sheetLead, c.ink2)
+    Spacer(Modifier.height(22.dp))
+    Btn("Support Waylink", { nav.open("support:0") }, Modifier.fillMaxWidth(), icon = "love")
+    Spacer(Modifier.height(8.dp))
+    Btn("Not now", { nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.LINE)
+}
+
+/** After a purchase: the same fanned Paper pages, a tick, what this plan unlocked, and a way to try Paper straight away. */
+@Composable
+private fun ThanksBody(t: app.waylink.data.Support.Tier, vm: AppViewModel, nav: SheetNav) {
+    val c = W.c
+    Spacer(Modifier.height(18.dp))
+    Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(24.dp)).background(c.tintSage), contentAlignment = Alignment.Center) {
+        PaperCard(Color(0xFF1E1B17), Color(0xFF2A2621), Color(0xFFEDE5D6), Modifier.offset(x = 34.dp, y = 6.dp).graphicsLayer { rotationZ = 8f })
+        PaperCard(Color(0xFFEEE7DA), Color(0xFFF7F1E6), Color(0xFF2A2620), Modifier.offset(x = (-34).dp, y = (-4).dp).graphicsLayer { rotationZ = -7f })
+        Box(
+            Modifier.offset(y = 52.dp).size(44.dp).clip(CircleShape).background(c.sageInk),
+            contentAlignment = Alignment.Center,
+        ) { Ic("check", size = 22.dp, tint = c.bg) }
+    }
+    Spacer(Modifier.height(20.dp))
+    Txt("You’re a ${t.name} now", T.tileTitle.copy(fontSize = 22.sp), c.ink)
+    Spacer(Modifier.height(6.dp))
+    Txt("Thank you for backing Waylink. It keeps the app free, private and getting better for every rider.", T.sheetLead, c.ink2)
+    Spacer(Modifier.height(16.dp))
+    Txt("Unlocked", T.eyebrow, c.ink3)
+    Spacer(Modifier.height(6.dp))
+    t.perks.forEach { p ->
+        Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+            Ic("check", size = 15.dp, tint = c.sageInk)
+            Spacer(Modifier.width(10.dp))
+            Txt(p, T.row, c.ink2, maxLines = 1)
+        }
+    }
+    Spacer(Modifier.height(22.dp))
+    Btn("Try Paper now", { if (vm.state.value.settings.theme != "auto") vm.setTheme("sketch"); nav.close() }, Modifier.fillMaxWidth(), icon = "palette")
+    Spacer(Modifier.height(8.dp))
+    Btn("Done", { nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.LINE)
+}
+
+/** A tiny phone page in fixed Paper colours: a title line and two cards. */
+@Composable
+private fun PaperCard(bg: Color, card: Color, ink: Color, modifier: Modifier) {
+    Column(
+        modifier.size(96.dp, 128.dp).shadow(6.dp, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp)).background(bg).padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+        Box(Modifier.size(42.dp, 7.dp).clip(RoundedCornerShape(4.dp)).background(ink))
+        Box(Modifier.fillMaxWidth().height(34.dp).clip(RoundedCornerShape(8.dp)).background(card)) {
+            Box(Modifier.align(Alignment.CenterStart).padding(start = 8.dp).size(30.dp, 4.dp).clip(RoundedCornerShape(2.dp)).background(ink.copy(alpha = 0.6f)))
+        }
+        Box(Modifier.fillMaxWidth().height(34.dp).clip(RoundedCornerShape(8.dp)).background(card)) {
+            Box(Modifier.align(Alignment.CenterStart).padding(start = 8.dp).size(22.dp, 4.dp).clip(RoundedCornerShape(2.dp)).background(ink.copy(alpha = 0.6f)))
+        }
+    }
 }
 
 private tailrec fun android.content.Context.findActivity(): android.app.Activity? = when (this) {
