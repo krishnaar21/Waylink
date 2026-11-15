@@ -96,6 +96,7 @@ fun LogbookScreen(s: AppState, act: LogbookActions, bottom: Dp) {
             Spacer(Modifier.width(8.dp))
             Ic("edit", size = 18.dp, tint = c.ink4)
         }
+        if (app.waylink.ui.components.DummyAds.top(s)) app.waylink.ui.components.AdBanner(2, Modifier.padding(top = 12.dp)) { act.sheet(app.waylink.ui.components.DummyAds.REMOVE) }
 
         SectionGap()
         SectionHead("Reminders · most urgent first", help = { act.help("reminders") })

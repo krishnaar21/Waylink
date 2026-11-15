@@ -286,7 +286,7 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             Hairline(66.dp)
             // The thank-you sheet as each plan sees it after paying.
             ListRow("Thank-you sheet", "What each plan sees after paying", icon = "love", trailing = {})
-            Row(Modifier.fillMaxWidth().padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 app.waylink.data.Support.TIERS.forEach { t -> app.waylink.ui.components.Chip(t.name, { act.sheet("thanks:${t.id}") }) }
             }
             Hairline(66.dp)
@@ -296,7 +296,8 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             Hairline(66.dp)
             // One item for the placeholder ads: where they show, and the paid "no ads" state that hides them.
             ListRow("Sample ads", "Try placements before real ads", icon = "image", trailing = {})
-            Row(Modifier.fillMaxWidth().padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                app.waylink.ui.components.Chip("At the top", { act.toggle("adTop") }, on = st.adTop)
                 app.waylink.ui.components.Chip("Under Rides", { act.toggle("adRides") }, on = st.adRides)
                 app.waylink.ui.components.Chip("In lists", { act.toggle("adLists") }, on = st.adLists)
                 app.waylink.ui.components.Chip("No ads", { act.toggle("adFree") }, on = st.adFree)

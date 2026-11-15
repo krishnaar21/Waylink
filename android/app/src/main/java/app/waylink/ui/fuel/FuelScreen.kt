@@ -137,6 +137,7 @@ fun FuelScreen(s: AppState, act: FuelActions, bottom: Dp) {
         }
         Spacer(Modifier.height(12.dp))
         Btn("Log fuel", { act.sheet("fuel:new") }, Modifier.fillMaxWidth(), icon = "fuel")
+        if (app.waylink.ui.components.DummyAds.top(s)) app.waylink.ui.components.AdBanner(3, Modifier.padding(top = 14.dp)) { act.sheet(app.waylink.ui.components.DummyAds.REMOVE) }
 
         SectionGap()
         SectionHead("Mileage", help = { act.help("mileage") }) { Txt("Full tank to full tank", T.eyebrow.copy(fontSize = 14.sp), c.ink3) }

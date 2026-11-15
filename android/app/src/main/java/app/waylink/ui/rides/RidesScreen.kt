@@ -104,6 +104,7 @@ interface RidesActions {
     fun endRide()
     fun open(id: String)
     fun chart(page: Int)
+    fun sheet(key: String) {}
 }
 
 private val RC_NAMES = listOf("Calendar", "Km per week", "Km by weekday")
@@ -153,6 +154,8 @@ fun RidesScreen(s: AppState, live: Live, act: RidesActions, bottom: Dp) {
                     contentAlignment = Alignment.Center,
                 ) { Ic("play", size = 20.dp, tint = c.bg) }
             }
+            // Never during a ride: the top ad only sits under the idle card.
+            if (app.waylink.ui.components.DummyAds.top(s)) app.waylink.ui.components.AdBanner(1, Modifier.padding(top = 12.dp)) { act.sheet(app.waylink.ui.components.DummyAds.REMOVE) }
         }
 
         // All rides, with the swipeable charts.
@@ -249,7 +252,7 @@ fun RidesScreen(s: AppState, live: Live, act: RidesActions, bottom: Dp) {
         }
         if (app.waylink.ui.components.DummyAds.rides(s)) {
             Spacer(Modifier.height(14.dp))
-            app.waylink.ui.components.AdBanner(0)
+            app.waylink.ui.components.AdBanner(0) { act.sheet(app.waylink.ui.components.DummyAds.REMOVE) }
         }
     }
 }

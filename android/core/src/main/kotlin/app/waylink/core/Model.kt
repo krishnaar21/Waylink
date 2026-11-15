@@ -92,6 +92,8 @@ data class Settings(
     val supporterPlus: Boolean = false,
     /** Developer previews of placeholder ads: a banner under Rides, and a row inside Fuel and Service history. */
     val adRides: Boolean = false,
+    /** A native card near the top of Rides, Fuel and Service, seen without scrolling. */
+    val adTop: Boolean = false,
     val adLists: Boolean = false,
     /** Today's quick-link layout: cards, icons, list or pills. */
     val tileLayout: String = "cards",
