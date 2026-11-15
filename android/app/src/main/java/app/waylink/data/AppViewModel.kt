@@ -107,6 +107,8 @@ data class Toast(val text: String, val id: Long = System.nanoTime())
  * Holds the app's state and saves it to a JSON file on this phone (same shape as the web app's
  * localStorage), with a short delay so quick taps write once.
  */
+const val PAPER_LOCKED = "Paper is a premium theme made for supporters. It unlocks when you support Waylink with ₹100 or more."
+
 class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.route.RouteActions {
     private val file = AtomicFile(File(app.filesDir, "waylink-state.json"))
     private val _state = MutableStateFlow(load())
@@ -936,7 +938,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     private fun wipeGlove() { try { gloveDir.deleteRecursively() } catch (e: Exception) { } }
 
     // ---------- Settings ----------
-    fun setTheme(key: String) = commit { it.copy(settings = it.settings.copy(theme = key)) }
+    /** Paper and Paper dark are for supporters: anyone else gets a toast and keeps their theme. */
+    fun setTheme(key: String) {
+        if (key in app.waylink.ui.theme.PREMIUM_THEMES && !_state.value.settings.supporter) { toast(PAPER_LOCKED); return }
+        commit { it.copy(settings = it.settings.copy(theme = key)) }
+    }
     fun setRideChart(i: Int) { sound.click(true); commit { it.copy(settings = it.settings.copy(rideChart = i.coerceIn(0, 2))) } }
     fun setProgress(k: String) { sound.click(true); commit { it.copy(settings = it.settings.copy(progress = if (k in listOf("gauge", "road", "tread", "dipstick")) k else "gauge")) } }
     fun setIconLook(k: String) { sound.click(true); commit { it.copy(settings = it.settings.copy(icons = if (k == "duo" || k == "fill") k else "line")) } }
@@ -970,6 +976,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "sounds" -> st.copy(sounds = !st.sounds)
             "devFrames" -> st.copy(devFrames = !st.devFrames)
             "devUnlocked" -> st.copy(devUnlocked = !st.devUnlocked)
+            "supporter" -> st.copy(supporter = !st.supporter)
             else -> st
         })
     }

@@ -282,6 +282,8 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
                 app.waylink.ui.components.Chip("Loading", { act.dev("loading") })
             }
             Hairline(66.dp)
+            ListRow("Supporter", "Unlocks Paper, as if you paid ₹100", icon = "love", trailing = { Switch(st.supporter, "Supporter", { act.toggle("supporter") }) })
+            Hairline(66.dp)
             ListRow("Simulated bike", "Try it all without a bike", icon = "bolt", trailing = { Switch(simOn, "Simulated bike", { act.sim(!simOn) }) })
             Hairline(66.dp)
             ListRow("Show Bluetooth messages", "Raw bytes on the Route tab", icon = "btMsgs", trailing = { Switch(st.devFrames, "Show Bluetooth messages", { act.toggle("devFrames") }) })
@@ -420,28 +422,30 @@ private fun LookCard(s: AppState, act: SettingsActions) {
     val c = W.c
     Column(Modifier.fillMaxWidth().card(20.dp)) {
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 20.dp)) {
-            // Auto follows the phone with Paper and Paper dark. Off, every theme is there to pick.
+            // Auto follows the phone: Paper and Paper dark for supporters, Light and Dark otherwise. Off, every theme is there to pick.
             val auto = s.settings.theme == "auto"
             val sysDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val sup = s.settings.supporter
+            val pair = if (sup) listOf("sketch", "sketchdark") else listOf("paper", "obsidian")
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Txt("Match the phone", T.body.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), c.ink, maxLines = 1)
-                    Txt(if (auto) "Paper by day, Paper dark at night" else "Off. Pick a theme below", T.rowSub, c.ink3, maxLines = 2)
+                    Txt(if (!auto) "Off. Pick a theme below" else if (sup) "Paper by day, Paper dark at night" else "Light by day, Dark at night", T.rowSub, c.ink3, maxLines = 2)
                 }
                 Spacer(Modifier.width(12.dp))
-                Switch(auto, "Match the phone", { act.theme(if (auto) (if (sysDark) "sketchdark" else "sketch") else "auto") })
+                Switch(auto, "Match the phone", { act.theme(if (auto) (if (sysDark) pair[1] else pair[0]) else "auto") })
             }
             if (auto) {
                 Spacer(Modifier.height(16.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    listOf("sketch", "sketchdark").forEach { k ->
+                    pair.forEach { k ->
                         val t = app.waylink.ui.theme.THEMES.first { it[0] == k }
-                        val now = if (sysDark) k == "sketchdark" else k == "sketch"
+                        val now = if (sysDark) k == pair[1] else k == pair[0]
                         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                             ThemePreview(k, now, Modifier.fillMaxWidth().aspectRatio(1.6f))
                             Spacer(Modifier.height(8.dp))
                             Txt(t[1], T.row.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), if (now) c.ink else c.ink2, maxLines = 1)
-                            Txt(if (now) "Now" else if (k == "sketch") "Day" else "Night", T.rowSub.copy(fontSize = 12.sp, lineHeight = 18.sp), c.ink3, maxLines = 1)
+                            Txt(if (now) "Now" else if (k == pair[0]) "Day" else "Night", T.rowSub.copy(fontSize = 12.sp, lineHeight = 18.sp), c.ink3, maxLines = 1)
                         }
                     }
                 }
@@ -451,13 +455,22 @@ private fun LookCard(s: AppState, act: SettingsActions) {
                     if (i > 0) Spacer(Modifier.height(14.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         row.forEach { t ->
-                            val key = t[0]; val label = t[1]; val sub = t[5]
+                            val key = t[0]; val label = t[1]
+                            val locked = key in app.waylink.ui.theme.PREMIUM_THEMES && !sup
+                            val sub = if (locked) "Supporters" else t[5]
                             val on = s.settings.theme == key
                             Column(
-                                Modifier.weight(1f).semantics { selected = on }.pressable(label = label, role = Role.RadioButton, scale = 0.95f) { act.theme(key) },
+                                Modifier.weight(1f).semantics { selected = on }
+                                    .pressable(label = if (locked) "$label, for supporters" else label, role = Role.RadioButton, scale = 0.95f) { act.theme(key) },
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                ThemePreview(key, on, Modifier.fillMaxWidth().aspectRatio(1.25f))
+                                Box {
+                                    ThemePreview(key, on, Modifier.fillMaxWidth().aspectRatio(1.25f))
+                                    if (locked) Box(
+                                        Modifier.align(Alignment.TopEnd).padding(6.dp).size(24.dp).clip(CircleShape).background(c.raised).border(1.dp, c.line, CircleShape),
+                                        contentAlignment = Alignment.Center,
+                                    ) { Ic("lock", size = 13.dp, tint = c.ink2) }
+                                }
                                 Spacer(Modifier.height(8.dp))
                                 Txt(label, T.row.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), if (on) c.ink else c.ink2, maxLines = 1)
                                 Spacer(Modifier.height(2.dp))

@@ -505,7 +505,7 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav) {
     var amt by rememberSaveable { mutableIntStateOf(99) }
     fun go(i: Intent) = try { ctx.startActivity(i) } catch (e: Exception) { vm.toast("No app can open that.") }
     Spacer(Modifier.height(15.dp))
-    Txt("Waylink is free, with no ads and no tracking. If it makes your rides easier, you can chip in towards new features and upkeep.", T.sheetLead, c.ink2)
+    Txt("Waylink is free, with no ads and no tracking. If it makes your rides easier, you can chip in towards new features and upkeep. Support with ₹100 or more and the Paper themes are yours.", T.sheetLead, c.ink2)
     Spacer(Modifier.height(20.dp))
     // Web .give: card paper with a hairline ring, neutral icon square, the amount in the display face, a segmented amount picker.
     Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
