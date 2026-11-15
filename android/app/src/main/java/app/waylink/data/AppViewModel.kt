@@ -107,7 +107,7 @@ data class Toast(val text: String, val id: Long = System.nanoTime())
  * Holds the app's state and saves it to a JSON file on this phone (same shape as the web app's
  * localStorage), with a short delay so quick taps write once.
  */
-const val PAPER_LOCKED = "Paper is a premium theme made for supporters. It unlocks when you support Waylink with ${app.waylink.ui.theme.SUPPORTER_PRICE_TEXT}."
+const val PAPER_LOCKED = "Paper is a premium theme made for supporters. Unlock it from ${app.waylink.ui.theme.SUPPORTER_PRICE_TEXT} in Settings, Support Waylink."
 
 class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.route.RouteActions {
     private val file = AtomicFile(File(app.filesDir, "waylink-state.json"))
@@ -115,7 +115,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     val state: StateFlow<AppState> = _state.asStateFlow()
     /** Google Play support products; a ₹100+ purchase unlocks the Paper themes. */
     val billing = Billing(app,
-        onSupporter = { viewModelScope.launch { if (!_state.value.settings.supporter) commit { it.copy(settings = it.settings.copy(supporter = true)) } } },
+        onSupporter = { ad, early -> viewModelScope.launch {
+            val st = _state.value.settings
+            if (!st.supporter || (ad && !st.adFree) || (early && !st.supporterPlus))
+                commit { it.copy(settings = it.settings.copy(supporter = true, adFree = st.adFree || ad, supporterPlus = st.supporterPlus || early)) }
+        } },
         onMessage = { m -> viewModelScope.launch { toast(m) } })
     private val _live = MutableStateFlow(Live())
     val live: StateFlow<Live> = _live.asStateFlow()
@@ -982,6 +986,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "devFrames" -> st.copy(devFrames = !st.devFrames)
             "devUnlocked" -> st.copy(devUnlocked = !st.devUnlocked)
             "supporter" -> st.copy(supporter = !st.supporter)
+            "adFree" -> st.copy(adFree = !st.adFree)
+            "supporterPlus" -> st.copy(supporterPlus = !st.supporterPlus)
+            "adRides" -> st.copy(adRides = !st.adRides)
+            "adLists" -> st.copy(adLists = !st.adLists)
             else -> st
         })
     }

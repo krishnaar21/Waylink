@@ -443,6 +443,7 @@ private fun ReportBody(s: AppState, live: Live, vm: AppViewModel) {
         "Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
         "Device: ${Build.MANUFACTURER} ${Build.MODEL}",
         "Theme: ${s.settings.theme}, ${s.settings.accent}",
+        "Support: " + when { s.settings.supporterPlus -> "Supporter+ (priority)"; s.settings.adFree -> "Supporter"; s.settings.supporter -> "Themes"; else -> "None" },
     ).joinToString("\n")
     fun full() = (body.trim().ifEmpty { "(Describe what happened)" }) + "\n\n---\n" + info
     fun go(i: Intent) = try { ctx.startActivity(i) } catch (e: Exception) { vm.toast("No app can open that.") }
@@ -459,7 +460,7 @@ private fun ReportBody(s: AppState, live: Live, vm: AppViewModel) {
     Btn("Email support", {
         go(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
             putExtra(Intent.EXTRA_EMAIL, arrayOf(SUPPORT_EMAIL))
-            putExtra(Intent.EXTRA_SUBJECT, "Waylink: " + subj.trim().ifEmpty { "Problem report" })
+            putExtra(Intent.EXTRA_SUBJECT, (if (s.settings.supporterPlus) "[Priority] " else "") + "Waylink: " + subj.trim().ifEmpty { "Problem report" })
             putExtra(Intent.EXTRA_TEXT, full())
         })
     }, Modifier.fillMaxWidth(), icon = "mail")
@@ -502,15 +503,15 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav) {
     val c = W.c
     val ctx = LocalContext.current
     val tiers = app.waylink.data.Support.TIERS
-    var amt by rememberSaveable { mutableIntStateOf(1) }
+    var amt by rememberSaveable { mutableIntStateOf(app.waylink.data.Support.SUGGESTED) }
     val tier = tiers[amt.coerceIn(0, tiers.size - 1)]
     val prices by vm.billing.prices.collectAsStateWithLifecycle()
     val owned by vm.billing.owned.collectAsStateWithLifecycle()
-    val supporter = vm.state.collectAsStateWithLifecycle().value.settings.supporter
+    val st = vm.state.collectAsStateWithLifecycle().value.settings
     LaunchedEffect(Unit) { vm.billing.start() }
     fun go(i: Intent) = try { ctx.startActivity(i) } catch (e: Exception) { vm.toast("No app can open that.") }
     Spacer(Modifier.height(15.dp))
-    Txt("Waylink is free, with no ads and no tracking. If it makes your rides easier, you can chip in towards new features and upkeep. Support with ${app.waylink.ui.theme.SUPPORTER_PRICE_TEXT} and the Paper themes are yours.", T.sheetLead, c.ink2)
+    Txt("Waylink is free, with no ads and no tracking. If it makes your rides easier, you can chip in towards new features and upkeep. Pick what suits you. Prices include GST.", T.sheetLead, c.ink2)
     Spacer(Modifier.height(20.dp))
     // Web .give: card paper with a hairline ring, neutral icon square, the amount in the display face, a segmented amount picker.
     Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
@@ -521,12 +522,12 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav) {
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Txt("₹${tier.base}", T.big(34f).copy(lineHeight = 35.7.sp), c.ink, maxLines = 1)
+                    Txt("₹${tier.price}", T.big(34f).copy(lineHeight = 35.7.sp), c.ink, maxLines = 1)
                     Spacer(Modifier.width(6.dp))
-                    Txt("+ GST", T.row, c.ink3, Modifier.padding(bottom = 5.dp), maxLines = 1)
+                    Txt(if (amt == app.waylink.data.Support.SUGGESTED) "incl. GST · suggested" else "incl. GST", T.row, c.ink3, Modifier.padding(bottom = 5.dp), maxLines = 1)
                 }
                 Spacer(Modifier.height(3.dp))
-                Txt(tier.line, T.row, c.ink3, maxLines = 2)
+                Txt(tier.name, T.row.copy(fontWeight = FontWeight.SemiBold), c.ink2, maxLines = 1)
             }
         }
         Spacer(Modifier.height(18.dp))
@@ -535,25 +536,25 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav) {
                 val on = amt == i
                 Box(
                     Modifier.weight(1f).height(38.dp).clip(CircleShape).background(if (on) c.ink else Color.Transparent)
-                        .semantics { selected = on }.pressable(label = "₹${t.base} plus GST", role = Role.RadioButton) { amt = i },
+                        .semantics { selected = on }.pressable(label = "${t.name}, ₹${t.price}", role = Role.RadioButton) { amt = i },
                     contentAlignment = Alignment.Center,
-                ) { Txt("₹${t.base}", T.body.copy(fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold), if (on) c.bg else c.ink2, maxLines = 1) }
+                ) { Txt(t.name, T.body.copy(fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold), if (on) c.bg else c.ink2, maxLines = 1) }
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        // What this tier includes, ticked.
+        tier.perks.forEach { p ->
+            Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                Ic("check", size = 15.dp, tint = c.sageInk)
+                Spacer(Modifier.width(10.dp))
+                Txt(p, T.row, c.ink2, maxLines = 1)
             }
         }
         Spacer(Modifier.height(16.dp))
         val have = tier.id in owned
-        val total = prices[tier.id] ?: "₹${tier.withTax}"
+        val total = prices[tier.id] ?: "₹${tier.price}"
         Btn(if (have) "Given. Thank you!" else "Pay $total with Google Play", { if (!have) vm.billing.buy(ctx.findActivity(), tier.id) },
             Modifier.fillMaxWidth().then(if (have) Modifier.alpha(0.5f).semantics { disabled() } else Modifier))
-        Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Ic(if (tier.unlocksPaper) "lock" else "info", size = 15.dp, tint = c.ink3)
-            Spacer(Modifier.width(8.dp))
-            Txt(
-                if (supporter) "Paper is unlocked. Thank you." else if (tier.unlocksPaper) "Unlocks the Paper themes" else "Paper unlocks from ₹${app.waylink.ui.theme.SUPPORTER_PRICE}",
-                T.row.copy(fontSize = 13.sp), c.ink3,
-            )
-        }
     }
     Spacer(Modifier.height(10.dp))
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {

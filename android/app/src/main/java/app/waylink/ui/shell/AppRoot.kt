@@ -562,7 +562,8 @@ private fun TabItem(t: Tab, on: Boolean, pip: androidx.compose.ui.graphics.Color
 private fun ToastHost(live: Live, clear: () -> Unit) {
     val t = live.toast
     val density = androidx.compose.ui.platform.LocalDensity.current.density
-    LaunchedEffect(t?.id) { if (t != null) { delay(2600); clear() } }
+    // Longer messages stay up longer: about 55 ms a character, between 2.6 and 7 seconds.
+    LaunchedEffect(t?.id) { if (t != null) { delay((t.text.length * 55L).coerceIn(2600L, 7000L)); clear() } }
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.navigationBars).padding(bottom = 96.dp, start = 20.dp, end = 20.dp), contentAlignment = Alignment.BottomCenter) {
         // toastIn .4s spring: up 14 px from 96 %; out: fadeOut .25s
         AnimatedVisibility(

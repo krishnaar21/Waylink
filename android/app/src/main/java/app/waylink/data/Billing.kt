@@ -17,31 +17,27 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * One-time "support" products sold through Google Play. Each amount is the base price; GST is added on top
- * (Play shows the tax-inclusive price, e.g. ₹118 for ₹100). Every product of ₹100 or more unlocks the Paper themes.
- * The product ids here must match the in-app products created in Play Console.
+ * One-time support products sold through Google Play. Prices are final, GST included. ₹120 unlocks the Paper
+ * themes, ₹220 (suggested) also turns ads off, and ₹520 adds early access, future premium features and priority support. The product ids here must match the in-app products created in Play Console.
  */
 object Support {
-    const val GST_PERCENT = 18
-    data class Tier(val id: String, val base: Int, val icon: String, val line: String) {
-        val withTax: Int get() = Math.round(base * (100 + GST_PERCENT) / 100.0).toInt()
-        val unlocksPaper: Boolean get() = base >= app.waylink.ui.theme.SUPPORTER_PRICE
-    }
+    data class Tier(val id: String, val price: Int, val icon: String, val name: String, val perks: List<String>, val adFree: Boolean, val early: Boolean)
     val TIERS = listOf(
-        Tier("support_50", 50, "tea", "A cutting chai for the developer"),
-        Tier("support_100", 100, "coffee", "A coffee, and the Paper themes are yours"),
-        Tier("support_200", 200, "fuel", "Two litres of petrol for test rides"),
-        Tier("support_500", 500, "wrench", "Towards a month of upkeep"),
+        Tier("themes_120", 120, "palette", "Themes", listOf("The Paper themes"), adFree = false, early = false),
+        Tier("support_220", 220, "love", "Supporter", listOf("The Paper themes", "No ads"), adFree = true, early = false),
+        Tier("supporter_plus_520", 520, "sparkles", "Supporter+", listOf("The Paper themes", "No ads", "Early access to new features", "Future premium features", "Priority support"), adFree = true, early = true),
     )
+    /** Preselected on the Support sheet. */
+    const val SUGGESTED = 1
     fun tier(id: String) = TIERS.firstOrNull { it.id == id }
 }
 
 /**
  * Google Play Billing for the support products. Purchases are one-time and not consumed, so they come back
  * on a reinstall or a new phone ([restore]). There is no server: the purchase is checked on the phone, which
- * is enough for a theme unlock. [onSupporter] runs when Play reports an owned product that unlocks Paper.
+ * is enough for a cosmetic unlock. [onSupporter] runs with what the owned products unlock.
  */
-class Billing(context: Context, private val onSupporter: () -> Unit, private val onMessage: (String) -> Unit) {
+class Billing(context: Context, private val onSupporter: (adFree: Boolean, early: Boolean) -> Unit, private val onMessage: (String) -> Unit) {
     private val _prices = MutableStateFlow<Map<String, String>>(emptyMap())
     /** Play's tax-inclusive price per product id, once Play has answered. */
     val prices: StateFlow<Map<String, String>> = _prices.asStateFlow()
@@ -92,7 +88,7 @@ class Billing(context: Context, private val onSupporter: () -> Unit, private val
         c.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.INAPP).build()) { result, purchases ->
             val ok = result.responseCode == BillingClient.BillingResponseCode.OK
             val unlocked = ok && handle(purchases)
-            if (restoring) onMessage(if (!ok) "Couldn’t reach Google Play. Try again in a moment." else if (unlocked) "Support restored. Paper is unlocked." else "No earlier support found on this Google account.")
+            if (restoring) onMessage(if (!ok) "Couldn’t reach Google Play. Try again in a moment." else if (unlocked) "Support restored. Thank you!" else "No earlier support found on this Google account.")
             restoring = false
         }
     }
@@ -115,7 +111,7 @@ class Billing(context: Context, private val onSupporter: () -> Unit, private val
             BillingClient.BillingResponseCode.OK -> if (purchases != null) {
                 val unlocked = handle(purchases)
                 if (purchases.any { it.purchaseState == Purchase.PurchaseState.PURCHASED })
-                    onMessage(if (unlocked) "Thank you for supporting Waylink. Paper is unlocked." else "Thank you for supporting Waylink.")
+                    onMessage("Thank you for supporting Waylink! Your unlocks are on.")
             }
             BillingClient.BillingResponseCode.USER_CANCELED -> {}
             BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> restore()
@@ -127,16 +123,18 @@ class Billing(context: Context, private val onSupporter: () -> Unit, private val
     private fun handle(purchases: List<Purchase>): Boolean {
         val c = client ?: return false
         var unlocks = false
+        var adFree = false
+        var early = false
         val mine = mutableSetOf<String>()
         purchases.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }.forEach { p ->
             if (!p.isAcknowledged) {
                 c.acknowledgePurchase(AcknowledgePurchaseParams.newBuilder().setPurchaseToken(p.purchaseToken).build()) {}
             }
-            p.products.forEach { id -> mine += id; if (Support.tier(id)?.unlocksPaper == true) unlocks = true }
+            p.products.forEach { id -> mine += id; Support.tier(id)?.let { t -> unlocks = true; if (t.adFree) adFree = true; if (t.early) early = true } }
         }
         _owned.value = _owned.value + mine
-        if (purchases.any { it.purchaseState == Purchase.PurchaseState.PENDING }) onMessage("Your payment is pending. Paper unlocks once it clears.")
-        if (unlocks) onSupporter()
+        if (purchases.any { it.purchaseState == Purchase.PurchaseState.PENDING }) onMessage("Your payment is pending. Your unlocks turn on once it clears.")
+        if (unlocks) onSupporter(adFree, early)
         return unlocks
     }
 

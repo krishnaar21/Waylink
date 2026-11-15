@@ -183,7 +183,9 @@ fun FuelScreen(s: AppState, act: FuelActions, bottom: Dp) {
                 Txt("Tap Log fuel at the pump.", T.row.copy(fontSize = 14.5.sp), c.ink3)
             }
         } else ListCard {
+            val ads = app.waylink.ui.components.DummyAds.lists(s)
             entries.forEachIndexed { i, e ->
+                if (ads && i == 3) { Hairline(start = 0.dp); app.waylink.ui.components.AdRow(3) }
                 if (i > 0) Hairline(start = 20.dp)
                 Row(
                     Modifier.fillMaxWidth().pressable(label = "Fill-up, ${dMed(e.ts)}") { act.sheet("fuel:${e.id}") }.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 20.dp),

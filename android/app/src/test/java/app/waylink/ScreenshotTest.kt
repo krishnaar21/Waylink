@@ -96,14 +96,11 @@ class ScreenshotTest {
         shot("route-frames", tab = Tab.ROUTE) { RouteScreen(alt, live.copy(lastFrame = "Turn" to frame, frameCount = 42), noop(), {}, 80.dp) }
     }
     /** Every theme on the busiest screens, to check contrast and consistency side by side. */
-    private fun themed(theme: String, name: String, content: @Composable () -> Unit) = captureRoboImage("build/shots/theme-$theme-$name.png") {
-        WaylinkTheme(theme, sample.settings.accent) { Box(Modifier.fillMaxSize().background(W.c.bg).grain()) { content() } }
-    }
-    private val THEMES = listOf("paper", "obsidian", "amoled")
-    @Test fun themesToday() = THEMES.forEach { t -> themed(t, "today") { TodayScreen(sample, live, noop(), 80.dp) } }
-    @Test fun themesFuel() = THEMES.forEach { t -> themed(t, "fuel") { FuelScreen(sample, noop(), 80.dp) } }
-    @Test fun themesRides() = THEMES.forEach { t -> themed(t, "rides") { RidesScreen(sample, live, noop(), 80.dp) } }
-    @Test fun themesSettings() = THEMES.forEach { t -> themed(t, "settings") { SettingsScreen(sample, live, noop(), 80.dp) } }
+    // Placeholder ad slots, to judge the placements (the theme matrix that sat here did its job and is gone).
+    private val withAds get() = sample.copy(settings = sample.settings.copy(adRides = true, adLists = true))
+    @Test fun adsRides() = shot("ads-rides") { RidesScreen(withAds, live, noop(), 80.dp) }
+    @Test fun adsFuel() = shot("ads-fuel") { FuelScreen(withAds, noop(), 80.dp) }
+    @Test fun adsService() = shot("ads-service") { app.waylink.ui.logbook.LogbookScreen(withAds, noop(), 80.dp) }
     @Test fun profile() = shot("profile", tab = Tab.SETTINGS) { ProfileScreen(sample, {}, {}, {}, 80.dp) }
 
     /** Developer preview states: a brand-new rider and the edge cases, for every tab, plus ride mode. */
