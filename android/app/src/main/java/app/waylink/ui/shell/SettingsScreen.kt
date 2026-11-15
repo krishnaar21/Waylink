@@ -285,13 +285,15 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             Hairline(66.dp)
             ListRow("Supporter", "Unlocks Paper, as if you’d paid", icon = "love", trailing = { Switch(st.supporter, "Supporter", { act.toggle("supporter") }) })
             Hairline(66.dp)
-            ListRow("No ads", "As if you’d given ₹220", icon = "eye", trailing = { Switch(st.adFree, "No ads", { act.toggle("adFree") }) })
-            Hairline(66.dp)
             ListRow("Supporter+", "As if you’d given ₹520", icon = "sparkles", trailing = { Switch(st.supporterPlus, "Supporter+", { act.toggle("supporterPlus") }) })
             Hairline(66.dp)
-            ListRow("Sample ad under Rides", "A banner below the ride list", icon = "image", trailing = { Switch(st.adRides, "Sample ad under Rides", { act.toggle("adRides") }) })
-            Hairline(66.dp)
-            ListRow("Sample ads in lists", "A row in Fuel and Service history", icon = "list", trailing = { Switch(st.adLists, "Sample ads in lists", { act.toggle("adLists") }) })
+            // One item for the placeholder ads: where they show, and the paid "no ads" state that hides them.
+            ListRow("Sample ads", "Try placements before real ads", icon = "image", trailing = {})
+            Row(Modifier.fillMaxWidth().padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                app.waylink.ui.components.Chip("Under Rides", { act.toggle("adRides") }, on = st.adRides)
+                app.waylink.ui.components.Chip("In lists", { act.toggle("adLists") }, on = st.adLists)
+                app.waylink.ui.components.Chip("No ads", { act.toggle("adFree") }, on = st.adFree)
+            }
             Hairline(66.dp)
             ListRow("Simulated bike", "Try it all without a bike", icon = "bolt", trailing = { Switch(simOn, "Simulated bike", { act.sim(!simOn) }) })
             Hairline(66.dp)
@@ -455,7 +457,7 @@ private fun LookCard(s: AppState, act: SettingsActions) {
                     val dim = auto && !inPair
                     Column(
                         Modifier.width(58.dp).semantics { selected = on }
-                            .pressable(label = if (locked) "$label, for supporters" else label, role = Role.RadioButton, scale = 0.9f) { act.theme(key) }
+                            .pressable(label = if (locked) "$label, for supporters" else label, role = Role.RadioButton, scale = 0.9f) { if (locked) act.sheet("paper") else act.theme(key) }
                             .then(if (dim) Modifier.alpha(0.4f) else Modifier),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
