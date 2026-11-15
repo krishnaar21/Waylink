@@ -388,6 +388,23 @@ class ScenarioTest {
         assertTrue(compose.onAllNodesWithText("Today", substring = true).fetchSemanticsNodes().isNotEmpty())
     }
 
+    /** The tidier-layout switch changes the live screens, not only the pictures. */
+    @Test fun tidyLayoutSwitchShows() {
+        val vm = vm()
+        vm.onboardSample(); vm.finishOnboarding(simulated = true); vm.hideSplash()
+        compose.setContent { AppRoot(vm) }
+        compose.waitForIdle()
+        fun has(t: String) = compose.onAllNodesWithText(t).fetchSemanticsNodes().isNotEmpty()
+        assertTrue(has("Shortcuts"))
+        vm.toggleSetting("tidy"); compose.mainClock.advanceTimeBy(600); compose.waitForIdle()
+        assertTrue("Shortcuts should go with the tidier layout", !has("Shortcuts"))
+        compose.onAllNodesWithContentDescription("Settings").onFirst().performClick()
+        compose.mainClock.advanceTimeBy(600); compose.waitForIdle()
+        assertTrue(!has("Records & safety"))
+        vm.toggleSetting("tidy"); compose.mainClock.advanceTimeBy(600); compose.waitForIdle()
+        assertTrue(has("Records & safety"))
+    }
+
     /** Every sheet opens without a crash, on the sample data and on the edge-case data. */
     @Test fun everySheetOpens() {
         val vm = vm()

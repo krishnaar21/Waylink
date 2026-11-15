@@ -383,7 +383,7 @@ private fun UpCard(r: ServiceRow, f: Fmt, tall: Boolean, onClick: () -> Unit) {
         Due.OK -> Triple("On track", c.ink3, c.raised)
     }
     Column(
-        Modifier.width(310.dp).height(if (tall) 160.dp else 140.dp).card(20.dp).pressable(label = r.item.name, onClick = onClick)
+        Modifier.width(248.dp).height(if (tall) 160.dp else 140.dp).card(20.dp).pressable(label = r.item.name, onClick = onClick)
             .padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
