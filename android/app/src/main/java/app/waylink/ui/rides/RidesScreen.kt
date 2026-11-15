@@ -247,6 +247,10 @@ fun RidesScreen(s: AppState, live: Live, act: RidesActions, bottom: Dp) {
                 }
             }
         }
+        if (app.waylink.ui.components.DummyAds.rides(s) && v.trips.isNotEmpty()) {
+            Spacer(Modifier.height(14.dp))
+            app.waylink.ui.components.AdBanner(0)
+        }
     }
 }
 

@@ -986,6 +986,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "devUnlocked" -> st.copy(devUnlocked = !st.devUnlocked)
             "supporter" -> st.copy(supporter = !st.supporter)
             "adFree" -> st.copy(adFree = !st.adFree)
+            "adRides" -> st.copy(adRides = !st.adRides)
+            "adLists" -> st.copy(adLists = !st.adLists)
             else -> st
         })
     }

@@ -112,7 +112,9 @@ fun LogbookScreen(s: AppState, act: LogbookActions, bottom: Dp) {
         if (v.records.isEmpty()) ListCard { Empty("Log each visit. A full history helps at resale.") }
         else {
             ListCard {
+                val ads = app.waylink.ui.components.DummyAds.lists(s)
                 v.records.sortedByDescending { it.date }.forEachIndexed { i, r ->
+                    if (ads && i == 3) { Hairline(start = 0.dp); app.waylink.ui.components.AdRow(2, start = 16.dp) }
                     if (i > 0) Hairline(start = 16.dp)
                     Row(
                         Modifier.fillMaxWidth().pressable(label = r.title) { act.sheet("rec:${r.id}") }.padding(horizontal = 16.dp, vertical = 13.dp),
