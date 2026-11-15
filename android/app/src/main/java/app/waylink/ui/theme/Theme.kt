@@ -148,9 +148,9 @@ val THEMES = listOf(
 /** Themes only supporters can pick (Paper and Paper dark). */
 val PREMIUM_THEMES = setOf("sketch", "sketchdark")
 
-/** The supporter unlock price, in one place until payments are set up. Tax is added on top. */
-const val SUPPORTER_PRICE = 100
-const val SUPPORTER_PRICE_TEXT = "₹$SUPPORTER_PRICE or more (plus tax)"
+/** The lowest unlock price, GST included (the themes_120 product in Play). */
+const val SUPPORTER_PRICE = 120
+const val SUPPORTER_PRICE_TEXT = "₹$SUPPORTER_PRICE (GST included)"
 
 /**
  * The theme to actually draw. Auto follows the phone: Paper and Paper dark for supporters, Light and Dark
