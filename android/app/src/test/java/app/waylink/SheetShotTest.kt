@@ -69,6 +69,7 @@ class SheetShotTest {
     @Test fun specs() = shot("specs") { vm, nav -> settingsSheet("specs", sample, live, vm, nav) }
     @Test fun support() = shot("support") { vm, nav -> settingsSheet("support", sample, live, vm, nav) }
     @Test fun paperLocked() = shot("paper-locked") { vm, nav -> settingsSheet("paper", sample, live, vm, nav) }
+    @Test fun thanks() = shot("thanks") { vm, nav -> settingsSheet("thanks:support_220", sample, live, vm, nav) }
     @Test fun icons() = shot("pick-brand") { vm, nav -> devSheet("pick-brand", sample, live, vm, nav, noop()) }
     @Test fun fonts() = shot("pick-font") { vm, nav -> devSheet("pick-font", sample, live, vm, nav, noop()) }
     @Test fun progress() = shot("pick-progress") { vm, nav -> devSheet("pick-progress", sample, live, vm, nav, noop()) }

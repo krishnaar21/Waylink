@@ -276,11 +276,12 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
         ListCard {
             val simOn = live.simulated && live.link == LinkState.CONNECTED
             // One item for the three full-screen previews.
-            ListRow("Show a screen", "First launch, the logo, or loading", icon = "sparkles", trailing = {})
+            ListRow("Show a screen", "First launch, the logo, loading, or the thank-you sheet", icon = "sparkles", trailing = {})
             Row(Modifier.fillMaxWidth().padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 app.waylink.ui.components.Chip("Onboarding", { act.dev("onboarding") })
                 app.waylink.ui.components.Chip("Splash", { act.dev("splash") })
                 app.waylink.ui.components.Chip("Loading", { act.dev("loading") })
+                app.waylink.ui.components.Chip("Thanks", { act.sheet("thanks:support_220") })
             }
             Hairline(66.dp)
             ListRow("Supporter", "Unlocks Paper, as if you’d paid", icon = "love", trailing = { Switch(st.supporter, "Supporter", { act.toggle("supporter") }) })

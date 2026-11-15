@@ -37,7 +37,7 @@ object Support {
  * on a reinstall or a new phone ([restore]). There is no server: the purchase is checked on the phone, which
  * is enough for a cosmetic unlock. [onSupporter] runs with what the owned products unlock.
  */
-class Billing(context: Context, private val onSupporter: (adFree: Boolean, early: Boolean) -> Unit, private val onMessage: (String) -> Unit) {
+class Billing(context: Context, private val onSupporter: (adFree: Boolean, early: Boolean) -> Unit, private val onMessage: (String) -> Unit, private val onThanks: (tierId: String) -> Unit = {}) {
     private val _prices = MutableStateFlow<Map<String, String>>(emptyMap())
     /** Play's tax-inclusive price per product id, once Play has answered. */
     val prices: StateFlow<Map<String, String>> = _prices.asStateFlow()
@@ -111,7 +111,8 @@ class Billing(context: Context, private val onSupporter: (adFree: Boolean, early
             BillingClient.BillingResponseCode.OK -> if (purchases != null) {
                 val unlocked = handle(purchases)
                 if (purchases.any { it.purchaseState == Purchase.PurchaseState.PURCHASED })
-                    onMessage("Thank you for supporting Waylink! Your unlocks are on.")
+                    purchases.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }.flatMap { it.products }
+                        .mapNotNull { Support.tier(it) }.maxByOrNull { it.price }?.let { onThanks(it.id) }
             }
             BillingClient.BillingResponseCode.USER_CANCELED -> {}
             BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> restore()

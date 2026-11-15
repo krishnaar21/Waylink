@@ -120,7 +120,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             if (!st.supporter || (ad && !st.adFree) || (early && !st.supporterPlus))
                 commit { it.copy(settings = it.settings.copy(supporter = true, adFree = st.adFree || ad, supporterPlus = st.supporterPlus || early)) }
         } },
-        onMessage = { m -> viewModelScope.launch { toast(m) } })
+        onMessage = { m -> viewModelScope.launch { toast(m) } },
+        onThanks = { id -> viewModelScope.launch { _live.update { it.copy(ask = "thanks:$id") } } })
     private val _live = MutableStateFlow(Live())
     val live: StateFlow<Live> = _live.asStateFlow()
     private var saveJob: Job? = null

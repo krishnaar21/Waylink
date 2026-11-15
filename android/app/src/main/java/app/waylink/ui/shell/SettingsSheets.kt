@@ -211,6 +211,10 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
         }
         "support" -> SheetSpec("Support Waylink", null) { SupportBody(vm, nav, arg.toIntOrNull()) }
         "paper" -> SheetSpec("Paper themes", "For supporters") { PaperLockedBody(nav) }
+        "thanks" -> {
+            val t = app.waylink.data.Support.tier(arg) ?: return null
+            SheetSpec("Thank you", t.name) { ThanksBody(t, vm, nav) }
+        }
         "avatar" -> SheetSpec("Your picture", "Profile") {
             // .av-grid: eleven riders and a Photo tile, four to a row. The picked one grows (1.12) with an accent ring,
             // the rest sit at .9 with their face at .8.
@@ -596,6 +600,39 @@ private fun PaperLockedBody(nav: SheetNav) {
     Btn("Support Waylink", { nav.open("support:0") }, Modifier.fillMaxWidth(), icon = "love")
     Spacer(Modifier.height(8.dp))
     Btn("Not now", { nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.LINE)
+}
+
+/** After a purchase: the same fanned Paper pages, a tick, what this plan unlocked, and a way to try Paper straight away. */
+@Composable
+private fun ThanksBody(t: app.waylink.data.Support.Tier, vm: AppViewModel, nav: SheetNav) {
+    val c = W.c
+    Spacer(Modifier.height(18.dp))
+    Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(24.dp)).background(c.tintSage), contentAlignment = Alignment.Center) {
+        PaperCard(Color(0xFF1E1B17), Color(0xFF2A2621), Color(0xFFEDE5D6), Modifier.offset(x = 34.dp, y = 6.dp).graphicsLayer { rotationZ = 8f })
+        PaperCard(Color(0xFFEEE7DA), Color(0xFFF7F1E6), Color(0xFF2A2620), Modifier.offset(x = (-34).dp, y = (-4).dp).graphicsLayer { rotationZ = -7f })
+        Box(
+            Modifier.offset(y = 52.dp).size(44.dp).clip(CircleShape).background(c.sageInk),
+            contentAlignment = Alignment.Center,
+        ) { Ic("check", size = 22.dp, tint = c.bg) }
+    }
+    Spacer(Modifier.height(20.dp))
+    Txt("You’re a ${t.name} now", T.tileTitle.copy(fontSize = 22.sp), c.ink)
+    Spacer(Modifier.height(6.dp))
+    Txt("Thank you for backing Waylink. It keeps the app free, private and getting better for every rider.", T.sheetLead, c.ink2)
+    Spacer(Modifier.height(16.dp))
+    Txt("Unlocked", T.eyebrow, c.ink3)
+    Spacer(Modifier.height(6.dp))
+    t.perks.forEach { p ->
+        Row(Modifier.padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+            Ic("check", size = 15.dp, tint = c.sageInk)
+            Spacer(Modifier.width(10.dp))
+            Txt(p, T.row, c.ink2, maxLines = 1)
+        }
+    }
+    Spacer(Modifier.height(22.dp))
+    Btn("Try Paper now", { if (vm.state.value.settings.theme != "auto") vm.setTheme("sketch"); nav.close() }, Modifier.fillMaxWidth(), icon = "palette")
+    Spacer(Modifier.height(8.dp))
+    Btn("Done", { nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.LINE)
 }
 
 /** A tiny phone page in fixed Paper colours: a title line and two cards. */
