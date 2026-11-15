@@ -219,10 +219,10 @@ class ScenarioTest {
         vm.onboardSample()
         // Search on Today finds screens by everyday words; every word must match.
         val st = vm.state.value
-        val hits = { q: String -> app.waylink.core.Finder.search(st, q).flatMap { g -> g.hits.map { it.go } } }
-        assertTrue(hits("petrol").contains("fuel:new"))
-        assertEquals("parking", hits("where did I park").first())
-        assertTrue(hits("zzqx").isEmpty())
+        val found = { q: String -> app.waylink.core.Finder.search(st, q).flatMap { g -> g.hits.map { it.go } } }
+        assertTrue(found("petrol").contains("fuel:new"))
+        assertEquals("parking", found("where did I park").first())
+        assertTrue(found("zzqx").isEmpty())
 
         // A turn from Google Maps becomes the live route; another app's is ignored until it's the chosen one.
         app.waylink.data.NavFeed.turn.value = "waze" to app.waylink.core.LiveTurn("TURN_LEFT", 300.0, "MG Road", "Turn left onto MG Road")
