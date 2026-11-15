@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -306,12 +307,12 @@ private fun ConnRow(s: AppState, live: Live, good: Boolean, okCount: Int, act: T
             )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Txt(t, T.rowTitle, c.ink, maxLines = 1)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Dot(if (connected) c.sage else if (busy) c.amber.copy(alpha = pulse) else c.ink4, size = 7.dp)
+                    Txt(t, T.rowTitle, c.ink, Modifier.weight(1f, fill = false), maxLines = 1)
                     Spacer(Modifier.width(6.dp))
-                    Txt(sb, T.rowSub, c.ink3, maxLines = 1)
+                    Dot(if (connected) c.sage else if (busy) c.amber.copy(alpha = pulse) else c.ink4, Modifier.semantics { contentDescription = title }, size = 6.dp)
                 }
+                Txt(sb, T.rowSub, c.ink3, maxLines = 1)
             }
         }
         Spacer(Modifier.width(10.dp))

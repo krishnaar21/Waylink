@@ -408,11 +408,22 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         val top = sheets.lastOrNull()
         val spec = top?.let { buildSheet(it, s, live, vm, nav, host) }
         var last by remember { mutableStateOf<SheetSpec?>(null) }
-        if (spec != null) last = spec
+        var lastKey by remember { mutableStateOf("") }
+        if (spec != null) { last = spec; lastKey = top ?: "" }
         if (top != null && spec == null) LaunchedEffect(top) { nav.back() }
         val shown = spec ?: last
-        Sheet(spec != null, nav::close, shown?.title ?: "", shown?.sub, onBack = if (sheets.size > 1) nav::back else null) {
-            shown?.content?.invoke(this)
+        // Each open sheet keeps what was typed into it while another sits on top (Log fuel under the brim help),
+        // and forgets it once it's closed.
+        val kept = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
+        val held = remember { mutableSetOf<String>() }
+        LaunchedEffect(stack) { held.filter { it !in sheets }.forEach { kept.removeState(it); held.remove(it) } }
+        // Dismissing an explainer stacked on another sheet goes back to that sheet; anything else closes all.
+        val info = top != null && sheets.size > 1 && (top.startsWith("help:") || top.startsWith("cluster:"))
+        Sheet(spec != null, if (info) nav::back else nav::close, shown?.title ?: "", shown?.sub, onBack = if (sheets.size > 1) nav::back else null) {
+            if (shown != null) {
+                held += lastKey
+                androidx.compose.runtime.key(lastKey) { kept.SaveableStateProvider(lastKey) { shown.content.invoke(this) } }
+            }
         }
 
         androidx.compose.animation.AnimatedVisibility(live.rideMode, enter = fadeIn(tween(220)), exit = fadeOut(tween(200))) {
