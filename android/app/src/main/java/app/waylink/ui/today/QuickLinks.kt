@@ -50,12 +50,15 @@ import kotlin.math.roundToInt
 object QuickLinks {
     // Most used first: fuel and service every week, parking and pumps most rides, then the planning
     // tiles, the paperwork, and the safety pair kept together at the end.
+    // SOS lives in the header (always one tap away) and Hospitals inside the SOS sheet, so neither needs a tile.
     val ORDER = listOf(
-        "log-fuel", "service", "parking",
-        "pumps", "weather", "places",
-        "speed", "papers", "visit",
-        "hospitals", "sos", "profile",
+        "log-fuel", "service", "parking", "pumps",
+        "weather", "places", "speed", "papers",
+        "visit", "profile",
     )
+
+    /** The tidier-layout preview folds the Shortcuts row in, so Rides joins the grid. */
+    fun order(s: AppState): List<String> = if (s.settings.tidy) ORDER.take(4) + "rides" + ORDER.drop(4) else ORDER
 
     data class Link(val key: String, val icon: String, val title: String, val sub: String, val go: String, val dot: Boolean? = null) {
         /** The one-word name under the icon; [title] stays for screen readers. */
@@ -63,7 +66,7 @@ object QuickLinks {
     }
 
     private val SHORT = mapOf(
-        "log-fuel" to "Fuel", "parking" to "Parking", "pumps" to "Pumps", "places" to "Places",
+        "log-fuel" to "Fuel", "service" to "Service", "parking" to "Parking", "pumps" to "Pumps", "places" to "Places", "rides" to "Rides", "papers" to "Papers",
         "speed" to "Speed", "visit" to "Workshop", "hospitals" to "Hospitals", "profile" to "Rider",
     )
 
@@ -82,12 +85,12 @@ object QuickLinks {
             "places" -> Link(key, "home", "Saved places", if (s.places.isEmpty()) "Add home, work" else "${s.places.size} saved", "tab:route")
             "log-fuel" -> {
                 val fs = fuelStats(v)
-                Link(key, "fuel", "Log fuel", fs.range?.let { "≈${f.num(it)} km left" } ?: "Add a fill-up", "fuel:new", if (fs.range != null && fs.onReserve) false else null)
+                Link(key, "fuel", "Fuel", fs.range?.let { "≈${f.num(it)} km left" } ?: "No fill-ups yet", "page:fuel", if (fs.range != null && fs.onReserve) false else null)
             }
             "pumps" -> Link(key, "fuel", "Petrol pumps", "Nearest first", "nearby:fuel")
             "hospitals" -> Link(key, "hospital", "Hospitals", "Nearest first", "nearby:hospital")
             "sos" -> Link(key, "sos", "SOS", "Emergency · ${s.country.name}", "sos")
-            "parking" -> Link(key, "parking", "Parked bike", v.parking?.let { "Saved ${f.ago(it.ts)}" } ?: "Save the spot", "parking")
+            "parking" -> Link(key, "parking", "Parking", v.parking?.let { "Saved ${f.ago(it.ts)}" } ?: "Save the spot", "parking")
             "service" -> {
                 val vd = verdictOf(sortedService(v))
                 Link(key, "wrench", "Service", if (vd.over + vd.soon > 0) "${vd.over + vd.soon} need care" else "All in order", "page:logbook",
@@ -126,7 +129,7 @@ fun QuickLinksGrid(s: AppState, live: Live, f: Fmt, go: (String) -> Unit) {
     val ctx = LocalContext.current
     val tick = app.waylink.ui.route.rememberResumeTick()
     val need = remember(tick, s.settings.navSource) { app.waylink.ui.route.Perms.needed(ctx, s) }
-    IconsLayout(QuickLinks.ORDER.mapNotNull { QuickLinks.build(it, s, live, f, need) }, go)
+    IconsLayout(QuickLinks.order(s).mapNotNull { QuickLinks.build(it, s, live, f, need) }, go)
 }
 
 @Composable

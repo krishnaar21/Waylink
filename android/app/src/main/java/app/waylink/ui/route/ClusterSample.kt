@@ -38,7 +38,7 @@ import app.waylink.ui.theme.W
  * which differs by model.
  */
 @Composable
-fun ClusterSample(kind: String, modifier: Modifier = Modifier) {
+fun ClusterSample(kind: String, modifier: Modifier = Modifier, street: Boolean = true) {
     val lcd = Color(0xFF0E1114); val ink = Color(0xFFE9EEF2); val dim = Color(0xFF7C8791); val amber = Color(0xFFFFB547)
     val mono = TextStyle(fontFamily = FontFamily.Monospace)
     val what = when (kind) { "call" -> "an incoming call"; "missed" -> "missed calls"; else -> "the next turn" }
@@ -79,7 +79,7 @@ fun ClusterSample(kind: String, modifier: Modifier = Modifier) {
                             Txt("250", mono.copy(fontSize = 28.sp, fontWeight = FontWeight.Bold), ink)
                             Txt(" m", mono.copy(fontSize = 13.sp), dim, Modifier.padding(bottom = 4.dp))
                         }
-                        Txt("BRIGADE RD", mono.copy(fontSize = 11.sp, letterSpacing = 1.sp), dim, maxLines = 1)
+                        if (street) Txt("BRIGADE RD", mono.copy(fontSize = 11.sp, letterSpacing = 1.sp), dim, maxLines = 1)
                     }
                 }
             }
@@ -111,7 +111,7 @@ private fun Battery(bars: Int, on: Color, off: Color) {
 
 /** The sheet behind the bike-display samples: [kind] turn, call or all. */
 @Composable
-fun ClusterSheetBody(kind: String) {
+fun ClusterSheetBody(kind: String, streetNames: Boolean? = null, onStreetNames: () -> Unit = {}) {
     val c = W.c
     Spacer(Modifier.height(8.dp))
     Txt("A sample of what your bike’s display shows. The exact look differs by model.", T.sheetLead, c.ink2)
@@ -119,7 +119,15 @@ fun ClusterSheetBody(kind: String) {
     parts.forEach { k ->
         Spacer(Modifier.height(16.dp))
         Txt(when (k) { "call" -> "Incoming call"; "missed" -> "Missed calls"; else -> "Next turn" }, T.eyebrow, c.ink3, Modifier.padding(start = 4.dp, bottom = 8.dp))
-        ClusterSample(k)
+        ClusterSample(k, street = streetNames ?: true)
+        if (k == "turn" && streetNames != null) {
+            Spacer(Modifier.height(8.dp))
+            app.waylink.ui.components.ListCard(flat = true) {
+                app.waylink.ui.components.ListRow("Street names on the bike", "Road name under the distance", icon = "eye", trailing = {
+                    app.waylink.ui.components.Switch(streetNames, "Street names on the bike", onStreetNames)
+                })
+            }
+        }
         Txt(
             when (k) {
                 "call" -> "The caller’s name from your contacts. A handlebar tap answers, a long press declines."

@@ -319,6 +319,12 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     }
                     override fun scenario(key: String?) = vm.setScenario(key)
                     override fun click(on: Boolean) = vm.uiClick(on)
+                    override fun tab(key: String) { Tab.values().firstOrNull { it.key == key }?.let { tab = it } }
+                    override fun unlockDev() {
+                        val on = !s.settings.devUnlocked
+                        vm.toggleSetting("devUnlocked")
+                        vm.toast(if (on) "Developer tools are on, at the end of Settings." else "Developer tools are hidden.")
+                    }
                 }, tabBarHeight, onFocused = vm::clearFocus)
                 Tab.ROUTE.key -> app.waylink.ui.route.RouteScreen(s, live, vm, openSheet, tabBarHeight)
                 Tab.RIDES.key -> RidesScreen(s, live, object : RidesActions {

@@ -41,7 +41,7 @@ fun dueReminders(s: AppState, now: Long = System.currentTimeMillis()): List<Remi
         out += Reminder(
             "doc:${d.slot}:$exp:$bucket", "papers",
             if (days < 0) "$name has expired" else if (days == 0) "$name expires today" else "$name expires in ${plural(days, "day", "days")}",
-            "Valid till ${dFull(exp)}. Renew it, then update the copy in your glovebox.",
+            "Valid till ${dFull(exp)}. Renew it, then update the copy in Papers.",
         )
     }
     return out

@@ -93,6 +93,10 @@ interface SettingsActions {
     fun scenario(key: String?)
     /** The switch click sound, for local toggles like the Look disclosure. */
     fun click(on: Boolean)
+    /** Switches tab ("route"). */
+    fun tab(key: String) {}
+    /** Seven taps on the version line show (or hide) the Developer section. */
+    fun unlockDev() {}
 }
 
 val RIDE_CHARTS = listOf("Calendar", "Km per week", "Km by weekday")
@@ -169,19 +173,21 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             Ic("chev", size = 18.dp, tint = c.ink3)
         }
 
+        if (!st.tidy) {
         SectionGap()
         SectionHead("Records & safety", help = { act.help("papers") })
         ListCard {
             val due = needsYou(v)
-            ListRow("Logbook", "Reminders and visits", icon = "wrench", end = if (due > 0) "$due due" else "All good", onClick = { act.page("logbook") })
+            ListRow("Service", "Reminders and visits", icon = "wrench", end = if (due > 0) "$due due" else "All good", onClick = { act.page("logbook") })
             Hairline(66.dp)
             ListRow("Fuel", "Fill-ups and petrol price", icon = "fuel", end = "${v.fuel.size} fills", onClick = { act.page("fuel") })
             Hairline(66.dp)
             val docs = s.glove.count { it.slot.startsWith(v.id + ":") || it.slot.startsWith("rider:") }
-            ListRow("Digital glovebox", "RC, insurance, PUC, licence", icon = "folder", end = "$docs", onClick = { act.sheet("glovebox") })
+            ListRow("Papers", "RC, insurance, PUC, licence", icon = "folder", end = "$docs", onClick = { act.sheet("glovebox") })
             Hairline(66.dp)
             val park = v.parking
-            ListRow("Parked bike", "Find your way back to it", icon = "pin", end = if (park != null) f.ago(park.ts) else "Not saved", onClick = { act.sheet("parking") })
+            ListRow("Parking", "Find your way back to the bike", icon = "parking", end = if (park != null) f.ago(park.ts) else "Not saved", onClick = { act.sheet("parking") })
+        }
         }
 
         SectionGap()
@@ -218,28 +224,42 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             Hairline(66.dp)
             ListRow("Keep the screen on", "While in ride mode", icon = "sparkles", trailing = { Switch(st.wakeLock, "Keep the screen on", { act.toggle("wakeLock") }) })
             Hairline(66.dp)
-            ListRow("What the bike shows", "Sample of turns, calls and status", icon = "bike", onClick = { act.sheet("cluster:all") })
-            Hairline(66.dp)
-            ListRow("Street names on the bike", "Road name beside the arrow", icon = "eye", trailing = { Switch(st.streetNames, "Street names on the bike", { act.toggle("streetNames") }) })
-            Hairline(66.dp)
-            ListRow("Music from the handlebar", "Tap plays or pauses, hold skips", icon = "volume", trailing = { Switch(st.handlebarMedia, "Music from the handlebar", { act.toggle("handlebarMedia") }) })
-            // Reading another maps app's turns is Android-only; an iPhone build leaves the row out.
+            ListRow("Speed alert", "Buzz when you pass a speed", icon = "alert", end = if (st.speedAlert > 0) "${st.speedAlert} km/h" else "Off", onClick = { act.sheet("speed") })
+        }
+        }
+
+        SectionGap()
+        SectionHead("On the bike")
+        ListCard {
+            ListRow("What the bike shows", if (st.tidy) "Sample display, street names" else "Sample of turns, calls and status", icon = "bike", onClick = { act.sheet("cluster:all") })
+            if (!st.tidy) {
+                Hairline(66.dp)
+                ListRow("Street names on the bike", "Road name beside the arrow", icon = "eye", trailing = { Switch(st.streetNames, "Street names on the bike", { act.toggle("streetNames") }) })
+            }
+            // Reading another maps app's turns is Android-only; an iPhone build leaves the row out. It's set up on Route.
             if (app.waylink.core.Platform.caps.readNavApps) {
                 Hairline(66.dp)
-                ListRow("Live turns from", "Which maps app the bike follows", icon = "nav", end = app.waylink.core.NavSource.of(st.navSource).name, onClick = { act.sheet("nav-source") })
+                ListRow("Live turns", "Set up on the Route tab", icon = "nav", end = app.waylink.core.NavSource.of(st.navSource).name, onClick = { act.tab("route") })
             }
-            Hairline(66.dp)
-            ListRow("Speed alert", "Buzz when you pass a speed", icon = "alert", end = if (st.speedAlert > 0) "${st.speedAlert} km/h" else "Off", onClick = { act.sheet("speed") })
+        }
+
+        SectionGap()
+        SectionHead("Phone")
+        ListCard {
+            val ctx = androidx.compose.ui.platform.LocalContext.current
+            val tick = app.waylink.ui.route.rememberResumeTick()
+            val need = androidx.compose.runtime.remember(tick, st.navSource, st.reminders) { app.waylink.ui.route.Perms.needed(ctx, s) }
+            ListRow("Permissions", "What Waylink can use", icon = "shield", end = if (need == 0) "All set" else "$need needed", onClick = { act.sheet("perms") })
             Hairline(66.dp)
             ListRow("Phone reminders", "Reserve fuel, service due, papers expiring", icon = "bell", trailing = {
-                val ctx = androidx.compose.ui.platform.LocalContext.current
                 Switch(st.reminders, "Phone reminders", {
                     act.toggle("reminders")
                     // Turning them on without Android's OK leads to the permissions list.
                     if (!st.reminders && !app.waylink.data.Reminders.allowed(ctx)) act.sheet("perms")
                 })
             })
-        }
+            Hairline(66.dp)
+            ListRow("Music from the handlebar", "Tap plays or pauses, hold skips", icon = "volume", trailing = { Switch(st.handlebarMedia, "Music from the handlebar", { act.toggle("handlebarMedia") }) })
         }
 
         SectionGap()
@@ -249,11 +269,6 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
         SectionGap()
         SectionHead("Data & region", help = { act.help("backup") })
         ListCard {
-            val ctx = androidx.compose.ui.platform.LocalContext.current
-            val tick = app.waylink.ui.route.rememberResumeTick()
-            val need = androidx.compose.runtime.remember(tick, st.navSource) { app.waylink.ui.route.Perms.needed(ctx, s) }
-            ListRow("Permissions", "What Waylink can use", icon = "shield", end = if (need == 0) "All set" else "$need needed", onClick = { act.sheet("perms") })
-            Hairline(66.dp)
             ListRow("Country", "Currency and SOS", icon = "globe", end = s.country.name, onClick = { act.sheet("country") })
             Hairline(66.dp)
             ListRow("Backup & restore", "Save, move or bring back your data", icon = "down", onClick = { act.sheet("backup") })
@@ -275,9 +290,12 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             ListRow("Refresh the app", "Latest version, data kept", icon = "refresh", onClick = { act.dev("refresh") })
         }
 
+        if (st.devUnlocked || live.scenario != null) {
         SectionGap()
-        SectionHead("Developer", help = { act.help("developer") })
+        SectionHead("Developer", help = { act.help("developer") }, right = { Txt("Hide", T.link, c.ink2, Modifier.pressable(label = "Hide developer tools") { act.unlockDev() }) })
         ListCard {
+            ListRow("Tidier layout", "Preview: fewer repeats on Today, Settings and Route", icon = "sparkles", trailing = { Switch(st.tidy, "Tidier layout", { act.toggle("tidy") }) })
+            Hairline(66.dp)
             val simOn = live.simulated && live.link == LinkState.CONNECTED
             ListRow("Show onboarding", "Preview first launch", icon = "flag", onClick = { act.dev("onboarding") })
             Hairline(66.dp)
@@ -308,6 +326,7 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             SegPills(listOf("real" to "My data", "empty" to "Empty", "edge" to "Edge cases"), live.scenario ?: "real") { act.scenario(it.takeIf { k -> k != "real" }) }
             app.waylink.ui.components.Hint("Empty shows a brand-new rider. Edge cases shows long names, huge numbers and everything overdue. Nothing is saved while previewing.")
         }
+        }
 
         // footer.about: 36 + 15vh down, the Loop wordmark (web brandOf() is always "loop"), version in the body face, legal line
         val vh = androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp
@@ -315,7 +334,10 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             app.waylink.ui.components.LoopWordmark(24f, animate = false)
             Spacer(Modifier.height(4.dp))
-            Txt("Version $APP_VERSION · MIT licence", T.rowSub.copy(fontSize = 13.5.sp, lineHeight = 20.sp), c.ink3)
+            // Like Android's build number: seven taps show the Developer section (and seven more hide it).
+            var taps by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+            Txt("Version $APP_VERSION · MIT licence", T.rowSub.copy(fontSize = 13.5.sp, lineHeight = 20.sp), c.ink3,
+                Modifier.pressable(label = "Version $APP_VERSION", scale = 1f) { taps++; if (taps >= 7) { taps = 0; act.unlockDev() } }.padding(horizontal = 12.dp, vertical = 6.dp))
             Spacer(Modifier.height(8.dp))
             Txt("Not affiliated with Bajaj Auto, OTC, Google or WhatsApp.", T.rowSub.copy(fontSize = 12.5.sp, lineHeight = 18.75.sp, textAlign = TextAlign.Center), c.ink4, Modifier.widthIn(max = 250.dp))
         }

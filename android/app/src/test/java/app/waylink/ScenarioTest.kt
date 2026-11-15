@@ -284,6 +284,13 @@ class ScenarioTest {
             {"lat":"12.98","lon":"77.61","category":"shop","type":"car","name":"Fuel Motors"}]""", 12.97, 77.59)
         assertEquals(1, nom.size); assertEquals("HP Petrol", nom[0].name); assertTrue(nom[0].open24)
 
+        // Developer tools stay hidden until asked for; the tidier layout is a preview switch.
+        assertTrue(!vm.state.value.settings.devUnlocked)
+        vm.toggleSetting("devUnlocked"); assertTrue(vm.state.value.settings.devUnlocked)
+        vm.toggleSetting("tidy"); assertTrue(vm.state.value.settings.tidy)
+        assertTrue(app.waylink.ui.today.QuickLinks.order(vm.state.value).contains("rides"))
+        vm.toggleSetting("tidy"); vm.toggleSetting("devUnlocked")
+
         // Handlebar music: on by default, a press goes to the phone's player; off, it's only logged.
         assertTrue(vm.state.value.settings.handlebarMedia)
         vm.press("tap"); vm.press("long")

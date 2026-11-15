@@ -921,7 +921,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
                     null
                 } catch (e: Exception) { "Couldn’t save the file." }
             }
-            toast(res ?: "Saved in your glovebox.")
+            toast(res ?: "Saved in your papers.")
         }
     }
 
@@ -930,7 +930,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     fun deleteDoc(slot: String) {
         docFile(slot).delete()
         commit { s -> s.copy(glove = s.glove.filter { it.slot != slot }) }
-        toast("Removed from your glovebox.")
+        toast("Removed from your papers.")
     }
 
     private fun wipeGlove() { try { gloveDir.deleteRecursively() } catch (e: Exception) { } }
@@ -970,6 +970,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "sounds" -> st.copy(sounds = !st.sounds)
             "devFrames" -> st.copy(devFrames = !st.devFrames)
             "allThemes" -> st.copy(allThemes = !st.allThemes)
+            "devUnlocked" -> st.copy(devUnlocked = !st.devUnlocked)
+            "tidy" -> st.copy(tidy = !st.tidy)
             else -> st
         })
     }

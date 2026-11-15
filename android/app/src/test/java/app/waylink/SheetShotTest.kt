@@ -60,6 +60,8 @@ class SheetShotTest {
         }
     }
 
+    @Test fun cluster() = shot("cluster-turn") { vm, nav -> app.waylink.ui.route.navSheet("cluster:turn", sample, live, vm, nav, noop<ExtraHost>()) }
+    @Test fun clusterTidy() = shot("cluster-turn-tidy") { vm, nav -> app.waylink.ui.route.navSheet("cluster:turn", sample.copy(settings = sample.settings.copy(tidy = true)), live, vm, nav, noop<ExtraHost>()) }
     @Test fun quick() = shot("quick") { vm, nav -> extraSheet("quick", sample, live, vm, nav, noop<ExtraHost>()) }
     @Test fun odo() = shot("odo") { vm, nav -> logbookSheet("odo", sample, vm, nav) }
     @Test fun service() = shot("svc") { vm, nav -> logbookSheet("svc:" + sample.vehicle.service.first().id, sample, vm, nav) }

@@ -90,7 +90,7 @@ fun extraSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Shee
     val arg = key.substringAfter(':', "")
     val v = s.vehicle
     return when (key.substringBefore(':')) {
-        "parking" -> SheetSpec("Parked bike", clip(vehicleTitle(s))) {
+        "parking" -> SheetSpec("Parking", clip(vehicleTitle(s))) {
             val c = W.c
             val ctx = LocalContext.current
             val f = Fmt(s.country.locale)
@@ -115,7 +115,7 @@ fun extraSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Shee
                 Btn("Save where I parked", { host.withLocation { vm.saveParking() } }, Modifier.fillMaxWidth(), icon = "pin")
             }
         }
-        "glovebox" -> SheetSpec("Digital glovebox", "Papers · ${clip(vehicleTitle(s))}") {
+        "glovebox" -> SheetSpec("Papers", clip(vehicleTitle(s))) {
             val c = W.c
             val title = vehicleTitle(s)
             Spacer(Modifier.height(8.dp))
@@ -138,7 +138,7 @@ fun extraSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Shee
                 }
             }
         }
-        "doc" -> SheetSpec(DOC_NAMES[arg.substringAfter(':')] ?: "Document", "Glovebox") { DocBody(s, arg, vm, nav) }
+        "doc" -> SheetSpec(DOC_NAMES[arg.substringAfter(':')] ?: "Document", "Papers") { DocBody(s, arg, vm, nav) }
         "quick" -> SheetSpec("What now?", "${clip(vehicleTitle(s))} · ${Fmt(s.country.locale).short(v.odo)} km") { QuickBody(s, live, vm, nav, host) }
         else -> null
     }
@@ -246,20 +246,7 @@ private fun QuickBody(s: AppState, live: Live, vm: AppViewModel, nav: SheetNav, 
             }
         }
     }
-    Spacer(Modifier.height(18.dp))
-    Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.tintRed).pressable(label = "Emergency SOS") { nav.open("sos") }.padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Ic("sos", size = 19.dp, tint = c.red)
-        Spacer(Modifier.width(12.dp))
-        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-            Txt("Emergency SOS", T.body.copy(fontWeight = FontWeight.Medium), c.red)
-            Txt(" · ${s.country.amb} ambulance", T.row.copy(fontSize = 12.5.sp), lerp(c.red, c.ink, 0.3f), maxLines = 1)
-        }
-        Spacer(Modifier.width(12.dp))
-        Ic("chev", size = 19.dp, tint = c.red)
-    }
+    // SOS isn't repeated here: the red button in Today's header is always one tap away.
 }
 
 /** Web .qtile: 140 tall, 16 padding, icon square top, title and line at the bottom; .live inverts to ink. */

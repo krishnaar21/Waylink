@@ -81,7 +81,7 @@ fun logbookSheet(key: String, s: AppState, vm: AppViewModel, nav: SheetNav): She
         "svc-edit" -> {
             val isNew = arg == "new"
             if (!isNew && v.service.none { x -> x.id == arg }) return null
-            SheetSpec(if (isNew) "New reminder" else "Edit reminder", "Logbook") { SvcEditBody(s, if (isNew) null else arg, vm, nav) }
+            SheetSpec(if (isNew) "New reminder" else "Edit reminder", "Service") { SvcEditBody(s, if (isNew) null else arg, vm, nav) }
         }
         "rec" -> {
             val isNew = arg == "new"

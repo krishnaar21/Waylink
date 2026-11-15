@@ -81,7 +81,7 @@ fun LogbookScreen(s: AppState, act: LogbookActions, bottom: Dp) {
     val cur = s.country.cur
 
     Page(bottom) {
-        PageHead("Logbook", "Service for ${clip(vehicleTitle(s), 24)}", onBack = act::back) {
+        PageHead("Service", "Jobs and visits for ${clip(vehicleTitle(s), 24)}", onBack = act::back) {
             CircleBtn("plus", "Add reminder", { act.sheet("svc-edit:new") })
         }
         Hero(verdict, verdict.line)

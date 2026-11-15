@@ -95,6 +95,11 @@ class ScreenshotTest {
         val frame = app.waylink.core.Protocol.tbtFrame(2, 350.0, 12_400.0, 4, 35, false, 0, "MG Road")
         shot("route-frames", tab = Tab.ROUTE) { RouteScreen(alt, live.copy(lastFrame = "Turn" to frame, frameCount = 42), noop(), {}, 80.dp) }
     }
+    /** The tidier-layout preview, next to today/settings/route for a before-and-after. */
+    private val tidy = sample.copy(settings = sample.settings.copy(tidy = true))
+    @Test fun todayTidy() = shot("today-tidy", tab = Tab.TODAY) { TodayScreen(tidy, live, noop(), 80.dp) }
+    @Test fun settingsTidy() = shot("settings-tidy", tab = Tab.SETTINGS) { SettingsScreen(tidy, live, noop(), 80.dp) }
+    @Test fun routeTidy() = shot("route-tidy", tab = Tab.ROUTE) { RouteScreen(tidy, live, noop(), {}, 80.dp) }
     @Test fun profile() = shot("profile", tab = Tab.SETTINGS) { ProfileScreen(sample, {}, {}, {}, 80.dp) }
 
     /** Developer preview states: a brand-new rider and the edge cases, for every tab, plus ride mode. */

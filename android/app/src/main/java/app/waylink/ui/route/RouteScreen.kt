@@ -147,7 +147,18 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
         ListCard { ListRow("How this works", "Plan, rehearse, then ride", icon = "info", onClick = { openSheet("route-howto") }) }
 
 
+        // Rehearse and Test one turn are for trying things at home, so they fold into one row.
         SectionGap()
+        var trying by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+        val turnDeg by androidx.compose.animation.core.animateFloatAsState(if (trying) 90f else 0f, label = "try")
+        ListCard {
+            ListRow("Try it without riding", "Rehearse a route or test one turn", icon = "play", chevron = false, onClick = { trying = !trying }, trailing = {
+                Ic("chev", size = 15.dp, tint = c.ink3, modifier = Modifier.graphicsLayer { rotationZ = turnDeg })
+            })
+        }
+        androidx.compose.animation.AnimatedVisibility(trying, enter = androidx.compose.animation.expandVertically() + androidx.compose.animation.fadeIn(), exit = androidx.compose.animation.shrinkVertically() + androidx.compose.animation.fadeOut()) {
+        Column {
+        Spacer(Modifier.height(16.dp))
         SectionHead("Rehearse a route", help = { openSheet("help:rehearse") })
         Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp)) {
             Txt(Rehearsal.NAME, T.title.copy(fontSize = 24.sp, lineHeight = 36.sp), c.ink)
@@ -161,7 +172,7 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
             Btn("Start rehearsal", vm::startRehearsal, Modifier.fillMaxWidth(), kind = BtnKind.ACCENT, icon = "play")
         }
 
-        SectionGap()
+        Spacer(Modifier.height(20.dp))
         SectionHead("Test one turn", help = { openSheet("help:testturn") })
         val t = live.turn
         val sel = Maneuvers.of(t.maneuver)
@@ -187,11 +198,16 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
             }
             Btn("Send to bike", vm::sendTurn, Modifier.fillMaxWidth(), kind = BtnKind.ACCENT)
         }
+        }
+        }
 
+        // The tidier-layout preview moves this switch into "What the bike shows", next to the sample it changes.
+        if (!s.settings.tidy) {
         SectionGap()
         SectionHead("Display", help = { openSheet("help:display") })
         ListCard {
             ListRow("Street names on the bike", "Road name beside the arrow", icon = "eye", trailing = { Switch(s.settings.streetNames, "Street names on the bike", { vm.toggleSetting("streetNames") }) })
+        }
         }
         if (s.settings.devFrames) FrameCard(live)
     }
