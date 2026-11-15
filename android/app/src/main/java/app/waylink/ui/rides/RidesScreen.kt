@@ -157,9 +157,14 @@ fun RidesScreen(s: AppState, live: Live, act: RidesActions, bottom: Dp) {
 
         // All rides, with the swipeable charts.
         val tot = v.trips.sumOf { it.km }
+        val chartPager = rememberPagerState(initialPage = s.settings.rideChart.coerceIn(0, 2)) { 3 }
         Column(Modifier.fillMaxWidth().padding(top = 12.dp).card(20.dp).padding(top = 18.dp, bottom = 18.dp)) {
             Column(Modifier.padding(horizontal = 20.dp)) {
-                Txt("All rides", T.body.copy(fontSize = 17.sp, fontWeight = FontWeight.SemiBold, lineHeight = 25.5.sp), c.ink)
+                // The dots for the charts below sit on the title row, on the right.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Txt("All rides", T.body.copy(fontSize = 17.sp, fontWeight = FontWeight.SemiBold, lineHeight = 25.5.sp), c.ink, Modifier.weight(1f))
+                    PageDots(chartPager.currentPage)
+                }
                 Spacer(Modifier.height(2.dp))
                 Txt("${v.trips.size}", T.big(64f), c.ink)
                 Spacer(Modifier.height(2.dp))
@@ -199,7 +204,7 @@ fun RidesScreen(s: AppState, live: Live, act: RidesActions, bottom: Dp) {
                 )
             }
             Spacer(Modifier.height(18.dp))
-            Charts(charts, s.settings.rideChart, act::chart, f)
+            Charts(charts, chartPager, s.settings.rideChart, act::chart, f)
         }
 
         Row(Modifier.fillMaxWidth().padding(top = 12.dp).card(20.dp).height(IntrinsicSize.Min)) {
@@ -283,9 +288,8 @@ fun Ticker(start: Long) {
 
 /** Calendar, km per week and km by weekday, swiped sideways. The page you leave on is remembered. */
 @Composable
-private fun Charts(ch: RideCharts, at: Int, onPage: (Int) -> Unit, f: Fmt) {
+private fun Charts(ch: RideCharts, pager: androidx.compose.foundation.pager.PagerState, at: Int, onPage: (Int) -> Unit, f: Fmt) {
     val c = W.c
-    val pager = rememberPagerState(initialPage = at.coerceIn(0, 2)) { 3 }
     LaunchedEffect(pager) { snapshotFlow { pager.settledPage }.collect { if (it != at) onPage(it) } }
     // Every chart page takes the height of the tallest one, so the card doesn't grow and shrink as you swipe:
     // an invisible stack of all three sets the height, and the pager fills it.
@@ -318,10 +322,15 @@ private fun Charts(ch: RideCharts, at: Int, onPage: (Int) -> Unit, f: Fmt) {
         }
     }
     }
-    // Page dots
-    Row(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.Center) {
+}
+
+/** Which of the three charts shows: the current one is a short pill. */
+@Composable
+private fun PageDots(current: Int) {
+    val c = W.c
+    Row(Modifier.semantics { contentDescription = "Chart ${current + 1} of 3" }) {
         repeat(3) { i ->
-            Box(Modifier.padding(horizontal = 3.dp).size(if (i == pager.currentPage) 16.dp else 6.dp, 6.dp).clip(CircleShape).background(if (i == pager.currentPage) c.ink2 else c.inkA(0.18f)))
+            Box(Modifier.padding(horizontal = 3.dp).size(if (i == current) 16.dp else 6.dp, 6.dp).clip(CircleShape).background(if (i == current) c.ink2 else c.inkA(0.18f)))
         }
     }
 }

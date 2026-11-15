@@ -83,7 +83,7 @@ class ScreenshotTest {
         }
     }
     @Test fun settingsAll() {
-        val alt = sample.copy(settings = sample.settings.copy(allThemes = true, devFrames = true, font = "fraunces", bodyFont = "atkinson"))
+        val alt = sample.copy(settings = sample.settings.copy(devUnlocked = true, theme = "obsidian", devFrames = true, font = "fraunces", bodyFont = "atkinson"))
         captureRoboImage("build/shots/settings-allthemes.png") {
             WaylinkTheme("obsidian", alt.settings.accent, "fraunces", "atkinson", icons = "fill") {
                 Box(Modifier.fillMaxSize().background(W.c.bg).grain()) { SettingsScreen(alt, live.copy(scenario = "edge"), noop(), 80.dp) }
@@ -95,6 +95,15 @@ class ScreenshotTest {
         val frame = app.waylink.core.Protocol.tbtFrame(2, 350.0, 12_400.0, 4, 35, false, 0, "MG Road")
         shot("route-frames", tab = Tab.ROUTE) { RouteScreen(alt, live.copy(lastFrame = "Turn" to frame, frameCount = 42), noop(), {}, 80.dp) }
     }
+    /** Every theme on the busiest screens, to check contrast and consistency side by side. */
+    private fun themed(theme: String, name: String, content: @Composable () -> Unit) = captureRoboImage("build/shots/theme-$theme-$name.png") {
+        WaylinkTheme(theme, sample.settings.accent) { Box(Modifier.fillMaxSize().background(W.c.bg).grain()) { content() } }
+    }
+    private val THEMES = listOf("paper", "obsidian", "amoled")
+    @Test fun themesToday() = THEMES.forEach { t -> themed(t, "today") { TodayScreen(sample, live, noop(), 80.dp) } }
+    @Test fun themesFuel() = THEMES.forEach { t -> themed(t, "fuel") { FuelScreen(sample, noop(), 80.dp) } }
+    @Test fun themesRides() = THEMES.forEach { t -> themed(t, "rides") { RidesScreen(sample, live, noop(), 80.dp) } }
+    @Test fun themesSettings() = THEMES.forEach { t -> themed(t, "settings") { SettingsScreen(sample, live, noop(), 80.dp) } }
     @Test fun profile() = shot("profile", tab = Tab.SETTINGS) { ProfileScreen(sample, {}, {}, {}, 80.dp) }
 
     /** Developer preview states: a brand-new rider and the edge cases, for every tab, plus ride mode. */

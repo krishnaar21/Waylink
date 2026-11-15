@@ -969,14 +969,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "reminders" -> st.copy(reminders = !st.reminders)
             "sounds" -> st.copy(sounds = !st.sounds)
             "devFrames" -> st.copy(devFrames = !st.devFrames)
-            "allThemes" -> st.copy(allThemes = !st.allThemes)
             "devUnlocked" -> st.copy(devUnlocked = !st.devUnlocked)
             else -> st
         })
     }
         val st = _state.value.settings
         sound.enabled = st.sounds
-        sound.click(when (key) { "autoRide" -> st.autoRide; "autoRecord" -> st.autoRecord; "wakeLock" -> st.wakeLock; "streetNames" -> st.streetNames; "sounds" -> st.sounds; "devFrames" -> st.devFrames; "allThemes" -> st.allThemes; else -> true })
+        sound.click(when (key) { "autoRide" -> st.autoRide; "autoRecord" -> st.autoRecord; "wakeLock" -> st.wakeLock; "streetNames" -> st.streetNames; "sounds" -> st.sounds; "devFrames" -> st.devFrames; else -> true })
     }
 
     fun setCountry(code: String) {

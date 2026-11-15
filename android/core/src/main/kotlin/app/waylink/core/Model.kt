@@ -95,9 +95,8 @@ data class Settings(
     /** App icon style (web ICON_STYLES) and the icon look: line, duo (Glow) or fill (Duotone). */
     val iconStyle: String = "classic",
     val icons: String = "line",
-    /** Developer: raw Bluetooth frames on Route, and every theme in the picker. */
+    /** Developer: raw Bluetooth frames on Route. */
     val devFrames: Boolean = false,
-    val allThemes: Boolean = false,
     val alerts: AlertSettings = AlertSettings(),
     /** Where live turns come from: a NavSource key. */
     val navSource: String = "gmaps",
