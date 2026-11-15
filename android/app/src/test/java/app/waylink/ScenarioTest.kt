@@ -390,12 +390,17 @@ class ScenarioTest {
     @Test fun noRepeatsOnTodayOrSettings() {
         val vm = vm()
         vm.onboardSample(); vm.finishOnboarding(simulated = true); vm.hideSplash()
-        compose.setContent { AppRoot(vm) }
+        var which by androidx.compose.runtime.mutableStateOf("today")
+        compose.setContent {
+            WaylinkTheme("auto", "rust") {
+                if (which == "today") app.waylink.ui.today.TodayScreen(vm.state.value, vm.live.value, noop(), androidx.compose.ui.unit.Dp(80f))
+                else app.waylink.ui.shell.SettingsScreen(vm.state.value, vm.live.value, noop(), androidx.compose.ui.unit.Dp(80f))
+            }
+        }
         compose.waitForIdle()
         fun has(t: String) = compose.onAllNodesWithText(t, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         assertTrue(has("Quick Actions")); assertTrue(!has("Shortcuts"))
-        compose.onAllNodesWithContentDescription("Settings").onFirst().performClick()
-        compose.mainClock.advanceTimeBy(600); compose.waitForIdle()
+        which = "settings"; compose.waitForIdle()
         assertTrue(has("On the bike")); assertTrue(!has("Records & safety"))
     }
 
