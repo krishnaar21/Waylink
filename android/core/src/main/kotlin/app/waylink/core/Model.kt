@@ -84,8 +84,6 @@ data class Settings(
     val reminders: Boolean = true,
     /** The Developer section in Settings shows once About's version line is tapped 7 times. */
     val devUnlocked: Boolean = false,
-    /** Developer preview of the tidier Today, Settings and Route layout, to compare before deciding. */
-    val tidy: Boolean = false,
     /** Today's quick-link layout: cards, icons, list or pills. */
     val tileLayout: String = "cards",
     val simulated: Boolean = false,

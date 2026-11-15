@@ -51,14 +51,12 @@ object QuickLinks {
     // Most used first: fuel and service every week, parking and pumps most rides, then the planning
     // tiles, the paperwork, and the safety pair kept together at the end.
     // SOS lives in the header (always one tap away) and Hospitals inside the SOS sheet, so neither needs a tile.
+    // Rides came in from the old Shortcuts row.
     val ORDER = listOf(
         "log-fuel", "service", "parking", "pumps",
-        "weather", "places", "speed", "papers",
-        "visit", "profile",
+        "rides", "weather", "places", "speed",
+        "papers", "visit", "profile",
     )
-
-    /** The tidier-layout preview folds the Shortcuts row in, so Rides joins the grid. */
-    fun order(s: AppState): List<String> = if (s.settings.tidy) ORDER.take(4) + "rides" + ORDER.drop(4) else ORDER
 
     data class Link(val key: String, val icon: String, val title: String, val sub: String, val go: String, val dot: Boolean? = null) {
         /** The one-word name under the icon; [title] stays for screen readers. */
@@ -129,7 +127,7 @@ fun QuickLinksGrid(s: AppState, live: Live, f: Fmt, go: (String) -> Unit) {
     val ctx = LocalContext.current
     val tick = app.waylink.ui.route.rememberResumeTick()
     val need = remember(tick, s.settings.navSource) { app.waylink.ui.route.Perms.needed(ctx, s) }
-    IconsLayout(QuickLinks.order(s).mapNotNull { QuickLinks.build(it, s, live, f, need) }, go)
+    IconsLayout(QuickLinks.ORDER.mapNotNull { QuickLinks.build(it, s, live, f, need) }, go)
 }
 
 @Composable

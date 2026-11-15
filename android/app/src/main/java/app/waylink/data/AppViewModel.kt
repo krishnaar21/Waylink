@@ -971,7 +971,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "devFrames" -> st.copy(devFrames = !st.devFrames)
             "allThemes" -> st.copy(allThemes = !st.allThemes)
             "devUnlocked" -> st.copy(devUnlocked = !st.devUnlocked)
-            "tidy" -> st.copy(tidy = !st.tidy)
             else -> st
         })
     }

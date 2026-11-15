@@ -201,14 +201,6 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
         }
         }
 
-        // The tidier-layout preview moves this switch into "What the bike shows", next to the sample it changes.
-        if (!s.settings.tidy) {
-        SectionGap()
-        SectionHead("Display", help = { openSheet("help:display") })
-        ListCard {
-            ListRow("Street names on the bike", "Road name beside the arrow", icon = "eye", trailing = { Switch(s.settings.streetNames, "Street names on the bike", { vm.toggleSetting("streetNames") }) })
-        }
-        }
         if (s.settings.devFrames) FrameCard(live)
     }
 }

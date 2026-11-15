@@ -136,13 +136,12 @@ fun navSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetN
             HowToSteps(src.name)
             Spacer(Modifier.height(20.dp))
             Txt("On your bike", T.eyebrow, W.c.ink3, Modifier.padding(start = 4.dp, bottom = 8.dp))
-            ClusterSample("turn")
+            ClusterSample("turn", street = s.settings.streetNames)
             Hint("A sample. The exact look differs by model.")
         }
         "cluster" -> SheetSpec("On your bike", "Sample display") {
-            // In the tidier-layout preview the Street names switch lives here, beside the sample it changes.
-            if (s.settings.tidy) ClusterSheetBody(arg.ifEmpty { "all" }, s.settings.streetNames) { vm.toggleSetting("streetNames") }
-            else ClusterSheetBody(arg.ifEmpty { "all" })
+            // The Street names switch lives here, beside the sample it changes.
+            ClusterSheetBody(arg.ifEmpty { "all" }, s.settings.streetNames) { vm.toggleSetting("streetNames") }
         }
         "nearby" -> {
             val k = app.waylink.data.Nearby.Kind.of(arg) ?: return null

@@ -173,23 +173,6 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             Ic("chev", size = 18.dp, tint = c.ink3)
         }
 
-        if (!st.tidy) {
-        SectionGap()
-        SectionHead("Records & safety", help = { act.help("papers") })
-        ListCard {
-            val due = needsYou(v)
-            ListRow("Service", "Reminders and visits", icon = "wrench", end = if (due > 0) "$due due" else "All good", onClick = { act.page("logbook") })
-            Hairline(66.dp)
-            ListRow("Fuel", "Fill-ups and petrol price", icon = "fuel", end = "${v.fuel.size} fills", onClick = { act.page("fuel") })
-            Hairline(66.dp)
-            val docs = s.glove.count { it.slot.startsWith(v.id + ":") || it.slot.startsWith("rider:") }
-            ListRow("Papers", "RC, insurance, PUC, licence", icon = "folder", end = "$docs", onClick = { act.sheet("glovebox") })
-            Hairline(66.dp)
-            val park = v.parking
-            ListRow("Parking", "Find your way back to the bike", icon = "parking", end = if (park != null) f.ago(park.ts) else "Not saved", onClick = { act.sheet("parking") })
-        }
-        }
-
         SectionGap()
         // #sec-riding: the ride mode hint lands here (goto-riding): scrolled into view, then a 1.6 s accent ring (secFlash).
         val riding = remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
@@ -231,11 +214,7 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
         SectionGap()
         SectionHead("On the bike")
         ListCard {
-            ListRow("What the bike shows", if (st.tidy) "Sample display, street names" else "Sample of turns, calls and status", icon = "bike", onClick = { act.sheet("cluster:all") })
-            if (!st.tidy) {
-                Hairline(66.dp)
-                ListRow("Street names on the bike", "Road name beside the arrow", icon = "eye", trailing = { Switch(st.streetNames, "Street names on the bike", { act.toggle("streetNames") }) })
-            }
+            ListRow("What the bike shows", "Sample display and street names", icon = "bike", onClick = { act.sheet("cluster:all") })
             // Reading another maps app's turns is Android-only; an iPhone build leaves the row out. It's set up on Route.
             if (app.waylink.core.Platform.caps.readNavApps) {
                 Hairline(66.dp)
@@ -294,8 +273,6 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
         SectionGap()
         SectionHead("Developer", help = { act.help("developer") }, right = { Txt("Hide", T.link, c.ink2, Modifier.pressable(label = "Hide developer tools") { act.unlockDev() }) })
         ListCard {
-            ListRow("Tidier layout", "Preview: fewer repeats on Today, Settings and Route", icon = "sparkles", trailing = { Switch(st.tidy, "Tidier layout", { act.toggle("tidy") }) })
-            Hairline(66.dp)
             val simOn = live.simulated && live.link == LinkState.CONNECTED
             ListRow("Show onboarding", "Preview first launch", icon = "flag", onClick = { act.dev("onboarding") })
             Hairline(66.dp)

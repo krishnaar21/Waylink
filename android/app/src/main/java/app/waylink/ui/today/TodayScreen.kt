@@ -202,29 +202,6 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
         }
         Readings(s, live, f, fs, act)
 
-        // Shortcuts (the tidier-layout preview folds these into Quick Actions)
-        if (!s.settings.tidy) {
-        Spacer(Modifier.height(34.dp))
-        SectionHead("Shortcuts")
-        Row(
-            Modifier.bleed(20).fitScrollX().padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            val week = periodStats(v.trips, weekStart()).rides
-            Tile("fuel", "Fuel", if (fs.range != null) (if (fs.onReserve) Tone.BAD else Tone.OK) else null,
-                if (fs.range != null) "≈${f.num(fs.range)} km left" else "No tanks yet",
-                List(6) { if (it < (fs.bars ?: 0)) Tone.NEUTRAL else null }, act::fuel)
-            Tile("wrench", "Service", if (verdict.over > 0) Tone.BAD else if (verdict.soon > 0) Tone.SOON else Tone.OK,
-                if (verdict.over + verdict.soon > 0) "${verdict.over + verdict.soon} need care" else "All in order",
-                verdict.bar.map { when (it) { Due.OVERDUE -> Tone.BAD; Due.SOON -> Tone.SOON; Due.OK -> Tone.OK } }, act::logbook)
-            Tile("trips", "Rides", Tone.OK, "${v.trips.size} logged", List(6) { if (it < minOf(6, week)) Tone.NEUTRAL else null }, act::rides)
-            // Four bars, one per paper (RC, insurance, PUC, licence), lit when saved.
-            val papers = listOf("${v.id}:rc", "${v.id}:insurance", "${v.id}:puc", "rider:licence").map { k -> s.glove.any { it.slot == k } }
-            val nPapers = papers.count { it }
-            Tile("folder", "Papers", if (nPapers == 4) Tone.OK else null, if (nPapers == 0) "Empty" else "$nPapers of 4 saved",
-                papers.map { if (it) Tone.NEUTRAL else null }, act::glovebox)
-        }
-        }
 
 
         Spacer(Modifier.height(24.dp))

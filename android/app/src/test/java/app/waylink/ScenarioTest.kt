@@ -287,9 +287,7 @@ class ScenarioTest {
         // Developer tools stay hidden until asked for; the tidier layout is a preview switch.
         assertTrue(!vm.state.value.settings.devUnlocked)
         vm.toggleSetting("devUnlocked"); assertTrue(vm.state.value.settings.devUnlocked)
-        vm.toggleSetting("tidy"); assertTrue(vm.state.value.settings.tidy)
-        assertTrue(app.waylink.ui.today.QuickLinks.order(vm.state.value).contains("rides"))
-        vm.toggleSetting("tidy"); vm.toggleSetting("devUnlocked")
+        vm.toggleSetting("devUnlocked")
 
         // Handlebar music: on by default, a press goes to the phone's player; off, it's only logged.
         assertTrue(vm.state.value.settings.handlebarMedia)
@@ -388,21 +386,17 @@ class ScenarioTest {
         assertTrue(compose.onAllNodesWithText("Today", substring = true).fetchSemanticsNodes().isNotEmpty())
     }
 
-    /** The tidier-layout switch changes the live screens, not only the pictures. */
-    @Test fun tidyLayoutSwitchShows() {
+    /** Repeats are gone: no Shortcuts row on Today, no Records section in Settings. */
+    @Test fun noRepeatsOnTodayOrSettings() {
         val vm = vm()
         vm.onboardSample(); vm.finishOnboarding(simulated = true); vm.hideSplash()
         compose.setContent { AppRoot(vm) }
         compose.waitForIdle()
         fun has(t: String) = compose.onAllNodesWithText(t, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
-        assertTrue(has("Shortcuts"))
-        vm.toggleSetting("tidy"); compose.mainClock.advanceTimeBy(600); compose.waitForIdle()
-        assertTrue("Shortcuts should go with the tidier layout", !has("Shortcuts"))
+        assertTrue(has("Quick Actions")); assertTrue(!has("Shortcuts"))
         compose.onAllNodesWithContentDescription("Settings").onFirst().performClick()
         compose.mainClock.advanceTimeBy(600); compose.waitForIdle()
-        assertTrue(!has("Records & safety"))
-        vm.toggleSetting("tidy"); compose.mainClock.advanceTimeBy(600); compose.waitForIdle()
-        assertTrue(has("Records & safety"))
+        assertTrue(has("On the bike")); assertTrue(!has("Records & safety"))
     }
 
     /** Every sheet opens without a crash, on the sample data and on the edge-case data. */
