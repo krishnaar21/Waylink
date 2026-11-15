@@ -212,7 +212,11 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
                 if (verdict.over + verdict.soon > 0) "${verdict.over + verdict.soon} need care" else "All in order",
                 verdict.bar.map { when (it) { Due.OVERDUE -> Tone.BAD; Due.SOON -> Tone.SOON; Due.OK -> Tone.OK } }, act::logbook)
             Tile("trips", "Rides", Tone.OK, "${v.trips.size} logged", List(6) { if (it < minOf(6, week)) Tone.NEUTRAL else null }, act::rides)
-            Tile("folder", "Glovebox", null, "Empty", List(4) { null }, act::glovebox)
+            // Four bars, one per paper (RC, insurance, PUC, licence), lit when saved.
+            val papers = listOf("${v.id}:rc", "${v.id}:insurance", "${v.id}:puc", "rider:licence").map { k -> s.glove.any { it.slot == k } }
+            val nPapers = papers.count { it }
+            Tile("folder", "Glovebox", if (nPapers == 4) Tone.OK else null, if (nPapers == 0) "Empty" else "$nPapers of 4 saved",
+                papers.map { if (it) Tone.NEUTRAL else null }, act::glovebox)
         }
 
         Spacer(Modifier.height(18.dp))
