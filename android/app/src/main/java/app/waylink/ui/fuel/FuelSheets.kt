@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -103,7 +104,13 @@ private fun FuelBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNav) 
     Hint("$cur${f.num(price, 2)} a litre. Fill either one; the other follows.")
     Spacer(Modifier.height(16.dp))
     ListCard(flat = true) {
-        ListRow("Filled to the brim", "Needed to work out mileage", trailing = { Switch(full, "Filled to the brim", { full = !full }) })
+        ListRow("Filled to the brim", "Needed to work out mileage", trailing = {
+            androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                app.waylink.ui.components.CircleBtn("info", "What filling to the brim means", { nav.open("help:brim") }, size = 34.dp, flat = true, iconSize = 17.dp)
+                androidx.compose.foundation.layout.Spacer(Modifier.width(8.dp))
+                Switch(full, "Filled to the brim", { full = !full })
+            }
+        })
     }
     FormField("Date and time") { DateTimeField(ts, { ts = it }, max = System.currentTimeMillis() + 3_600_000) }
     Spacer(Modifier.height(24.dp))

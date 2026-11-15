@@ -287,6 +287,12 @@ class ScenarioTest {
         // Location isn't granted in the test, so the chip asks for it.
         assertEquals("perms", app.waylink.ui.route.attentionOf(ApplicationProvider.getApplicationContext(), vm.state.value, vm.live.value)?.key)
 
+        // Reminders: the check reads the saved state and never throws; the switch flips.
+        app.waylink.data.Reminders.check(ApplicationProvider.getApplicationContext())
+        app.waylink.data.Reminders.schedule(ApplicationProvider.getApplicationContext())
+        assertTrue(vm.state.value.settings.reminders)
+        vm.toggleSetting("reminders"); assertTrue(!vm.state.value.settings.reminders); vm.toggleSetting("reminders")
+
         vm.setSpeedAlert(10); assertEquals(30, vm.state.value.settings.speedAlert)
         vm.setSpeedAlert(80); assertEquals(80, vm.state.value.settings.speedAlert)
         vm.setSpeedAlert(0); assertEquals(0, vm.state.value.settings.speedAlert)
@@ -392,7 +398,7 @@ class ScenarioTest {
                 "specs", "country", "pick-ridechart", "backup", "erase", "reset", "faq", "report", "about", "models", "support", "avatar",
                 "prof:about", "prof:licence", "prof:medical", "weather", "pick-brand", "pick-font", "pick-progress", "log", "protocol",
                 "pair-intro", "auto-ask", "pair", "parking", "glovebox", "doc:rc", "quick", "turn-test", "garage", "sos", "clear:clear-wa",
-                "nav-source", "place:new", "speed", "perms", "nearby:fuel", "nearby:hospital")
+                "nav-source", "place:new", "speed", "perms", "nearby:fuel", "nearby:hospital", "help:brim")
             if (s.places.isEmpty()) vm.savePlace(null, "Home", "home", "12 Lavelle Rd", 12.97, 77.59)
             vm.state.value.places.forEach { keys += "place:${it.id}" }
             v.service.take(3).forEach { keys += "svc:${it.id}"; keys += "svc-edit:${it.id}" }

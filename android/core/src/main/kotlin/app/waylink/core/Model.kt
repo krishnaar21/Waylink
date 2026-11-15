@@ -80,6 +80,8 @@ data class Settings(
     val streetNames: Boolean = false,
     /** Handlebar tap plays or pauses the phone's music, a long press skips (when no call is showing). */
     val handlebarMedia: Boolean = true,
+    /** Phone notifications for reserve fuel, service due and papers expiring. */
+    val reminders: Boolean = true,
     /** Today's quick-link layout: cards, icons, list or pills. */
     val tileLayout: String = "cards",
     val simulated: Boolean = false,

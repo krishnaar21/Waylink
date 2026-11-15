@@ -86,4 +86,19 @@ class LiveNavTest {
         assertEquals("STRAIGHT", d.maneuver); assertEquals(23708.0, d.stepMeters)
         assertEquals("DESTINATION_REACHED", NavParse.parse("You have arrived", null, prev = t)?.maneuver)
     }
+
+    @Test fun remindersSayEachThingOnce() {
+        val now = 1_700_000_000_000L
+        val base = Sample.seed(freshState(), now)
+        val v = base.vehicle
+        val s = base.copy(glove = listOf(GloveDoc("${v.id}:insurance", "ins.jpg", "image", now, expiry = now + 5 * DAY_MS), GloveDoc("${v.id}:puc", "p.jpg", "image", now, expiry = now + 90 * DAY_MS)))
+        val r = dueReminders(s, now)
+        val ins = r.single { it.kind == "papers" }
+        assertEquals("Insurance expires in 5 days", ins.title)
+        // The same news keeps its key; a renewed paper gets a new one.
+        assertEquals(ins.key, dueReminders(s, now + 3600_000).single { it.kind == "papers" }.key)
+        val renewed = s.copy(glove = listOf(GloveDoc("${v.id}:insurance", "ins.jpg", "image", now, expiry = now + 400 * DAY_MS)))
+        assertEquals(0, dueReminders(renewed, now).count { it.kind == "papers" })
+        assertEquals(dueReminders(s, now).count { it.kind == "service" }, sortedService(v, now).count { it.st.status != Due.OK })
+    }
 }

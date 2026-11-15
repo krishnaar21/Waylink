@@ -5,6 +5,8 @@
     <!-- Weather only: the city name goes to Open-Meteo. Nothing else leaves the phone. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Short taps of vibration on toggles and events, like the web app's navigator.vibrate. -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- Bluetooth to the bike's cluster: "nearby devices" on Android 12+, the older pair on 11 and below. -->
@@ -36,6 +38,9 @@
         android:theme="@style/Theme.Waylink">
         <!-- Live turns: reads the turn card that Google Maps, Waze, OsmAnd or Organic Maps shows while it navigates.
              Only works once the rider switches Waylink on under notification access. -->
+        <receiver android:name=".data.ReminderReceiver" android:exported="false">
+            <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED" /></intent-filter>
+        </receiver>
         <service
             android:name=".data.NavListener"
             android:exported="true"

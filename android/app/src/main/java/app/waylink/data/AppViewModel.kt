@@ -141,6 +141,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         // Live turns from Google Maps & co. (Android notification access).
         viewModelScope.launch { NavFeed.turns.collect(::onLiveTurn) }
         refreshWeather(); sound.play(Sound.Fx.ENGINE_START)
+        // Phone reminders: the daily look, and one now (after the saved state is on disk).
+        viewModelScope.launch(Dispatchers.IO) { delay(3000); Reminders.schedule(getApplication()); Reminders.check(getApplication()) }
         // A bike paired before links again by itself when the app opens, as the web app's restore().
         _state.value.vehicle.bike.id?.let { id ->
             if (BikeLink.hasPermissions(app) && link.enabled) viewModelScope.launch { delay(1200); if (_live.value.link == LinkState.IDLE) link.connect(id, _state.value.vehicle.bike.name) }
@@ -964,6 +966,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "wakeLock" -> st.copy(wakeLock = !st.wakeLock)
             "streetNames" -> st.copy(streetNames = !st.streetNames)
             "handlebarMedia" -> st.copy(handlebarMedia = !st.handlebarMedia)
+            "reminders" -> st.copy(reminders = !st.reminders)
             "sounds" -> st.copy(sounds = !st.sounds)
             "devFrames" -> st.copy(devFrames = !st.devFrames)
             "allThemes" -> st.copy(allThemes = !st.allThemes)

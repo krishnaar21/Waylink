@@ -113,6 +113,14 @@ fun FuelScreen(s: AppState, act: FuelActions, bottom: Dp) {
                 },
                 T.lead, c.ink2,
             )
+            if (!hasRange || fs.tanks.size < 3) Row(
+                Modifier.padding(top = 8.dp).pressable(label = "What filling to the brim means") { act.help("brim") },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Ic("info", size = 15.dp, tint = c.ink2)
+                Spacer(Modifier.width(6.dp))
+                Txt("What’s “to the brim”?", T.link, c.ink2)
+            }
             Spacer(Modifier.height(18.dp))
             Segs(List(6) { i -> if (i < (fs.bars ?: 0)) (if (fs.onReserve) Tone.BAD else Tone.NEUTRAL) else null }, height = 7.dp, gap = 4.dp)
             Spacer(Modifier.height(10.dp))

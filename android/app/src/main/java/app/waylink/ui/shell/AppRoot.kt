@@ -445,6 +445,7 @@ internal fun buildSheet(key: String, s: AppState, live: Live, vm: AppViewModel, 
         "help" -> HELP[arg]?.let { h ->
             SheetSpec(h.title, h.eyebrow) {
                 val c = W.c
+                if (arg == "brim") { Spacer(Modifier.height(12.dp)); app.waylink.ui.fuel.BrimPicture() }
                 h.paras.forEachIndexed { i, p ->
                     Spacer(Modifier.height(if (i == 0) 12.dp else 10.dp))
                     Txt(p, if (i == 0) T.sheetLead else T.sheetLead.copy(fontSize = 15.sp), if (i == 0) c.ink2 else c.ink3)

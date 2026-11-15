@@ -228,6 +228,15 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             }
             Hairline(66.dp)
             ListRow("Speed alert", "Buzz when you pass a speed", icon = "alert", end = if (st.speedAlert > 0) "${st.speedAlert} km/h" else "Off", onClick = { act.sheet("speed") })
+            Hairline(66.dp)
+            ListRow("Phone reminders", "Reserve fuel, service due, papers expiring", icon = "bell", trailing = {
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                Switch(st.reminders, "Phone reminders", {
+                    act.toggle("reminders")
+                    // Turning them on without Android's OK leads to the permissions list.
+                    if (!st.reminders && !app.waylink.data.Reminders.allowed(ctx)) act.sheet("perms")
+                })
+            })
         }
         }
 

@@ -101,6 +101,7 @@ object Perms {
             val src = NavSource.of(s.settings.navSource)
             add(Perm("navaccess", "Notification access", if (src.readsNotifications) "Reads ${src.name}’s turn card for the bike" else "Only for live turns from a maps app", "bell", NavFeed.allowed(ctx), src.readsNotifications))
         }
+        if (android.os.Build.VERSION.SDK_INT >= 33) add(Perm("notify", "Notifications", "Reminders for fuel, service and papers", "bell", app.waylink.data.Reminders.allowed(ctx), s.settings.reminders))
         val pm = ctx.getSystemService(Context.POWER_SERVICE) as? PowerManager
         add(Perm("battery", "Battery unrestricted", "Keeps the bike linked with the screen off", "battery", pm?.isIgnoringBatteryOptimizations(ctx.packageName) ?: true, false))
     }
@@ -327,12 +328,16 @@ private fun PermsBody(s: AppState) {
             if (i > 0) Hairline(66.dp)
             val act: (() -> Unit)? = if (p.ok) null else ({
                 when (p.key) {
-                    "location", "nearby" -> {
+                    "location", "nearby", "notify" -> {
                         // Android stops showing its prompt after a refusal; the second tap goes to settings.
                         if (p.key in asked) Perms.openAppSettings(ctx)
                         else {
                             asked = asked + p.key
-                            launcher.launch(if (p.key == "location") arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION) else BikeLink.PERMISSIONS)
+                            launcher.launch(when (p.key) {
+                                "location" -> arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                                "notify" -> arrayOf(android.Manifest.permission.POST_NOTIFICATIONS)
+                                else -> BikeLink.PERMISSIONS
+                            })
                         }
                     }
                     "navaccess" -> NavFeed.openAccess(ctx)
