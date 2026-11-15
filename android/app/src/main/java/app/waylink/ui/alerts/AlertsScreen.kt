@@ -217,7 +217,7 @@ private fun LTab(label: String, count: Int, on: Boolean, onClick: () -> Unit) {
             if (count > 0) {
                 Spacer(Modifier.width(6.dp))
                 Box(Modifier.height(18.dp).widthIn(min = 18.dp).clip(RoundedCornerShape(9.dp)).background(c.red).padding(horizontal = 5.dp), contentAlignment = Alignment.Center) {
-                    Txt("$count", T.chip.copy(fontSize = 11.sp, lineHeight = 11.sp), androidx.compose.ui.graphics.Color.White)
+                    Txt("$count", T.chip.copy(fontSize = 11.sp, lineHeight = 11.sp), if (c.dark) c.bg else androidx.compose.ui.graphics.Color.White)
                 }
             }
         }

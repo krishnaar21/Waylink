@@ -24,8 +24,8 @@ class MainActivity : ComponentActivity() {
             val theme = s.settings.theme
             LaunchedEffect(theme) {
                 val style = when (theme) {
-                    "sketch" -> SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
-                    "sketchdark" -> SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
+                    "sketch", "paper" -> SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
+                    "sketchdark", "obsidian", "amoled" -> SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
                     else -> SystemBarStyle.auto(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
                 }
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
