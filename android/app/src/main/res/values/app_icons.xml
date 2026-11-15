@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Backgrounds for the app icon styles (web img/logos), one per launcher alias. -->
+<resources>
+    <color name="app_icon_bg_chrome">#E7E9EE</color>
+    <color name="app_icon_bg_retro">#F3E6C8</color>
+    <color name="app_icon_bg_leather">#69391C</color>
+    <color name="app_icon_bg_ascii">#0A140F</color>
+    <color name="app_icon_bg_wool">#762C28</color>
+    <color name="app_icon_bg_oil">#17191E</color>
+    <color name="app_icon_bg_stitch">#F7F5F0</color>
+    <color name="app_icon_bg_classic_rust">#501B11</color>
+    <color name="app_icon_bg_classic_wine">#4B0A12</color>
+    <color name="app_icon_bg_classic_blue">#0C2457</color>
+    <color name="app_icon_bg_classic_slate">#272C34</color>
+    <color name="app_icon_bg_classic_amber">#543709</color>
+    <color name="app_icon_bg_classic_mint">#12382F</color>
+</resources>
