@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             // Status and navigation bar icons follow the app's theme, not just the phone's.
             val s by vm.state.collectAsStateWithLifecycle()
-            val theme = s.settings.theme
+            val theme = app.waylink.ui.theme.resolveTheme(s.settings.theme, s.settings.supporter, androidx.compose.foundation.isSystemInDarkTheme())
             LaunchedEffect(theme) {
                 val style = when (theme) {
                     "sketch", "paper" -> SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)

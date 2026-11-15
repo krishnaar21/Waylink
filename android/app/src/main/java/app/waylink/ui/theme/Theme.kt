@@ -145,6 +145,23 @@ val THEMES = listOf(
     listOf("sketchdark", "Paper dark", "#1E1B17", "#2A2621", "#EDE5D6", "Dark"),
 )
 
+/** Themes only supporters can pick (Paper and Paper dark). */
+val PREMIUM_THEMES = setOf("sketch", "sketchdark")
+
+/** The supporter unlock price, in one place until payments are set up. Tax is added on top. */
+const val SUPPORTER_PRICE = 100
+const val SUPPORTER_PRICE_TEXT = "₹$SUPPORTER_PRICE or more (plus tax)"
+
+/**
+ * The theme to actually draw. Auto follows the phone: Paper and Paper dark for supporters, Light and Dark
+ * for everyone else. A Paper theme left over without the supporter unlock falls back the same way.
+ */
+fun resolveTheme(theme: String, supporter: Boolean, sysDark: Boolean): String = when {
+    theme == "auto" || (theme in PREMIUM_THEMES && !supporter) ->
+        if (supporter) (if (sysDark) "sketchdark" else "sketch") else (if (sysDark) "obsidian" else "paper")
+    else -> theme
+}
+
 val LocalColors = staticCompositionLocalOf { paper(Accent.WINE) }
 
 object W {
@@ -153,13 +170,15 @@ object W {
 
 /** theme: "auto" follows the phone; "sketch" is Paper; "sketchdark" is Paper dark. */
 @Composable
-fun WaylinkTheme(theme: String, accent: String, font: String = "system", bodyFont: String = "system", progress: String = "gauge", icons: String = "line", content: @Composable () -> Unit) {
+fun WaylinkTheme(theme: String, accent: String, font: String = "system", bodyFont: String = "system", progress: String = "gauge", icons: String = "line", supporter: Boolean = true, content: @Composable () -> Unit) {
     if (Looks.progress != progress) Looks.progress = progress
     if (Looks.icons != icons) Looks.icons = icons
     if (Fonts.title != font) Fonts.title = font
     if (Fonts.body != bodyFont) Fonts.body = bodyFont
     val sys = isSystemInDarkTheme()
     val a = Accent.of(accent)
+    val picked = theme
+    @Suppress("NAME_SHADOWING") val theme = resolveTheme(picked, supporter, sys)
     val colors = when (theme) {
         "sketch" -> paper(a)
         "sketchdark" -> paperDark(a)

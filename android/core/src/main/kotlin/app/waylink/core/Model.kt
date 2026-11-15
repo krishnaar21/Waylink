@@ -84,6 +84,8 @@ data class Settings(
     val reminders: Boolean = true,
     /** The Developer section in Settings shows once About's version line is tapped 7 times. */
     val devUnlocked: Boolean = false,
+    /** Has supported the app (₹100 or more). Unlocks the Paper themes. Set from Developer until payments exist. */
+    val supporter: Boolean = false,
     /** Today's quick-link layout: cards, icons, list or pills. */
     val tileLayout: String = "cards",
     val simulated: Boolean = false,

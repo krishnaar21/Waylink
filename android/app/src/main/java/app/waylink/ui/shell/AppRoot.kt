@@ -117,7 +117,7 @@ enum class Tab(val key: String, val label: String, val icon: String) {
 fun AppRoot(vm: AppViewModel) {
     val s by vm.state.collectAsStateWithLifecycle()
     val live by vm.live.collectAsStateWithLifecycle()
-    WaylinkTheme(s.settings.theme, s.settings.accent, s.settings.font, s.settings.bodyFont, s.settings.progress, s.settings.icons) {
+    WaylinkTheme(s.settings.theme, s.settings.accent, s.settings.font, s.settings.bodyFont, s.settings.progress, s.settings.icons, s.settings.supporter) {
         val c = W.c
         Box(Modifier.fillMaxSize().background(c.bg).grain()) {
             Crossfade(s.onboarded, animationSpec = tween(260), label = "root") { onboarded ->

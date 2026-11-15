@@ -7,6 +7,7 @@ coreKtx = "1.15.0"
 lifecycle = "2.8.7"
 serialization = "1.7.3"
 junit = "4.13.2"
+billing = "8.0.0"
 robolectric = "4.14.1"
 roborazzi = "1.38.0"
 androidxTestJunit = "1.2.1"
@@ -23,6 +24,7 @@ compose-foundation = { group = "androidx.compose.foundation", name = "foundation
 compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+play-billing = { group = "com.android.billingclient", name = "billing", version.ref = "billing" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 roborazzi = { group = "io.github.takahirom.roborazzi", name = "roborazzi", version.ref = "roborazzi" }

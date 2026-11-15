@@ -289,6 +289,22 @@ class ScenarioTest {
         vm.toggleSetting("devUnlocked"); assertTrue(vm.state.value.settings.devUnlocked)
         vm.toggleSetting("devUnlocked")
 
+        // Paper is for supporters: locked, picking it leaves the theme alone and Auto uses Light and Dark.
+        val before = vm.state.value.settings.theme
+        assertTrue(!vm.state.value.settings.supporter)
+        vm.setTheme("sketch"); assertEquals(before, vm.state.value.settings.theme)
+        assertEquals("paper", app.waylink.ui.theme.resolveTheme("auto", false, false))
+        assertEquals("obsidian", app.waylink.ui.theme.resolveTheme("auto", false, true))
+        assertEquals("obsidian", app.waylink.ui.theme.resolveTheme("sketchdark", false, true))
+        vm.toggleSetting("supporter"); vm.setTheme("sketch"); assertEquals("sketch", vm.state.value.settings.theme)
+        assertEquals("sketchdark", app.waylink.ui.theme.resolveTheme("auto", true, true))
+        vm.setTheme(before); vm.toggleSetting("supporter")
+        // Support prices: GST on top, and ₹100 or more unlocks Paper.
+        val t100 = app.waylink.data.Support.tier("support_100")!!
+        assertEquals(118, t100.withTax); assertTrue(t100.unlocksPaper)
+        assertTrue(!app.waylink.data.Support.tier("support_50")!!.unlocksPaper)
+        assertEquals(59, app.waylink.data.Support.tier("support_50")!!.withTax)
+
         // Handlebar music: on by default, a press goes to the phone's player; off, it's only logged.
         assertTrue(vm.state.value.settings.handlebarMedia)
         vm.press("tap"); vm.press("long")
