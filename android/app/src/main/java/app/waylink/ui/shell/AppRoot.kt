@@ -332,6 +332,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun endRide() = openSheet("rec-end")
                     override fun open(id: String) = openSheet("trip-detail:$id")
                     override fun chart(page: Int) = vm.setRideChart(page)
+                    override fun sheet(key: String) = openSheet(key)
                 }, tabBarHeight)
                 else -> AlertsScreen(s, live, object : AlertsActions {
                     override fun clickSound() = vm.uiClick(true)

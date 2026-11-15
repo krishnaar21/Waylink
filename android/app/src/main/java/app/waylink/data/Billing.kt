@@ -21,11 +21,17 @@ import kotlinx.coroutines.flow.asStateFlow
  * themes, ₹220 (suggested) also turns ads off, and ₹520 adds early access, future premium features and priority support. The product ids here must match the in-app products created in Play Console.
  */
 object Support {
-    data class Tier(val id: String, val price: Int, val icon: String, val name: String, val perks: List<String>, val adFree: Boolean, val early: Boolean)
+    data class Tier(val id: String, val price: Int, val icon: String, val name: String, val pitch: String, val perks: List<String>, val adFree: Boolean, val early: Boolean)
     val TIERS = listOf(
-        Tier("themes_120", 120, "palette", "Themes", listOf("The Paper themes"), adFree = false, early = false),
-        Tier("support_220", 220, "love", "Supporter", listOf("The Paper themes", "No ads"), adFree = true, early = false),
-        Tier("supporter_plus_520", 520, "sparkles", "Supporter+", listOf("The Paper themes", "No ads", "Early access to new features", "Future premium features", "Priority support"), adFree = true, early = true),
+        Tier("friend_120", 120, "palette", "Friend",
+            "A small thank-you that keeps Waylink free. As a Friend, the warm Paper and Paper dark looks are yours.",
+            listOf("The Paper themes"), adFree = false, early = false),
+        Tier("backer_220", 220, "love", "Backer",
+            "Back Waylink and ride without ads. Backers get the Paper themes and a clean, ad-free app.",
+            listOf("The Paper themes", "No ads"), adFree = true, early = false),
+        Tier("patron_520", 520, "sparkles", "Patron",
+            "For riders who want to shape what comes next. Patrons get everything, try new features first, and jump the queue for help.",
+            listOf("The Paper themes", "No ads", "Early access to new features", "Future premium features", "Priority support"), adFree = true, early = true),
     )
     /** Preselected on the Support sheet. */
     const val SUGGESTED = 1

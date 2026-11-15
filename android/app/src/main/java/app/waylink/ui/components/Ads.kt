@@ -28,7 +28,8 @@ import app.waylink.ui.theme.W
 
 /**
  * Placeholder ads, so the placements can be judged on a phone before any ad SDK goes in. The advertisers are
- * made up. Each slot has its own Developer switch, and supporters on ₹220 or more never see them.
+ * made up. Each slot has its own Developer switch, and Backers and Patrons never see them. Never on ride,
+ * navigation, SOS or call screens, and never full screen.
  */
 object DummyAds {
     data class Ad(val icon: String, val title: String, val line: String, val cta: String)
@@ -40,6 +41,9 @@ object DummyAds {
     )
     fun pick(slot: Int) = ADS[Math.floorMod(slot, ADS.size)]
     fun rides(s: AppState) = s.settings.adRides && !s.settings.adFree
+    fun top(s: AppState) = s.settings.adTop && !s.settings.adFree
+    /** Opens Support with Backer (the no-ads plan) picked. */
+    const val REMOVE = "support:1"
     fun lists(s: AppState) = s.settings.adLists && !s.settings.adFree
 }
 
@@ -51,28 +55,37 @@ private fun AdTag() {
     }
 }
 
-/** A banner card that sits on its own below a list (Rides). */
+/**
+ * A native ad card that sits near the top of a screen, in the same card style as everything else. A quiet
+ * "Remove ads" link under it opens Support with Backer picked; [onRemove] null hides the link.
+ */
 @Composable
-fun AdBanner(slot: Int, modifier: Modifier = Modifier) {
+fun AdBanner(slot: Int, modifier: Modifier = Modifier, onRemove: (() -> Unit)? = null) {
     val c = W.c
     val ad = DummyAds.pick(slot)
-    Row(
-        modifier.fillMaxWidth().card(20.dp).padding(horizontal = 14.dp, vertical = 12.dp).semantics { contentDescription = "Advertisement: ${ad.title}" },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(c.inkA(0.06f)), contentAlignment = Alignment.Center) { Ic(ad.icon, size = 22.dp, tint = c.ink2) }
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                AdTag()
-                Txt(ad.title, T.rowTitle, c.ink, maxLines = 1)
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 14.dp, vertical = 12.dp).semantics { contentDescription = "Advertisement: ${ad.title}" },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(c.inkA(0.06f)), contentAlignment = Alignment.Center) { Ic(ad.icon, size = 22.dp, tint = c.ink2) }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    AdTag()
+                    Txt(ad.title, T.rowTitle, c.ink, maxLines = 1)
+                }
+                Spacer(Modifier.height(2.dp))
+                Txt(ad.line, T.rowSub, c.ink3, maxLines = 1)
             }
-            Spacer(Modifier.height(2.dp))
-            Txt(ad.line, T.rowSub, c.ink3, maxLines = 1)
+            Spacer(Modifier.width(10.dp))
+            Box(Modifier.clip(RoundedCornerShape(99.dp)).background(c.inkA(0.07f)).padding(horizontal = 12.dp, vertical = 7.dp)) {
+                Txt(ad.cta, T.chip.copy(fontWeight = FontWeight.SemiBold), c.ink2, maxLines = 1)
+            }
         }
-        Spacer(Modifier.width(10.dp))
-        Box(Modifier.clip(RoundedCornerShape(99.dp)).background(c.inkA(0.07f)).padding(horizontal = 12.dp, vertical = 7.dp)) {
-            Txt(ad.cta, T.chip.copy(fontWeight = FontWeight.SemiBold), c.ink2, maxLines = 1)
+        if (onRemove != null) Row(Modifier.fillMaxWidth().padding(top = 6.dp, end = 6.dp), horizontalArrangement = Arrangement.End) {
+            Txt("Remove ads", T.rowSub.copy(fontWeight = FontWeight.Medium), c.ink3,
+                Modifier.clip(RoundedCornerShape(8.dp)).pressable(label = "Remove ads with Backer", onClick = onRemove).padding(horizontal = 6.dp, vertical = 4.dp))
         }
     }
 }

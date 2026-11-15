@@ -148,7 +148,7 @@ val THEMES = listOf(
 /** Themes only supporters can pick (Paper and Paper dark). */
 val PREMIUM_THEMES = setOf("sketch", "sketchdark")
 
-/** The lowest unlock price, GST included (the themes_120 product in Play). */
+/** The lowest unlock price, GST included (the friend_120 product in Play). */
 const val SUPPORTER_PRICE = 120
 const val SUPPORTER_PRICE_TEXT = "₹$SUPPORTER_PRICE (GST included)"
 
