@@ -27,6 +27,16 @@ object Finder {
         "Petrol pumps nearby" to "fuel",
     )
 
+    /** Settings worth one tap, shown under the questions while the box is empty. */
+    fun settingsShortcuts(s: AppState): List<Found> = buildList {
+        add(Found("Speed alert", if (s.settings.speedAlert > 0) "Buzz above ${s.settings.speedAlert} km/h" else "Off", "alert", "speed"))
+        add(Found("Phone reminders", if (s.settings.reminders) "On · fuel, service, papers" else "Off", "bell", "tab:settings"))
+        if (Platform.caps.readNavApps) add(Found("Live turns from", NavSource.of(s.settings.navSource).name, "nav", "nav-source"))
+        add(Found("What the bike shows", "Sample display", "bike", "cluster:all"))
+        add(Found("Permissions", "What Waylink can use", "shield", "perms"))
+        add(Found("Backup & restore", "Save or move your data", "down", "backup"))
+    }
+
     /** Shown when nothing matches. */
     val TRY = listOf("service", "fuel left", "papers", "last ride", "parked", "settings")
 

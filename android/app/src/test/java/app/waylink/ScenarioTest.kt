@@ -410,8 +410,8 @@ class ScenarioTest {
             vm.state.value.places.forEach { keys += "place:${it.id}" }
             // Every sheet search can open.
             val st = vm.state.value
-            val searched = (app.waylink.core.Finder.SUGGESTIONS.map { it.first } + listOf("service", "fuel", "papers", "settings", "places", "rides", "help", "visit", "insurance", "bike"))
-                .flatMap { q -> app.waylink.core.Finder.search(st, q).flatMap { g -> g.hits.map { it.go } } }
+            val searched = ((app.waylink.core.Finder.SUGGESTIONS.map { it.first } + listOf("service", "fuel", "papers", "settings", "places", "rides", "help", "visit", "insurance", "bike"))
+                .flatMap { q -> app.waylink.core.Finder.search(st, q).flatMap { g -> g.hits.map { it.go } } } + app.waylink.core.Finder.settingsShortcuts(st).map { it.go })
                 .filter { k -> listOf("tab:", "page:", "place-go:").none { k.startsWith(it) } && k !in listOf("record", "ride", "weather") }.distinct()
             keys += searched
             v.service.take(3).forEach { keys += "svc:${it.id}"; keys += "svc-edit:${it.id}" }

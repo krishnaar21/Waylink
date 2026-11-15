@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -105,23 +107,27 @@ private fun FuelBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNav) 
     Hint("$cur${f.num(price, 2)} a litre. Fill either one; the other follows.")
     Spacer(Modifier.height(16.dp))
     ListCard(flat = true) {
-        ListRow("Filled to the brim", "Needed to work out mileage", trailing = {
-            androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                app.waylink.ui.components.CircleBtn("info", "What filling to the brim means", { nav.open("help:brim") }, size = 34.dp, flat = true, iconSize = 17.dp)
-                androidx.compose.foundation.layout.Spacer(Modifier.width(8.dp))
-                Switch(full, "Filled to the brim", { full = !full })
+        // The (i) sits right after the title, so what "to the brim" means is one tap from the words.
+        val c = app.waylink.ui.theme.W.c
+        androidx.compose.foundation.layout.Row(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 9.dp, bottom = 11.dp),
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
+                androidx.compose.foundation.layout.Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                    Txt("Filled to the brim", app.waylink.ui.theme.T.body.copy(lineHeight = 22.4.sp), c.ink, maxLines = 1)
+                    androidx.compose.foundation.layout.Box(
+                        Modifier.size(36.dp).clip(androidx.compose.foundation.shape.CircleShape).pressable(label = "What filling to the brim means", scale = 0.9f) { nav.open("help:brim") },
+                        contentAlignment = androidx.compose.ui.Alignment.Center,
+                    ) { app.waylink.ui.components.Ic("info", size = 17.dp, tint = c.ink3) }
+                }
+                Txt("Needed to work out mileage", app.waylink.ui.theme.T.row.copy(lineHeight = 20.3.sp), c.ink3, maxLines = 2)
             }
-        })
+            Spacer(Modifier.width(8.dp))
+            Switch(full, "Filled to the brim", { full = !full })
+        }
     }
-    // Plainly visible, not only behind the (i): what "to the brim" means, with the picture.
-    androidx.compose.foundation.layout.Row(
-        Modifier.padding(top = 10.dp, start = 4.dp).pressable(label = "What filling to the brim means") { nav.open("help:brim") },
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-    ) {
-        app.waylink.ui.components.Ic("info", size = 15.dp, tint = app.waylink.ui.theme.W.c.ink2)
-        androidx.compose.foundation.layout.Spacer(Modifier.width(6.dp))
-        Txt("What’s “to the brim”? See a picture", app.waylink.ui.theme.T.link, app.waylink.ui.theme.W.c.ink2)
-    }
+    Spacer(Modifier.height(4.dp))
     FormField("Date and time") { DateTimeField(ts, { ts = it }, max = System.currentTimeMillis() + 3_600_000) }
     Spacer(Modifier.height(24.dp))
     Btn("Save", {

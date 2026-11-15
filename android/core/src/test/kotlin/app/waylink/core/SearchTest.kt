@@ -47,4 +47,10 @@ class SearchTest {
         assertEquals("service", Finder.stem("services"))
         assertEquals("battery", Finder.stem("batteries"))
     }
+
+    @Test fun `settings shortcuts follow the platform`() {
+        assertTrue(Finder.settingsShortcuts(s).any { it.go == "speed" })
+        val was = Platform.caps
+        try { Platform.caps = Caps.IOS; assertTrue(Finder.settingsShortcuts(s).none { it.go == "nav-source" }) } finally { Platform.caps = was }
+    }
 }

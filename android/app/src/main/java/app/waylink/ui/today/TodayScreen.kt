@@ -162,7 +162,7 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
         live.scenario?.let { Spacer(Modifier.height(26.dp)); app.waylink.ui.components.PreviewBar(it, act::exitPreview) }
 
         Spacer(Modifier.height(if (live.scenario != null) 14.dp else 22.dp))
-        SearchBar(s) { act.open(it) }
+        SearchLauncher { act.open("search") }
         Spacer(Modifier.height(14.dp))
         BikeCard(s, live, f, good, verdict.ok, act)
 
@@ -298,18 +298,20 @@ private fun ConnRow(s: AppState, live: Live, good: Boolean, okCount: Int, act: T
         .animateFloat(1f, 0.35f, androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(800), androidx.compose.animation.core.RepeatMode.Reverse), label = "cc").value else 1f
     Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
         Row(Modifier.weight(1f).pressable(label = "Bike link details", onClick = act::pair), verticalAlignment = Alignment.CenterVertically) {
+            // One clear symbol: a check when the bike is road ready, else the link. The link state sits as a
+            // small dot beside the line under the title, not stacked on the icon.
             IconTile(
-                if (good) "ok" else "signal", size = 36.dp, radius = 10.dp, iconSize = 19.dp,
+                if (good) "ok" else "bt", size = 36.dp, radius = 10.dp, iconSize = 19.dp,
                 bg = if (good) c.tintSage else c.inkA(0.06f), tint = if (good) c.sageInk else c.ink2,
-            ) {
-                Box(Modifier.align(Alignment.BottomEnd).offset(4.dp, 4.dp).size(15.dp).clip(CircleShape).background(c.card), contentAlignment = Alignment.Center) {
-                    Dot(if (connected) c.sage else if (busy) c.amber.copy(alpha = pulse) else c.ink4, size = 11.dp)
-                }
-            }
+            )
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Txt(t, T.rowTitle, c.ink, maxLines = 1)
-                Txt(sb, T.rowSub, c.ink3, maxLines = 1)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Dot(if (connected) c.sage else if (busy) c.amber.copy(alpha = pulse) else c.ink4, size = 7.dp)
+                    Spacer(Modifier.width(6.dp))
+                    Txt(sb, T.rowSub, c.ink3, maxLines = 1)
+                }
             }
         }
         Spacer(Modifier.width(10.dp))

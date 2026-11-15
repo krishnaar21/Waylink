@@ -193,6 +193,20 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         else { pendingLoc = then; askLocation.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)) }
     }
     val beginRec = { needLocation { vm.startRecording() } }
+    var searching by rememberSaveable { mutableStateOf(false) }
+    /** Quick Actions and search targets: "tab:<key>", "page:<key>", "record", "ride", "weather", "search", else a sheet key. */
+    val openKey: (String) -> Unit = { key ->
+        when {
+            key.startsWith("tab:") -> Tab.values().firstOrNull { it.key == key.drop(4) }?.let { tab = it }
+            key.startsWith("page:") -> page = key.drop(5)
+            key == "record" -> beginRec()
+            key == "ride" -> vm.openRideMode(true)
+            key == "weather" -> { if (vm.live.value.weather !is app.waylink.data.Weather.State.Ready) vm.refreshWeather(); openSheet("weather") }
+            key == "search" -> searching = true
+            key.startsWith("layout:") -> vm.setTileLayout(key.drop(7))
+            else -> openSheet(key)
+        }
+    }
     val host = object : app.waylink.ui.shell.ExtraHost {
         override fun withLocation(then: () -> Unit) = needLocation(then)
         override fun startRec() = beginRec()
@@ -282,17 +296,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                     override fun glovebox() = openSheet("glovebox")
                     override fun weather() { if (live.weather !is app.waylink.data.Weather.State.Ready) vm.refreshWeather(); openSheet("weather") }
                     override fun readingsHelp() = openSheet("help:readings")
-                    override fun open(key: String) {
-                        when {
-                            key.startsWith("tab:") -> Tab.values().firstOrNull { it.key == key.drop(4) }?.let { tab = it }
-                            key.startsWith("page:") -> page = key.drop(5)
-                            key == "record" -> beginRec()
-                            key == "ride" -> vm.openRideMode(true)
-                            key == "weather" -> weather()
-                            key.startsWith("layout:") -> vm.setTileLayout(key.drop(7))
-                            else -> openSheet(key)
-                        }
-                    }
+                    override fun open(key: String) = openKey(key)
                 }, tabBarHeight)
                 "profile" -> ProfileScreen(s, back = { page = null }, sheet = openSheet, help = { openSheet("help:$it") }, bottom = tabBarHeight)
                 Tab.SETTINGS.key -> SettingsScreen(s, live, object : SettingsActions {
@@ -389,6 +393,15 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                 Box(Modifier.matchParentSize().padding(2.dp).border(1.dp, c.bg.copy(alpha = 0.18f), CircleShape))
                 Ic("plus", size = 25.5.dp, tint = c.bg)
             }
+        }
+
+        // Search: a page of its own over everything, opened from the bar on Today.
+        androidx.compose.animation.AnimatedVisibility(
+            searching && !live.rideMode,
+            enter = fadeIn(tween(180)) + slideInVertically(tween(260, easing = app.waylink.ui.theme.Spring)) { it / 30 },
+            exit = fadeOut(tween(140)),
+        ) {
+            app.waylink.ui.today.SearchPage(s, onClose = { searching = false }) { key -> searching = false; openKey(key) }
         }
 
         // One sheet host. The top of the stack shows; the last one stays drawn while it slides away.

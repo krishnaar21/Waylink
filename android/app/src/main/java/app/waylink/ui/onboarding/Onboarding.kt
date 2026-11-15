@@ -273,7 +273,8 @@ private fun YourBike(s: AppState, onBack: () -> Unit, onSkip: () -> Unit, onSamp
 private fun AboutYou(s: AppState, onBack: () -> Unit, onSkip: () -> Unit, onSave: (String, String, String, String, String, String) -> Unit) {
     val c = W.c
     val p = s.profile
-    var avatar by rememberSaveable { mutableStateOf(p.avatar) }
+    // A new rider starts on the third avatar; one already chosen stays.
+    var avatar by rememberSaveable { mutableStateOf(if (!s.onboarded && p.avatar == "a1") "a3" else p.avatar) }
     var name by rememberSaveable { mutableStateOf(p.name) }
     var city by rememberSaveable { mutableStateOf(p.city) }
     var blood by rememberSaveable { mutableStateOf(p.blood) }
