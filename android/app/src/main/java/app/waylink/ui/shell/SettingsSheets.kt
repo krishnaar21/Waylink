@@ -32,6 +32,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -495,14 +497,17 @@ private fun AboutBody(nav: SheetNav) {
     Hint("Not affiliated with Bajaj Auto, OTC, Google or WhatsApp. Names and marks belong to their owners.")
 }
 
-private val AMOUNTS = listOf(49, 99, 199, 499, 0)
-private val AMT = mapOf(49 to ("tea" to "A cutting chai for the developer"), 99 to ("coffee" to "A coffee for a late-night fix"), 199 to ("fuel" to "Two litres of petrol for test rides"), 499 to ("wrench" to "Towards a month of upkeep"), 0 to ("love" to "You choose the amount in your UPI app"))
-
 @Composable
 private fun SupportBody(vm: AppViewModel, nav: SheetNav) {
     val c = W.c
     val ctx = LocalContext.current
-    var amt by rememberSaveable { mutableIntStateOf(99) }
+    val tiers = app.waylink.data.Support.TIERS
+    var amt by rememberSaveable { mutableIntStateOf(1) }
+    val tier = tiers[amt.coerceIn(0, tiers.size - 1)]
+    val prices by vm.billing.prices.collectAsStateWithLifecycle()
+    val owned by vm.billing.owned.collectAsStateWithLifecycle()
+    val supporter = vm.state.collectAsStateWithLifecycle().value.settings.supporter
+    LaunchedEffect(Unit) { vm.billing.start() }
     fun go(i: Intent) = try { ctx.startActivity(i) } catch (e: Exception) { vm.toast("No app can open that.") }
     Spacer(Modifier.height(15.dp))
     Txt("Waylink is free, with no ads and no tracking. If it makes your rides easier, you can chip in towards new features and upkeep. Support with ${app.waylink.ui.theme.SUPPORTER_PRICE_TEXT} and the Paper themes are yours.", T.sheetLead, c.ink2)
@@ -511,35 +516,48 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav) {
     Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(52.dp).clip(RoundedCornerShape(16.dp)).background(c.inkA(0.06f)), contentAlignment = Alignment.Center) {
-                Ic(AMT.getValue(amt).first, size = 26.dp, tint = c.ink)
+                Ic(tier.icon, size = 26.dp, tint = c.ink)
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Txt(if (amt > 0) "₹$amt" else "Any amount", T.big(34f).copy(lineHeight = 35.7.sp), c.ink, maxLines = 1)
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Txt("₹${tier.base}", T.big(34f).copy(lineHeight = 35.7.sp), c.ink, maxLines = 1)
+                    Spacer(Modifier.width(6.dp))
+                    Txt("+ GST", T.row, c.ink3, Modifier.padding(bottom = 5.dp), maxLines = 1)
+                }
                 Spacer(Modifier.height(3.dp))
-                Txt(AMT.getValue(amt).second, T.row, c.ink3, maxLines = 1)
+                Txt(tier.line, T.row, c.ink3, maxLines = 2)
             }
         }
         Spacer(Modifier.height(18.dp))
         Row(Modifier.fillMaxWidth().clip(CircleShape).background(c.inkA(0.05f)).padding(4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            AMOUNTS.forEach { a ->
-                val on = amt == a
+            tiers.forEachIndexed { i, t ->
+                val on = amt == i
                 Box(
                     Modifier.weight(1f).height(38.dp).clip(CircleShape).background(if (on) c.ink else Color.Transparent)
-                        .semantics { selected = on }.pressable(label = if (a > 0) "₹$a" else "Other amount", role = Role.RadioButton) { amt = a },
+                        .semantics { selected = on }.pressable(label = "₹${t.base} plus GST", role = Role.RadioButton) { amt = i },
                     contentAlignment = Alignment.Center,
-                ) { Txt(if (a > 0) "₹$a" else "Other", T.body.copy(fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold), if (on) c.bg else c.ink2, maxLines = 1) }
+                ) { Txt("₹${t.base}", T.body.copy(fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold), if (on) c.bg else c.ink2, maxLines = 1) }
             }
         }
         Spacer(Modifier.height(16.dp))
-        // No UPI ID yet, so the pay button shows disabled like the web's (opacity .35).
-        Btn("Pay ${if (amt > 0) "₹$amt " else ""}with any UPI app", {}, Modifier.fillMaxWidth().alpha(0.35f).semantics { disabled() })
+        val have = tier.id in owned
+        val total = prices[tier.id] ?: "₹${tier.withTax}"
+        Btn(if (have) "Given. Thank you!" else "Pay $total with Google Play", { if (!have) vm.billing.buy(ctx.findActivity(), tier.id) },
+            Modifier.fillMaxWidth().then(if (have) Modifier.alpha(0.5f).semantics { disabled() } else Modifier))
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Ic("info", size = 15.dp, tint = c.ink3)
+            Ic(if (tier.unlocksPaper) "lock" else "info", size = 15.dp, tint = c.ink3)
             Spacer(Modifier.width(8.dp))
-            Txt("Payments open once a UPI ID is added.", T.row.copy(fontSize = 13.sp), c.ink3)
+            Txt(
+                if (supporter) "Paper is unlocked. Thank you." else if (tier.unlocksPaper) "Unlocks the Paper themes" else "Paper unlocks from ₹${app.waylink.ui.theme.SUPPORTER_PRICE}",
+                T.row.copy(fontSize = 13.sp), c.ink3,
+            )
         }
+    }
+    Spacer(Modifier.height(10.dp))
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Txt("Restore an earlier purchase", T.link, c.ink2, Modifier.padding(8.dp).pressable(label = "Restore an earlier purchase") { vm.billing.restore(announce = true) })
     }
     Spacer(Modifier.height(24.dp))
     Txt("Free ways to help", T.eyebrow, c.ink3)
@@ -553,7 +571,13 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav) {
         Hairline(66.dp)
         ListRow("Report a problem or idea", "Every report makes it better", icon = "flag", onClick = { nav.open("report") })
     }
-    Hint("Payments go straight to the developer through your UPI app. Waylink never sees your payment details.")
+    Hint("Payments go through Google Play, with GST added. Waylink never sees your payment details.")
+}
+
+private tailrec fun android.content.Context.findActivity(): android.app.Activity? = when (this) {
+    is android.app.Activity -> this
+    is android.content.ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 @Composable

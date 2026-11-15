@@ -113,6 +113,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     private val file = AtomicFile(File(app.filesDir, "waylink-state.json"))
     private val _state = MutableStateFlow(load())
     val state: StateFlow<AppState> = _state.asStateFlow()
+    /** Google Play support products; a ₹100+ purchase unlocks the Paper themes. */
+    val billing = Billing(app,
+        onSupporter = { viewModelScope.launch { if (!_state.value.settings.supporter) commit { it.copy(settings = it.settings.copy(supporter = true)) } } },
+        onMessage = { m -> viewModelScope.launch { toast(m) } })
     private val _live = MutableStateFlow(Live())
     val live: StateFlow<Live> = _live.asStateFlow()
     private var saveJob: Job? = null
@@ -140,6 +144,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     }
 
     init {
+        runCatching { billing.start() }
         // Live turns from Google Maps & co. (Android notification access).
         viewModelScope.launch { NavFeed.turns.collect(::onLiveTurn) }
         refreshWeather(); sound.play(Sound.Fx.ENGINE_START)
@@ -479,7 +484,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     fun renameTrip(id: String, title: String) = veh { v -> v.copy(trips = v.trips.map { if (it.id == id) it.copy(title = title.trim().take(60).ifEmpty { it.title }) else it }) }
     fun deleteTrip(id: String) { veh { v -> v.copy(trips = v.trips.filter { it.id != id }) }; toast("Ride deleted. The odometer is unchanged.") }
 
-    override fun onCleared() { stopGps(); sound.release(); runCatching { link.stopScan() }; super.onCleared() }
+    override fun onCleared() { billing.end(); stopGps(); sound.release(); runCatching { link.stopScan() }; super.onCleared() }
 
     // ---------- Alerts ----------
     private fun logAlert(a: Alerts, kind: String, name: String, count: Boolean = true): Alerts {

@@ -299,6 +299,11 @@ class ScenarioTest {
         vm.toggleSetting("supporter"); vm.setTheme("sketch"); assertEquals("sketch", vm.state.value.settings.theme)
         assertEquals("sketchdark", app.waylink.ui.theme.resolveTheme("auto", true, true))
         vm.setTheme(before); vm.toggleSetting("supporter")
+        // Support prices: GST on top, and ₹100 or more unlocks Paper.
+        val t100 = app.waylink.data.Support.tier("support_100")!!
+        assertEquals(118, t100.withTax); assertTrue(t100.unlocksPaper)
+        assertTrue(!app.waylink.data.Support.tier("support_50")!!.unlocksPaper)
+        assertEquals(59, app.waylink.data.Support.tier("support_50")!!.withTax)
 
         // Handlebar music: on by default, a press goes to the phone's player; off, it's only logged.
         assertTrue(vm.state.value.settings.handlebarMedia)
