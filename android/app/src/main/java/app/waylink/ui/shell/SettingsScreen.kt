@@ -32,6 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import kotlinx.coroutines.launch
@@ -435,49 +436,24 @@ private fun LookCard(s: AppState, act: SettingsActions) {
                 Spacer(Modifier.width(12.dp))
                 Switch(auto, "Match the phone", { act.theme(if (auto) (if (sysDark) pair[1] else pair[0]) else "auto") })
             }
-            if (auto) {
-                Spacer(Modifier.height(16.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    pair.forEach { k ->
-                        val t = app.waylink.ui.theme.THEMES.first { it[0] == k }
-                        val now = if (sysDark) k == pair[1] else k == pair[0]
-                        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                            ThemePreview(k, now, Modifier.fillMaxWidth().aspectRatio(1.6f))
-                            Spacer(Modifier.height(8.dp))
-                            Txt(t[1], T.row.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), if (now) c.ink else c.ink2, maxLines = 1)
-                            Txt(if (now) "Now" else if (k == pair[0]) "Day" else "Night", T.rowSub.copy(fontSize = 12.sp, lineHeight = 18.sp), c.ink3, maxLines = 1)
-                        }
-                    }
-                }
-            } else {
-                Spacer(Modifier.height(16.dp))
-                app.waylink.ui.theme.THEMES.filter { it[0] != "auto" }.chunked(3).forEachIndexed { i, row ->
-                    if (i > 0) Spacer(Modifier.height(14.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        row.forEach { t ->
-                            val key = t[0]; val label = t[1]
-                            val locked = key in app.waylink.ui.theme.PREMIUM_THEMES && !sup
-                            val sub = if (locked) "Supporters" else t[5]
-                            val on = s.settings.theme == key
-                            Column(
-                                Modifier.weight(1f).semantics { selected = on }
-                                    .pressable(label = if (locked) "$label, for supporters" else label, role = Role.RadioButton, scale = 0.95f) { act.theme(key) },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Box {
-                                    ThemePreview(key, on, Modifier.fillMaxWidth().aspectRatio(1.25f))
-                                    if (locked) Box(
-                                        Modifier.align(Alignment.TopEnd).padding(6.dp).size(24.dp).clip(CircleShape).background(c.raised).border(1.dp, c.line, CircleShape),
-                                        contentAlignment = Alignment.Center,
-                                    ) { Ic("lock", size = 13.dp, tint = c.ink2) }
-                                }
-                                Spacer(Modifier.height(8.dp))
-                                Txt(label, T.row.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), if (on) c.ink else c.ink2, maxLines = 1)
-                                Spacer(Modifier.height(2.dp))
-                                Txt(sub, T.rowSub.copy(fontSize = 12.sp, lineHeight = 18.sp), c.ink3, maxLines = 1)
-                            }
-                        }
-                        repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+            // Compact swatches like the accent dots: page colour with a card chip and an ink line. Auto on shows its pair, read-only.
+            Spacer(Modifier.height(16.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                app.waylink.ui.theme.THEMES.filter { it[0] != "auto" }.forEach { t ->
+                    val key = t[0]; val label = t[1]
+                    val locked = key in app.waylink.ui.theme.PREMIUM_THEMES && !sup
+                    val inPair = key in pair
+                    val on = if (auto) key == (if (sysDark) pair[1] else pair[0]) else s.settings.theme == key
+                    val dim = auto && !inPair
+                    Column(
+                        Modifier.width(58.dp).semantics { selected = on }
+                            .pressable(label = if (locked) "$label, for supporters" else label, role = Role.RadioButton, scale = 0.9f) { act.theme(key) }
+                            .then(if (dim) Modifier.alpha(0.4f) else Modifier),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        ThemeDot(t, on, locked)
+                        Spacer(Modifier.height(6.dp))
+                        Txt(label, T.rowSub.copy(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = if (on) androidx.compose.ui.text.font.FontWeight.SemiBold else androidx.compose.ui.text.font.FontWeight.Normal), if (on) c.ink else c.ink3, maxLines = 1)
                     }
                 }
             }
@@ -543,47 +519,22 @@ private fun LookCard(s: AppState, act: SettingsActions) {
 }
 
 /** .themeopt .tp: a tiny page in the theme's colours, a title bar, two cards and an accent pill. */
+/** A 40 dp theme swatch: the page colour, a card chip and an ink line; a lock badge when it is for supporters. */
 @Composable
-private fun ThemePreview(key: String, on: Boolean, modifier: Modifier) {
+private fun ThemeDot(t: List<String>, on: Boolean, locked: Boolean) {
     val c = W.c
-    val t = app.waylink.ui.theme.THEMES.firstOrNull { it[0] == key } ?: app.waylink.ui.theme.THEMES[0]
     fun hex(h: String) = Color(android.graphics.Color.parseColor(h))
-    val bg = hex(t[2]); val card = hex(t[3]); val ink = hex(t[4])
-    val shape = RoundedCornerShape(14.dp)
-    Box(
-        modifier
-            // .themeopt.on .tp: box-shadow 0 0 0 2px var(--bg), 0 0 0 4px var(--accent). The ring sits outside the tile, which keeps its size.
-            .then(
-                if (on) Modifier.drawBehind {
-                    val g = 1.dp.toPx(); val r = 3.dp.toPx()
-                    drawRoundRect(c.bg, androidx.compose.ui.geometry.Offset(-g, -g), androidx.compose.ui.geometry.Size(size.width + 2 * g, size.height + 2 * g), androidx.compose.ui.geometry.CornerRadius(15.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx()))
-                    drawRoundRect(c.accent, androidx.compose.ui.geometry.Offset(-r, -r), androidx.compose.ui.geometry.Size(size.width + 2 * r, size.height + 2 * r), androidx.compose.ui.geometry.CornerRadius(17.dp.toPx()), style = androidx.compose.ui.graphics.drawscope.Stroke(2.dp.toPx()))
-                } else Modifier.shadow(3.dp, shape, ambientColor = Color(0x59000000), spotColor = Color(0x59000000)),
-            )
-            .clip(shape).background(bg).border(1.dp, c.line, shape),
-    ) {
-        MiniPage(Modifier.fillMaxSize(), card, ink, c.accent)
-        // Auto follows the phone: Paper on the left, Paper dark cut in on a diagonal from the right.
-        if (key == "auto") {
-            val dk = app.waylink.ui.theme.THEMES.firstOrNull { it[0] == "sketchdark" }
-            if (dk != null) MiniPage(
-                Modifier.fillMaxSize().clip(androidx.compose.foundation.shape.GenericShape { sz, _ ->
-                    moveTo(sz.width * 0.62f, 0f); lineTo(sz.width, 0f); lineTo(sz.width, sz.height); lineTo(sz.width * 0.38f, sz.height); close()
-                }).background(hex(dk[2])),
-                hex(dk[3]), hex(dk[4]), c.accent,
-            )
+    Box(Modifier.size(46.dp), contentAlignment = Alignment.Center) {
+        if (on) Box(Modifier.size(46.dp).border(2.dp, c.accent, CircleShape))
+        Box(Modifier.size(38.dp).clip(CircleShape).background(hex(t[2])).border(1.dp, c.line, CircleShape)) {
+            Box(Modifier.align(Alignment.BottomEnd).offset(x = (-5).dp, y = (-7).dp).size(22.dp, 14.dp).clip(RoundedCornerShape(4.dp)).background(hex(t[3]))) {
+                Box(Modifier.align(Alignment.Center).size(12.dp, 2.dp).clip(RoundedCornerShape(1.dp)).background(hex(t[4])))
+            }
         }
+        if (locked) Box(
+            Modifier.align(Alignment.TopEnd).size(18.dp).clip(CircleShape).background(c.raised).border(1.dp, c.line, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) { Ic("lock", size = 10.dp, tint = c.ink2) }
     }
 }
 
-/** The tiny page inside a theme tile: a title bar, two cards and an accent pill (.tp u, i, i, b). */
-@Composable
-private fun MiniPage(modifier: Modifier, card: Color, ink: Color, accent: Color) {
-    androidx.compose.foundation.layout.BoxWithConstraints(modifier) {
-        val w = maxWidth; val h = maxHeight
-        Box(Modifier.offset(w * 0.14f, h * 0.13f).size(w * 0.34f, h * 0.07f).clip(RoundedCornerShape(3.dp)).background(ink.copy(alpha = 0.7f)))
-        Box(Modifier.offset(w * 0.14f, h * 0.30f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card).border(0.5.dp, Color.Black.copy(alpha = 0.06f), RoundedCornerShape(6.dp)))
-        Box(Modifier.offset(w * 0.14f, h * 0.53f).size(w * 0.72f, h * 0.17f).clip(RoundedCornerShape(6.dp)).background(card).border(0.5.dp, Color.Black.copy(alpha = 0.06f), RoundedCornerShape(6.dp)))
-        Box(Modifier.offset(w * 0.14f, h * 0.81f).size(w * 0.40f, h * 0.09f).clip(RoundedCornerShape(99.dp)).background(accent))
-    }
-}
