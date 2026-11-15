@@ -394,7 +394,7 @@ class ScenarioTest {
         vm.onboardSample(); vm.finishOnboarding(simulated = true); vm.hideSplash()
         compose.setContent { AppRoot(vm) }
         compose.waitForIdle()
-        fun has(t: String) = compose.onAllNodesWithText(t).fetchSemanticsNodes().isNotEmpty()
+        fun has(t: String) = compose.onAllNodesWithText(t, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         assertTrue(has("Shortcuts"))
         vm.toggleSetting("tidy"); compose.mainClock.advanceTimeBy(600); compose.waitForIdle()
         assertTrue("Shortcuts should go with the tidier layout", !has("Shortcuts"))
