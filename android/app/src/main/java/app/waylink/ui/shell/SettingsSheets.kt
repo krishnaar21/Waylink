@@ -53,6 +53,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -450,7 +451,7 @@ private fun ReportBody(s: AppState, live: Live, vm: AppViewModel) {
         "Android: ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})",
         "Device: ${Build.MANUFACTURER} ${Build.MODEL}",
         "Theme: ${s.settings.theme}, ${s.settings.accent}",
-        "Support: " + when { s.settings.supporterPlus -> "Supporter+ (priority)"; s.settings.adFree -> "Supporter"; s.settings.supporter -> "Themes"; else -> "None" },
+        "Support: " + when { s.settings.supporterPlus -> "Patron (priority)"; s.settings.adFree -> "Backer"; s.settings.supporter -> "Friend"; else -> "None" },
     ).joinToString("\n")
     fun full() = (body.trim().ifEmpty { "(Describe what happened)" }) + "\n\n---\n" + info
     fun go(i: Intent) = try { ctx.startActivity(i) } catch (e: Exception) { vm.toast("No app can open that.") }
@@ -518,7 +519,10 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav, pick: Int? = null) {
     LaunchedEffect(Unit) { vm.billing.start() }
     fun go(i: Intent) = try { ctx.startActivity(i) } catch (e: Exception) { vm.toast("No app can open that.") }
     Spacer(Modifier.height(15.dp))
-    Txt("Waylink is free and never tracks you. If it makes your rides easier, pick a plan: Themes unlocks the Paper looks, Supporter also removes ads, and Supporter+ adds early access, future premium features and priority support. Prices include GST. Payments go through Google Play, so Waylink never sees your payment details.", T.sheetLead, c.ink2)
+    // The lead follows the picked plan, so it only ever describes one.
+    androidx.compose.animation.Crossfade(tier, label = "pitch") { t ->
+        Txt("${t.pitch} Prices include GST, and payment goes through Google Play, so Waylink never sees your card or UPI details.", T.sheetLead, c.ink2)
+    }
     Spacer(Modifier.height(20.dp))
     // Web .give: card paper with a hairline ring, neutral icon square, the amount in the display face, a segmented amount picker.
     Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
@@ -584,14 +588,7 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav, pick: Int? = null) {
 private fun PaperLockedBody(nav: SheetNav) {
     val c = W.c
     Spacer(Modifier.height(18.dp))
-    Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(24.dp)).background(c.inkA(0.04f)), contentAlignment = Alignment.Center) {
-        PaperCard(Color(0xFF1E1B17), Color(0xFF2A2621), Color(0xFFEDE5D6), Modifier.offset(x = 34.dp, y = 6.dp).graphicsLayer { rotationZ = 8f })
-        PaperCard(Color(0xFFEEE7DA), Color(0xFFF7F1E6), Color(0xFF2A2620), Modifier.offset(x = (-34).dp, y = (-4).dp).graphicsLayer { rotationZ = -7f })
-        Box(
-            Modifier.offset(y = 52.dp).size(44.dp).clip(CircleShape).background(c.accent),
-            contentAlignment = Alignment.Center,
-        ) { Ic("love", size = 22.dp, tint = c.onAccent) }
-    }
+    PaperShowcase(c.inkA(0.04f)) { Ic("love", size = 22.dp, tint = c.onAccent) }
     Spacer(Modifier.height(20.dp))
     Txt("Made for supporters", T.tileTitle.copy(fontSize = 22.sp), c.ink)
     Spacer(Modifier.height(6.dp))
@@ -607,14 +604,7 @@ private fun PaperLockedBody(nav: SheetNav) {
 private fun ThanksBody(t: app.waylink.data.Support.Tier, vm: AppViewModel, nav: SheetNav) {
     val c = W.c
     Spacer(Modifier.height(18.dp))
-    Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(24.dp)).background(c.tintSage), contentAlignment = Alignment.Center) {
-        PaperCard(Color(0xFF1E1B17), Color(0xFF2A2621), Color(0xFFEDE5D6), Modifier.offset(x = 34.dp, y = 6.dp).graphicsLayer { rotationZ = 8f })
-        PaperCard(Color(0xFFEEE7DA), Color(0xFFF7F1E6), Color(0xFF2A2620), Modifier.offset(x = (-34).dp, y = (-4).dp).graphicsLayer { rotationZ = -7f })
-        Box(
-            Modifier.offset(y = 52.dp).size(44.dp).clip(CircleShape).background(c.sageInk),
-            contentAlignment = Alignment.Center,
-        ) { Ic("check", size = 22.dp, tint = c.bg) }
-    }
+    PaperShowcase(c.tintSage, badge = c.sageInk) { Ic("check", size = 22.dp, tint = c.bg) }
     Spacer(Modifier.height(20.dp))
     Txt("You’re a ${t.name} now", T.tileTitle.copy(fontSize = 22.sp), c.ink)
     Spacer(Modifier.height(6.dp))
@@ -633,6 +623,78 @@ private fun ThanksBody(t: app.waylink.data.Support.Tier, vm: AppViewModel, nav: 
     Btn("Try Paper now", { if (vm.state.value.settings.theme != "auto") vm.setTheme("sketch"); nav.close() }, Modifier.fillMaxWidth(), icon = "palette")
     Spacer(Modifier.height(8.dp))
     Btn("Done", { nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.LINE)
+}
+
+/**
+ * Four swipeable pictures of what Paper looks like: the two pages fanned out, a day screen, a night screen and the
+ * inks. The same set sits on the locked sheet and the thank-you sheet; [badge] marks the first picture.
+ */
+@Composable
+private fun PaperShowcase(tint: Color, badge: Color = W.c.accent, mark: @Composable () -> Unit) {
+    val c = W.c
+    val day = app.waylink.ui.theme.paper(app.waylink.ui.theme.Accent.WINE)
+    val night = app.waylink.ui.theme.paperDark(app.waylink.ui.theme.Accent.WINE)
+    val captions = listOf("Two warm looks", "Paper, by day", "Paper dark, at night", "Inks made to match")
+    val pager = androidx.compose.foundation.pager.rememberPagerState { captions.size }
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.fillMaxWidth().height(190.dp).clip(RoundedCornerShape(24.dp)).background(tint), pageSpacing = 12.dp) { i ->
+            Box(Modifier.fillMaxSize().semantics { contentDescription = captions[i] }, contentAlignment = Alignment.Center) {
+                when (i) {
+                    0 -> {
+                        PaperCard(night.bg, night.card, night.ink, Modifier.offset(x = 34.dp, y = 4.dp).graphicsLayer { rotationZ = 8f })
+                        PaperCard(day.bg, day.card, day.ink, Modifier.offset(x = (-34).dp, y = (-6).dp).graphicsLayer { rotationZ = -7f })
+                        Box(Modifier.offset(y = 54.dp).size(44.dp).clip(CircleShape).background(badge), contentAlignment = Alignment.Center) { mark() }
+                    }
+                    1 -> PaperScreen(day, sun = true)
+                    2 -> PaperScreen(night, sun = false)
+                    else -> Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        listOf(day.bg, day.ink, day.sage, day.amber, day.red, night.bg).forEach { col ->
+                            Box(Modifier.size(34.dp).shadow(3.dp, CircleShape).clip(CircleShape).background(col))
+                        }
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Txt(captions[pager.currentPage], T.rowSub, c.ink3, maxLines = 1)
+        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.semantics { contentDescription = "Picture ${pager.currentPage + 1} of ${captions.size}" }) {
+            repeat(captions.size) { k ->
+                val on = k == pager.currentPage
+                Box(Modifier.size(if (on) 16.dp else 6.dp, 6.dp).clip(CircleShape).background(if (on) c.ink2 else c.inkA(0.2f)))
+            }
+        }
+    }
+}
+
+/** A small Today screen in a Paper palette: sun or moon, a title, the verdict card and three tiles. */
+@Composable
+private fun PaperScreen(p: app.waylink.ui.theme.WaylinkColors, sun: Boolean) {
+    Column(
+        Modifier.size(150.dp, 168.dp).graphicsLayer { rotationZ = if (sun) -3f else 3f }.shadow(8.dp, RoundedCornerShape(18.dp)).clip(RoundedCornerShape(18.dp))
+            .background(p.bg).padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(52.dp, 8.dp).clip(RoundedCornerShape(4.dp)).background(p.ink))
+            Spacer(Modifier.weight(1f))
+            Box(Modifier.size(14.dp).clip(CircleShape).background(if (sun) p.amber else p.ink2))
+        }
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(androidx.compose.ui.graphics.Brush.verticalGradient(p.heroOk)).padding(9.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Box(Modifier.size(56.dp, 7.dp).clip(RoundedCornerShape(4.dp)).background(p.ink))
+            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                repeat(5) { k -> Box(Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp)).background(if (k < 3) p.sage else p.inkA(0.15f))) }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            repeat(3) { k ->
+                Column(Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(9.dp)).background(p.card).padding(6.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                    Box(Modifier.size(12.dp).clip(RoundedCornerShape(4.dp)).background(if (k == 0) p.accent else p.inkA(0.18f)))
+                    Box(Modifier.size(22.dp, 4.dp).clip(RoundedCornerShape(2.dp)).background(p.ink.copy(alpha = 0.6f)))
+                }
+            }
+        }
+    }
 }
 
 /** A tiny phone page in fixed Paper colours: a title line and two cards. */
