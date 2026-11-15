@@ -217,6 +217,12 @@ class ScenarioTest {
     @Test fun liveTurnsPlacesAndSpeed() {
         val vm = vm()
         vm.onboardSample()
+        // Search on Today finds screens by everyday words; every word must match.
+        val st = vm.state.value
+        assertTrue(app.waylink.ui.today.searchHits(st, "petrol").any { it.go == "fuel:new" })
+        assertEquals("glovebox", app.waylink.ui.today.searchHits(st, "insurance").first().go)
+        assertTrue(app.waylink.ui.today.searchHits(st, "zzqx").isEmpty())
+        assertTrue(app.waylink.ui.today.searchHits(st, "  ").isEmpty())
         // A turn from Google Maps becomes the live route; another app's is ignored until it's the chosen one.
         app.waylink.data.NavFeed.turn.value = "waze" to app.waylink.core.LiveTurn("TURN_LEFT", 300.0, "MG Road", "Turn left onto MG Road")
         shadowOf(Looper.getMainLooper()).idle()
@@ -398,7 +404,7 @@ class ScenarioTest {
                 "specs", "country", "pick-ridechart", "backup", "erase", "reset", "faq", "report", "about", "models", "support", "avatar",
                 "prof:about", "prof:licence", "prof:medical", "weather", "pick-brand", "pick-font", "pick-progress", "log", "protocol",
                 "pair-intro", "auto-ask", "pair", "parking", "glovebox", "doc:rc", "quick", "turn-test", "garage", "sos", "clear:clear-wa",
-                "nav-source", "place:new", "speed", "perms", "nearby:fuel", "nearby:hospital", "help:brim")
+                "nav-source", "place:new", "speed", "perms", "nearby:fuel", "nearby:hospital", "help:brim", "route-howto", "cluster:all", "cluster:turn", "cluster:call")
             if (s.places.isEmpty()) vm.savePlace(null, "Home", "home", "12 Lavelle Rd", 12.97, 77.59)
             vm.state.value.places.forEach { keys += "place:${it.id}" }
             v.service.take(3).forEach { keys += "svc:${it.id}"; keys += "svc-edit:${it.id}" }

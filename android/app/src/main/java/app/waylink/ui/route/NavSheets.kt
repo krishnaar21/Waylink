@@ -130,6 +130,16 @@ fun navSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetN
         }
         "speed" -> SheetSpec("Speed alert", "Riding") { SpeedBody(s, vm) }
         "perms" -> SheetSpec("Permissions", "What Waylink can use") { PermsBody(s) }
+        "route-howto" -> SheetSpec("How this works", "Route") {
+            val src = NavSource.of(s.settings.navSource).let { if (it.readsNotifications) it else NavSource.of("gmaps") }
+            Spacer(Modifier.height(12.dp))
+            HowToSteps(src.name)
+            Spacer(Modifier.height(20.dp))
+            Txt("On your bike", T.eyebrow, W.c.ink3, Modifier.padding(start = 4.dp, bottom = 8.dp))
+            ClusterSample("turn")
+            Hint("A sample. The exact look differs by model.")
+        }
+        "cluster" -> SheetSpec("On your bike", "Sample display") { ClusterSheetBody(arg.ifEmpty { "all" }) }
         "nearby" -> {
             val k = app.waylink.data.Nearby.Kind.of(arg) ?: return null
             SheetSpec("${k.title} nearby", "Nearest first") { NearbyBody(k, s, live, vm, host) }
@@ -386,6 +396,10 @@ fun LiveTurnsCard(s: AppState, openSheet: (String) -> Unit) {
                     Txt(state, T.rowSub, c.ink3, maxLines = 1)
                 }
             }
+            Box(Modifier.size(34.dp).clip(CircleShape).pressable(label = "What the bike shows", scale = 0.9f) { openSheet("cluster:turn") }, contentAlignment = Alignment.Center) {
+                Ic("info", size = 18.dp, tint = c.ink3)
+            }
+            Spacer(Modifier.width(4.dp))
             Chip("Change", { openSheet("nav-source") })
         }
         if (ok == false) {

@@ -161,7 +161,9 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
         // .preview-bar sits 26 under the header and 14 above the bike card
         live.scenario?.let { Spacer(Modifier.height(26.dp)); app.waylink.ui.components.PreviewBar(it, act::exitPreview) }
 
-        Spacer(Modifier.height(if (live.scenario != null) 14.dp else 28.dp))
+        Spacer(Modifier.height(if (live.scenario != null) 14.dp else 22.dp))
+        SearchBar(s) { act.open(it) }
+        Spacer(Modifier.height(14.dp))
         BikeCard(s, live, f, good, verdict.ok, act)
 
         if (!good) {
@@ -266,8 +268,6 @@ private fun BikeCard(s: AppState, live: Live, f: Fmt, good: Boolean, okCount: In
         }
         Hairline()
         ConnRow(s, live, good, okCount, act)
-        Hairline()
-        WeatherRow(live.weather, act::weather)
     }
 }
 

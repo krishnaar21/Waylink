@@ -39,6 +39,7 @@ import app.waylink.ui.components.ListRow
 import app.waylink.ui.components.Switch
 import app.waylink.ui.components.Two
 import app.waylink.ui.components.Txt
+import app.waylink.ui.components.pressable
 import app.waylink.ui.components.card
 import app.waylink.ui.components.parseNum
 import app.waylink.ui.logbook.SheetNav
@@ -111,6 +112,15 @@ private fun FuelBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNav) 
                 Switch(full, "Filled to the brim", { full = !full })
             }
         })
+    }
+    // Plainly visible, not only behind the (i): what "to the brim" means, with the picture.
+    androidx.compose.foundation.layout.Row(
+        Modifier.padding(top = 10.dp, start = 4.dp).pressable(label = "What filling to the brim means") { nav.open("help:brim") },
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    ) {
+        app.waylink.ui.components.Ic("info", size = 15.dp, tint = app.waylink.ui.theme.W.c.ink2)
+        androidx.compose.foundation.layout.Spacer(Modifier.width(6.dp))
+        Txt("What’s “to the brim”? See a picture", app.waylink.ui.theme.T.link, app.waylink.ui.theme.W.c.ink2)
     }
     FormField("Date and time") { DateTimeField(ts, { ts = it }, max = System.currentTimeMillis() + 3_600_000) }
     Spacer(Modifier.height(24.dp))

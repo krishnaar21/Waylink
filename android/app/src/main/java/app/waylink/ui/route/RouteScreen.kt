@@ -141,28 +141,11 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
         PlacesCard(s, vm::toast, openSheet)
 
         SectionGap()
-        SectionHead("How this works")
-        // .howto: numbered steps in filled ink circles, 14 apart, 15/1.5 text
-        Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            listOf(
-                "Plan the ride in ${src.name}." to " It draws the map and gives voice directions on your phone.",
-                "Rehearse a route" to " to see how turns look on your bike’s display before you ride.",
-                "Test one turn" to " to check a single arrow and distance on the display.",
-            ).forEachIndexed { i, (b, rest) ->
-                Row {
-                    Box(Modifier.padding(top = 1.dp).size(24.dp).clip(CircleShape).background(c.ink), contentAlignment = Alignment.Center) {
-                        Txt("${i + 1}", T.chip.copy(fontSize = 12.5.sp, lineHeight = 12.5.sp), c.bg)
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Txt(androidx.compose.ui.text.buildAnnotatedString {
-                        pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.SemiBold, color = c.ink)); append(b); pop()
-                        append(rest)
-                    }, T.row.copy(fontSize = 15.sp, lineHeight = 22.5.sp), c.ink2)
-                }
-            }
-        }
-        Spacer(Modifier.height(12.dp))
         LiveTurnsCard(s, openSheet)
+        Spacer(Modifier.height(12.dp))
+        // The steps live in a sheet; a single row keeps the page short.
+        ListCard { ListRow("How this works", "Plan, rehearse, then ride", icon = "info", onClick = { openSheet("route-howto") }) }
+
 
         SectionGap()
         SectionHead("Rehearse a route", help = { openSheet("help:rehearse") })
@@ -465,5 +448,29 @@ fun routeSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Shee
         }
         Spacer(Modifier.height(20.dp))
         Btn("Send to bike", { nav.close(); vm.sendTurn() }, Modifier.fillMaxWidth(), kind = BtnKind.ACCENT)
+    }
+}
+
+/** The three steps behind "How this works" on the Route tab. */
+@Composable
+fun HowToSteps(srcName: String) {
+    val c = W.c
+    Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        listOf(
+            "Plan the ride in $srcName." to " It draws the map and gives voice directions on your phone.",
+            "Rehearse a route" to " to see how turns look on your bike’s display before you ride.",
+            "Test one turn" to " to check a single arrow and distance on the display.",
+        ).forEachIndexed { i, (b, rest) ->
+            Row {
+                Box(Modifier.padding(top = 1.dp).size(24.dp).clip(CircleShape).background(c.ink), contentAlignment = Alignment.Center) {
+                    Txt("${i + 1}", T.chip.copy(fontSize = 12.5.sp, lineHeight = 12.5.sp), c.bg)
+                }
+                Spacer(Modifier.width(12.dp))
+                Txt(androidx.compose.ui.text.buildAnnotatedString {
+                    pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.SemiBold, color = c.ink)); append(b); pop()
+                    append(rest)
+                }, T.row.copy(fontSize = 15.sp, lineHeight = 22.5.sp), c.ink2)
+            }
+        }
     }
 }
