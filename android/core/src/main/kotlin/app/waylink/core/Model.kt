@@ -96,6 +96,8 @@ data class Settings(
     val adTop: Boolean = false,
     /** Developer only: hide the live ads, to see screens without them. */
     val hideAds: Boolean = false,
+    /** Which of the three plan picture versions to show (Developer, while choosing). */
+    val planArt: Int = 0,
     val adLists: Boolean = false,
     /** Today's quick-link layout: cards, icons, list or pills. */
     val tileLayout: String = "cards",

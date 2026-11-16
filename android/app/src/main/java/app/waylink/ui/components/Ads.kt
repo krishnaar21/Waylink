@@ -137,3 +137,29 @@ internal fun RemoveAdsLink(onRemove: (() -> Unit)?) {
             Modifier.clip(RoundedCornerShape(8.dp)).pressable(label = "Remove ads with Backer", onClick = onRemove).padding(horizontal = 6.dp, vertical = 4.dp))
     }
 }
+
+/**
+ * Waylink's own card, shown in an ad slot while no Google ad is there (still loading, offline, or no consent):
+ * a gentle pitch for Backer, the no-ads plan. Tapping it opens Support with Backer picked.
+ */
+@Composable
+fun HouseAd(modifier: Modifier = Modifier, onRemove: (() -> Unit)?) {
+    val c = W.c
+    Row(
+        modifier.fillMaxWidth().card(20.dp).then(if (onRemove != null) Modifier.pressable(label = "Ride without ads, see Backer", onClick = onRemove) else Modifier)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(44.dp).clip(RoundedCornerShape(12.dp)).background(c.tintSage), contentAlignment = Alignment.Center) { Ic("love", size = 22.dp, tint = c.sageInk) }
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Txt("Ride without ads", T.rowTitle, c.ink, maxLines = 1)
+            Spacer(Modifier.height(2.dp))
+            Txt("Become a Backer and get the Paper themes too", T.rowSub, c.ink3, maxLines = 1)
+        }
+        Spacer(Modifier.width(10.dp))
+        Box(Modifier.clip(RoundedCornerShape(99.dp)).background(c.inkA(0.07f)).padding(horizontal = 12.dp, vertical = 7.dp)) {
+            Txt("See plans", T.chip.copy(fontWeight = FontWeight.SemiBold), c.ink2, maxLines = 1)
+        }
+    }
+}

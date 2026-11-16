@@ -993,7 +993,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "adTop" -> st.copy(adTop = !st.adTop)
             "hideAds" -> st.copy(hideAds = !st.hideAds)
             "adLists" -> st.copy(adLists = !st.adLists)
-            else -> st
+            else -> if (key.startsWith("planArt:")) st.copy(planArt = key.substringAfter(':').toIntOrNull()?.coerceIn(0, 2) ?: 0) else st
         })
     }
         val st = _state.value.settings
