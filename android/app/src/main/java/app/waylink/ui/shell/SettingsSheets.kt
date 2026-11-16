@@ -700,7 +700,7 @@ private fun PaperScreen(p: app.waylink.ui.theme.WaylinkColors, sun: Boolean) {
 
 /**
  * A picture for each plan, drawn from the app's own riders. Friend: two riders side by side with a heart.
- * Backer: a rider on the open road with a "No ads" tag. Patron: the painted rider in a gold ring with sparkles.
+ * Backer: a rider on the open road with a "No ads" tag. Patron: the rider in a gold ring with sparkles.
  */
 @Composable
 private fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, framed: Boolean = true) {
@@ -732,7 +732,7 @@ private fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, framed
             }
             else -> {
                 Box(Modifier.size(112.dp).clip(CircleShape).background(c.card).border(3.dp, c.amber, CircleShape), contentAlignment = Alignment.BottomCenter) {
-                    Image(painterResource(app.waylink.R.drawable.rider_paint), null, Modifier.fillMaxSize().padding(top = 8.dp), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
+                    Image(painterResource(app.waylink.R.drawable.rider_street), null, Modifier.fillMaxSize().padding(start = 6.dp, end = 6.dp, top = 14.dp), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
                 }
                 listOf(Triple(-74, -34, 18), Triple(70, -40, 14), Triple(80, 30, 12), Triple(-66, 38, 12)).forEach { (x, y, sz) ->
                     Box(Modifier.offset(x = x.dp, y = y.dp)) { Ic("sparkles", size = sz.dp, tint = c.amber) }
