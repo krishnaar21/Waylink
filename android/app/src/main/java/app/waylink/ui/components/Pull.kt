@@ -119,6 +119,7 @@ fun PullToRefresh(enabled: Boolean, onRefresh: suspend () -> Unit, content: @Com
             val draw = if (busy) 1f else p // how much of the tyre is drawn, 0..1
             val roll = d * 3f + spin.value * 360f
             val ink = W.c.ink
+            val rim = W.c.accent
             Canvas(
                 Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.statusBars).size(46.dp)
                     .graphicsLayer { translationY = (d * 0.5f - 23f + 2f) * density; alpha = if (d > 0f) min(1f, p * 1.4f) else 0f },
@@ -128,7 +129,7 @@ fun PullToRefresh(enabled: Boolean, onRefresh: suspend () -> Unit, content: @Com
                     rotate(roll, pivot = Offset(50f, 50f)) {
                         drawCircle(ink.copy(alpha = 0.22f * draw), 38f, Offset(50f, 50f), style = Stroke(12f))
                         drawArc(ink, -90f, 360f * draw, false, Offset(5.5f, 5.5f), Size(89f, 89f), style = Stroke(4.5f))
-                        drawCircle(ink, 31.5f, Offset(50f, 50f), style = Stroke(3.5f))
+                        drawCircle(rim, 31.5f, Offset(50f, 50f), style = Stroke(3.5f)) // the rim, in the theme's accent
                         TREAD.forEach { t -> drawLine(ink.copy(alpha = draw), Offset(t[0], t[1]), Offset(t[2], t[3]), 3.6f, StrokeCap.Round) }
                     }
                 }
