@@ -41,7 +41,8 @@ object DummyAds {
     )
     fun pick(slot: Int) = ADS[Math.floorMod(slot, ADS.size)]
     fun rides(s: AppState) = s.settings.adRides && !s.settings.adFree
-    fun top(s: AppState) = s.settings.adTop && !s.settings.adFree
+    /** The live placement: near the top of Today, Rides, Fuel and Service, for everyone without the no-ads plan. */
+    fun top(s: AppState) = !s.settings.adFree && !s.settings.hideAds
     /** Opens Support with Backer (the no-ads plan) picked. */
     const val REMOVE = "support:1"
     fun lists(s: AppState) = s.settings.adLists && !s.settings.adFree
@@ -56,11 +57,30 @@ private fun AdTag() {
 }
 
 /**
+ * Where ad content comes from. [SampleAds] (made-up advertisers) is the only source today; a real network's native
+ * ad view drops in here later without touching the screens.
+ */
+interface AdSource {
+    @Composable fun Card(slot: Int, modifier: Modifier, onRemove: (() -> Unit)?)
+}
+
+object SampleAds : AdSource {
+    @Composable override fun Card(slot: Int, modifier: Modifier, onRemove: (() -> Unit)?) = SampleBanner(slot, modifier, onRemove)
+}
+
+/** The source the app uses. */
+var adSource: AdSource = SampleAds
+
+/** An ad card near the top of a screen, from [adSource]. */
+@Composable
+fun AdBanner(slot: Int, modifier: Modifier = Modifier, onRemove: (() -> Unit)? = null) = adSource.Card(slot, modifier, onRemove)
+
+/**
  * A native ad card that sits near the top of a screen, in the same card style as everything else. A quiet
  * "Remove ads" link under it opens Support with Backer picked; [onRemove] null hides the link.
  */
 @Composable
-fun AdBanner(slot: Int, modifier: Modifier = Modifier, onRemove: (() -> Unit)? = null) {
+private fun SampleBanner(slot: Int, modifier: Modifier = Modifier, onRemove: (() -> Unit)? = null) {
     val c = W.c
     val ad = DummyAds.pick(slot)
     Column(modifier.fillMaxWidth()) {

@@ -991,6 +991,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "supporterPlus" -> st.copy(supporterPlus = !st.supporterPlus)
             "adRides" -> st.copy(adRides = !st.adRides)
             "adTop" -> st.copy(adTop = !st.adTop)
+            "hideAds" -> st.copy(hideAds = !st.hideAds)
             "adLists" -> st.copy(adLists = !st.adLists)
             else -> st
         })

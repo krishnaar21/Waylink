@@ -305,6 +305,10 @@ class ScenarioTest {
         assertTrue(!tiers[0].adFree && tiers.drop(1).all { it.adFree })
         assertTrue(tiers.single { it.early }.price == 520)
         assertEquals(220, tiers[app.waylink.data.Support.SUGGESTED].price)
+        // Ads at the top are live for free riders and Friends, and gone with the no-ads plan.
+        val st0 = vm.state.value
+        assertTrue(app.waylink.ui.components.DummyAds.top(st0.copy(settings = st0.settings.copy(adFree = false, hideAds = false))))
+        assertTrue(!app.waylink.ui.components.DummyAds.top(st0.copy(settings = st0.settings.copy(adFree = true))))
 
         // Handlebar music: on by default, a press goes to the phone's player; off, it's only logged.
         assertTrue(vm.state.value.settings.handlebarMedia)
