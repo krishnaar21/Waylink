@@ -4,7 +4,6 @@ import app.waylink.ui.components.fitScrollX
 import app.waylink.ui.components.fitScrollY
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.draw.drawBehind
 import android.content.Intent
 import android.net.Uri
@@ -585,12 +584,12 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav, pick: Int? = null) {
     }
 }
 
-/** Shown when a Paper theme is tapped without the unlock: two Paper pages fanned out, a thank-you note, and a way to Support. */
+/** Shown when a Paper theme is tapped without the unlock: the Friend picture, a thank-you note, and a way to Support. */
 @Composable
 private fun PaperLockedBody(nav: SheetNav) {
     val c = W.c
     Spacer(Modifier.height(18.dp))
-    PaperShowcase(c.inkA(0.04f)) { Ic("love", size = 22.dp, tint = c.onAccent) }
+    PlanArt(app.waylink.data.Support.TIERS[0], Modifier.fillMaxWidth().height(160.dp))
     Spacer(Modifier.height(20.dp))
     Txt("Made for supporters", T.tileTitle.copy(fontSize = 22.sp), c.ink)
     Spacer(Modifier.height(6.dp))
@@ -601,12 +600,12 @@ private fun PaperLockedBody(nav: SheetNav) {
     Btn("Not now", { nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.LINE)
 }
 
-/** After a purchase: the same fanned Paper pages, a tick, what this plan unlocked, and a way to try Paper straight away. */
+/** After a purchase: the plan's picture, what it unlocked, and a way to try Paper straight away. */
 @Composable
 private fun ThanksBody(t: app.waylink.data.Support.Tier, vm: AppViewModel, nav: SheetNav) {
     val c = W.c
     Spacer(Modifier.height(18.dp))
-    PaperShowcase(c.tintSage, badge = c.sageInk, lead = "You’re a ${t.name}" to { PlanArt(t, Modifier.fillMaxSize(), framed = false) }) { Ic("check", size = 22.dp, tint = c.bg) }
+    PlanArt(t, Modifier.fillMaxWidth().height(160.dp))
     Spacer(Modifier.height(20.dp))
     Txt("You’re a ${t.name} now", T.tileTitle.copy(fontSize = 22.sp), c.ink)
     Spacer(Modifier.height(6.dp))
@@ -628,82 +627,9 @@ private fun ThanksBody(t: app.waylink.data.Support.Tier, vm: AppViewModel, nav: 
 }
 
 /**
- * Four swipeable pictures of what Paper looks like: the two pages fanned out, a day screen, a night screen and the
- * inks. The same set sits on the locked sheet and the thank-you sheet; [badge] marks the first picture.
- */
-@Composable
-private fun PaperShowcase(tint: Color, badge: Color = W.c.accent, lead: Pair<String, @Composable () -> Unit>? = null, mark: @Composable () -> Unit) {
-    val c = W.c
-    val day = app.waylink.ui.theme.paper(app.waylink.ui.theme.Accent.WINE)
-    val night = app.waylink.ui.theme.paperDark(app.waylink.ui.theme.Accent.WINE)
-    val captions = listOfNotNull(lead?.first, "Two warm looks", "Paper, by day", "Paper dark, at night", "Inks made to match")
-    val off = if (lead != null) 1 else 0
-    val pager = androidx.compose.foundation.pager.rememberPagerState { captions.size }
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        androidx.compose.foundation.pager.HorizontalPager(pager, Modifier.fillMaxWidth().height(190.dp).clip(RoundedCornerShape(24.dp)).background(tint), pageSpacing = 12.dp) { i ->
-            Box(Modifier.fillMaxSize().semantics { contentDescription = captions[i] }, contentAlignment = Alignment.Center) {
-                if (lead != null && i == 0) lead.second() else when (i - off) {
-                    0 -> {
-                        PaperCard(night.bg, night.card, night.ink, Modifier.offset(x = 34.dp, y = 4.dp).graphicsLayer { rotationZ = 8f })
-                        PaperCard(day.bg, day.card, day.ink, Modifier.offset(x = (-34).dp, y = (-6).dp).graphicsLayer { rotationZ = -7f })
-                        Box(Modifier.offset(y = 54.dp).size(44.dp).clip(CircleShape).background(badge), contentAlignment = Alignment.Center) { mark() }
-                    }
-                    1 -> PaperScreen(day, sun = true)
-                    2 -> PaperScreen(night, sun = false)
-                    else -> Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        listOf(day.bg, day.ink, day.sage, day.amber, day.red, night.bg).forEach { col ->
-                            Box(Modifier.size(34.dp).shadow(3.dp, CircleShape).clip(CircleShape).background(col))
-                        }
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        Txt(captions[pager.currentPage], T.rowSub, c.ink3, maxLines = 1)
-        Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.semantics { contentDescription = "Picture ${pager.currentPage + 1} of ${captions.size}" }) {
-            repeat(captions.size) { k ->
-                val on = k == pager.currentPage
-                Box(Modifier.size(if (on) 16.dp else 6.dp, 6.dp).clip(CircleShape).background(if (on) c.ink2 else c.inkA(0.2f)))
-            }
-        }
-    }
-}
-
-/** A small Today screen in a Paper palette: sun or moon, a title, the verdict card and three tiles. */
-@Composable
-private fun PaperScreen(p: app.waylink.ui.theme.WaylinkColors, sun: Boolean) {
-    Column(
-        Modifier.size(150.dp, 168.dp).graphicsLayer { rotationZ = if (sun) -3f else 3f }.shadow(8.dp, RoundedCornerShape(18.dp)).clip(RoundedCornerShape(18.dp))
-            .background(p.bg).padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(52.dp, 8.dp).clip(RoundedCornerShape(4.dp)).background(p.ink))
-            Spacer(Modifier.weight(1f))
-            Box(Modifier.size(14.dp).clip(CircleShape).background(if (sun) p.amber else p.ink2))
-        }
-        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(androidx.compose.ui.graphics.Brush.verticalGradient(p.heroOk)).padding(9.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Box(Modifier.size(56.dp, 7.dp).clip(RoundedCornerShape(4.dp)).background(p.ink))
-            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                repeat(5) { k -> Box(Modifier.weight(1f).height(4.dp).clip(RoundedCornerShape(2.dp)).background(if (k < 3) p.sage else p.inkA(0.15f))) }
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            repeat(3) { k ->
-                Column(Modifier.weight(1f).height(44.dp).clip(RoundedCornerShape(9.dp)).background(p.card).padding(6.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                    Box(Modifier.size(12.dp).clip(RoundedCornerShape(4.dp)).background(if (k == 0) p.accent else p.inkA(0.18f)))
-                    Box(Modifier.size(22.dp, 4.dp).clip(RoundedCornerShape(2.dp)).background(p.ink.copy(alpha = 0.6f)))
-                }
-            }
-        }
-    }
-}
-
-/**
  * A picture for each plan, one shared layout: three round frames in a row. A rider on the left, the plan's own icon
  * in the middle, and the Waylink mark on the right. The rider and the mark are light grey line art so the coloured
- * middle circle carries the plan. Backer adds a "No ads" tag; Patron adds a crown and a scatter of sparkles.
+ * middle circle carries the plan. Backer adds a "No ads" tag; Patron adds a crown.
  */
 @Composable
 internal fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, framed: Boolean = true) {
@@ -723,11 +649,10 @@ internal fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, frame
         Modifier.size(size).graphicsLayer { rotationZ = turn }.shadow(4.dp, CircleShape).clip(CircleShape).background(Color.White).border(3.dp, c.card, CircleShape),
         contentAlignment = Alignment.Center, content = content,
     )
-    BoxWithConstraints(
+    Box(
         modifier.then(if (framed) Modifier.clip(RoundedCornerShape(18.dp)).background(bg) else Modifier).semantics { contentDescription = "${t.name} picture" },
         contentAlignment = Alignment.Center,
     ) {
-        if (t.id == "patron_520") Sparkles(gold, maxWidth, maxHeight)
         Row(horizontalArrangement = Arrangement.spacedBy((-14).dp), verticalAlignment = Alignment.CenterVertically) {
             // The rider is drawn at 80 % of the frame, so it sits inside the circle with room around it.
             Frame(60.dp, -6f) { Image(painterResource(app.waylink.R.drawable.avatar_a3), null, Modifier.fillMaxSize(0.8f), colorFilter = grey) }
@@ -746,28 +671,6 @@ internal fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, frame
     }
 }
 
-/**
- * Patron's background: small sparkles spread over a jittered grid (one per cell, nudged at random, fixed seed so it
- * never jumps), skipping the cells behind the circles and the crown.
- */
-@Composable
-private fun Sparkles(col: Color, w: androidx.compose.ui.unit.Dp, h: androidx.compose.ui.unit.Dp) {
-    val dots = remember(w, h) {
-        val rnd = kotlin.random.Random(520)
-        val cols = 7; val rows = 3
-        val cw = w.value / cols; val rh = h.value / rows
-        buildList {
-            for (r in 0 until rows) for (k in 0 until cols) {
-                val x = (k + 0.2f + rnd.nextFloat() * 0.6f) * cw - w.value / 2
-                val y = (r + 0.2f + rnd.nextFloat() * 0.6f) * rh - h.value / 2
-                if (kotlin.math.abs(x) < 104f && kotlin.math.abs(y) < 62f) continue
-                add(Triple(x, y, 10f + rnd.nextFloat() * 9f) to (0.45f + rnd.nextFloat() * 0.5f))
-            }
-        }
-    }
-    dots.forEach { (p, a) -> Box(Modifier.offset(x = p.first.dp, y = p.second.dp).alpha(a)) { Ic("sparkles", size = p.third.dp, tint = col) } }
-}
-
 /** A small three-point crown. */
 @Composable
 private fun Crown(col: Color, modifier: Modifier) = androidx.compose.foundation.Canvas(modifier) {
@@ -777,23 +680,6 @@ private fun Crown(col: Color, modifier: Modifier) = androidx.compose.foundation.
         lineTo(w * 0.75f, h * 0.62f); lineTo(w, h * 0.25f); lineTo(w, h); close()
     }
     drawPath(p, col)
-}
-
-/** A tiny phone page in fixed Paper colours: a title line and two cards. */
-@Composable
-private fun PaperCard(bg: Color, card: Color, ink: Color, modifier: Modifier) {
-    Column(
-        modifier.size(96.dp, 128.dp).shadow(6.dp, RoundedCornerShape(16.dp)).clip(RoundedCornerShape(16.dp)).background(bg).padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp),
-    ) {
-        Box(Modifier.size(42.dp, 7.dp).clip(RoundedCornerShape(4.dp)).background(ink))
-        Box(Modifier.fillMaxWidth().height(34.dp).clip(RoundedCornerShape(8.dp)).background(card)) {
-            Box(Modifier.align(Alignment.CenterStart).padding(start = 8.dp).size(30.dp, 4.dp).clip(RoundedCornerShape(2.dp)).background(ink.copy(alpha = 0.6f)))
-        }
-        Box(Modifier.fillMaxWidth().height(34.dp).clip(RoundedCornerShape(8.dp)).background(card)) {
-            Box(Modifier.align(Alignment.CenterStart).padding(start = 8.dp).size(22.dp, 4.dp).clip(RoundedCornerShape(2.dp)).background(ink.copy(alpha = 0.6f)))
-        }
-    }
 }
 
 private tailrec fun android.content.Context.findActivity(): android.app.Activity? = when (this) {
