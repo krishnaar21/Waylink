@@ -44,8 +44,9 @@ import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.min
 
-private const val TRIGGER = 88f
-private const val HOLD = 84f
+// A tall open band, like iOS large-title pages: the wheel sits centred between the status bar and the page title.
+private const val TRIGGER = 104f
+private const val HOLD = 128f
 
 /** The tyre's tread blocks (web PTR_MARK), in a 100 × 100 box. */
 private val TREAD = "83.5 50.0 91.9 57.2,82.1 59.4 88.2 68.7,78.2 68.1 81.4 78.7,71.9 75.3 72.0 86.4,63.9 80.5 60.9 91.1,54.8 83.2 48.8 92.5,45.2 83.2 36.9 90.4,36.1 80.5 26.1 85.1,28.1 75.3 17.1 76.9,21.8 68.1 10.9 66.6,17.9 59.4 7.8 54.9,16.5 50.0 8.1 42.8,17.9 40.6 11.8 31.3,21.8 31.9 18.6 21.3,28.1 24.7 28.0 13.6,36.1 19.5 39.1 8.9,45.2 16.8 51.2 7.5,54.8 16.8 63.1 9.6,63.9 19.5 73.9 14.9,71.9 24.7 82.9 23.1,78.2 31.9 89.1 33.4,82.1 40.6 92.2 45.1"
@@ -65,7 +66,7 @@ fun PullToRefresh(enabled: Boolean, onRefresh: suspend () -> Unit, content: @Com
     var armed by remember { mutableStateOf(false) }
     val shown = remember { Animatable(0f) } // dp the page sits down by
     val spin = remember { Animatable(0f) }
-    val pull = { r: Float -> 140f * (1f - exp(-max(0f, r) / 200f)) }
+    val pull = { r: Float -> 200f * (1f - exp(-max(0f, r) / 240f)) }
 
     val conn = remember(enabled) {
         object : NestedScrollConnection {
@@ -120,7 +121,7 @@ fun PullToRefresh(enabled: Boolean, onRefresh: suspend () -> Unit, content: @Com
             val ink = W.c.ink
             Canvas(
                 Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.statusBars).size(46.dp)
-                    .graphicsLayer { translationY = (d * 0.5f - 23f + 4f) * density; alpha = if (d > 0f) min(1f, p * 1.4f) else 0f },
+                    .graphicsLayer { translationY = (d * 0.5f - 23f + 2f) * density; alpha = if (d > 0f) min(1f, p * 1.4f) else 0f },
             ) {
                 val k = size.width / 100f
                 scale(k, k, pivot = Offset.Zero) {
