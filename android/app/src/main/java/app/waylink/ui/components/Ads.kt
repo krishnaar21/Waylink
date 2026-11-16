@@ -103,10 +103,7 @@ private fun SampleBanner(slot: Int, modifier: Modifier = Modifier, onRemove: (()
                 Txt(ad.cta, T.chip.copy(fontWeight = FontWeight.SemiBold), c.ink2, maxLines = 1)
             }
         }
-        if (onRemove != null) Row(Modifier.fillMaxWidth().padding(top = 6.dp, end = 6.dp), horizontalArrangement = Arrangement.End) {
-            Txt("Remove ads", T.rowSub.copy(fontWeight = FontWeight.Medium), c.ink3,
-                Modifier.clip(RoundedCornerShape(8.dp)).pressable(label = "Remove ads with Backer", onClick = onRemove).padding(horizontal = 6.dp, vertical = 4.dp))
-        }
+        RemoveAdsLink(onRemove)
     }
 }
 
@@ -128,5 +125,15 @@ fun AdRow(slot: Int, start: androidx.compose.ui.unit.Dp = 20.dp) {
         }
         Spacer(Modifier.width(8.dp))
         AdTag()
+    }
+}
+
+/** The quiet "Remove ads" link under an ad card; it opens Support with Backer picked. */
+@Composable
+internal fun RemoveAdsLink(onRemove: (() -> Unit)?) {
+    val c = W.c
+    if (onRemove != null) Row(Modifier.fillMaxWidth().padding(top = 6.dp, end = 6.dp), horizontalArrangement = Arrangement.End) {
+        Txt("Remove ads", T.rowSub.copy(fontWeight = FontWeight.Medium), c.ink3,
+            Modifier.clip(RoundedCornerShape(8.dp)).pressable(label = "Remove ads with Backer", onClick = onRemove).padding(horizontal = 6.dp, vertical = 4.dp))
     }
 }

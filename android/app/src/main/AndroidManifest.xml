@@ -36,6 +36,8 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Waylink">
+        <!-- AdMob app id, set per build in app/build.gradle.kts (Google's test id until publish). -->
+        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="${admobAppId}" />
         <!-- Live turns: reads the turn card that Google Maps, Waze, OsmAnd or Organic Maps shows while it navigates.
              Only works once the rider switches Waylink on under notification access. -->
         <receiver android:name=".data.ReminderReceiver" android:exported="false">
