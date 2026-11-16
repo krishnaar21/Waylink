@@ -18,6 +18,9 @@ android {
         targetSdk = 35
         versionCode = (System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1)
         versionName = "0.1.0"
+        // AdMob: Google's public test ids. Swap both for the real ones from the AdMob console before publishing.
+        manifestPlaceholders["admobAppId"] = "ca-app-pub-3940256099942544~3347511713"
+        buildConfigField("String", "ADMOB_NATIVE", "\"ca-app-pub-3940256099942544/2247696110\"")
     }
 
     // A fixed debug key (Android's standard public debug credentials), so each preview build installs
@@ -42,7 +45,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
     // Screenshot tests render screens on the JVM (Robolectric), to compare with the web app.
     testOptions { unitTests { isIncludeAndroidResources = true } }
@@ -53,6 +56,8 @@ kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }
 dependencies {
     implementation(project(":core"))
     implementation(libs.play.billing)
+    implementation(libs.play.ads)
+    implementation(libs.ump)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)

@@ -417,7 +417,7 @@ private val FAQ = listOf(
     "How is mileage worked out?" to "From full tank to full tank: fill to the brim, ride, fill to the brim again. The litres of the second fill, plus any top-ups between, divided by the distance ridden.",
     "Where does the petrol price come from?" to "State rates that come with the app, from published city prices. Tap the price in Fuel to use your state’s rate or type your pump’s price.",
     "Why does weather say offline?" to "Weather needs the internet and your city. Add your city in Profile, then pull to refresh on Today.",
-    "Is my data shared?" to "No. Everything stays on this phone. Weather sends only your city to Open-Meteo. Use Backup in Settings to move to a new phone.",
+    "Is my data shared?" to "Your rides, bike and profile stay on this phone. Weather sends only your city to Open-Meteo. Ads come from Google AdMob, which uses your phone’s advertising ID; Backers and Patrons see no ads. Use Backup in Settings to move to a new phone.",
 )
 
 @Composable
@@ -503,7 +503,7 @@ private fun AboutBody(nav: SheetNav) {
         Hairline(66.dp)
         ListRow("Source code", "MIT licence, on GitHub", icon = "code", onClick = { open(REPO_URL) })
         Hairline(66.dp)
-        ListRow("Privacy", "Your data stays on this phone", icon = "lock", chevron = false)
+        ListRow("Privacy", "Your data stays on this phone. Ads are by Google.", icon = "lock", chevron = false)
     }
     Hint("Not affiliated with Bajaj Auto, OTC, Google or WhatsApp. Names and marks belong to their owners.")
 }

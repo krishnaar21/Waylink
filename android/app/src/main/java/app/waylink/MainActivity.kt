@@ -30,6 +30,9 @@ class MainActivity : ComponentActivity() {
                 }
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
             }
+            // Ads: Google's consent form, then AdMob, only for riders without the no-ads plan.
+            val adFree = s.settings.adFree
+            LaunchedEffect(adFree) { if (!adFree) app.waylink.ui.components.startAds(this@MainActivity) else app.waylink.ui.components.AdMob.clear() }
             AppRoot(vm)
         }
     }
