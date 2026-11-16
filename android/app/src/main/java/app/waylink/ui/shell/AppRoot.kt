@@ -394,7 +394,9 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                 Modifier.windowInsetsPadding(WindowInsets.navigationBars).padding(end = 16.dp, bottom = tabBarHeight + 22.dp)
                     .size(57.dp + 8.dp).border(1.dp, c.inkA(0.07f), CircleShape).padding(1.dp).clip(CircleShape).background(c.bg.copy(alpha = 0.5f)).padding(3.dp)
                     .shadow(8.dp, CircleShape, ambientColor = c.ink.copy(alpha = 0.3f), spotColor = c.ink.copy(alpha = 0.3f)).clip(CircleShape).background(c.ink)
-                    .pressable(label = "Quick actions", scale = 0.9f) { openSheet("quick") },
+                    // While the button animates away (leaving Today), it slides down over the tab bar; a tap there,
+                    // meant for Settings, must not open it, so it only acts while Today is really showing.
+                    .pressable(label = "Quick actions", scale = 0.9f) { if (page == null && tab == Tab.TODAY && tapTab == null) openSheet("quick") },
                 contentAlignment = Alignment.Center,
             ) {
                 Box(Modifier.matchParentSize().padding(2.dp).border(1.dp, c.bg.copy(alpha = 0.18f), CircleShape))

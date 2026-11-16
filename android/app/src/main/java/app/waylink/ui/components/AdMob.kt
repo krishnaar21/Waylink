@@ -50,6 +50,12 @@ object AdMob {
     private val _ads = MutableStateFlow<Map<Int, NativeAd>>(emptyMap())
     val ads: StateFlow<Map<Int, NativeAd>> = _ads.asStateFlow()
     private val loading = mutableSetOf<Int>()
+    private val _ready = MutableStateFlow(false)
+    /** True once consent allows ads and the SDK has started; slots wait for it before asking. */
+    val ready: StateFlow<Boolean> = _ready.asStateFlow()
+    private val _status = MutableStateFlow("Waiting for consent")
+    /** One line for Developer, to see on the phone why an ad is or isn't showing. */
+    val status: StateFlow<String> = _status.asStateFlow()
 
     /** Shows Google's consent form when the rider's region needs one, then starts the SDK if ads are allowed. */
     fun consentAndStart(activity: Activity) {
@@ -58,7 +64,7 @@ object AdMob {
             val info = UserMessagingPlatform.getConsentInformation(activity)
             info.requestConsentInfoUpdate(activity, ConsentRequestParameters.Builder().build(), {
                 UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { if (info.canRequestAds()) start(activity) }
-            }, { if (info.canRequestAds()) start(activity) })
+            }, { e -> _status.value = "Consent check failed: ${e.message}"; if (info.canRequestAds()) start(activity) })
             // A rider who answered before can see ads straight away, without waiting for the update.
             if (info.canRequestAds()) start(activity)
         }
@@ -67,7 +73,9 @@ object AdMob {
     private fun start(ctx: Context) {
         if (!started.compareAndSet(false, true)) return
         appContext = ctx.applicationContext
-        runCatching { MobileAds.initialize(ctx.applicationContext) {} }
+        _status.value = "Starting AdMob"
+        runCatching { MobileAds.initialize(ctx.applicationContext) { _status.value = "AdMob ready, loading ads"; _ready.value = true } }
+            .onFailure { _status.value = "AdMob didn’t start: ${it.message}" }
     }
 
     /** Asks for one native ad for [slot], once; the card appears when it arrives and stays hidden if none does. */
@@ -77,8 +85,8 @@ object AdMob {
         loading += slot
         runCatching {
             AdLoader.Builder(ctx, BuildConfig.ADMOB_NATIVE)
-                .forNativeAd { ad -> loading -= slot; _ads.value[slot]?.destroy(); _ads.value = _ads.value + (slot to ad) }
-                .withAdListener(object : AdListener() { override fun onAdFailedToLoad(e: LoadAdError) { loading -= slot } })
+                .forNativeAd { ad -> loading -= slot; _ads.value[slot]?.destroy(); _ads.value = _ads.value + (slot to ad); _status.value = "Showing ${_ads.value.size} ad(s)" }
+                .withAdListener(object : AdListener() { override fun onAdFailedToLoad(e: LoadAdError) { loading -= slot; _status.value = "No ad: ${e.message} (code ${e.code})" } })
                 .withNativeAdOptions(NativeAdOptions.Builder().setAdChoicesPlacement(NativeAdOptions.ADCHOICES_TOP_RIGHT).build())
                 .build()
                 .loadAd(AdRequest.Builder().build())
@@ -93,11 +101,17 @@ object AdMob {
 object AdMobSource : AdSource {
     @Composable
     override fun Card(slot: Int, modifier: Modifier, onRemove: (() -> Unit)?) {
-        LaunchedEffect(slot) { AdMob.load(slot) }
+        val ready by AdMob.ready.collectAsState()
+        // Ask once AdMob is ready, and again every 45 s while the slot is still empty (offline, no fill).
+        LaunchedEffect(slot, ready) {
+            while (ready && AdMob.ads.value[slot] == null) { AdMob.load(slot); kotlinx.coroutines.delay(45_000) }
+        }
         val ads by AdMob.ads.collectAsState()
         val ad = ads[slot]
         val c = W.c
-        if (ad != null) Column(modifier.fillMaxWidth()) {
+        // Until a Google ad arrives, Waylink's own card for the no-ads plan holds the spot.
+        if (ad == null) HouseAd(modifier, onRemove)
+        else Column(modifier.fillMaxWidth()) {
             AndroidView(
                 factory = { ctx -> NativeCard.build(ctx) },
                 update = { v -> NativeCard.bind(v, ad, c) },

@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -285,6 +286,11 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             }
             Hairline(66.dp)
             // The thank-you sheet as each plan sees it after paying.
+            ListRow("Plan pictures", "Version shown on Support and Thank you", icon = "image", trailing = {})
+            Row(Modifier.fillMaxWidth().padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                (0..2).forEach { k -> app.waylink.ui.components.Chip("Version ${k + 1}", { act.toggle("planArt:$k") }, on = st.planArt == k) }
+            }
+            Hairline(66.dp)
             ListRow("Thank-you sheet", "What each plan sees after paying", icon = "love", trailing = {})
             Row(Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 app.waylink.data.Support.TIERS.forEach { t -> app.waylink.ui.components.Chip(t.name, { act.sheet("thanks:${t.id}") }) }
@@ -295,7 +301,7 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             ListRow("Patron", "As if you’d given ₹520", icon = "sparkles", trailing = { Switch(st.supporterPlus, "Patron", { act.toggle("supporterPlus") }) })
             Hairline(66.dp)
             // One item for the placeholder ads: where they show, and the paid "no ads" state that hides them.
-            ListRow("Ads", "At the top is live for free riders and Friends", icon = "image", trailing = {})
+            ListRow("Ads", app.waylink.ui.components.AdMob.status.collectAsState().value, icon = "image", trailing = {})
             Row(Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 app.waylink.ui.components.Chip("At the top", { act.toggle("hideAds") }, on = !st.hideAds)
                 app.waylink.ui.components.Chip("Under Rides", { act.toggle("adRides") }, on = st.adRides)

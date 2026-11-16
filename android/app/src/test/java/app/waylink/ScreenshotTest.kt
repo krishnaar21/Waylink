@@ -98,6 +98,18 @@ class ScreenshotTest {
     /** Every theme on the busiest screens, to check contrast and consistency side by side. */
     // Placeholder ad slots, to judge the placements (the theme matrix that sat here did its job and is gone).
     private val withAds get() = sample.copy(settings = sample.settings.copy(adRides = true, adLists = true, adTop = true))
+    /** The three plan picture versions, one row per version, Friend, Backer and Patron across. */
+    @Test fun planPictures() = shot("plan-pictures") {
+        androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.fillMaxSize().background(W.c.bg), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)) {
+            (0..2).forEach { v ->
+                androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
+                    app.waylink.data.Support.TIERS.forEach { t ->
+                        app.waylink.ui.shell.PlanArt(t, androidx.compose.ui.Modifier.weight(1f).height(132.dp), v = v)
+                    }
+                }
+            }
+        }
+    }
     @Test fun adsToday() = shot("ads-today") { TodayScreen(withAds, live, noop(), 80.dp) }
     @Test fun adsRides() = shot("ads-rides") { RidesScreen(withAds, live, noop(), 80.dp) }
     @Test fun adsFuel() = shot("ads-fuel") { FuelScreen(withAds, noop(), 80.dp) }
