@@ -295,9 +295,9 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             ListRow("Patron", "As if you’d given ₹520", icon = "sparkles", trailing = { Switch(st.supporterPlus, "Patron", { act.toggle("supporterPlus") }) })
             Hairline(66.dp)
             // One item for the placeholder ads: where they show, and the paid "no ads" state that hides them.
-            ListRow("Sample ads", "Try placements before real ads", icon = "image", trailing = {})
+            ListRow("Ads", "At the top is live for free riders and Friends", icon = "image", trailing = {})
             Row(Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                app.waylink.ui.components.Chip("At the top", { act.toggle("adTop") }, on = st.adTop)
+                app.waylink.ui.components.Chip("At the top", { act.toggle("hideAds") }, on = !st.hideAds)
                 app.waylink.ui.components.Chip("Under Rides", { act.toggle("adRides") }, on = st.adRides)
                 app.waylink.ui.components.Chip("In lists", { act.toggle("adLists") }, on = st.adLists)
                 app.waylink.ui.components.Chip("No ads", { act.toggle("adFree") }, on = st.adFree)

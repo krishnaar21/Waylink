@@ -34,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -700,7 +701,7 @@ private fun PaperScreen(p: app.waylink.ui.theme.WaylinkColors, sun: Boolean) {
 
 /**
  * A picture for each plan, drawn from the app's own riders. Friend: two riders side by side with a heart.
- * Backer: a rider on the open road with a "No ads" tag. Patron: the rider in a gold ring with sparkles.
+ * Backer: the open road with a "No ads" tag. Patron: a helmet in a laurel wreath with a crown.
  */
 @Composable
 private fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, framed: Boolean = true) {
@@ -720,7 +721,7 @@ private fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, framed
                 }
             }
             "backer_220" -> {
-                Image(painterResource(app.waylink.R.drawable.rider_street), null, Modifier.fillMaxHeight(0.92f).align(Alignment.BottomCenter), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
+                BackerArt(Modifier.fillMaxSize())
                 Row(
                     Modifier.align(Alignment.TopEnd).padding(10.dp).clip(RoundedCornerShape(99.dp)).background(c.card).border(1.dp, c.line, RoundedCornerShape(99.dp)).padding(horizontal = 10.dp, vertical = 5.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -730,17 +731,124 @@ private fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, framed
                     Txt("No ads", T.chip, c.ink2, maxLines = 1)
                 }
             }
-            else -> {
-                Box(Modifier.size(112.dp).clip(CircleShape).background(c.card).border(3.dp, c.amber, CircleShape), contentAlignment = Alignment.BottomCenter) {
-                    Image(painterResource(app.waylink.R.drawable.rider_street), null, Modifier.fillMaxSize().padding(start = 6.dp, end = 6.dp, top = 14.dp), contentScale = androidx.compose.ui.layout.ContentScale.Fit)
+            else -> PatronArt(Modifier.fillMaxSize())
+        }
+    }
+}
+
+/**
+ * Backer: the open road. A low sun, two rows of hills, and a road that narrows to the horizon with a dashed
+ * centre line, all clear of clutter, which is the point of the plan. Drawn in the theme's own tints.
+ */
+@Composable
+private fun BackerArt(modifier: Modifier) {
+    val c = W.c
+    androidx.compose.foundation.Canvas(modifier) {
+        val w = size.width; val h = size.height
+        val horizon = h * 0.56f
+        // Sun, low over the hills, with a soft halo.
+        drawCircle(c.amber.copy(alpha = 0.18f), h * 0.26f, androidx.compose.ui.geometry.Offset(w * 0.68f, horizon - h * 0.04f))
+        drawCircle(c.amber.copy(alpha = 0.85f), h * 0.13f, androidx.compose.ui.geometry.Offset(w * 0.68f, horizon - h * 0.04f))
+        // Far hills, then near hills.
+        fun hills(base: Float, amp: Float, phase: Float, col: Color) {
+            val path = androidx.compose.ui.graphics.Path().apply {
+                moveTo(0f, h); lineTo(0f, base)
+                val steps = 24
+                for (k in 1..steps) {
+                    val x = w * k / steps
+                    lineTo(x, base - amp * kotlin.math.sin((k.toFloat() / steps) * 6.283f * 1.2f + phase))
                 }
-                listOf(Triple(-74, -34, 18), Triple(70, -40, 14), Triple(80, 30, 12), Triple(-66, 38, 12)).forEach { (x, y, sz) ->
-                    Box(Modifier.offset(x = x.dp, y = y.dp)) { Ic("sparkles", size = sz.dp, tint = c.amber) }
+                lineTo(w, h); close()
+            }
+            drawPath(path, col)
+        }
+        hills(horizon, h * 0.06f, 0.6f, c.sage.copy(alpha = 0.45f))
+        hills(horizon + h * 0.08f, h * 0.05f, 2.4f, c.sage.copy(alpha = 0.75f))
+        // The road: wide at the bottom, a point at the horizon.
+        val vx = w * 0.5f; val vy = horizon + h * 0.02f
+        val road = androidx.compose.ui.graphics.Path().apply {
+            moveTo(vx - w * 0.01f, vy); lineTo(vx + w * 0.01f, vy); lineTo(w * 0.78f, h); lineTo(w * 0.22f, h); close()
+        }
+        drawPath(road, c.ink.copy(alpha = 0.78f))
+        // Edge lines and the dashed centre line, shrinking with distance.
+        drawLine(c.card, androidx.compose.ui.geometry.Offset(vx - w * 0.01f, vy), androidx.compose.ui.geometry.Offset(w * 0.24f, h), 2.dp.toPx())
+        drawLine(c.card, androidx.compose.ui.geometry.Offset(vx + w * 0.01f, vy), androidx.compose.ui.geometry.Offset(w * 0.76f, h), 2.dp.toPx())
+        var t = 0.08f
+        while (t < 1f) {
+            val t2 = (t + 0.07f * (0.4f + t)).coerceAtMost(1f)
+            val y1 = vy + (h - vy) * t; val y2 = vy + (h - vy) * t2
+            drawLine(c.amber, androidx.compose.ui.geometry.Offset(vx, y1), androidx.compose.ui.geometry.Offset(vx, y2), (1.2f + 3.5f * t).dp.toPx(), androidx.compose.ui.graphics.StrokeCap.Round)
+            t = t2 + 0.06f * (0.4f + t)
+        }
+    }
+}
+
+/**
+ * Patron: a riding helmet inside a laurel wreath, with a small crown above and sparkles, all in gold. The
+ * helmet and wreath are drawn from paths, so they stay sharp at any size.
+ */
+@Composable
+private fun PatronArt(modifier: Modifier) {
+    val c = W.c
+    val gold = c.amber
+    androidx.compose.foundation.Canvas(modifier) {
+        val cx = size.width / 2f; val cy = size.height * 0.54f
+        val r = size.height * 0.36f
+        // Laurel: leaves along two arcs, each turned along the curve.
+        for (side in listOf(-1f, 1f)) {
+            for (k in 0..6) {
+                // Left arc runs from low (120°) to high (230°); the right arc mirrors it.
+                val deg = 120f + k * 18f
+                val a = Math.toRadians(deg.toDouble())
+                val x = cx - side * (r * kotlin.math.cos(a)).toFloat()
+                val y = cy + (r * kotlin.math.sin(a)).toFloat()
+                val lw = r * 0.32f; val lh = r * 0.13f
+                val turn = if (side < 0) deg + 90f + 30f else 180f - (deg + 90f + 30f)
+                rotate(degrees = turn, pivot = androidx.compose.ui.geometry.Offset(x, y)) {
+                    drawOval(gold.copy(alpha = 0.5f + 0.07f * k), androidx.compose.ui.geometry.Offset(x - lw / 2, y - lh / 2), androidx.compose.ui.geometry.Size(lw, lh))
                 }
-                Txt("Patron", T.chip.copy(fontWeight = FontWeight.Bold), c.bg,
-                    Modifier.align(Alignment.Center).offset(y = 54.dp).clip(RoundedCornerShape(99.dp)).background(c.amber).padding(horizontal = 10.dp, vertical = 3.dp))
             }
         }
+        // Helmet: shell, a visor, a chin bar line.
+        val hw = r * 1.05f; val hh = r * 0.95f
+        val left = cx - hw / 2; val top = cy - hh * 0.62f
+        val shell = androidx.compose.ui.graphics.Path().apply {
+            moveTo(left + hw * 0.06f, top + hh * 0.86f)
+            cubicTo(left - hw * 0.02f, top + hh * 0.30f, left + hw * 0.30f, top, left + hw * 0.58f, top + hh * 0.02f)
+            cubicTo(left + hw * 0.88f, top + hh * 0.05f, left + hw * 1.02f, top + hh * 0.36f, left + hw * 0.98f, top + hh * 0.70f)
+            lineTo(left + hw * 0.92f, top + hh * 0.92f)
+            lineTo(left + hw * 0.30f, top + hh * 0.96f)
+            close()
+        }
+        drawPath(shell, c.ink)
+        val visor = androidx.compose.ui.graphics.Path().apply {
+            moveTo(left + hw * 0.46f, top + hh * 0.36f)
+            lineTo(left + hw * 0.97f, top + hh * 0.38f)
+            lineTo(left + hw * 0.95f, top + hh * 0.62f)
+            lineTo(left + hw * 0.52f, top + hh * 0.64f)
+            close()
+        }
+        drawPath(visor, gold)
+        drawLine(c.card.copy(alpha = 0.8f), androidx.compose.ui.geometry.Offset(left + hw * 0.56f, top + hh * 0.42f), androidx.compose.ui.geometry.Offset(left + hw * 0.88f, top + hh * 0.43f), 2.dp.toPx(), androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(c.card.copy(alpha = 0.5f), androidx.compose.ui.geometry.Offset(left + hw * 0.14f, top + hh * 0.74f), androidx.compose.ui.geometry.Offset(left + hw * 0.88f, top + hh * 0.78f), 2.dp.toPx(), androidx.compose.ui.graphics.StrokeCap.Round)
+        // Crown above.
+        val cw = r * 0.62f; val ch = r * 0.34f; val ctop = top - ch * 1.25f
+        val crown = androidx.compose.ui.graphics.Path().apply {
+            moveTo(cx - cw / 2, ctop + ch); lineTo(cx - cw / 2, ctop + ch * 0.25f); lineTo(cx - cw / 4, ctop + ch * 0.62f)
+            lineTo(cx, ctop); lineTo(cx + cw / 4, ctop + ch * 0.62f); lineTo(cx + cw / 2, ctop + ch * 0.25f); lineTo(cx + cw / 2, ctop + ch); close()
+        }
+        drawPath(crown, gold)
+        // Sparkles: four-point stars.
+        fun star(x: Float, y: Float, s: Float) {
+            val p = androidx.compose.ui.graphics.Path().apply {
+                moveTo(x, y - s); quadraticTo(x, y, x + s, y); quadraticTo(x, y, x, y + s); quadraticTo(x, y, x - s, y); quadraticTo(x, y, x, y - s); close()
+            }
+            drawPath(p, gold)
+        }
+        star(cx - r * 1.55f, cy - r * 0.55f, r * 0.16f)
+        star(cx + r * 1.5f, cy - r * 0.75f, r * 0.12f)
+        star(cx + r * 1.65f, cy + r * 0.35f, r * 0.09f)
+        star(cx - r * 1.4f, cy + r * 0.55f, r * 0.08f)
     }
 }
 
