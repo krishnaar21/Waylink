@@ -4,6 +4,7 @@ import app.waylink.ui.components.fitScrollX
 import app.waylink.ui.components.fitScrollY
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.ui.draw.drawBehind
 import android.content.Intent
 import android.net.Uri
@@ -34,7 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -530,7 +530,7 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav, pick: Int? = null) {
     // Web .give: card paper with a hairline ring, neutral icon square, the amount in the display face, a segmented amount picker.
     Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
         // Each plan has its own picture, swapped with a crossfade as the pick changes.
-        androidx.compose.animation.Crossfade(tier, label = "plan-art") { t -> PlanArt(t, Modifier.fillMaxWidth().height(132.dp), v = st.planArt) }
+        androidx.compose.animation.Crossfade(tier, label = "plan-art") { t -> PlanArt(t, Modifier.fillMaxWidth().height(132.dp)) }
         Spacer(Modifier.height(16.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -606,7 +606,7 @@ private fun PaperLockedBody(nav: SheetNav) {
 private fun ThanksBody(t: app.waylink.data.Support.Tier, vm: AppViewModel, nav: SheetNav) {
     val c = W.c
     Spacer(Modifier.height(18.dp))
-    PaperShowcase(c.tintSage, badge = c.sageInk, lead = "You’re a ${t.name}" to { PlanArt(t, Modifier.fillMaxSize(), framed = false, v = vm.state.value.settings.planArt) }) { Ic("check", size = 22.dp, tint = c.bg) }
+    PaperShowcase(c.tintSage, badge = c.sageInk, lead = "You’re a ${t.name}" to { PlanArt(t, Modifier.fillMaxSize(), framed = false) }) { Ic("check", size = 22.dp, tint = c.bg) }
     Spacer(Modifier.height(20.dp))
     Txt("You’re a ${t.name} now", T.tileTitle.copy(fontSize = 22.sp), c.ink)
     Spacer(Modifier.height(6.dp))
@@ -701,93 +701,65 @@ private fun PaperScreen(p: app.waylink.ui.theme.WaylinkColors, sun: Boolean) {
 }
 
 /**
- * A picture for each plan, in the Friend style: the app's rider avatars in round frames with a badge. [v] is the
- * version (0, 1 or 2), picked in Developer so the look can be chosen on the phone.
- *  Friend: two riders and a heart / a rider and a friend high-fiving / three riders in a row with a heart.
- *  Backer: three riders behind a shield / one rider with a "No ads" tag / two riders with a check.
- *  Patron: one rider in a gold ring with a crown / a rider in a laurel wreath / a gold rider among two friends.
+ * A picture for each plan, one shared layout: three round frames in a row. A rider on the left, the plan's own icon
+ * in the middle, and the Waylink mark on the right. The rider and the mark are light grey line art so the coloured
+ * middle circle carries the plan. Backer adds a "No ads" tag; Patron adds a crown and a scatter of sparkles.
  */
 @Composable
-internal fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, framed: Boolean = true, v: Int = 0) {
+internal fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, framed: Boolean = true) {
     val c = W.c
     val bg = when (t.id) { "friend_120" -> c.tintRed; "backer_220" -> c.tintSage; else -> c.tintAmber }
-    @Composable fun Ava(res: Int, size: androidx.compose.ui.unit.Dp, turn: Float = 0f, ring: Color = c.card, ringW: androidx.compose.ui.unit.Dp = 3.dp) =
-        Image(painterResource(res), null, Modifier.size(size).graphicsLayer { rotationZ = turn }
-            .shadow(4.dp, CircleShape).clip(CircleShape).background(Color.White).border(ringW, ring, CircleShape))
-    @Composable fun BoxScope.Badge(fill: Color, icon: String, tint: Color, y: androidx.compose.ui.unit.Dp = 40.dp) =
-        Box(Modifier.align(Alignment.Center).offset(y = y).size(34.dp).clip(CircleShape).background(fill).border(2.dp, c.card, CircleShape), contentAlignment = Alignment.Center) {
-            Ic(icon, size = 17.dp, tint = tint)
-        }
-    @Composable fun BoxScope.Tag(text: String) = Row(
-        Modifier.align(Alignment.TopEnd).padding(10.dp).clip(RoundedCornerShape(99.dp)).background(c.card).border(1.dp, c.line, RoundedCornerShape(99.dp)).padding(horizontal = 10.dp, vertical = 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Ic("check", size = 13.dp, tint = c.sageInk); Spacer(Modifier.width(5.dp)); Txt(text, T.chip, c.ink2, maxLines = 1)
-    }
     val gold = c.amber
-    Box(modifier.then(if (framed) Modifier.clip(RoundedCornerShape(18.dp)).background(bg) else Modifier).semantics { contentDescription = "${t.name} picture" }, contentAlignment = Alignment.Center) {
-        when (t.id) {
-            "friend_120" -> when (v) {
-                1 -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp), verticalAlignment = Alignment.CenterVertically) { Ava(app.waylink.R.drawable.avatar_a3, 74.dp, -8f); Ava(app.waylink.R.drawable.avatar_a9, 74.dp, 8f) }
-                    Box(Modifier.size(40.dp).clip(CircleShape).background(c.accent).border(2.dp, c.card, CircleShape), contentAlignment = Alignment.Center) { Ic("hand", size = 20.dp, tint = c.onAccent) }
-                }
-                2 -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy((-14).dp), verticalAlignment = Alignment.CenterVertically) {
-                        Ava(app.waylink.R.drawable.avatar_a5, 60.dp, -6f); Ava(app.waylink.R.drawable.avatar_a3, 74.dp); Ava(app.waylink.R.drawable.avatar_a8, 60.dp, 6f)
-                    }
-                    Badge(c.accent, "love", c.onAccent, 42.dp)
-                }
-                else -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy((-18).dp), verticalAlignment = Alignment.CenterVertically) { Ava(app.waylink.R.drawable.avatar_a3, 78.dp, -6f); Ava(app.waylink.R.drawable.avatar_a7, 78.dp, 6f) }
-                    Badge(c.accent, "love", c.onAccent)
-                }
+    val (fill, onFill) = when (t.id) { "friend_120" -> c.accent to c.onAccent; "backer_220" -> c.sageInk to c.bg; else -> gold to c.bg }
+    // People and the mark in a light grey, so they read as a soft backdrop to the plan's icon.
+    val grey = androidx.compose.ui.graphics.ColorFilter.tint(c.ink3.copy(alpha = 0.75f))
+    @Composable fun Frame(size: androidx.compose.ui.unit.Dp, turn: Float, content: @Composable BoxScope.() -> Unit) = Box(
+        Modifier.size(size).graphicsLayer { rotationZ = turn }.shadow(4.dp, CircleShape).clip(CircleShape).background(c.card).border(3.dp, c.card, CircleShape),
+        contentAlignment = Alignment.Center, content = content,
+    )
+    BoxWithConstraints(
+        modifier.then(if (framed) Modifier.clip(RoundedCornerShape(18.dp)).background(bg) else Modifier).semantics { contentDescription = "${t.name} picture" },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (t.id == "patron_520") Sparkles(gold, maxWidth, maxHeight)
+        Row(horizontalArrangement = Arrangement.spacedBy((-14).dp), verticalAlignment = Alignment.CenterVertically) {
+            // The rider is drawn at 80 % of the frame, so it sits inside the circle with room around it.
+            Frame(60.dp, -6f) { Image(painterResource(app.waylink.R.drawable.avatar_a3), null, Modifier.fillMaxSize(0.8f), colorFilter = grey) }
+            Box(Modifier.zIndex(1f).size(74.dp).shadow(6.dp, CircleShape).clip(CircleShape).background(fill).border(3.dp, c.card, CircleShape), contentAlignment = Alignment.Center) {
+                Ic(t.icon, size = 32.dp, tint = onFill)
             }
-            "backer_220" -> when (v) {
-                1 -> {
-                    Ava(app.waylink.R.drawable.avatar_a3, 92.dp, ring = c.sageInk, ringW = 3.dp)
-                    Badge(c.sageInk, "check", c.bg, 44.dp)
-                    Tag("No ads")
-                }
-                2 -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy((-18).dp), verticalAlignment = Alignment.CenterVertically) { Ava(app.waylink.R.drawable.avatar_a3, 78.dp, -6f, c.sageInk); Ava(app.waylink.R.drawable.avatar_a10, 78.dp, 6f, c.sageInk) }
-                    Badge(c.sageInk, "check", c.bg)
-                    Tag("No ads")
-                }
-                else -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy((-14).dp), verticalAlignment = Alignment.CenterVertically) {
-                        Ava(app.waylink.R.drawable.avatar_a6, 60.dp, -6f); Ava(app.waylink.R.drawable.avatar_a3, 74.dp, ring = c.sageInk); Ava(app.waylink.R.drawable.avatar_a11, 60.dp, 6f)
-                    }
-                    Box(Modifier.align(Alignment.Center).offset(y = 42.dp).size(36.dp).clip(CircleShape).background(c.sageInk).border(2.dp, c.card, CircleShape), contentAlignment = Alignment.Center) {
-                        Ic("lock", size = 17.dp, tint = c.bg)
-                    }
-                    Tag("No ads")
-                }
-            }
-            else -> when (v) {
-                1 -> {
-                    Laurel(gold, Modifier.size(140.dp))
-                    Ava(app.waylink.R.drawable.avatar_a3, 78.dp, ring = gold)
-                    Badge(gold, "sparkles", c.bg, 44.dp)
-                }
-                2 -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy((-14).dp), verticalAlignment = Alignment.CenterVertically) {
-                        Ava(app.waylink.R.drawable.avatar_a5, 58.dp, -6f); Ava(app.waylink.R.drawable.avatar_a3, 82.dp, ring = gold, ringW = 4.dp); Ava(app.waylink.R.drawable.avatar_a8, 58.dp, 6f)
-                    }
-                    Crown(gold, Modifier.align(Alignment.Center).offset(y = (-52).dp).size(34.dp, 22.dp))
-                    Badge(gold, "sparkles", c.bg, 44.dp)
-                }
-                else -> {
-                    Ava(app.waylink.R.drawable.avatar_a3, 90.dp, ring = gold, ringW = 4.dp)
-                    Crown(gold, Modifier.align(Alignment.Center).offset(y = (-56).dp).size(38.dp, 24.dp))
-                    Badge(gold, "sparkles", c.bg, 44.dp)
-                    listOf(Triple(-80, -30, 16), Triple(78, -36, 13), Triple(86, 26, 11), Triple(-74, 34, 11)).forEach { (x, y, sz) ->
-                        Box(Modifier.offset(x = x.dp, y = y.dp)) { Ic("sparkles", size = sz.dp, tint = gold) }
-                    }
-                }
+            Frame(60.dp, 6f) { Image(painterResource(app.waylink.R.drawable.logo_mark), null, Modifier.fillMaxSize(0.5f), colorFilter = grey) }
+        }
+        if (t.id == "patron_520") Crown(gold, Modifier.align(Alignment.Center).offset(y = (-50).dp).size(34.dp, 22.dp))
+        if (t.adFree && !t.early) Row(
+            Modifier.align(Alignment.TopEnd).padding(10.dp).clip(RoundedCornerShape(99.dp)).background(c.card).border(1.dp, c.line, RoundedCornerShape(99.dp)).padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Ic("check", size = 13.dp, tint = c.sageInk); Spacer(Modifier.width(5.dp)); Txt("No ads", T.chip, c.ink2, maxLines = 1)
+        }
+    }
+}
+
+/**
+ * Patron's background: small sparkles spread over a jittered grid (one per cell, nudged at random, fixed seed so it
+ * never jumps), skipping the cells behind the circles and the crown.
+ */
+@Composable
+private fun Sparkles(col: Color, w: androidx.compose.ui.unit.Dp, h: androidx.compose.ui.unit.Dp) {
+    val dots = remember(w, h) {
+        val rnd = kotlin.random.Random(520)
+        val cols = 7; val rows = 3
+        val cw = w.value / cols; val rh = h.value / rows
+        buildList {
+            for (r in 0 until rows) for (k in 0 until cols) {
+                val x = (k + 0.2f + rnd.nextFloat() * 0.6f) * cw - w.value / 2
+                val y = (r + 0.2f + rnd.nextFloat() * 0.6f) * rh - h.value / 2
+                if (kotlin.math.abs(x) < 104f && kotlin.math.abs(y) < 62f) continue
+                add(Triple(x, y, 8f + rnd.nextFloat() * 8f) to (0.35f + rnd.nextFloat() * 0.5f))
             }
         }
     }
+    dots.forEach { (p, a) -> Box(Modifier.offset(x = p.first.dp, y = p.second.dp).alpha(a)) { Ic("sparkles", size = p.third.dp, tint = col) } }
 }
 
 /** A small three-point crown. */
@@ -799,23 +771,6 @@ private fun Crown(col: Color, modifier: Modifier) = androidx.compose.foundation.
         lineTo(w * 0.75f, h * 0.62f); lineTo(w, h * 0.25f); lineTo(w, h); close()
     }
     drawPath(p, col)
-}
-
-/** A laurel wreath: leaves along two arcs, open at the top. */
-@Composable
-private fun Laurel(col: Color, modifier: Modifier) = androidx.compose.foundation.Canvas(modifier) {
-    val cx = size.width / 2f; val cy = size.height / 2f; val r = size.minDimension * 0.44f
-    for (side in listOf(-1f, 1f)) for (k in 0..6) {
-        val deg = 120f + k * 18f
-        val a = Math.toRadians(deg.toDouble())
-        val x = cx - side * (r * kotlin.math.cos(a)).toFloat()
-        val y = cy + (r * kotlin.math.sin(a)).toFloat()
-        val lw = r * 0.32f; val lh = r * 0.13f
-        val turn = if (side < 0) deg + 120f else 180f - (deg + 120f)
-        rotate(degrees = turn, pivot = androidx.compose.ui.geometry.Offset(x, y)) {
-            drawOval(col.copy(alpha = 0.5f + 0.07f * k), androidx.compose.ui.geometry.Offset(x - lw / 2, y - lh / 2), androidx.compose.ui.geometry.Size(lw, lh))
-        }
-    }
 }
 
 /** A tiny phone page in fixed Paper colours: a title line and two cards. */

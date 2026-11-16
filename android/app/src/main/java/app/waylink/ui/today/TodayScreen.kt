@@ -204,7 +204,8 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
         }
         Readings(s, live, f, fs, act)
 
-
+        // A second ad at the very bottom, after everything the rider came for.
+        if (app.waylink.ui.components.DummyAds.top(s)) app.waylink.ui.components.AdBanner(5, Modifier.padding(top = 34.dp)) { act.open(app.waylink.ui.components.DummyAds.REMOVE) }
 
         Spacer(Modifier.height(24.dp))
         Txt("Everything stays on this phone. No account, no cloud.", T.note.copy(textAlign = TextAlign.Center), c.ink3, Modifier.fillMaxWidth())
