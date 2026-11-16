@@ -629,7 +629,7 @@ private fun ThanksBody(t: app.waylink.data.Support.Tier, vm: AppViewModel, nav: 
 /**
  * A picture for each plan, one shared layout: three round frames in a row. A rider on the left, the plan's own icon
  * in the middle, and the Waylink mark on the right. The rider and the mark are light grey line art so the coloured
- * middle circle carries the plan. Backer adds a "No ads" tag; Patron adds a crown.
+ * middle circle carries the plan. Backer adds a "No ads" tag; Patron's icon is a crown.
  */
 @Composable
 internal fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, framed: Boolean = true) {
@@ -657,11 +657,12 @@ internal fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, frame
             // The rider is drawn at 80 % of the frame, so it sits inside the circle with room around it.
             Frame(60.dp, -6f) { Image(painterResource(app.waylink.R.drawable.avatar_a3), null, Modifier.fillMaxSize(0.8f), colorFilter = grey) }
             Box(Modifier.zIndex(1f).size(74.dp).shadow(6.dp, CircleShape).clip(CircleShape).background(fill).border(3.dp, c.card, CircleShape), contentAlignment = Alignment.Center) {
-                Ic(t.icon, size = 32.dp, tint = onFill)
+                // Patron wears a crown (a hand-drawn line icon, outside the generated set so a regenerate keeps it).
+                if (t.id == "patron_520") Image(painterResource(app.waylink.R.drawable.ic_crown), null, Modifier.size(32.dp), colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(onFill))
+                else Ic(t.icon, size = 32.dp, tint = onFill)
             }
             Frame(60.dp, 6f) { Image(painterResource(app.waylink.R.drawable.logo_mark), null, Modifier.fillMaxSize(0.5f), colorFilter = grey) }
         }
-        if (t.id == "patron_520") Crown(gold, Modifier.align(Alignment.Center).offset(y = (-50).dp).size(34.dp, 22.dp))
         if (t.adFree && !t.early) Row(
             Modifier.align(Alignment.TopEnd).padding(10.dp).clip(RoundedCornerShape(99.dp)).background(c.card).border(1.dp, c.line, RoundedCornerShape(99.dp)).padding(horizontal = 10.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -669,17 +670,6 @@ internal fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, frame
             Ic("check", size = 13.dp, tint = c.sageInk); Spacer(Modifier.width(5.dp)); Txt("No ads", T.chip, c.ink2, maxLines = 1)
         }
     }
-}
-
-/** A small three-point crown. */
-@Composable
-private fun Crown(col: Color, modifier: Modifier) = androidx.compose.foundation.Canvas(modifier) {
-    val w = size.width; val h = size.height
-    val p = androidx.compose.ui.graphics.Path().apply {
-        moveTo(0f, h); lineTo(0f, h * 0.25f); lineTo(w * 0.25f, h * 0.62f); lineTo(w * 0.5f, 0f)
-        lineTo(w * 0.75f, h * 0.62f); lineTo(w, h * 0.25f); lineTo(w, h); close()
-    }
-    drawPath(p, col)
 }
 
 private tailrec fun android.content.Context.findActivity(): android.app.Activity? = when (this) {
