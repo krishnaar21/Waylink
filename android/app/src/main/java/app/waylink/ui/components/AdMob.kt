@@ -120,7 +120,7 @@ private object NativeCard {
             setPadding(dp(14f), dp(12f), dp(14f), dp(12f))
         }
         val icon = ImageView(ctx).apply { layoutParams = LinearLayout.LayoutParams(dp(44f), dp(44f)); clipToOutline = true; scaleType = ImageView.ScaleType.CENTER_CROP }
-        val text = LinearLayout(ctx).apply {
+        val words = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dp(12f); marginEnd = dp(10f) }
         }
@@ -134,8 +134,8 @@ private object NativeCard {
         val body = TextView(ctx).apply { setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f); maxLines = 1; ellipsize = TextUtils.TruncateAt.END }
         val cta = TextView(ctx).apply { setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f); typeface = android.graphics.Typeface.DEFAULT_BOLD; setPadding(dp(12f), dp(7f), dp(12f), dp(7f)); maxLines = 1 }
         top.addView(tag); top.addView(head)
-        text.addView(top); text.addView(body)
-        row.addView(icon); row.addView(text); row.addView(cta)
+        words.addView(top); words.addView(body)
+        row.addView(icon); row.addView(words); row.addView(cta)
         view.addView(row)
         view.iconView = icon; view.headlineView = head; view.bodyView = body; view.callToActionView = cta
         view.tag = Parts(icon, tag, head, body, cta)
