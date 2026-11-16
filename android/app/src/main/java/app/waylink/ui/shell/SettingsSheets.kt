@@ -523,7 +523,7 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav, pick: Int? = null) {
     Spacer(Modifier.height(15.dp))
     // The lead follows the picked plan, so it only ever describes one.
     androidx.compose.animation.Crossfade(tier, label = "pitch") { t ->
-        Txt("${t.pitch} Prices include GST, and payment goes through Google Play, so Waylink never sees your card or UPI details.", T.sheetLead, c.ink2)
+        Txt("${t.pitch} Prices include GST. Paid through Google Play, so Waylink never sees your card or UPI.", T.sheetLead.copy(fontSize = 14.sp, lineHeight = 21.sp), c.ink2)
     }
     Spacer(Modifier.height(20.dp))
     // Web .give: card paper with a hairline ring, neutral icon square, the amount in the display face, a segmented amount picker.
