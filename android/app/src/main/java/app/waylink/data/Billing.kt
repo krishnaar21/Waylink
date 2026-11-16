@@ -27,11 +27,11 @@ object Support {
             "A small thank-you that keeps Waylink free. As a Friend, the warm Paper and Paper dark looks are yours.",
             listOf("The Paper themes"), adFree = false, early = false),
         Tier("backer_220", 220, "love", "Backer",
-            "Back Waylink and ride without ads. Backers get the Paper themes and a clean, ad-free app.",
-            listOf("The Paper themes", "No ads"), adFree = true, early = false),
+            "Back Waylink and ride without ads. Everything in Friend, plus a clean, ad-free app.",
+            listOf("Everything in Friend", "No ads"), adFree = true, early = false),
         Tier("patron_520", 520, "sparkles", "Patron",
-            "For riders who want to shape what comes next. Patrons get everything, try new features first, and jump the queue for help.",
-            listOf("The Paper themes", "No ads", "Early access to new features", "Future premium features", "Priority support"), adFree = true, early = true),
+            "For riders who want to shape what comes next. Everything in Backer, plus new features first and help when you need it.",
+            listOf("Everything in Backer", "Early access to new features", "Future premium features", "Priority support"), adFree = true, early = true),
     )
     /** Preselected on the Support sheet. */
     const val SUGGESTED = 1

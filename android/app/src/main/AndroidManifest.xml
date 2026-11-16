@@ -38,6 +38,8 @@
         android:theme="@style/Theme.Waylink">
         <!-- AdMob app id, set per build in app/build.gradle.kts (Google's test id until publish). -->
         <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="${admobAppId}" />
+        <!-- Turns off Google's "native ad validator" popup, which test ads show over the ad card. -->
+        <meta-data android:name="com.google.android.gms.ads.flag.NATIVE_AD_DEBUGGER_ENABLED" android:value="false" />
         <!-- Live turns: reads the turn card that Google Maps, Waze, OsmAnd or Organic Maps shows while it navigates.
              Only works once the rider switches Waylink on under notification access. -->
         <receiver android:name=".data.ReminderReceiver" android:exported="false">

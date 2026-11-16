@@ -159,7 +159,7 @@ private fun SourceBody(s: AppState, vm: AppViewModel) {
     val cur = NavSource.of(s.settings.navSource)
     val allowed = remember(tick) { NavFeed.allowed(ctx) }
     Spacer(Modifier.height(8.dp))
-    Txt("While your maps app guides, Waylink reads its turn card and sends the arrow and distance to the bike. Only that card is read, and nothing is kept.", T.sheetLead, c.ink2)
+    Txt("While your maps app guides, Waylink reads its turn card and sends the arrow and distance to the bike. Only that card is read, and nothing is kept.", T.sheetLead.copy(fontSize = 14.sp, lineHeight = 21.sp), c.ink2)
     Spacer(Modifier.height(18.dp))
     ListCard(flat = true) {
         NavSource.available().forEachIndexed { i, src ->
@@ -167,7 +167,7 @@ private fun SourceBody(s: AppState, vm: AppViewModel) {
             val have = src.packages.isEmpty() || remember(tick, src.key) { NavApps.installed(ctx, src) }
             ListRow(
                 src.name, if (have) src.note else "Not on this phone", icon = if (src.readsNotifications) "map" else "route",
-                chevron = false, onClick = { vm.setNavSource(src.key) },
+                chevron = false, onClick = { vm.setNavSource(src.key) }, compact = true,
                 trailing = { if (src.key == cur.key) Ic("check", size = 20.dp, tint = c.accent) },
             )
         }
@@ -190,7 +190,7 @@ private fun StatusLine(ok: Boolean, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(8.dp).clip(CircleShape).background(if (ok) c.sage else c.amber))
         Spacer(Modifier.width(10.dp))
-        Txt(text, T.row, c.ink2)
+        Txt(text, T.row.copy(fontSize = 13.sp, lineHeight = 19.sp), c.ink2)
     }
 }
 

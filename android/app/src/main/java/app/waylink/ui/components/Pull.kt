@@ -122,7 +122,7 @@ fun PullToRefresh(enabled: Boolean, onRefresh: suspend () -> Unit, content: @Com
             val rim = W.c.accent
             Canvas(
                 Modifier.align(Alignment.TopCenter).windowInsetsPadding(WindowInsets.statusBars).size(46.dp)
-                    .graphicsLayer { translationY = (d * 0.5f - 23f + 2f) * density; alpha = if (d > 0f) min(1f, p * 1.4f) else 0f },
+                    .graphicsLayer { translationY = (d * 0.6f - 23f + 2f) * density; alpha = if (d > 0f) min(1f, p * 1.4f) else 0f },
             ) {
                 val k = size.width / 100f
                 scale(k, k, pivot = Offset.Zero) {

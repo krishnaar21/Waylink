@@ -206,6 +206,8 @@ fun ListRow(
     chevron: Boolean = true,
     onClick: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    /** One type step down, for long option lists in a sheet. */
+    compact: Boolean = false,
 ) {
     val c = W.c
     Row(
@@ -222,8 +224,8 @@ fun ListRow(
             Spacer(Modifier.width(14.dp))
         }
         Column(Modifier.weight(1f)) {
-            Txt(title, T.body.copy(lineHeight = 22.4.sp), if (danger) c.red else c.ink, maxLines = 2)
-            if (desc != null) Txt(desc, T.row.copy(lineHeight = 20.3.sp), c.ink3, Modifier.padding(top = 3.dp), maxLines = 2)
+            Txt(title, if (compact) T.body.copy(fontSize = 15.sp, lineHeight = 21.sp) else T.body.copy(lineHeight = 22.4.sp), if (danger) c.red else c.ink, maxLines = 2)
+            if (desc != null) Txt(desc, if (compact) T.row.copy(fontSize = 13.sp, lineHeight = 18.5.sp) else T.row.copy(lineHeight = 20.3.sp), c.ink3, Modifier.padding(top = 3.dp), maxLines = 2)
         }
         if (end != null) Txt(end, T.row.copy(fontSize = 15.sp), c.ink3, Modifier.padding(start = 8.dp), maxLines = 1)
         trailing?.invoke()
