@@ -184,6 +184,8 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
             val tall = shown.any { it.st.status != Due.OK }
             shown.forEach { UpCard(it, f, tall) { act.service(it.item.id) } }
         }
+        // Sample ad under Coming up, seen without scrolling (Developer, Sample ads, At the top).
+        if (app.waylink.ui.components.DummyAds.top(s)) app.waylink.ui.components.AdBanner(0, Modifier.padding(top = 6.dp)) { act.open(app.waylink.ui.components.DummyAds.REMOVE) }
 
         if (missed.isNotEmpty()) {
             Spacer(Modifier.height(12.dp))

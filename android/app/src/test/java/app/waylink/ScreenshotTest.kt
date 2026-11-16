@@ -98,6 +98,7 @@ class ScreenshotTest {
     /** Every theme on the busiest screens, to check contrast and consistency side by side. */
     // Placeholder ad slots, to judge the placements (the theme matrix that sat here did its job and is gone).
     private val withAds get() = sample.copy(settings = sample.settings.copy(adRides = true, adLists = true, adTop = true))
+    @Test fun adsToday() = shot("ads-today") { TodayScreen(withAds, live, noop(), 80.dp) }
     @Test fun adsRides() = shot("ads-rides") { RidesScreen(withAds, live, noop(), 80.dp) }
     @Test fun adsFuel() = shot("ads-fuel") { FuelScreen(withAds, noop(), 80.dp) }
     @Test fun adsService() = shot("ads-service") { app.waylink.ui.logbook.LogbookScreen(withAds, noop(), 80.dp) }
