@@ -711,10 +711,16 @@ internal fun PlanArt(t: app.waylink.data.Support.Tier, modifier: Modifier, frame
     val bg = when (t.id) { "friend_120" -> c.tintRed; "backer_220" -> c.tintSage; else -> c.tintAmber }
     val gold = c.amber
     val (fill, onFill) = when (t.id) { "friend_120" -> c.accent to c.onAccent; "backer_220" -> c.sageInk to c.bg; else -> gold to c.bg }
-    // People and the mark in a light grey, so they read as a soft backdrop to the plan's icon.
-    val grey = androidx.compose.ui.graphics.ColorFilter.tint(c.ink3.copy(alpha = 0.75f))
+    // People and the mark in a light grey, so they read as a soft backdrop to the plan's icon: black line art is lifted
+    // to a mid grey while the white face stays white (a tint would flood the whole face).
+    val grey = androidx.compose.ui.graphics.ColorFilter.colorMatrix(androidx.compose.ui.graphics.ColorMatrix(floatArrayOf(
+        0.45f, 0f, 0f, 0f, 140f,
+        0f, 0.45f, 0f, 0f, 140f,
+        0f, 0f, 0.45f, 0f, 140f,
+        0f, 0f, 0f, 1f, 0f,
+    )))
     @Composable fun Frame(size: androidx.compose.ui.unit.Dp, turn: Float, content: @Composable BoxScope.() -> Unit) = Box(
-        Modifier.size(size).graphicsLayer { rotationZ = turn }.shadow(4.dp, CircleShape).clip(CircleShape).background(c.card).border(3.dp, c.card, CircleShape),
+        Modifier.size(size).graphicsLayer { rotationZ = turn }.shadow(4.dp, CircleShape).clip(CircleShape).background(Color.White).border(3.dp, c.card, CircleShape),
         contentAlignment = Alignment.Center, content = content,
     )
     BoxWithConstraints(
@@ -755,7 +761,7 @@ private fun Sparkles(col: Color, w: androidx.compose.ui.unit.Dp, h: androidx.com
                 val x = (k + 0.2f + rnd.nextFloat() * 0.6f) * cw - w.value / 2
                 val y = (r + 0.2f + rnd.nextFloat() * 0.6f) * rh - h.value / 2
                 if (kotlin.math.abs(x) < 104f && kotlin.math.abs(y) < 62f) continue
-                add(Triple(x, y, 8f + rnd.nextFloat() * 8f) to (0.35f + rnd.nextFloat() * 0.5f))
+                add(Triple(x, y, 10f + rnd.nextFloat() * 9f) to (0.45f + rnd.nextFloat() * 0.5f))
             }
         }
     }
