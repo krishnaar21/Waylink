@@ -286,11 +286,6 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             }
             Hairline(66.dp)
             // The thank-you sheet as each plan sees it after paying.
-            ListRow("Plan pictures", "Version shown on Support and Thank you", icon = "image", trailing = {})
-            Row(Modifier.fillMaxWidth().padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                (0..2).forEach { k -> app.waylink.ui.components.Chip("Version ${k + 1}", { act.toggle("planArt:$k") }, on = st.planArt == k) }
-            }
-            Hairline(66.dp)
             ListRow("Thank-you sheet", "What each plan sees after paying", icon = "love", trailing = {})
             Row(Modifier.fillMaxWidth().horizontalScroll(androidx.compose.foundation.rememberScrollState()).padding(start = 66.dp, end = 16.dp, bottom = 14.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 app.waylink.data.Support.TIERS.forEach { t -> app.waylink.ui.components.Chip(t.name, { act.sheet("thanks:${t.id}") }) }

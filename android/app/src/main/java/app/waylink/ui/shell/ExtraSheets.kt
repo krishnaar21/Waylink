@@ -247,6 +247,8 @@ private fun QuickBody(s: AppState, live: Live, vm: AppViewModel, nav: SheetNav, 
         }
     }
     // SOS isn't repeated here: the red button in Today's header is always one tap away.
+    // An ad sits last, well clear of the tiles above, so it can't be hit when reaching for an action.
+    if (app.waylink.ui.components.DummyAds.top(s)) app.waylink.ui.components.AdBanner(4, Modifier.padding(top = 28.dp)) { nav.open(app.waylink.ui.components.DummyAds.REMOVE) }
 }
 
 /** Web .qtile: 140 tall, 16 padding, icon square top, title and line at the bottom; .live inverts to ink. */

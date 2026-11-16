@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,15 +100,11 @@ class ScreenshotTest {
     /** Every theme on the busiest screens, to check contrast and consistency side by side. */
     // Placeholder ad slots, to judge the placements (the theme matrix that sat here did its job and is gone).
     private val withAds get() = sample.copy(settings = sample.settings.copy(adRides = true, adLists = true, adTop = true))
-    /** The three plan picture versions, one row per version, Friend, Backer and Patron across. */
+    /** The plan pictures at full card width, Friend, Backer and Patron top to bottom. */
     @Test fun planPictures() = shot("plan-pictures") {
-        androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.fillMaxSize().background(W.c.bg), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)) {
-            (0..2).forEach { v ->
-                androidx.compose.foundation.layout.Row(horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
-                    app.waylink.data.Support.TIERS.forEach { t ->
-                        app.waylink.ui.shell.PlanArt(t, androidx.compose.ui.Modifier.weight(1f).height(132.dp), v = v)
-                    }
-                }
+        androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.fillMaxSize().background(W.c.bg).padding(16.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+            app.waylink.data.Support.TIERS.forEach { t ->
+                app.waylink.ui.shell.PlanArt(t, androidx.compose.ui.Modifier.fillMaxWidth().height(132.dp))
             }
         }
     }
