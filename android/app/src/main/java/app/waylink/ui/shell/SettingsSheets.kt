@@ -99,7 +99,7 @@ import java.nio.charset.StandardCharsets
 
 const val REPO_URL = "https://github.com/krishnaar21/Waylink"
 /** Where Waylink for desktop lives (GitHub Pages, web/ in the repo). */
-const val DESKTOP_URL = "krishnaar21.github.io/Waylink/app"
+const val DESKTOP_URL = "krishnaar21.github.io/Waylink"
 const val SUPPORT_EMAIL = "support@krishnaar.work"
 
 /** Settings and Profile sheets, or null. Keys follow the web app. */

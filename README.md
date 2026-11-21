@@ -7,7 +7,7 @@
 A free companion app for Bajaj Pulsar and Dominar motorcycles with the Bluetooth digital cluster.<br>
 Turn arrows and caller names on your cluster, and your bike's care in one place.
 
-**[Get the Android preview](https://github.com/krishnaar21/Waylink/releases/tag/android-preview)** · **[Open the web app](https://krishnaar21.github.io/Waylink/)**
+**[Get the Android preview](https://github.com/krishnaar21/Waylink/releases/tag/android-preview)** · **[Open Waylink for desktop](https://krishnaar21.github.io/Waylink/)** · [Web app v0](https://krishnaar21.github.io/Waylink/v0/)
 
 No account · No ads · No tracking · Your data stays on your phone
 
@@ -68,7 +68,9 @@ Needs Android 8.0 or newer. The preview is rebuilt automatically after every cha
 
 ### Web app
 
-Open **[krishnaar21.github.io/Waylink](https://krishnaar21.github.io/Waylink/)** and add it to your Home Screen: *Install app* in Chrome on Android, or *Share → Add to Home Screen* on iPhone. It works offline once installed.
+**Waylink for desktop** is at **[krishnaar21.github.io/Waylink](https://krishnaar21.github.io/Waylink/)**: your garage, rides, fuel and service on a bigger screen. Open it on your computer, then on your phone go to *Settings → Linked computers → Link a computer* and scan the code. The phone stays the source of truth and the sync is end-to-end encrypted.
+
+The original web app (v0, kept as the design reference) is at **[krishnaar21.github.io/Waylink/v0](https://krishnaar21.github.io/Waylink/v0/)**. Open it and add it to your Home Screen: *Install app* in Chrome on Android, or *Share → Add to Home Screen* on iPhone. It works offline once installed.
 
 - **Android:** Chrome pairs with the cluster directly.
 - **iPhone:** Safari can't use Bluetooth from a web page, so Waylink walks you through opening it in the free Bluefy browser, which can.
