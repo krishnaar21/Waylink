@@ -30,19 +30,19 @@ OVERLAP = 2               # each slide piece reaches 2 units into the next so th
 
 # ---------- colours, picked from the old pictures (median of each part, nudged where the grain washed them out) ----------
 PALETTE = {
-    'light': dict(sky='#EBE4D6', sun='#E2DBCD', cloud='#EFEADF', far='#E2DBCD', town='#DFD8CA', mid='#D8D1C4', tree='#CCC5B8',
+    'light': dict(sky='#EBE4D6', sun='#E2DBCD', cloud='#EEE8DC', far='#E2DBCD', town='#E1DACC', mid='#D8D1C4', tree='#CCC5B8',
                   road='#C3BCB1', edge='#D9D2C6', lane='#E9E3D8', near='#CDC5BA', bird='#BFB8AB', plate='#A8717F', arrow='#FFFFFF',
                   post='#C6BFB4', card='#FBF8F2', calldot='#5FAE80', phone='#FFFFFF', line1='#8C877B', line2='#DCD6CB', tick='#ACA599',
                   arc='#A8717F', needle='#8E887B', hub='#8C8578', streak='#E9E3D8', screen='#F2F1EE', hose='#C2BCAF', base='#C2BCB2',
                   house='#D3CDBF', door='#C3BCB1', shopdot='#A8717F', wrench='#FFFFFF', moon='#DDD6C8', moonc='#E4DED1', star='#D8D1C4',
                   lock=('#C9ADB4', '#B48D98', '#9E7581'), lockhi='#FFFFFF', shackle='#C4C5BD', keyhole='#6E6A66'),
-    'dark': dict(sky='#201013', sun='#2A191C', cloud='#241417', far='#2A1A1D', town='#2C1C1F', mid='#34262A', tree='#3D333B',
+    'dark': dict(sky='#201013', sun='#2A191C', cloud='#231316', far='#2A1A1D', town='#2B1B1E', mid='#34262A', tree='#3D333B',
                  road='#4C4D56', edge='#5E5F68', lane='#2C2B34', near='#3C3B44', bird='#4C3C40', plate='#7A2E40', arrow='#F2E8EA',
                  post='#3F484D', card='#231316', calldot='#2F7A52', phone='#FFFFFF', line1='#9AA1AA', line2='#3B2B31', tick='#8A8590',
                  arc='#7A2A40', needle='#958E99', hub='#949BA0', streak='#5C5862', screen='#9AA1A8', hose='#4A494F', base='#4B3D4A',
                  house='#383037', door='#555462', shopdot='#7A2E45', wrench='#F2E8EA', moon='#3A292C', moonc='#2C1B1F', star='#6A5A5E',
                  lock=('#A8404F', '#8E2E40', '#6E2232'), lockhi='#FFFFFF', shackle='#6A7073', keyhole='#1E0D11'),
-    'night': dict(sky='#2E2B25', sun='#37342E', cloud='#33302A', far='#393530', town='#3B3832', mid='#45413B', tree='#524F47',
+    'night': dict(sky='#2E2B25', sun='#37342E', cloud='#312E28', far='#393530', town='#3A3631', mid='#45413B', tree='#524F47',
                   road='#65625A', edge='#77746C', lane='#3C3933', near='#57534B', bird='#5C584F', plate='#74303F', arrow='#F3EFE6',
                   post='#5F5C56', card='#34302A', calldot='#3F7A54', phone='#FFFFFF', line1='#A6A497', line2='#4A473F', tick='#8E8B82',
                   arc='#702E40', needle='#9D9A90', hub='#A9A69B', streak='#6E6A62', screen='#ACA49C', hose='#5F5C56', base='#5B534D',
@@ -128,8 +128,9 @@ def dashes(pts, on, off):
 
 # ---------- a tiny drawing model: shapes inside optional groups, written out as SVG and as Android XML ----------
 class Shape:
-    def __init__(self, d, fill=None, stroke=None, sw=0, alpha=1.0, cap=None, join=None, grad=None, x0=0, x1=0):
+    def __init__(self, d, fill=None, stroke=None, sw=0, alpha=1.0, cap=None, join=None, grad=None, x0=0, x1=0, salpha=None):
         self.d, self.fill, self.stroke, self.sw, self.alpha, self.cap, self.join, self.grad = d, fill, stroke, sw, alpha, cap, join, grad
+        self.salpha = alpha if salpha is None else salpha     # stroke alpha, when it differs from the fill's
         self.x0, self.x1 = x0, x1        # horizontal extent in scene units, used to cut the scene into slides
 
 class Group:
@@ -166,7 +167,8 @@ def svg_out(items, vb, extra_defs=''):
             a += [f'stroke="{it.stroke}"', f'stroke-width="{fmt(it.sw, 2)}"']
             if it.cap: a.append(f'stroke-linecap="{it.cap}"')
             if it.join: a.append(f'stroke-linejoin="{it.join}"')
-        if it.alpha != 1: a.append(f'opacity="{fmt(it.alpha, 2)}"')
+        if it.alpha != 1 and (it.fill or it.grad): a.append(f'fill-opacity="{fmt(it.alpha, 2)}"')
+        if it.stroke and it.salpha != 1: a.append(f'stroke-opacity="{fmt(it.salpha, 2)}"')
         body.append(f'<path {" ".join(a)}/>')
     for it in items: emit(it)
     d = f'<defs>{"".join(defs)}{extra_defs}</defs>' if defs or extra_defs else ''
@@ -194,9 +196,8 @@ def vd_out(items, vw, vh, w_dp, h_dp, clip=None):
             a += [f'android:strokeColor="{it.stroke}"', f'android:strokeWidth="{fmt(it.sw, 2)}"']
             if it.cap: a.append(f'android:strokeLineCap="{it.cap}"')
             if it.join: a.append(f'android:strokeLineJoin="{it.join}"')
-        if it.alpha != 1:
-            if it.fill or it.grad: a.append(f'android:fillAlpha="{fmt(it.alpha, 2)}"')
-            if it.stroke: a.append(f'android:strokeAlpha="{fmt(it.alpha, 2)}"')
+        if it.alpha != 1 and (it.fill or it.grad): a.append(f'android:fillAlpha="{fmt(it.alpha, 2)}"')
+        if it.stroke and it.salpha != 1: a.append(f'android:strokeAlpha="{fmt(it.salpha, 2)}"')
         if not it.grad:
             lines.append(f'{p}<path {" ".join(a)}/>'); return
         need_aapt[0] = True; g = it.grad
@@ -259,7 +260,8 @@ def scene_items(theme):
         if 'url(#g-near)' in f: return dict(fill=c['near'])
         if 'url(#g-road)' in f: return dict(fill=c['road'])
         if 'url(#m-lock)' in f: return dict(lock=True)
-        if any(k in f for k in ('url(#g-sun)', 'url(#g-haze)', 'url(#sc-v)')): return None
+        if 'url(#g-sun)' in f: return dict(sunglow=True)
+        if any(k in f for k in ('url(#g-haze)', 'url(#sc-v)')): return None
         k = cls or ctx
         if k in ('sc-bike', 'sc-moonglow', 'sc-poles'): return None
         S = dict(fill=None)
@@ -303,7 +305,8 @@ def scene_items(theme):
             if not kids: return
             if gx or gy:
                 x0 = min(k.x0 for k in kids) + gx; x1 = max(k.x1 for k in kids) + gx
-                sink.append(Group(kids, tx=gx, ty=gy, x0=x0, x1=x1))
+                grp = Group(kids, tx=gx, ty=gy, x0=x0, x1=x1); grp.cls = cls
+                sink.append(grp)
             else:
                 sink.extend(kids)
             return
@@ -322,6 +325,11 @@ def scene_items(theme):
         x0, x1 = ext(d)
         if tag in ('circle', 'ellipse', 'rect') or not points(d):
             x0, x1 = (g('cx', g('x')) - g('r', g('rx', 0)) - 60, g('cx', g('x')) + g('r', g('rx', 0)) + g('width') + 60)
+        if st.get('sunglow'):
+            sc = c['sun']
+            sink.append(Shape(d, grad=dict(type='radial', cx=g('cx'), cy=g('cy'), r=g('r'),
+                                           stops=[(0, sc + 'E6'), (0.35, sc + '59'), (1, sc + '00')]), x0=x0, x1=x1))
+            return
         if st.get('lock'):
             lk = c['lock']
             sink.append(Shape(d, grad=dict(type='linear', x1=-48, y1=0, x2=48, y2=86, stops=[(0, lk[0]), (0.5, lk[1]), (1, lk[2])]), x0=x0, x1=x1))
@@ -337,6 +345,192 @@ def scene_items(theme):
     rx = ix + (iw - RIDER_VB[0] * s) / 2; ry = iy + ih - RIDER_VB[1] * s
     rider = Group([Group(rider_items(), sx=s, sy=s)], tx=rx, ty=ry, x0=rx, x1=rx + RIDER_VB[0] * s)
     return out, rider
+
+
+# ---------- the watercolour look, baked into the shapes (no filters at run time) ----------
+# v0 painted the scene through an SVG filter: a low-frequency displacement (wobbly edges, +-5 units), pigment pooled
+# in a darker rim along every edge, soft drop shadows and paper grain. The first three are baked into the geometry
+# here; the grain is a small tiling texture drawn over the scene on the phone (onb_grain.png, see grain_png()).
+
+def _arc_pts(x0, y0, rx, ry, phi, fa, fs, x1, y1, step):
+    if rx == 0 or ry == 0: return [(x1, y1)]
+    cp, sp = math.cos(math.radians(phi)), math.sin(math.radians(phi))
+    dx, dy = (x0 - x1) / 2, (y0 - y1) / 2
+    x1p, y1p = cp * dx + sp * dy, -sp * dx + cp * dy
+    rx, ry = abs(rx), abs(ry)
+    lam = x1p ** 2 / rx ** 2 + y1p ** 2 / ry ** 2
+    if lam > 1: rx, ry = rx * math.sqrt(lam), ry * math.sqrt(lam)
+    num = rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p
+    co = math.sqrt(max(0, num / (rx * rx * y1p * y1p + ry * ry * x1p * x1p))) * (-1 if fa == fs else 1)
+    cxp, cyp = co * rx * y1p / ry, -co * ry * x1p / rx
+    cx, cy = cp * cxp - sp * cyp + (x0 + x1) / 2, sp * cxp + cp * cyp + (y0 + y1) / 2
+    ang = lambda ux, uy, vx, vy: math.atan2(ux * vy - uy * vx, ux * vx + uy * vy)
+    t1 = ang(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry)
+    dt = ang((x1p - cxp) / rx, (y1p - cyp) / ry, (-x1p - cxp) / rx, (-y1p - cyp) / ry)
+    if not fs and dt > 0: dt -= 2 * math.pi
+    elif fs and dt < 0: dt += 2 * math.pi
+    n = max(2, int(abs(dt) * max(rx, ry) / step) + 1)
+    out = []
+    for k in range(1, n + 1):
+        t = t1 + dt * k / n
+        out.append((cx + rx * math.cos(t) * cp - ry * math.sin(t) * sp, cy + rx * math.cos(t) * sp + ry * math.sin(t) * cp))
+    return out
+
+def flatten(d, step=4.0):
+    """SVG path data -> list of (points, closed). Handles M L H V C S Q T A Z, absolute and relative."""
+    toks = NUM.findall(d); i = 0; subs = []; cur = []; x = y = sx = sy = 0.0; cmd = None; lc = lq = None
+    def nums(n):
+        nonlocal i
+        v = [float(t) for t in toks[i:i + n]]; i += n; return v
+    def seg_bez(p0, pts_c, p3, n):
+        out = []
+        for k in range(1, n + 1):
+            t = k / n; u = 1 - t
+            if len(pts_c) == 1:
+                (qx, qy), = pts_c
+                out.append((u * u * p0[0] + 2 * u * t * qx + t * t * p3[0], u * u * p0[1] + 2 * u * t * qy + t * t * p3[1]))
+            else:
+                (ax, ay), (bx, by) = pts_c
+                out.append((u ** 3 * p0[0] + 3 * u * u * t * ax + 3 * u * t * t * bx + t ** 3 * p3[0],
+                            u ** 3 * p0[1] + 3 * u * u * t * ay + 3 * u * t * t * by + t ** 3 * p3[1]))
+        return out
+    while i < len(toks):
+        if toks[i].isalpha(): cmd = toks[i]; i += 1
+        rel = cmd.islower(); C = cmd.upper(); ox, oy = (x, y) if rel else (0, 0)
+        if C == 'Z':
+            if cur: subs.append((cur, True))
+            cur = []; x, y = sx, sy; lc = lq = None; continue
+        if C == 'M':
+            a, b = nums(2)
+            if cur: subs.append((cur, False))
+            x, y = a + ox, b + oy; sx, sy = x, y; cur = [(x, y)]; cmd = 'l' if rel else 'L'; lc = lq = None; continue
+        if C == 'L': a, b = nums(2); x, y = a + ox, b + oy; cur.append((x, y)); lc = lq = None
+        elif C == 'H': a, = nums(1); x = a + (x if rel else 0); cur.append((x, y)); lc = lq = None
+        elif C == 'V': b, = nums(1); y = b + (y if rel else 0); cur.append((x, y)); lc = lq = None
+        elif C in 'CS':
+            if C == 'C': a, b, c2, d2, e, f = nums(6); p1 = (a + ox, b + oy)
+            else:
+                c2, d2, e, f = nums(4); p1 = (2 * x - lc[0], 2 * y - lc[1]) if lc else (x, y)
+            p2, p3 = (c2 + ox, d2 + oy), (e + ox, f + oy)
+            n = max(2, int(math.hypot(p3[0] - x, p3[1] - y) / step) + 1)
+            cur += seg_bez((x, y), [p1, p2], p3, n); x, y = p3; lc = p2; lq = None
+        elif C in 'QT':
+            if C == 'Q': a, b, e, f = nums(4); q = (a + ox, b + oy)
+            else:
+                e, f = nums(2); q = (2 * x - lq[0], 2 * y - lq[1]) if lq else (x, y)
+            p3 = (e + ox, f + oy); n = max(2, int(math.hypot(p3[0] - x, p3[1] - y) / step) + 1)
+            cur += seg_bez((x, y), [q], p3, n); x, y = p3; lq = q; lc = None
+        elif C == 'A':
+            rx, ry, phi, fa, fs, e, f = nums(7)
+            cur += _arc_pts(x, y, rx, ry, phi, int(fa), int(fs), e + ox, f + oy, step); x, y = e + ox, f + oy; lc = lq = None
+    if cur: subs.append((cur, False))
+    return subs
+
+def _densify(pts, closed, step):
+    out = []; seq = pts + ([pts[0]] if closed else [])
+    for (x0, y0), (x1, y1) in zip(seq, seq[1:]):
+        n = max(1, int(math.hypot(x1 - x0, y1 - y0) / step))
+        out += [(x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n) for k in range(n)]
+    if not closed: out.append(seq[-1])
+    return out
+
+class Field:
+    """Smooth 2-D noise (two octaves of value noise), the stand-in for v0's feTurbulence .02."""
+    def __init__(self, seed, cell=48.0):
+        import random
+        r = random.Random(seed); self.cell = cell
+        self.g = {(i, j): (r.uniform(-1, 1), r.uniform(-1, 1)) for i in range(-4, 60) for j in range(-4, 16)}
+    def _at(self, x, y, cell):
+        gx, gy = x / cell, y / cell; i, j = math.floor(gx), math.floor(gy); fx, fy = gx - i, gy - j
+        sx, sy = fx * fx * (3 - 2 * fx), fy * fy * (3 - 2 * fy)
+        def g(a, b): return self.g.get((a % 60, b % 16), (0, 0))
+        v = []
+        for k in (0, 1):
+            a = g(i, j)[k] + (g(i + 1, j)[k] - g(i, j)[k]) * sx
+            b = g(i, j + 1)[k] + (g(i + 1, j + 1)[k] - g(i, j + 1)[k]) * sx
+            v.append(a + (b - a) * sy)
+        return v
+    def __call__(self, x, y):
+        a = self._at(x, y, self.cell); b = self._at(x + 101, y + 37, self.cell / 2.3)
+        return a[0] + .45 * b[0], a[1] + .45 * b[1]
+
+DEEPEN = 1.3      # colours sit this much further from the paper, because the grain lifts them back toward it
+WOBBLE = 3.2      # units; v0 used +-5, a little less keeps the small parts readable
+FIELD = Field(4)
+
+def _hex(c): return tuple(int(c[k:k + 2], 16) for k in (1, 3, 5))
+def _mix(a, b, t):
+    A, B = _hex(a), _hex(b)
+    return '#%02X%02X%02X' % tuple(max(0, min(255, round(A[k] + (B[k] - A[k]) * t))) for k in range(3))
+
+def wobble_d(d, ox, oy, amp=WOBBLE, step=7.0):
+    out = []
+    for pts, closed in flatten(d, step):
+        if len(pts) < 2: continue
+        dense = _densify(pts, closed, step)
+        moved = []
+        for x, y in dense:
+            nx, ny = FIELD(x + ox, y + oy); moved.append((x + nx * amp, y + ny * amp))
+        out.append('M' + 'L'.join(f'{fmt(x)} {fmt(y)}' for x, y in moved) + ('Z' if closed else ''))
+    return ''.join(out)
+
+def watercolour(items, theme, ox=0.0, oy=0.0):
+    c = PALETTE[theme]; paper = c['sky']; out = []
+    rim_dark = 'dark' if theme == 'light' else 'light'
+    for it in items:
+        if isinstance(it, Group):
+            kids = watercolour(it.items, theme, ox + it.tx, oy + it.ty)
+            cls = getattr(it, 'cls', '')
+            if cls in ('sc-sign', 'sc-call', 'sc-lock'):           # v0 feDropShadow dy 6, blur 6, .35: four soft rings
+                shape = {'sc-sign': (-28, -26, 56, 52, 14), 'sc-call': (-82, -30, 164, 60, 18), 'sc-lock': (-48, 0, 96, 86, 22)}[cls]
+                x, y, w, h, r = shape
+                rings = [Shape(wobble_d(rect_d(x - e, y + 6 - e, w + 2 * e, h + 2 * e, r + e), ox + it.tx, oy + it.ty), fill='#000000',
+                               alpha=.05 if theme == 'light' else .09) for e in (1, 3.5, 6, 9)]
+                kids = rings + kids
+            g = Group(kids, it.tx, it.ty, it.sx, it.sy, it.px, it.py, it.x0, it.x1); g.cls = cls
+            out.append(g); continue
+        if it.fill == paper and not it.stroke:                          # the sky: nothing to paint
+            out.append(it); continue
+        tiny = it.x1 - it.x0 < 8 and not it.stroke
+        d = it.d if tiny else wobble_d(it.d, ox, oy)
+        deep = lambda col: _mix(paper, col, DEEPEN) if col and col.startswith('#') and col != paper else col
+        grad = dict(it.grad, stops=[(o, deep(cc[:7]) + cc[7:]) for o, cc in it.grad['stops']]) if it.grad and it.grad['type'] == 'linear' else it.grad
+        sh = Shape(d, deep(it.fill), deep(it.stroke), it.sw, it.alpha, it.cap, it.join, grad, it.x0 - 6, it.x1 + 6, it.salpha)
+        if (it.fill or (it.grad and it.grad['type'] == 'linear')) and not it.stroke and not tiny and it.fill not in (c['cloud'], c['town'], c['sun']):
+            # pigment pooled at the edge: a thin rim in a deeper shade of the same wash
+            base = sh.fill or sh.grad['stops'][1][1][:7]
+            sh.stroke = _mix(base, '#000000', .2)
+            sh.sw, sh.salpha, sh.join = 1.5, .4 * it.alpha, 'round'
+        out.append(sh)
+    return out
+
+def grain_png(path, n=160, seed=5):
+    """The paper: a seamless n x n tile of pale pores (alpha only, tinted to the theme's paper colour on the phone).
+    Matches v0's feTurbulence .6 / 2 octaves cut by the alpha matte -1.4n + 1.2 (light) at 2.5 px per unit."""
+    import random, struct, zlib
+    r = random.Random(seed)
+    def lattice(m):
+        return [[r.random() for _ in range(m)] for _ in range(m)]
+    def sample(L, m, x, y):
+        gx, gy = x * m / n, y * m / n; i, j = int(gx), int(gy); fx, fy = gx - i, gy - j
+        sx, sy = fx * fx * (3 - 2 * fx), fy * fy * (3 - 2 * fy)
+        a = L[j % m][i % m] + (L[j % m][(i + 1) % m] - L[j % m][i % m]) * sx
+        b = L[(j + 1) % m][i % m] + (L[(j + 1) % m][(i + 1) % m] - L[(j + 1) % m][i % m]) * sx
+        return a + (b - a) * sy
+    m1, m2, m3 = n // 4, n // 2, n // 10
+    L1, L2, L3 = lattice(m1), lattice(m2), lattice(m3)
+    rows = []
+    for y in range(n):
+        row = bytearray([0])
+        for x in range(n):
+            v = .55 * sample(L1, m1, x, y) + .3 * sample(L2, m2, x, y) + .15 * sample(L3, m3, x, y)
+            a = max(0.0, min(1.0, (v - .5) * 3.2))                   # pores where the noise is high
+            row += bytes((255, 255, 255, int(a * 170)))
+        rows.append(bytes(row))
+    raw = zlib.compress(b''.join(rows), 9)
+    def chunk(t, data): return struct.pack('>I', len(data)) + t + data + struct.pack('>I', zlib.crc32(t + data) & 0xffffffff)
+    png = b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', n, n, 8, 6, 0, 0, 0)) + chunk(b'IDAT', raw) + chunk(b'IEND', b'')
+    with open(path, 'wb') as f: f.write(png)
 
 POLY = re.compile(r'^M[-\d. ]+(L[-\d. ]+)+Z?$')
 
@@ -371,7 +565,7 @@ def trim(sh, a, b):
             if not keep: continue
             lo, hi = max(0, keep[0] - 1), min(len(pts), keep[-1] + 2)
             if hi - lo > 1: out.append('M' + 'L'.join(f'{fmt(x)} {fmt(y)}' for x, y in pts[lo:hi]))
-    return Shape(''.join(out), sh.fill, sh.stroke, sh.sw, sh.alpha, sh.cap, sh.join, sh.grad, a, b) if out else None
+    return Shape(''.join(out), sh.fill, sh.stroke, sh.sw, sh.alpha, sh.cap, sh.join, sh.grad, a, b, sh.salpha) if out else None
 
 def merge(items):
     """Join neighbouring shapes that share one flat style into one path: fewer draw calls, same picture."""
@@ -380,9 +574,9 @@ def merge(items):
         if isinstance(it, Group):
             out.append(Group(merge(it.items), it.tx, it.ty, it.sx, it.sy, it.px, it.py, it.x0, it.x1)); continue
         prev = out[-1] if out else None
-        key = lambda s: (s.fill, s.stroke, s.sw, s.alpha, s.cap, s.join)
+        key = lambda s: (s.fill, s.stroke, s.sw, s.alpha, s.salpha, s.cap, s.join)
         if isinstance(prev, Shape) and not prev.grad and not it.grad and key(prev) == key(it):
-            out[-1] = Shape(prev.d + it.d, it.fill, it.stroke, it.sw, it.alpha, it.cap, it.join, None, min(prev.x0, it.x0), max(prev.x1, it.x1))
+            out[-1] = Shape(prev.d + it.d, it.fill, it.stroke, it.sw, it.alpha, it.cap, it.join, None, min(prev.x0, it.x0), max(prev.x1, it.x1), it.salpha)
         else:
             out.append(it)
     return out
@@ -466,6 +660,7 @@ def main():
     # scene: one source SVG per theme, five slide pieces per theme
     for theme in PALETTE:
         items, rider = scene_items(theme)
+        items = watercolour(items, theme)
         # the full scene, rider included, for looking at; on the phone the rider is drawn on top from rider_street
         write(os.path.join(ART, f'scene_{theme}.svg'), svg_out(items + [rider], f'0 0 1950 {H}'))
         for i in range(5):
@@ -474,6 +669,7 @@ def main():
             write(os.path.join(RES, f'scene_{theme}_{i}.xml'),
                   vd_out(piece, PW + OVERLAP, H, PW + OVERLAP, H, clip=f'M0 0H{PW + OVERLAP}V{H}H0Z'))
             write(os.path.join(ART, 'pieces', f'scene_{theme}_{i}.svg'), svg_out(piece, f'0 0 {PW + OVERLAP} {H}'))
+    grain_png(os.path.join(ROOT, 'android', 'app', 'src', 'main', 'res', 'drawable-nodpi', 'onb_grain.png'))
     bt = bt_items()
     write(os.path.join(ART, 'bt_disc.svg'), svg_out(bt, '0 0 160 160'))
     write(os.path.join(RES, 'bt_disc.xml'), vd_out(bt, 160, 160, 40, 40))
