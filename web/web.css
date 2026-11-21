@@ -157,6 +157,21 @@ html[data-theme="obsidian"] .rider > img:first-child, html[data-theme="amoled"] 
 @keyframes dlgIn { from { opacity: 0; transform: translate(-50%, calc(-50% + 14px)) scale(.98); } }
 @keyframes dlgOut { to { opacity: 0; transform: translate(-50%, calc(-50% + 8px)) scale(.98); } }
 
+/* ---------- Detail pane: on a wide screen a ride, job or fuel entry opens beside the page, not over it ---------- */
+@media (min-width: 1100px) {
+  .main { transition: margin-right .32s var(--spring); }
+  .wapp.has-pane .main { margin-right: var(--pane-w, 440px); }
+  #sheets:has(.sheet[data-dock="1"]) .backdrop { display: none; }
+  #sheets .sheet[data-dock="1"] { left: auto; right: 0; top: 0; bottom: 0; width: var(--pane-w, 440px); height: 100dvh; max-height: none; transform: none; border-radius: 0;
+    box-shadow: inset var(--hair) 0 0 var(--line), -24px 0 48px -36px rgba(0,0,0,.35); animation: paneIn .32s var(--spring) both; }
+  #sheets .sheet[data-dock="1"].out { animation: paneOut .2s ease both; }
+  #sheets .sheet[data-dock="1"] .sheet-head, #sheets .sheet[data-dock="1"] .dlg-foot { border-radius: 0; }
+  #sheets .sheet[data-dock="1"] .sheet-body { flex: 1; }
+  #main [aria-current="true"] { background-color: color-mix(in srgb, var(--accent, var(--ink)) 10%, var(--card)); box-shadow: inset 3px 0 0 var(--accent, var(--ink)); }
+}
+@keyframes paneIn { from { transform: translateX(28px); opacity: 0; } }
+@keyframes paneOut { to { transform: translateX(28px); opacity: 0; } }
+
 /* ---------- Settings window: sections on the left, one pane on the right ---------- */
 .prefs { display: flex; flex-direction: column; gap: 16px; }
 .pf-title { display: none; }
