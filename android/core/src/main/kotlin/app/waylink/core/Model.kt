@@ -212,7 +212,7 @@ data class Trip(
 )
 
 @Serializable
-data class Parking(val lat: Double, val lng: Double, val ts: Long)
+data class Parking(val lat: Double, val lng: Double, val ts: Long, val address: String? = null, val photo: String? = null)
 
 @Serializable
 data class PairedBike(val id: String? = null, val name: String? = null)

@@ -13,7 +13,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.shadow
@@ -112,8 +111,8 @@ fun StickyInfo(title: String?, onBack: (() -> Unit)? = null, end: (@Composable R
 }
 
 /**
- * .pagehead.stuck: once the page scrolls 6 px, the header sits over it with the page colour behind it, fading out
- * over its last 30 px, the title down to 22 and the subtitle gone. The status bar stays readable over a scrolled page.
+ * .pagehead.stuck: once the page scrolls 6 px, the header sits over it on the page colour with a hairline under it,
+ * the title down to 22 and the subtitle gone. The status bar stays readable over a scrolled page.
  */
 @Composable
 fun BoxScope.StickyBar(scroll: ScrollState, head: StickyHead) {
@@ -123,14 +122,17 @@ fun BoxScope.StickyBar(scroll: ScrollState, head: StickyHead) {
     val a by animateFloatAsState(if (stuck) 1f else 0f, tween(250), label = "stuck")
     if (a <= 0f) return
     val bg = c.bg
+    // Solid page colour with the same half-point hairline the tab bar has, so the header reads as a bar while scrolling.
+    val line = c.inkA(0.09f)
     Column(
         Modifier.align(Alignment.TopStart).fillMaxWidth().graphicsLayer { alpha = a }
             .drawBehind {
-                val fade = 30.dp.toPx()
-                drawRect(Brush.verticalGradient(0f to bg, (size.height - fade) / size.height to bg, 1f to bg.copy(alpha = 0f)))
+                drawRect(bg)
+                val w = 0.5.dp.toPx()
+                drawRect(line, topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - w), size = androidx.compose.ui.geometry.Size(size.width, w))
             }
             .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 30.dp + 8.dp),
+            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 10.dp),
     ) {
         val back = head.onBack
         val title = head.title
