@@ -6,6 +6,10 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.waylink.core.AppState
 import app.waylink.core.Catalog
+import app.waylink.core.Computer
+import app.waylink.core.LinkClient
+import app.waylink.core.LinkCrypto
+import app.waylink.core.LinkSync
 import app.waylink.core.ChecklistItem
 import app.waylink.core.DAY_MS
 import app.waylink.core.Alerts
@@ -1187,10 +1191,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     // ---------- Linked computers (Waylink for desktop, relay/PROTOCOL.md) ----------
 
     private val computerStore = Computers(app)
-    private val client = app.waylink.core.LinkClient()
-    private val _computers = MutableStateFlow<List<app.waylink.core.Computer>>(emptyList())
+    private val client = LinkClient()
+    private val _computers = MutableStateFlow<List<Computer>>(emptyList())
     /** The computers linked to this phone. The phone stays the one source of truth. */
-    val computers: StateFlow<List<app.waylink.core.Computer>> = _computers.asStateFlow()
+    val computers: StateFlow<List<Computer>> = _computers.asStateFlow()
     private val syncLock = kotlinx.coroutines.sync.Mutex()
     private var pushJob: Job? = null
     private var pollJob: Job? = null
@@ -1206,24 +1210,24 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         viewModelScope.launch(Dispatchers.IO) { _computers.value = computerStore.load(); syncComputers() }
     }
 
-    private fun saveComputers(f: (List<app.waylink.core.Computer>) -> List<app.waylink.core.Computer>) {
+    private fun saveComputers(f: (List<Computer>) -> List<Computer>) {
         _computers.update(f)
         computerStore.save(_computers.value)
     }
 
     /** Answers a QR code from the computer's screen. */
     fun linkComputer(text: String) {
-        val qr = app.waylink.core.LinkCrypto.parseQr(text.trim())
+        val qr = LinkCrypto.parseQr(text.trim())
         if (qr == null) { toast("That isn’t a Waylink code. Open Waylink on your computer to show one."); return }
         if (_linking.value) return
         _linking.value = true
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val c = client.pair(qr, deviceName)
-                client.push(c, app.waylink.core.LinkSync.vault(realState ?: _state.value, 0, deviceName))
+                client.push(c, LinkSync.vault(realState ?: _state.value, 0, deviceName))
                 syncLock.withLock { saveComputers { it.filter { x -> x.linkId != c.linkId } + c.copy(syncedAt = System.currentTimeMillis()) } }
                 buzz(12, 60, 12); toast("Linked. Your garage shows on the computer in a moment.")
-            } catch (e: app.waylink.core.LinkClient.Expired) {
+            } catch (e: LinkClient.Expired) {
                 toast("That code has expired or was used. Show a new one on the computer.")
             } catch (e: Exception) {
                 toast("Couldn’t link. Check your internet and try again.")
@@ -1252,13 +1256,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         val s = _state.value
         for (c in _computers.value) {
             try {
-                client.push(c, app.waylink.core.LinkSync.vault(s, c.ackSeq, deviceName))
+                client.push(c, LinkSync.vault(s, c.ackSeq, deviceName))
                 saveComputers { l -> l.map { if (it.linkId == c.linkId) it.copy(syncedAt = System.currentTimeMillis()) else it } }
-            } catch (e: app.waylink.core.LinkClient.Gone) { dropGone(c) } catch (e: Exception) { /* offline: the next change or check tries again */ }
+            } catch (e: LinkClient.Gone) { dropGone(c) } catch (e: Exception) { /* offline: the next change or check tries again */ }
         }
     }
 
-    private fun dropGone(c: app.waylink.core.Computer) {
+    private fun dropGone(c: Computer) {
         saveComputers { l -> l.filter { it.linkId != c.linkId } }
         toast("A computer was unlinked from Waylink for desktop.")
     }
@@ -1275,14 +1279,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
                         val (ops, last) = client.pull(c)
                         if (last <= c.ackSeq) continue
                         if (ops.isNotEmpty()) {
-                            withContext(Dispatchers.Main) { commit { s -> ops.fold(s) { acc, op -> app.waylink.core.LinkSync.apply(acc, op) } } }
+                            withContext(Dispatchers.Main) { commit { s -> ops.fold(s) { acc, op -> LinkSync.apply(acc, op) } } }
                             any = true
                         }
                         saveComputers { l -> l.map { if (it.linkId == c.linkId) it.copy(ackSeq = last) else it } }
                         val now = _computers.value.firstOrNull { it.linkId == c.linkId } ?: continue
-                        client.push(now, app.waylink.core.LinkSync.vault(_state.value, last, deviceName))
+                        client.push(now, LinkSync.vault(_state.value, last, deviceName))
                         client.ack(now, last)
-                    } catch (e: app.waylink.core.LinkClient.Gone) { dropGone(c) } catch (e: Exception) { }
+                    } catch (e: LinkClient.Gone) { dropGone(c) } catch (e: Exception) { }
                 }
                 // The other computers see the change too.
                 if (any) { pushJob?.cancel(); pushAll() }
