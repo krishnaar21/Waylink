@@ -96,7 +96,7 @@ fun extraSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Shee
             val c = W.c
             val ctx = LocalContext.current
             val f = Fmt(s.country.locale)
-            val p = v.parking
+            val p = v.parking ?: return@SheetSpec
             Spacer(Modifier.height(8.dp))
             app.waylink.ui.components.MapPeek(p.lat, p.lng, Modifier.fillMaxWidth().height(170.dp))
             Spacer(Modifier.height(14.dp))
