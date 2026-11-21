@@ -92,7 +92,7 @@ fun logbookSheet(key: String, s: AppState, vm: AppViewModel, nav: SheetNav): She
         "odo" -> SheetSpec("Odometer", vehicleTitle(s)) { OdoBody(s, vm, nav) }
         "trip" -> {
             val t = if (arg == "A") v.tripA else v.tripB
-            SheetSpec("${f.num(t.km, 1)} km", "Trip $arg") {
+            SheetSpec("Trip $arg · ${f.num(t.km, 1)} km", null) {
                 Spacer(Modifier.height(12.dp))
                 Txt("Since ${dFull(t.since)}. Every ride you record adds to it.", T.sheetLead, W.c.ink2)
                 Spacer(Modifier.height(24.dp))

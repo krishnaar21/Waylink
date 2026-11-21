@@ -85,35 +85,43 @@ interface ExtraHost {
 
 private val DOC_NAMES = mapOf("rc" to "Registration (RC)", "insurance" to "Insurance", "puc" to "Pollution (PUC)", "licence" to "Driving licence", "other" to "Other")
 
-/** "parking", "glovebox", "doc:<slot>", "quick". */
+/** "parking[:new]", "rec-start", "glovebox", "doc:<slot>", "quick". */
 fun extraSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetNav, host: ExtraHost): SheetSpec? {
     val arg = key.substringAfter(':', "")
     val v = s.vehicle
     return when (key.substringBefore(':')) {
-        "parking" -> SheetSpec("Parking", clip(vehicleTitle(s))) {
+        // The saved spot, or (no spot yet, or "parking:new") a fresh fix to look over before it's saved.
+        "parking" -> if (v.parking == null || arg == "new") SheetSpec("Save parking", null) { ParkingNew(s, vm, nav, host) }
+        else SheetSpec("Parking", null) {
             val c = W.c
             val ctx = LocalContext.current
             val f = Fmt(s.country.locale)
-            val p = v.parking
+            val p = v.parking ?: return@SheetSpec
             Spacer(Modifier.height(8.dp))
-            if (p != null) {
-                Txt("Saved ${f.ago(p.ts)}, at ${tShort(p.ts)}.", T.sheetLead, c.ink2)
-                Txt("%.5f, %.5f".format(java.util.Locale.ROOT, p.lat, p.lng), T.plate.copy(fontSize = 12.sp), c.ink4, Modifier.padding(top = 4.dp))
-                Spacer(Modifier.height(20.dp))
-                Btn("Walk back with Google Maps", {
-                    val url = "https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking"
-                    try { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (e: Exception) { vm.toast("No app can open maps.") }
-                }, Modifier.fillMaxWidth(), icon = "map")
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Btn("Update", { host.withLocation { vm.saveParking() } }, Modifier.weight(1f), kind = BtnKind.LINE)
-                    Btn("Clear", { vm.clearParking() }, Modifier.weight(1f), kind = BtnKind.LINE)
-                }
-            } else {
-                Txt("Saves where you are now, so you can walk back to it.", T.sheetLead, c.ink2)
-                Spacer(Modifier.height(24.dp))
-                Btn("Save where I parked", { host.withLocation { vm.saveParking() } }, Modifier.fillMaxWidth(), icon = "pin")
+            app.waylink.ui.components.MapPeek(p.lat, p.lng, Modifier.fillMaxWidth().height(170.dp))
+            Spacer(Modifier.height(14.dp))
+            Txt(p.address ?: "%.5f, %.5f".format(java.util.Locale.ROOT, p.lat, p.lng), T.rowTitle, c.ink, maxLines = 2)
+            Txt("Saved ${f.ago(p.ts)}, at ${tShort(p.ts)}", T.rowSub, c.ink3, Modifier.padding(top = 2.dp))
+            p.photo?.let { ParkingPhoto(it, Modifier.padding(top = 14.dp)) }
+            Spacer(Modifier.height(20.dp))
+            Btn("Walk back with Google Maps", {
+                val url = "https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking"
+                try { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (e: Exception) { vm.toast("No app can open maps.") }
+            }, Modifier.fillMaxWidth(), icon = "map")
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Btn("Park again", { nav.open("parking:new") }, Modifier.weight(1f), kind = BtnKind.LINE, icon = "pin")
+                Btn("Clear", { vm.clearParking(); nav.close() }, Modifier.weight(1f), kind = BtnKind.LINE)
             }
+        }
+        "rec-start" -> SheetSpec("Start recording?", null) {
+            val c = W.c
+            Spacer(Modifier.height(8.dp))
+            Txt("Waylink logs distance, time and route with the phone’s GPS until you end the ride. Keep the phone on you.", T.sheetLead.copy(fontSize = 15.sp, lineHeight = 22.sp), c.ink2)
+            Spacer(Modifier.height(22.dp))
+            Btn("Start recording", { nav.close(); host.startRec() }, Modifier.fillMaxWidth(), icon = "play")
+            Spacer(Modifier.height(8.dp))
+            Btn("Not now", { nav.back() }, Modifier.fillMaxWidth(), kind = BtnKind.LINE)
         }
         "glovebox" -> SheetSpec("Papers", clip(vehicleTitle(s))) {
             val c = W.c
@@ -218,12 +226,12 @@ private fun QuickBody(s: AppState, live: Live, vm: AppViewModel, nav: SheetNav, 
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         QTile("fuel", quiet, "Log fuel", lastFill?.let { "Last: ${dShort(it.ts)}" } ?: "At the pump", Modifier.weight(1f)) { nav.open("fuel:new") }
         if (rec != null) QTile("stop", c.bg.copy(alpha = 0.16f) to c.bg, "End ride", "${f.num(rec.km, 1)} km so far", Modifier.weight(1f), live = true) { nav.open("rec-end") }
-        else QTile("play", quiet, "Record a ride", "Uses phone GPS", Modifier.weight(1f)) { nav.close(); host.startRec() }
+        else QTile("play", quiet, "Record a ride", "Uses phone GPS", Modifier.weight(1f)) { nav.open("rec-start") }
     }
     Spacer(Modifier.height(10.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         QTile("speed", c.inkA(0.08f) to c.ink, "Ride mode", "Big speed, next turn", Modifier.weight(1f)) { nav.close(); host.rideMode() }
-        QTile("pin", quiet, "Save parking", park?.let { "Saved ${f.ago(it.ts)}" } ?: "Find it later", Modifier.weight(1f)) { host.withLocation { vm.saveParking() } }
+        QTile("pin", quiet, "Save parking", park?.let { "Saved ${f.ago(it.ts)}" } ?: "Find it later", Modifier.weight(1f)) { nav.open("parking:new") }
     }
     if (due.isNotEmpty()) {
         Txt("Due on this bike", T.eyebrow, c.ink3, Modifier.padding(top = 24.dp, bottom = 10.dp))
@@ -267,5 +275,89 @@ private fun QTile(icon: String, qi: Pair<Color, Color>, title: String, desc: Str
             Spacer(Modifier.height(4.dp))
             Txt(desc, T.row.copy(fontSize = 13.5.sp, lineHeight = 19.6.sp), if (live) c.bg.copy(alpha = 0.7f) else c.ink3, maxLines = 2)
         }
+    }
+}
+
+/**
+ * A new parking spot: finds where you are, shows it on a small map with the street, lets you add a photo of the
+ * spot (level, pillar number), and saves only when you say so. A photo you don't keep is deleted.
+ */
+@Composable
+private fun ParkingNew(s: AppState, vm: AppViewModel, nav: SheetNav, host: ExtraHost) {
+    val c = W.c
+    val ctx = LocalContext.current
+    var fix by remember { mutableStateOf<Triple<Double, Double, Float?>?>(null) }
+    var street by remember { mutableStateOf<String?>(null) }
+    // Saveable, so a photo survives the app being recreated while the camera is open.
+    var photo by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<String?>(null) }
+    var pending by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<String?>(null) }
+    var saved by remember { mutableStateOf(false) }
+    var tries by remember { mutableStateOf(0) }
+    LaunchedEffect(tries) {
+        host.withLocation { vm.locateOnce { la, ln, acc -> fix = Triple(la, ln, acc); vm.streetOf(la, ln) { street = it } } }
+    }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { if (!saved) vm.discardParkingPhoto(photo) } }
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        val f = pending?.let { java.io.File(it) }
+        if (ok && f != null && f.length() > 0) { vm.discardParkingPhoto(photo); photo = f.path } else f?.delete()
+        pending = null
+    }
+    fun shoot() {
+        val f = vm.newParkingPhoto()
+        pending = f.path
+        runCatching { camera.launch(FileProvider.getUriForFile(ctx, ctx.packageName + ".files", f)) }
+            .onFailure { pending = null; f.delete(); vm.toast("No camera app found.") }
+    }
+    Spacer(Modifier.height(8.dp))
+    val here = fix
+    if (here == null) {
+        Box(Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(16.dp)).background(c.inkA(0.04f)).pressable(label = "Try again") { tries++ }, contentAlignment = Alignment.Center) {
+            Txt("Finding where you are…", T.row, c.ink3)
+        }
+    } else app.waylink.ui.components.MapPeek(here.first, here.second, Modifier.fillMaxWidth().height(170.dp))
+    Spacer(Modifier.height(14.dp))
+    Txt(street ?: here?.let { "%.5f, %.5f".format(java.util.Locale.ROOT, it.first, it.second) } ?: "Waiting for a location fix", T.rowTitle, c.ink, maxLines = 2)
+    Txt(here?.third?.let { "Accurate to about ${it.toInt().coerceAtLeast(3)} m" } ?: "Step outside if it takes long", T.rowSub, c.ink3, Modifier.padding(top = 2.dp))
+    Spacer(Modifier.height(14.dp))
+    val ph = photo
+    if (ph == null) Btn("Add a photo of the spot", { shoot() }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "camera")
+    else {
+        ParkingPhoto(ph)
+        Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Chip("Retake", { shoot() }, icon = "camera")
+            Chip("Remove", { vm.discardParkingPhoto(ph); photo = null })
+        }
+    }
+    Spacer(Modifier.height(20.dp))
+    Btn(if (here == null) "Finding you…" else "Save parking", {
+        val h = fix ?: return@Btn
+        saved = true
+        vm.confirmParking(h.first, h.second, street, photo)
+        nav.close()
+    }, Modifier.fillMaxWidth(), icon = "pin")
+    Spacer(Modifier.height(8.dp))
+    Btn("Cancel", { nav.back() }, Modifier.fillMaxWidth(), kind = BtnKind.LINE)
+}
+
+/** The parking photo, scaled down to fit. */
+@Composable
+private fun ParkingPhoto(path: String, modifier: Modifier = Modifier) {
+    val c = W.c
+    var img by remember(path) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(path) {
+        img = withContext(Dispatchers.IO) {
+            runCatching {
+                val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(path, o)
+                var sample = 1
+                while (maxOf(o.outWidth, o.outHeight) / sample > 1200) sample *= 2
+                BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = sample })?.asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    Box(modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(16.dp)).background(c.raised), contentAlignment = Alignment.Center) {
+        val b = img
+        if (b != null) Image(b, "Photo of the parking spot", Modifier.fillMaxWidth().height(180.dp), contentScale = ContentScale.Crop)
+        else Txt("Photo missing", T.row, c.ink3)
     }
 }

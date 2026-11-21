@@ -66,6 +66,7 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -170,6 +171,11 @@ private fun Intro(onSkip: () -> Unit, onDone: () -> Unit, onSample: () -> Unit) 
             val pieces = when (app.waylink.ui.theme.Looks.scene) { "night" -> SCENE_NIGHT; "dark" -> SCENE_DARK; else -> if (c.dark) SCENE_NIGHT else SCENE_LIGHT }
             val first by remember { androidx.compose.runtime.derivedStateOf { (pager.currentPage + pager.currentPageOffsetFraction).toInt().coerceIn(0, 4) } }
             val pieceW = w * (392f / 390f)
+            val paper = when (pieces) { SCENE_NIGHT -> Color(0xFF2E2B25); SCENE_DARK -> Color(0xFF201013); else -> Color(0xFFEBE4D6) }
+            val grainBmp = androidx.compose.ui.graphics.ImageBitmap.imageResource(R.drawable.onb_grain)
+            val grain = remember(grainBmp) {
+                androidx.compose.ui.graphics.ShaderBrush(androidx.compose.ui.graphics.ImageShader(grainBmp, androidx.compose.ui.graphics.TileMode.Repeated, androidx.compose.ui.graphics.TileMode.Repeated))
+            }
             for (i in first..minOf(first + 1, 4)) {
                 androidx.compose.runtime.key(i) {
                     Box(
@@ -177,7 +183,16 @@ private fun Intro(onSkip: () -> Unit, onDone: () -> Unit, onSample: () -> Unit) 
                             .offset { androidx.compose.ui.unit.IntOffset(((i - pager.currentPage - pager.currentPageOffsetFraction) * w.toPx()).roundToInt(), 0) }
                             .wrapContentWidth(Alignment.Start, unbounded = true).width(pieceW).height(372.dp),
                     ) {
-                        Image(painterResource(pieces[i]), null, Modifier.fillMaxSize(), contentScale = ContentScale.FillBounds)
+                        // the paper: a 160 px tile of pale pores, tinted to the paper colour and drawn over the washes
+                        // (under the rider), so the colours granulate like the v0 watercolour
+                        Image(
+                            painterResource(pieces[i]), null,
+                            Modifier.fillMaxSize().drawWithContent {
+                                drawContent()
+                                drawRect(grain, colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(paper, BlendMode.SrcIn))
+                            },
+                            contentScale = ContentScale.FillBounds,
+                        )
                         // the rider beside the incoming call (web: x 515, y 199.3, 140 x 132 of the 1950 x 400 scene)
                         if (i == 1) Image(
                             painterResource(R.drawable.rider_street), null,

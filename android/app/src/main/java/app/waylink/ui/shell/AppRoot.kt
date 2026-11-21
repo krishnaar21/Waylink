@@ -430,7 +430,8 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         LaunchedEffect(stack) { held.filter { it !in sheets }.forEach { kept.removeState(it); held.remove(it) } }
         // Dismissing an explainer stacked on another sheet goes back to that sheet; anything else closes all.
         val info = top != null && sheets.size > 1 && (top.startsWith("help:") || top.startsWith("cluster:"))
-        Sheet(spec != null, if (info) nav::back else nav::close, shown?.title ?: "", shown?.sub, onBack = if (sheets.size > 1) nav::back else null) {
+        Sheet(spec != null, if (info) nav::back else nav::close, shown?.title ?: "", null, // one short headline per sheet, no sub line
+            onBack = if (sheets.size > 1) nav::back else null) {
             if (shown != null) {
                 held += lastKey
                 androidx.compose.runtime.key(lastKey) { kept.SaveableStateProvider(lastKey) { shown.content.invoke(this) } }
