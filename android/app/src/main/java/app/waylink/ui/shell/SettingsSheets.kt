@@ -202,7 +202,7 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
         }
         "faq" -> SheetSpec("Questions and answers", "Help") { Faq() }
         "report" -> SheetSpec("Report a problem", "Help") { ReportBody(s, live, vm) }
-        "about" -> SheetSpec("About Waylink", "Turns, calls and bike care · v$APP_VERSION") { AboutBody(nav) }
+        "about" -> SheetSpec("Waylink v$APP_VERSION", null) { AboutBody(nav) }
         "models" -> SheetSpec("Bike models", "About") {
             Spacer(Modifier.height(16.dp))
             ListCard(flat = true) {
@@ -216,7 +216,7 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
         "paper" -> SheetSpec("Paper themes", "For supporters") { PaperLockedBody(nav) }
         "thanks" -> {
             val t = app.waylink.data.Support.tier(arg) ?: return null
-            SheetSpec("Thank you", t.name) { ThanksBody(t, vm, nav) }
+            SheetSpec("Thank you, ${t.name}", null) { ThanksBody(t, vm, nav) }
         }
         "avatar" -> SheetSpec("Your picture", "Profile") {
             // .av-grid: eleven riders and a Photo tile, four to a row. The picked one grows (1.12) with an accent ring,

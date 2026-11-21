@@ -867,8 +867,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     // ---------- Parked bike ----------
     /** Saves where the phone is now as the bike's parking spot. Location permission is asked by the screen first. */
     @android.annotation.SuppressLint("MissingPermission")
-    fun saveParking() {
-        if (_live.value.simulated) { setParking(sim[0], sim[1]); return }
+    fun saveParking() = locateOnce { lat, lng, _ -> setParking(lat, lng) }
+
+    /** One location fix for the parking sheet: [onFix] gets latitude, longitude and accuracy in metres (if known). */
+    fun locateOnce(onFix: (Double, Double, Float?) -> Unit) {
+        if (_live.value.simulated) { onFix(sim[0], sim[1], 8f); return }
         if (!hasLocation()) { toast("Allow location to save where you parked."); return }
         val provider = when {
             locations.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) -> android.location.LocationManager.GPS_PROVIDER
@@ -876,23 +879,51 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             else -> null
         }
         if (provider == null) { toast("Location is off. Turn it on in quick settings."); return }
-        toast("Finding where you are…")
         try {
             androidx.core.location.LocationManagerCompat.getCurrentLocation(
                 locations, provider, null as android.os.CancellationSignal?, androidx.core.content.ContextCompat.getMainExecutor(getApplication()),
                 androidx.core.util.Consumer<android.location.Location?> { loc ->
                 val l = loc ?: locations.getLastKnownLocation(provider)
-                if (l == null) toast("Couldn’t get a location fix. Try again outside.") else setParking(l.latitude, l.longitude)
+                if (l == null) toast("Couldn’t get a location fix. Try again outside.") else onFix(l.latitude, l.longitude, if (l.hasAccuracy()) l.accuracy else null)
             })
         } catch (e: SecurityException) { toast("Allow location to save where you parked.") }
     }
 
-    private fun setParking(lat: Double, lng: Double) {
-        veh { it.copy(parking = app.waylink.core.Parking(r6(lat), r6(lng), System.currentTimeMillis())) }
+    private fun setParking(lat: Double, lng: Double, address: String? = null, photo: String? = null) {
+        val old = state.value.vehicle.parking?.photo
+        if (old != null && old != photo) runCatching { File(old).delete() }
+        veh { it.copy(parking = app.waylink.core.Parking(r6(lat), r6(lng), System.currentTimeMillis(), address?.take(120), photo)) }
         toast("Parking saved.")
     }
 
-    fun clearParking() { veh { it.copy(parking = null) }; toast("Parking cleared.") }
+    /** Saves the spot the rider confirmed on the parking sheet, with its street and an optional photo. */
+    fun confirmParking(lat: Double, lng: Double, address: String?, photo: String?) = setParking(lat, lng, address, photo)
+
+    fun clearParking() {
+        state.value.vehicle.parking?.photo?.let { runCatching { File(it).delete() } }
+        veh { it.copy(parking = null) }; toast("Parking cleared.")
+    }
+
+    /** Where the camera writes a parking photo; kept in the app's own files, out of the gallery and out of backups. */
+    fun newParkingPhoto(): File = File(File(getApplication<Application>().filesDir, "parking").apply { mkdirs() }, "p-${System.currentTimeMillis()}.jpg")
+
+    /** Drops a photo that was taken but not kept (retake, cancel). */
+    fun discardParkingPhoto(path: String?) {
+        if (path != null && path != state.value.vehicle.parking?.photo) runCatching { File(path).delete() }
+    }
+
+    /** The street for a spot, from the phone's geocoder ("12th Main, Indiranagar"), or null offline. */
+    fun streetOf(lat: Double, lng: Double, done: (String?) -> Unit) {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val line = runCatching {
+                if (!android.location.Geocoder.isPresent()) return@runCatching null
+                @Suppress("DEPRECATION")
+                val a = android.location.Geocoder(getApplication(), java.util.Locale.ENGLISH).getFromLocation(lat, lng, 1)?.firstOrNull() ?: return@runCatching null
+                listOfNotNull(a.thoroughfare ?: a.featureName, a.subLocality ?: a.locality).distinct().joinToString(", ").ifBlank { null }
+            }.getOrNull()
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { done(line) }
+        }
+    }
 
     // ---------- Glovebox ----------
     private val gloveDir get() = File(getApplication<Application>().filesDir, "glove")

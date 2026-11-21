@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -95,15 +96,15 @@ object Perms {
 
     fun list(ctx: Context, s: AppState): List<Perm> = buildList {
         val loc = granted(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION) || granted(ctx, android.Manifest.permission.ACCESS_COARSE_LOCATION)
-        add(Perm("location", "Location", "Records rides, saves where you parked, weather here", "pin", loc, true))
-        if (Platform.caps.bluetooth) add(Perm("nearby", "Nearby devices", "Finds and links your bike over Bluetooth", "bt", BikeLink.hasPermissions(ctx), true))
+        add(Perm("location", "Location", "Records your rides, saves where you parked and shows the weather where you are", "pin", loc, true))
+        if (Platform.caps.bluetooth) add(Perm("nearby", "Nearby devices", "Finds your bike over Bluetooth so turns and calls reach its display", "bt", BikeLink.hasPermissions(ctx), true))
         if (Platform.caps.readNavApps) {
             val src = NavSource.of(s.settings.navSource)
-            add(Perm("navaccess", "Notification access", if (src.readsNotifications) "Reads ${src.name}’s turn card for the bike" else "Only for live turns from a maps app", "bell", NavFeed.allowed(ctx), src.readsNotifications))
+            add(Perm("navaccess", "Notification access", if (src.readsNotifications) "Reads only ${src.name}’s turn card, so the next turn shows on your bike" else "Only needed for live turns from a maps app", "nav", NavFeed.allowed(ctx), src.readsNotifications))
         }
-        if (android.os.Build.VERSION.SDK_INT >= 33) add(Perm("notify", "Notifications", "Reminders for fuel, service and papers", "bell", app.waylink.data.Reminders.allowed(ctx), s.settings.reminders))
+        if (android.os.Build.VERSION.SDK_INT >= 33) add(Perm("notify", "Notifications", "Reminds you when service, papers or fuel are due", "bell", app.waylink.data.Reminders.allowed(ctx), s.settings.reminders))
         val pm = ctx.getSystemService(Context.POWER_SERVICE) as? PowerManager
-        add(Perm("battery", "Battery unrestricted", "Keeps the bike linked with the screen off", "battery", pm?.isIgnoringBatteryOptimizations(ctx.packageName) ?: true, false))
+        add(Perm("battery", "Battery unrestricted", "Keeps the bike linked while the screen is off", "battery", pm?.isIgnoringBatteryOptimizations(ctx.packageName) ?: true, false))
     }
 
     fun needed(ctx: Context, s: AppState) = list(ctx, s).count { it.required && !it.ok }
@@ -112,24 +113,35 @@ object Perms {
         runCatching { ctx.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", ctx.packageName, null)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 
+    /**
+     * True when Android 13+ will block notification access with "restricted setting": the app came from a file
+     * (the preview APK), not from Play. The rider then has to allow it once from App info.
+     */
+    fun restricted(ctx: Context): Boolean {
+        if (android.os.Build.VERSION.SDK_INT < 33) return false
+        val from = runCatching { ctx.packageManager.getInstallSourceInfo(ctx.packageName).installingPackageName }.getOrNull()
+        return from != "com.android.vending"
+    }
+
     fun openBattery(ctx: Context) {
         val ok = runCatching { ctx.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess
         if (!ok) openAppSettings(ctx)
     }
 }
 
-/** "nav-source", "place:<id|new>", "speed", "perms". */
+/** "nav-source", "place:<id|new>", "speed", "perms", "navaccess". */
 fun navSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetNav, host: ExtraHost): SheetSpec? {
     val arg = key.substringAfter(':', "")
     return when (key.substringBefore(':')) {
-        "nav-source" -> SheetSpec("Live turns from", "Route") { SourceBody(s, vm) }
+        "nav-source" -> SheetSpec("Live turns from", null) { SourceBody(s, vm, nav) }
         "place" -> {
             val p = s.places.firstOrNull { it.id == arg }
             if (arg != "new" && p == null) return null
             SheetSpec(if (p == null) "New place" else p.name, "Saved places") { PlaceBody(s, p, vm, nav, host) }
         }
         "speed" -> SheetSpec("Speed alert", "Riding") { SpeedBody(s, vm) }
-        "perms" -> SheetSpec("Permissions", "What Waylink can use") { PermsBody(s) }
+        "perms" -> SheetSpec("Permissions", null) { PermsBody(s, nav) }
+        "navaccess" -> SheetSpec("Reading turn cards", null) { NavAccessBody(s) }
         "route-howto" -> SheetSpec("How this works", "Route") {
             val src = NavSource.of(s.settings.navSource).let { if (it.readsNotifications) it else NavSource.of("gmaps") }
             Spacer(Modifier.height(12.dp))
@@ -152,7 +164,7 @@ fun navSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetN
 }
 
 @Composable
-private fun SourceBody(s: AppState, vm: AppViewModel) {
+private fun SourceBody(s: AppState, vm: AppViewModel, nav: SheetNav) {
     val c = W.c
     val ctx = LocalContext.current
     val tick = rememberResumeTick()
@@ -178,8 +190,7 @@ private fun SourceBody(s: AppState, vm: AppViewModel) {
         else {
             StatusLine(false, "Waylink needs notification access to read ${cur.name}.")
             Spacer(Modifier.height(14.dp))
-            Btn("Allow notification access", { NavFeed.openAccess(ctx) }, Modifier.fillMaxWidth(), icon = "bell")
-            Hint("Android opens its list. Switch Waylink on, then come back.")
+            Btn("Allow notification access", { nav.open("navaccess") }, Modifier.fillMaxWidth(), icon = "bell")
         }
     }
 }
@@ -324,7 +335,7 @@ private fun Step(plus: Boolean, label: String, enabled: Boolean, onClick: () -> 
 }
 
 @Composable
-private fun PermsBody(s: AppState) {
+private fun PermsBody(s: AppState, nav: SheetNav) {
     val c = W.c
     val ctx = LocalContext.current
     val tick = rememberResumeTick()
@@ -332,35 +343,87 @@ private fun PermsBody(s: AppState) {
     var after by remember { mutableIntStateOf(0) }
     val perms = remember(tick, after, s.settings.navSource) { Perms.list(ctx, s) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { after++ }
-    val need = perms.count { it.required && !it.ok }
     Spacer(Modifier.height(8.dp))
-    Txt(if (need == 0) "Everything Waylink needs is allowed." else "$need ${if (need == 1) "thing needs" else "things need"} your OK. Each one only unlocks what it says.", T.sheetLead, c.ink2)
-    Spacer(Modifier.height(18.dp))
+    // The promise first, plainly.
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.tintSage).padding(14.dp), verticalAlignment = Alignment.Top) {
+        Ic("shield", size = 20.dp, tint = c.sageInk)
+        Spacer(Modifier.width(12.dp))
+        Txt("Everything stays on this phone. No account, and we never sell or share your data. Each switch only unlocks what it says, and you can turn any of them off.",
+            T.row.copy(lineHeight = 20.sp), c.ink2)
+    }
+    Spacer(Modifier.height(16.dp))
     ListCard(flat = true) {
         perms.forEachIndexed { i, p ->
             if (i > 0) Hairline(66.dp)
-            val act: (() -> Unit)? = if (p.ok) null else ({
-                when (p.key) {
-                    "location", "nearby", "notify" -> {
-                        // Android stops showing its prompt after a refusal; the second tap goes to settings.
-                        if (p.key in asked) Perms.openAppSettings(ctx)
-                        else {
-                            asked = asked + p.key
-                            launcher.launch(when (p.key) {
-                                "location" -> arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
-                                "notify" -> arrayOf(android.Manifest.permission.POST_NOTIFICATIONS)
-                                else -> BikeLink.PERMISSIONS
-                            })
-                        }
+            val toggle: () -> Unit = {
+                when {
+                    // Android only lets an app ask; turning one off happens in its settings.
+                    p.ok -> if (p.key == "navaccess") NavFeed.openAccess(ctx) else if (p.key == "battery") Perms.openBattery(ctx) else Perms.openAppSettings(ctx)
+                    p.key == "navaccess" -> nav.open("navaccess")
+                    p.key == "battery" -> Perms.openBattery(ctx)
+                    // Android stops showing its prompt after a refusal; the second tap goes to settings.
+                    p.key in asked -> Perms.openAppSettings(ctx)
+                    else -> {
+                        asked = asked + p.key
+                        launcher.launch(when (p.key) {
+                            "location" -> arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                            "notify" -> arrayOf(android.Manifest.permission.POST_NOTIFICATIONS)
+                            else -> BikeLink.PERMISSIONS
+                        })
                     }
-                    "navaccess" -> NavFeed.openAccess(ctx)
-                    "battery" -> Perms.openBattery(ctx)
                 }
-            })
-            ListRow(p.title, p.why, icon = p.icon, chevron = !p.ok, onClick = act, trailing = { PermPill(p) })
+            }
+            ListRow(p.title, p.why, icon = p.icon, chevron = false, compact = true, trailing = { app.waylink.ui.components.Switch(p.ok, p.title, toggle) })
         }
     }
-    Hint("Changes made in Android settings show here when you come back.")
+    Hint("Turning one off opens Android settings, since only Android can take a permission back. Changes show here when you come back.")
+}
+
+/**
+ * Before sending the rider to Android's notification access screen: what Waylink reads and why, that Android's
+ * warning is shown for every app that reads notifications, and (preview APK on Android 13+) how to get past the
+ * "restricted setting" block, which greys out the switch until it's allowed from App info.
+ */
+@Composable
+private fun NavAccessBody(s: AppState) {
+    val c = W.c
+    val ctx = LocalContext.current
+    val tick = rememberResumeTick()
+    val allowed = remember(tick) { NavFeed.allowed(ctx) }
+    val src = NavSource.of(s.settings.navSource).let { if (it.readsNotifications) it else NavSource.of("gmaps") }
+    val restricted = remember { Perms.restricted(ctx) }
+    Spacer(Modifier.height(8.dp))
+    Txt("Waylink reads only ${src.name}’s turn card (the arrow, the distance and the street) and sends it to your bike. Nothing else is read, and nothing is stored or sent anywhere.",
+        T.sheetLead.copy(fontSize = 15.sp, lineHeight = 22.sp), c.ink2)
+    Spacer(Modifier.height(10.dp))
+    Txt("Android warns about every app that reads notifications. That warning is generic and isn’t about Waylink.", T.row.copy(lineHeight = 20.sp), c.ink3)
+    Spacer(Modifier.height(18.dp))
+    if (allowed) StatusLine(true, "Notification access is on.")
+    else {
+        val steps = buildList {
+            if (restricted) {
+                add("Open App info below, tap ⋮ at the top right, then Allow restricted settings. (Android asks this once for apps installed from a file.)")
+                add("Come back and tap Turn on access.")
+            }
+            add("Find Waylink in the list and switch on Allow notification access.")
+            add("Come back here. It shows as on.")
+        }
+        steps.forEachIndexed { i, t ->
+            Row(Modifier.padding(bottom = 10.dp), verticalAlignment = Alignment.Top) {
+                Box(Modifier.size(22.dp).clip(CircleShape).background(c.inkA(0.07f)), contentAlignment = Alignment.Center) {
+                    Txt("${i + 1}", T.rowSub.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold), c.ink2)
+                }
+                Spacer(Modifier.width(10.dp))
+                Txt(t, T.row.copy(lineHeight = 20.sp), c.ink2)
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        if (restricted) {
+            Btn("Open App info", { Perms.openAppSettings(ctx) }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "settings")
+            Spacer(Modifier.height(8.dp))
+        }
+        Btn("Turn on access", { NavFeed.openAccess(ctx) }, Modifier.fillMaxWidth(), icon = "bell")
+    }
 }
 
 @Composable
@@ -407,7 +470,7 @@ fun LiveTurnsCard(s: AppState, openSheet: (String) -> Unit) {
         }
         if (ok == false) {
             Spacer(Modifier.height(14.dp))
-            Btn("Allow notification access", { NavFeed.openAccess(ctx) }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "bell", small = true)
+            Btn("Allow notification access", { openSheet("navaccess") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "bell", small = true)
         }
     }
 }
