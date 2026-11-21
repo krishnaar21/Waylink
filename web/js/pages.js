@@ -9,37 +9,59 @@ export const PAGES = [
   ['rides', 'Rides', 'trips'],
   ['service', 'Service', 'wrench'],
   ['fuel', 'Fuel', 'fuel'],
-  ['settings', 'Settings', 'settings'],
 ];
 
-// ---------- Shell ----------
-export function sidebar(c, page) {
+// ---------- Shell: one floating toolbar (top on a computer, bottom on a phone-sized window) ----------
+export function toolbar(c, page) {
   const { s } = c;
   const v = S.veh(s);
   const due = S.needsYou(s);
   const fs = S.fuelStats(s);
   const pip = { overview: due || fs.onReserve, service: due, fuel: fs.onReserve };
-  return `<div class="sd-brand">${V.LOOP}<span class="sd-tag">for desktop</span></div>
-  <button class="sd-bike" data-act="sheet" data-arg="garage" aria-label="Switch bike">${V.vehicleArt(s, v, 'thumb')}<span class="sd-bt"><b>${esc(clip(S.vehicleTitle(s), 18))}</b><span>${num(Math.floor(s.odo))} km${v.plate ? ' · ' + esc(v.plate) : ''}</span></span>${s.vehicles.length > 1 ? `<span class="sd-swap">${icon('updown')}</span>` : ''}</button>
-  <nav class="sd-nav" aria-label="Main">${PAGES.map(([k, l, ic]) => `<a class="sd-i ${page === k ? 'on' : ''}" href="#${k}" ${page === k ? 'aria-current="page"' : ''}>${icon(ic)}<span>${l}</span>${pip[k] ? '<span class="pip"></span>' : ''}</a>`).join('')}</nav>
-  <div class="sd-foot">${syncLine(c)}</div>`;
+  const sy = syncState(c);
+  return `<a class="tb-brand" href="#overview" aria-label="Waylink, overview">${V.LOOP}</a>
+  <nav class="tb-nav" aria-label="Main">${PAGES.map(([k, l, ic]) => `<a class="tb-i ${page === k ? 'on' : ''}" href="#${k}" ${page === k ? 'aria-current="page"' : ''} title="${l}">${icon(ic)}<span class="tb-l">${l}</span>${pip[k] ? '<span class="pip" aria-label="needs you"></span>' : ''}</a>`).join('')}</nav>
+  <div class="tb-end">
+    <button class="tb-bike" data-act="pop" data-arg="bike" aria-haspopup="dialog" aria-label="Bike: ${esc(S.vehicleTitle(s))}">${V.vehicleArt(s, v, 'thumb')}<span class="tb-bt">${esc(clip(S.vehicleTitle(s), 16))}</span>${icon('updown', 'tb-chev')}</button>
+    <button class="tb-sync" data-act="pop" data-arg="sync" aria-haspopup="dialog" aria-label="${sy.t}. ${sy.d}" title="${sy.t}"><span class="dot ${sy.tone}"></span><span class="tb-st">${sy.short}</span></button>
+    <button class="tb-gear" data-act="prefs" aria-label="Settings" title="Settings">${icon('settings')}</button>
+  </div>`;
 }
-export function tabbar(c, page) {
-  const { s } = c;
-  const due = S.needsYou(s);
-  return PAGES.map(([k, l, ic]) => `<a class="tab ${page === k ? 'on' : ''}" href="#${k}" aria-label="${l}" ${page === k ? 'aria-current="page"' : ''}>${icon(ic)}${k === 'service' && due ? '<span class="pip"></span>' : ''}<span>${l}</span></a>`).join('');
-}
-// Where the data came from and how fresh it is, always visible so nobody mistakes old numbers for new.
-export function syncLine(c) {
+// Where the data came from and how fresh it is, always in view so nobody mistakes old numbers for new.
+function syncState(c) {
   const { link } = c;
   const n = link.pending.length;
   const dev = esc(link.info?.device || 'your phone');
   const when = link.updated ? ago(link.updated) : '';
   const stale = link.updated && Date.now() - link.updated > 6 * 3600e3;
-  const tone = !link.online ? 'k' : n ? 'a' : stale ? 'a' : '';
+  const tone = !link.online ? 'k' : n || stale ? 'a' : '';
   const t = !link.online ? 'Offline' : n ? `${plural(n, 'change', 'changes')} waiting` : `Synced ${when}`;
+  const short = !link.online ? 'Offline' : n ? `${n} waiting` : when ? when.replace(' ago', '') : 'Synced';
   const d = !link.online ? `Showing data from ${when || 'earlier'}` : n ? `Saved. ${dev} picks ${n === 1 ? 'it' : 'them'} up when it’s online.` : stale ? `Open Waylink on ${dev} to refresh` : `From ${dev}`;
-  return `<button class="sync-line" data-act="sync-now" aria-label="Sync now"><span class="dot ${tone}"></span><span class="sl-tx"><b>${t}</b><span>${d}</span></span>${icon('refresh')}</button>`;
+  return { tone, t, d, short, dev };
+}
+
+// ---------- Popovers ----------
+export function popover(c, key) {
+  const { s, link } = c;
+  if (key === 'bike') {
+    const cur = S.veh(s);
+    return `<div class="pop-h">Your bikes</div>
+    <div class="pop-list" role="listbox" aria-label="Show bike">${s.vehicles.map((v) => {
+      const on = v.id === cur.id;
+      const title = v.nickname || S.bikeName({ ...s, active: v.id });
+      return `<button class="pop-bike ${on ? 'on' : ''}" role="option" aria-selected="${on}" data-act="${on ? 'close-pop' : 'switch-vehicle'}" data-arg="${v.id}">${V.vehicleArt(s, v, 'thumb')}<span class="pb-tx"><b>${esc(clip(title, 22))}</b><span>${num(Math.floor(v.odo))} km${v.plate ? ' · ' + esc(v.plate) : ''}</span></span>${on ? icon('check', 'pb-ok') : ''}</button>`; }).join('')}</div>
+    <div class="pop-foot"><button class="pop-a" data-act="sheet" data-arg="vehicle:${cur.id}">${icon('edit')}Edit this bike</button><button class="pop-a" data-act="sheet" data-arg="specs">${icon('spec')}Spec sheet</button></div>`;
+  }
+  if (key === 'sync') {
+    const sy = syncState(c);
+    return `<div class="pop-sync"><span class="dot ${sy.tone}"></span><div><b>${sy.t}</b><p>${sy.d}</p></div></div>
+    <div class="pop-kv"><span>Phone</span><b>${sy.dev}</b></div>
+    <div class="pop-kv"><span>Linked</span><b>${link.info?.linkedAt ? V.dFull(link.info.linkedAt) : '—'}</b></div>
+    <div class="pop-kv"><span>Lock</span><b>End-to-end encrypted</b></div>
+    <div class="pop-foot"><button class="pop-a" data-act="sync-now">${icon('refresh')}Sync now</button><button class="pop-a" data-act="prefs" data-arg="phone">${icon('settings')}Link settings</button></div>`;
+  }
+  return null;
 }
 const head = (title, sub, actions = '') => `<header class="whead"><div class="wh-tx"><h1 class="title">${title}</h1><div class="subtitle">${sub}</div></div>${actions ? `<div class="wh-act">${actions}</div>` : ''}</header>`;
 const btn = (label, act, arg = '', cls = 'ink', ic = '') => `<button class="btn ${cls} sm" data-act="${act}" data-arg="${esc(arg)}">${ic ? icon(ic) : ''}${label}</button>`;
@@ -206,64 +228,76 @@ export function fuel(c) {
   </div>`;
 }
 
-// ---------- Settings ----------
-export function settings(c) {
-  const { s, link, look } = c;
-  const v = S.veh(s);
-  const co = S.country(s);
-  const sup = !!s.settings.supporter;
-  const auto = look.theme === 'auto';
-  const pair = sup ? ['sketch', 'sketchdark'] : ['paper', 'obsidian'];
-  const sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
-  const shown = V.THEMES.filter(([k]) => k !== 'auto');
-  return `${head('Settings', 'This computer, your bike and the look')}
-  <div class="wgrid">
-    <div class="col-6">
-      <div class="section flush-s">${sh('Linked phone')}
-        <div class="card linked flush">
-          <div class="lk-row"><span class="lk-ic">${icon('phone')}</span><div class="grow"><div class="serif" style="font-size:20px">${esc(link.info?.device || 'Your phone')}</div><div class="small muted">Linked ${link.info?.linkedAt ? V.dFull(link.info.linkedAt) : ''} · end-to-end encrypted</div></div></div>
-          <div class="vc-rows">
-            ${li({ ic: 'refresh', t: 'Sync now', d: link.updated ? `Last data from the phone ${ago(link.updated)}` : 'Waiting for the phone’s first copy', act: 'sync-now', chev: false })}
-            ${li({ ic: 'down', t: 'Download a backup', d: 'The same file the phone’s backup makes', act: 'export' })}
-            ${li({ ic: 'trash', t: 'Unlink this computer', d: 'Removes your data from this browser', cls: 'danger', act: 'sheet', arg: 'unlink' })}
-          </div>
-        </div>
-        <p class="hint" style="padding:0 4px">Only this browser and your phone hold the key. The relay in between stores locked data it can’t read.</p></div>
-      <div class="section">${sh('Garage', s.vehicles.length > 1 ? '<button class="link" data-act="sheet" data-arg="garage">Switch</button>' : '')}
-        <div class="card vcard"><button class="flex gap12" style="width:100%;text-align:left;padding:12px 16px 12px 12px" data-act="sheet" data-arg="garage" aria-label="Switch bike">
-          ${V.vehicleArt(s, v, 'card')}
-          <div class="grow vc-tx"><div class="serif vc-name">${esc(S.vehicleTitle(s))}</div><div class="small muted vc-line">${v.nickname ? esc(S.bikeName(s)) + ' · ' : ''}${esc(v.plate || 'No plate')}</div><div class="eyebrow vc-line" style="margin-top:8px">${short(s.odo)} km</div></div>
-        </button><button class="circle edit" data-act="sheet" data-arg="vehicle:${v.id}" aria-label="Edit bike">${icon('edit')}</button>
-          <div class="vc-rows">
-          ${li({ ic: 'spec', t: 'Spec sheet', d: 'Oil, tyres, chain, plugs', act: 'sheet', arg: 'specs' })}
-          ${li({ ic: 'gauge', t: 'Odometer', d: 'Correct it if it drifts', end: num(Math.floor(s.odo)) + ' km', act: 'sheet', arg: 'odo' })}
-          ${li({ ic: 'globe', t: 'Country', d: 'Currency and fuel price', end: esc(co.name), act: 'sheet', arg: 'pick:country' })}
-        </div></div></div>
-    </div>
-    <div class="col-6">
-      <div class="section flush-s">${sh('Look')}
-        <div class="card pad flush">
-          <div class="flex between gap12"><div><div style="font-weight:600">Match the computer</div><div class="small muted">${!auto ? 'Off. Pick a theme below' : sup ? 'Paper by day, Paper dark at night' : 'Light by day, Dark at night'}</div></div>${sw(auto, 'match-system')}</div>
-          <div class="tdots mt16" role="radiogroup" aria-label="Theme">${shown.map(([k, l, bg, card, ink]) => {
-            const locked = (k === 'sketch' || k === 'sketchdark') && !sup;
-            const on = auto ? k === (sysDark ? pair[1] : pair[0]) : look.theme === k;
-            const dim = auto && !pair.includes(k);
-            return `<button class="tdot ${on ? 'on' : ''} ${dim ? 'dim' : ''}" role="radio" aria-checked="${on}" data-act="theme" data-arg="${k}" ${locked ? 'disabled title="Paper themes come with supporting Waylink on the phone"' : ''}><span class="td" style="--tbg:${bg};--tcard:${card};--tink:${ink}"><i></i>${locked ? icon('lock') : ''}</span><span class="nm">${l}</span></button>`; }).join('')}</div>
-          <div class="eyebrow mt24">Accent</div>
-          <div class="accents mt12">${V.ACCENTS.map(([k, col, l]) => `<button class="accentopt ${look.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${look.accent === k}" aria-label="${l}" title="${l}"><span class="dot" style="background-color:${col};--c:${col}"></span></button>`).join('')}</div>
-          <div class="vc-rows mt16" style="margin:16px -20px -20px">
-            ${li({ ic: 'progress', t: 'Progress style', end: `<span class="pick-val">${(V.PROGRESS_STYLES.find(([k]) => k === look.progress) || V.PROGRESS_STYLES[0])[1]}</span>`, act: 'sheet', arg: 'pick-progress' })}
-          </div>
-        </div>
-        <p class="hint" style="padding:0 4px">The look here starts from your phone’s and is kept for this computer only.</p></div>
-      <div class="section">${sh('About')}
-        <div class="list">
-          ${li({ ic: 'info', t: 'How linking works', d: 'What the phone sends and who can read it', act: 'sheet', arg: 'how' })}
-          ${li({ ic: 'heart', t: 'Waylink for desktop', d: 'Version ' + WEB_VERSION, chev: false })}
-        </div></div>
-    </div>
+// ---------- Settings: a preferences window, one pane at a time ----------
+export const PREF_TABS = [['phone', 'Linked phone', 'phone'], ['garage', 'Garage', 'garage'], ['look', 'Look', 'palette'], ['about', 'About', 'info']];
+export function prefs(c, tab) {
+  const t = PREF_TABS.some(([k]) => k === tab) ? tab : 'phone';
+  return `<div class="prefs">
+    <nav class="pf-nav" aria-label="Settings sections"><div class="pf-title">Settings</div>${PREF_TABS.map(([k, l, ic]) => `<button class="pf-i ${k === t ? 'on' : ''}" data-act="prefs-tab" data-arg="${k}" ${k === t ? 'aria-current="true"' : ''}>${icon(ic)}<span>${l}</span></button>`).join('')}</nav>
+    <div class="pf-pane" data-pane="${t}">${PANES[t](c)}</div>
   </div>`;
 }
+const paneHead = (t, d) => `<div class="pf-h"><h3>${t}</h3><p>${d}</p></div>`;
+const PANES = {
+  phone(c) {
+    const { link } = c;
+    return `${paneHead('Linked phone', 'Your phone holds the data. This computer shows it and sends your changes back.')}
+    <div class="pf-card pf-phone"><span class="lk-ic">${icon('phone')}</span><div class="grow"><b>${esc(link.info?.device || 'Your phone')}</b><span>Linked ${link.info?.linkedAt ? V.dFull(link.info.linkedAt) : ''} · end-to-end encrypted</span></div><button class="btn line sm" data-act="sync-now">${icon('refresh')}Sync now</button></div>
+    <div class="pf-group">
+      <div class="pf-row"><div><b>Last copy from the phone</b><span>${link.updated ? ago(link.updated) : 'Waiting for the first one'}</span></div></div>
+      <div class="pf-row"><div><b>Download a backup</b><span>The same file the phone’s backup makes</span></div><button class="btn line sm" data-act="export">${icon('down')}Download</button></div>
+      <div class="pf-row"><div><b>How linking works</b><span>What the phone sends and who can read it</span></div><button class="btn line sm" data-act="sheet" data-arg="how">Read</button></div>
+    </div>
+    <div class="pf-group pf-danger">
+      <div class="pf-row"><div><b>Unlink this computer</b><span>Removes your data from this browser. Your phone keeps everything.</span></div><button class="btn sm pf-red" data-act="sheet" data-arg="unlink">Unlink…</button></div>
+    </div>`;
+  },
+  garage(c) {
+    const { s } = c;
+    const v = S.veh(s);
+    const co = S.country(s);
+    return `${paneHead('Garage', s.vehicles.length > 1 ? `${s.vehicles.length} bikes. Switch from the toolbar.` : 'Your bike, as the phone has it.')}
+    <div class="pf-card pf-bike">${V.vehicleArt(s, v, 'card')}<div class="grow"><b class="serif">${esc(S.vehicleTitle(s))}</b><span>${v.nickname ? esc(S.bikeName(s)) + ' · ' : ''}${esc(v.plate || 'No plate')}</span><span class="eyebrow">${num(Math.floor(s.odo))} km</span></div><button class="btn line sm" data-act="sheet" data-arg="vehicle:${v.id}">${icon('edit')}Edit</button></div>
+    <div class="pf-group">
+      <div class="pf-row"><div><b>Odometer</b><span>Correct it if it drifts</span></div><button class="btn line sm" data-act="sheet" data-arg="odo">${num(Math.floor(s.odo))} km</button></div>
+      <div class="pf-row"><div><b>Spec sheet</b><span>Oil, tyres, chain, plugs</span></div><button class="btn line sm" data-act="sheet" data-arg="specs">Open</button></div>
+      <div class="pf-row"><div><b>Country</b><span>Currency and fuel price</span></div><button class="btn line sm" data-act="sheet" data-arg="pick:country">${esc(co.name)}</button></div>
+    </div>
+    <p class="pf-note">Adding or removing a bike, and its photo, happen on the phone.</p>`;
+  },
+  look(c) {
+    const { s, look } = c;
+    const sup = !!look.supporter;
+    const auto = look.theme === 'auto';
+    const pair = sup ? ['sketch', 'sketchdark'] : ['paper', 'obsidian'];
+    const sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
+    const shown = V.THEMES.filter(([k]) => k !== 'auto');
+    const prog = V.PROGRESS_STYLES;
+    return `${paneHead('Look', 'Starts from your phone’s look and is kept for this computer only.')}
+    <div class="pf-group">
+      <div class="pf-row"><div><b>Match the computer</b><span>${!auto ? 'Off. Pick a theme below' : sup ? 'Paper by day, Paper dark at night' : 'Light by day, Dark at night'}</span></div>${sw(auto, 'match-system')}</div>
+      <div class="pf-row col"><b>Theme</b>
+        <div class="pf-themes" role="radiogroup" aria-label="Theme">${shown.map(([k, l, bg, card, ink]) => {
+          const locked = (k === 'sketch' || k === 'sketchdark') && !sup;
+          const on = auto ? k === (sysDark ? pair[1] : pair[0]) : look.theme === k;
+          const dim = auto && !pair.includes(k);
+          return `<button class="pf-theme ${on ? 'on' : ''} ${dim ? 'dim' : ''}" role="radio" aria-checked="${on}" data-act="theme" data-arg="${k}" ${locked ? 'disabled title="Paper themes come with supporting Waylink on the phone"' : ''}><span class="pt-sw" style="--tbg:${bg};--tcard:${card};--tink:${ink}"><i></i><i></i>${locked ? icon('lock') : ''}</span><span>${l}</span></button>`; }).join('')}</div></div>
+      <div class="pf-row col"><b>Accent</b>
+        <div class="accents pf-acc">${V.ACCENTS.map(([k, col, l]) => `<button class="accentopt ${look.accent === k ? 'on' : ''}" data-act="accent" data-arg="${k}" aria-pressed="${look.accent === k}" aria-label="${l}" title="${l}"><span class="dot" style="background-color:${col};--c:${col}"></span></button>`).join('')}</div></div>
+      <div class="pf-row col"><b>Progress style</b>
+        <div class="seg pf-seg" role="radiogroup" aria-label="Progress style">${prog.map(([k, l]) => `<button role="radio" aria-checked="${look.progress === k}" class="${look.progress === k ? 'on' : ''}" data-act="progress-style" data-arg="${k}">${l}</button>`).join('')}</div></div>
+    </div>`;
+  },
+  about() {
+    return `${paneHead('About', 'Waylink for desktop shows what your phone records, on a bigger screen.')}
+    <div class="pf-card pf-about">${V.LOOP}<div><b>Waylink for desktop</b><span>Version ${WEB_VERSION}</span></div></div>
+    <div class="pf-group">
+      <div class="pf-row"><div><b>How linking works</b><span>What the phone sends and who can read it</span></div><button class="btn line sm" data-act="sheet" data-arg="how">Read</button></div>
+      <div class="pf-row"><div><b>Get the Android app</b><span>Rides, turns and call alerts live on the phone</span></div><a class="btn line sm" href="https://github.com/krishnaar21/Waylink/releases/tag/android-preview" target="_blank" rel="noopener">Download</a></div>
+      <div class="pf-row"><div><b>Source code</b><span>Open on GitHub</span></div><a class="btn line sm" href="https://github.com/krishnaar21/Waylink" target="_blank" rel="noopener">GitHub</a></div>
+    </div>`;
+  },
+};
 export const WEB_VERSION = '0.1';
 
 // ---------- Sheets only the web has ----------
