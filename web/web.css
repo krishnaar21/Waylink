@@ -298,3 +298,40 @@ html[data-theme="obsidian"] .rider > img:first-child, html[data-theme="amoled"] 
 /* Number fields: no spinner arrows under the unit label. */
 .input-wrap input[type=number] { -moz-appearance: textfield; appearance: textfield; }
 .input-wrap input[type=number]::-webkit-inner-spin-button, .input-wrap input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* ---------- Flat surfaces: hairlines and tones, no drop shadows ---------- */
+.wapp { --shadow: 0 0 0 var(--hair) var(--line); }
+.wapp .card { box-shadow: inset 0 0 0 var(--hair) var(--line); }
+
+/* ---------- Overview: one summary band, then what needs you and the latest rides ---------- */
+.ov-band { display: grid; grid-template-columns: minmax(0, 1fr); border-radius: var(--r-lg); background: var(--card); box-shadow: inset 0 0 0 var(--hair) var(--line); overflow: hidden; }
+.ov-verdict { display: flex; flex-direction: column; gap: 4px; padding: 22px 22px 20px; text-decoration: none; color: var(--ink); background: var(--hero-ok); }
+.ov-verdict.soon { background: var(--hero-soon, var(--hero-ok)); }
+.ov-verdict.bad { background: var(--hero-bad, var(--hero-ok)); }
+.ov-verdict .verdict { font-family: var(--serif); font-weight: var(--dw); letter-spacing: var(--dls); font-size: calc(30px * var(--dscale, 1)); line-height: 1.1; }
+.ov-verdict p { margin: 2px 0 12px; color: var(--ink-2); font-size: 15px; }
+.ov-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ov-stat { display: flex; flex-direction: column; gap: 4px; padding: 18px 22px; text-decoration: none; color: var(--ink); box-shadow: inset var(--hair) var(--hair) 0 var(--line); transition: background .15s; }
+.ov-stat:hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
+.ov-n { font-family: var(--serif); font-weight: var(--dw); letter-spacing: var(--dls); font-size: 28px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.ov-n .unit { margin-left: 3px; }
+.ov-sub { font-size: 13px; color: var(--ink-3); }
+.ov-cols { margin-top: 32px; }
+.ov-cols .section-h { margin-top: 0; }
+.ov-rides { padding: 4px; }
+@media (min-width: 900px) {
+  .ov-band { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+  .ov-verdict { padding: 28px 30px 24px; }
+  .ov-stat { padding: 22px 26px; }
+}
+
+/* ---------- Settings page: sections on the left, the chosen one on the right ---------- */
+.wpage[data-page="settings"] .prefs { max-width: 920px; }
+@media (min-width: 760px) {
+  .wpage[data-page="settings"] .prefs { height: auto; grid-template-columns: 200px minmax(0, 1fr); gap: 40px; }
+  .wpage[data-page="settings"] .pf-nav { position: sticky; top: 0; align-self: start; padding: 0; background: none; border: 0; border-radius: 0; }
+  .wpage[data-page="settings"] .pf-title { display: none; }
+  .wpage[data-page="settings"] .pf-pane { overflow: visible; padding: 0; }
+  .wpage[data-page="settings"] .pf-h { padding-right: 0; }
+}
+.ov-verdict p { margin-bottom: auto; padding-bottom: 16px; }
