@@ -8,6 +8,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read   # deploy-pages looks up the uploaded artifact
   pages: write
   id-token: write
 concurrency:
