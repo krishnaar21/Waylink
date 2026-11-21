@@ -9,6 +9,7 @@ serialization = "1.7.3"
 junit = "4.13.2"
 billing = "8.0.0"
 playAds = "23.6.0"
+codeScanner = "16.1.0"
 ump = "3.1.0"
 robolectric = "4.14.1"
 roborazzi = "1.38.0"
@@ -26,6 +27,7 @@ compose-foundation = { group = "androidx.compose.foundation", name = "foundation
 compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+play-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "codeScanner" }
 play-ads = { group = "com.google.android.gms", name = "play-services-ads", version.ref = "playAds" }
 ump = { group = "com.google.android.ump", name = "user-messaging-platform", version.ref = "ump" }
 play-billing = { group = "com.android.billingclient", name = "billing", version.ref = "billing" }

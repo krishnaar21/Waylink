@@ -1,0 +1,20 @@
+# Waylink relay on Cloudflare Workers (free plan). Deploy from this folder with:  npx wrangler deploy
+name = "waylink-relay"
+main = "src/worker.js"
+compatibility_date = "2025-09-01"
+
+[vars]
+# Web pages allowed to call the relay from a browser. The phone app doesn't need to be listed.
+ORIGINS = "https://krishnaar21.github.io,http://localhost:8766"
+
+[[durable_objects.bindings]]
+name = "BOX"
+class_name = "Box"
+
+# SQLite-backed Durable Objects are included in the Workers free plan.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Box"]
+
+[observability]
+enabled = false

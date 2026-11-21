@@ -31,6 +31,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -97,6 +98,8 @@ import app.waylink.ui.theme.W
 import java.nio.charset.StandardCharsets
 
 const val REPO_URL = "https://github.com/krishnaar21/Waylink"
+/** Where Waylink for desktop lives (GitHub Pages, web/ in the repo). */
+const val DESKTOP_URL = "krishnaar21.github.io/Waylink"
 const val SUPPORT_EMAIL = "support@krishnaar.work"
 
 /** Settings and Profile sheets, or null. Keys follow the web app. */
@@ -172,6 +175,10 @@ fun settingsSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: S
             }
         }
         "backup" -> SheetSpec("Backup & restore", "Data") { BackupBody(vm, nav) }
+        "computers" -> SheetSpec("Linked computers", "Waylink for desktop") { ComputersBody(s, vm, nav) }
+        "unlink-computer" -> SheetSpec("Unlink this computer?", "Linked computers") {
+            Confirm("It stops showing your garage and forgets this phone the next time it checks. You can link it again with a new code.", "Unlink", "Keep it", { vm.unlinkComputer(arg); nav.close() }, nav::close)
+        }
         "copy" -> SheetSpec("Your backup", "Backup") {
             val c = W.c
             val board = LocalClipboardManager.current
@@ -397,6 +404,35 @@ private fun BackupBody(vm: AppViewModel, nav: SheetNav) {
         ListRow("Restore from text", "Paste a copied backup", icon = "doc", onClick = { nav.open("paste") })
     }
     Hint("Backups from the Waylink web app work here too. Restoring replaces what’s on this phone.")
+}
+
+/** Waylink for desktop: scan the code on the computer, see what's linked, unlink. */
+@Composable
+private fun ComputersBody(s: AppState, vm: AppViewModel, nav: SheetNav) {
+    val c = W.c
+    val ctx = LocalContext.current
+    val list by vm.computers.collectAsState()
+    val linking by vm.linking.collectAsState()
+    val f = remember(s.country.locale) { Fmt(s.country.locale) }
+    Spacer(Modifier.height(8.dp))
+    Txt("Open $DESKTOP_URL on your computer and scan the code it shows. Your garage, rides, fuel and service show there, and what you change there comes back to this phone.", T.sheetLead, c.ink2)
+    Spacer(Modifier.height(16.dp))
+    if (list.isNotEmpty()) {
+        ListCard(flat = true) {
+            list.forEachIndexed { i, pc ->
+                if (i > 0) Hairline(66.dp)
+                val synced = if (pc.syncedAt > 0) "synced ${f.ago(pc.syncedAt)}" else "waiting to sync"
+                ListRow("Computer ${i + 1}", "Linked ${app.waylink.core.dShort(pc.linkedAt)} · $synced", icon = "grid", chevron = false, trailing = {
+                    Btn("Unlink", { nav.open("unlink-computer:${pc.linkId}") }, kind = BtnKind.GHOST, small = true)
+                })
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+    }
+    Btn(if (linking) "Linking…" else "Link a computer", {
+        if (!linking) app.waylink.data.QrScan.scan(ctx, onCode = vm::linkComputer, onError = vm::toast)
+    }, Modifier.fillMaxWidth(), icon = "camera")
+    Hint("Locked end to end: the relay in between passes sealed data and can’t read it. Medical ID, emergency contacts, documents, call alerts, places and parking stay on this phone.")
 }
 
 /** Reads at most [max] bytes (InputStream.readNBytes needs API 33). */

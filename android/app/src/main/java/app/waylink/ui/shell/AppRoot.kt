@@ -117,6 +117,8 @@ enum class Tab(val key: String, val label: String, val icon: String) {
 fun AppRoot(vm: AppViewModel) {
     val s by vm.state.collectAsStateWithLifecycle()
     val live by vm.live.collectAsStateWithLifecycle()
+    // Linked computers: check for changes made there while the app is on screen.
+    androidx.lifecycle.compose.LifecycleResumeEffect(vm) { vm.onForeground(true); onPauseOrDispose { vm.onForeground(false) } }
     WaylinkTheme(s.settings.theme, s.settings.accent, s.settings.font, s.settings.bodyFont, s.settings.progress, s.settings.icons, s.settings.supporter) {
         val c = W.c
         Box(Modifier.fillMaxSize().background(c.bg).grain()) {
@@ -325,7 +327,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
                         vm.toggleSetting("devUnlocked")
                         vm.toast(if (on) "Developer tools are on, at the end of Settings." else "Developer tools are hidden.")
                     }
-                }, tabBarHeight, onFocused = vm::clearFocus)
+                }, tabBarHeight, onFocused = vm::clearFocus, computers = vm.computers.collectAsStateWithLifecycle().value.size)
                 Tab.ROUTE.key -> app.waylink.ui.route.RouteScreen(s, live, vm, openSheet, tabBarHeight)
                 Tab.RIDES.key -> RidesScreen(s, live, object : RidesActions {
                     override fun record() = beginRec()

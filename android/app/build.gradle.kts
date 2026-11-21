@@ -57,6 +57,7 @@ dependencies {
     implementation(project(":core"))
     implementation(libs.play.billing)
     implementation(libs.play.ads)
+    implementation(libs.play.code.scanner)
     implementation(libs.ump)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

@@ -6,6 +6,10 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.waylink.core.AppState
 import app.waylink.core.Catalog
+import app.waylink.core.Computer
+import app.waylink.core.LinkClient
+import app.waylink.core.LinkCrypto
+import app.waylink.core.LinkSync
 import app.waylink.core.ChecklistItem
 import app.waylink.core.DAY_MS
 import app.waylink.core.Alerts
@@ -36,6 +40,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 
@@ -179,6 +184,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
                 val out = file.startWrite()
                 try { out.write(text.toByteArray(Charsets.UTF_8)); file.finishWrite(out) } catch (e: Exception) { file.failWrite(out) }
             }
+            schedulePush()
         }
     }
 
@@ -1182,6 +1188,118 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     }
 
     // ---------- Backup ----------
+    // ---------- Linked computers (Waylink for desktop, relay/PROTOCOL.md) ----------
+
+    private val computerStore = Computers(app)
+    private val client = LinkClient()
+    private val _computers = MutableStateFlow<List<Computer>>(emptyList())
+    /** The computers linked to this phone. The phone stays the one source of truth. */
+    val computers: StateFlow<List<Computer>> = _computers.asStateFlow()
+    private val syncLock = kotlinx.coroutines.sync.Mutex()
+    private var pushJob: Job? = null
+    private var pollJob: Job? = null
+    private val _linking = MutableStateFlow(false)
+    val linking: StateFlow<Boolean> = _linking.asStateFlow()
+
+    private val deviceName: String by lazy {
+        runCatching { android.provider.Settings.Global.getString(app.contentResolver, "device_name") }.getOrNull()?.takeIf { it.isNotBlank() }
+            ?: listOf(android.os.Build.MANUFACTURER.replaceFirstChar { it.uppercase() }, android.os.Build.MODEL).distinct().joinToString(" ").trim()
+    }
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) { _computers.value = computerStore.load(); syncComputers() }
+    }
+
+    private fun saveComputers(f: (List<Computer>) -> List<Computer>) {
+        _computers.update(f)
+        computerStore.save(_computers.value)
+    }
+
+    /** Answers a QR code from the computer's screen. */
+    fun linkComputer(text: String) {
+        val qr = LinkCrypto.parseQr(text.trim())
+        if (qr == null) { toast("That isn’t a Waylink code. Open Waylink on your computer to show one."); return }
+        if (_linking.value) return
+        _linking.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val c = client.pair(qr, deviceName)
+                client.push(c, LinkSync.vault(realState ?: _state.value, 0, deviceName))
+                syncLock.withLock { saveComputers { it.filter { x -> x.linkId != c.linkId } + c.copy(syncedAt = System.currentTimeMillis()) } }
+                buzz(12, 60, 12); toast("Linked. Your garage shows on the computer in a moment.")
+            } catch (e: LinkClient.Expired) {
+                toast("That code has expired or was used. Show a new one on the computer.")
+            } catch (e: Exception) {
+                toast("Couldn’t link. Check your internet and try again.")
+            } finally { _linking.value = false }
+        }
+    }
+
+    /** Unlinks one computer: it forgets the phone the next time it checks. */
+    fun unlinkComputer(linkId: String) {
+        val c = _computers.value.firstOrNull { it.linkId == linkId } ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            syncLock.withLock { saveComputers { it.filter { x -> x.linkId != linkId } } }
+            runCatching { client.unlink(c) }
+        }
+        toast("Computer unlinked.")
+    }
+
+    /** Uploads a few seconds after the last change, once per linked computer. */
+    private fun schedulePush() {
+        if (_computers.value.isEmpty() || realState != null) return
+        pushJob?.cancel()
+        pushJob = viewModelScope.launch(Dispatchers.IO) { delay(3000); syncLock.withLock { pushAll() } }
+    }
+
+    private fun pushAll() {
+        val s = _state.value
+        for (c in _computers.value) {
+            try {
+                client.push(c, LinkSync.vault(s, c.ackSeq, deviceName))
+                saveComputers { l -> l.map { if (it.linkId == c.linkId) it.copy(syncedAt = System.currentTimeMillis()) else it } }
+            } catch (e: LinkClient.Gone) { dropGone(c) } catch (e: Exception) { /* offline: the next change or check tries again */ }
+        }
+    }
+
+    private fun dropGone(c: Computer) {
+        saveComputers { l -> l.filter { it.linkId != c.linkId } }
+        toast("A computer was unlinked from Waylink for desktop.")
+    }
+
+    /** Pulls the changes made on each computer, applies them in order, saves, and uploads the result. */
+    fun syncComputers() {
+        if (_computers.value.isEmpty() || realState != null) return
+        viewModelScope.launch(Dispatchers.IO) {
+            if (!syncLock.tryLock()) return@launch
+            try {
+                var any = false
+                for (c in _computers.value) {
+                    try {
+                        val (ops, last) = client.pull(c)
+                        if (last <= c.ackSeq) continue
+                        if (ops.isNotEmpty()) {
+                            withContext(Dispatchers.Main) { commit { s -> ops.fold(s) { acc, op -> LinkSync.apply(acc, op) } } }
+                            any = true
+                        }
+                        saveComputers { l -> l.map { if (it.linkId == c.linkId) it.copy(ackSeq = last) else it } }
+                        val now = _computers.value.firstOrNull { it.linkId == c.linkId } ?: continue
+                        client.push(now, LinkSync.vault(_state.value, last, deviceName))
+                        client.ack(now, last)
+                    } catch (e: LinkClient.Gone) { dropGone(c) } catch (e: Exception) { }
+                }
+                // The other computers see the change too.
+                if (any) { pushJob?.cancel(); pushAll() }
+            } finally { syncLock.unlock() }
+        }
+    }
+
+    /** While the app is on screen: check now, then every 2 minutes. */
+    fun onForeground(visible: Boolean) {
+        pollJob?.cancel()
+        if (visible) pollJob = viewModelScope.launch { while (true) { syncComputers(); delay(120_000) } }
+    }
+
     fun backupText(): String = Vault.export(_state.value)
 
     /** Replaces everything with a backup. Returns false (and says why) when it isn't one. */
@@ -1205,6 +1323,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     /** Like a fresh install: data and every setting go. */
     fun resetAll() {
         simOff()
+        _computers.value.map { it.linkId }.forEach(::unlinkComputer)
         commit { freshState() }
         wipeGlove()
     }

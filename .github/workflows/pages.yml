@@ -1,9 +1,10 @@
-# Publishes the Waylink web app (v0) to GitHub Pages when web-v0/ changes on main.
-name: Deploy web v0 to GitHub Pages
+# Publishes to GitHub Pages when either web app changes on main:
+# web/ (Waylink for desktop) at the site root, and web-v0/ (the design reference) under /v0/.
+name: Deploy web apps to GitHub Pages
 on:
   push:
     branches: [main]
-    paths: ['web-v0/**', '.github/workflows/pages.yml']
+    paths: ['web-v0/**', 'web/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -20,11 +21,13 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-      - name: Leave out tests and tools
-        run: rm -rf web-v0/tests web-v0/tools
+      - name: Put the site together, without tests and tools
+        run: |
+          rm -rf web-v0/tests web-v0/tools web/tests web/tools
+          mkdir _site && cp -r web/. _site/ && cp -r web-v0 _site/v0
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: web-v0
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
