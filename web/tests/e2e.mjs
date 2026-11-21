@@ -61,6 +61,18 @@ for (const k of ['overview', 'rides', 'service', 'fuel']) {
   if (shots) await page.screenshot({ path: `${shots}/${k}.png`, fullPage: false });
 }
 
+// Top tabs, and details open in a pane beside the page; the list stays usable.
+check(await page.isVisible('.tb-nav .tb-i.on'), 'pages show as tabs in the header');
+await page.goto('http://localhost:8766/#rides'); await page.waitForSelector('.wpage[data-page="rides"]');
+await page.click('.ride >> nth=0'); await page.waitForSelector('#sheets .sheet[data-dock="1"]'); await page.waitForTimeout(450);
+check(await page.evaluate(() => !document.querySelector('#main').inert && !!document.querySelector('#main [aria-current="true"]')), 'ride opens in the side pane, list stays usable');
+if (shots) await page.screenshot({ path: `${shots}/rides-pane.png` });
+const t1 = await page.textContent('#sheets .sheet-title');
+await page.click('.ride >> nth=1'); await page.waitForTimeout(300);
+check((await page.textContent('#sheets .sheet-title')) !== t1 || (await page.$$('#sheets .sheet')).length === 1, 'picking another ride swaps the pane');
+await page.keyboard.press('Escape'); await page.waitForTimeout(350);
+check(!(await page.$('#sheets .sheet:not(.out)')), 'Escape closes the pane');
+
 // A change on the web: log fuel.
 await page.goto('http://localhost:8766/#fuel'); await page.waitForSelector('.wpage[data-page="fuel"]');
 const before = plain.vehicles.find((v) => v.id === plain.active).fuel.length;

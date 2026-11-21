@@ -119,7 +119,7 @@ function render() {
   if (popKey) refreshPop();
   document.title = `${P.PAGES.find(([k]) => k === page)[1]} · Waylink`;
   if (page === 'fuel') wireChart();
-  if (sheetKey) refreshSheet();
+  if (sheetKey) { refreshSheet(); markPicked(); }
 }
 function go(to) { if (location.hash.slice(1) === to) navigate(to); else location.hash = to; }
 function navigate(to) {
@@ -190,12 +190,19 @@ function liftTitle(sheet) {
   sheet.classList.toggle('has-title', !!t.innerHTML);
 }
 let lastFocus = null;
+// On a wide screen, details (a ride, a job, a fuel entry and their forms) open in a pane beside the page,
+// so the list stays in view and clickable. Settings and confirmations stay as centred windows.
+const wide = matchMedia('(min-width: 1100px)');
+const docks = (key) => wide.matches && !/^(prefs|unlink|how|pick)/.test(key);
 function openSheet(key, { push = true } = {}) {
   const html = sheetHTML(key);
   if (html == null) return;
   const host = $('#sheets');
   let sheet = $('.sheet', host);
   const open = sheet && !sheet.classList.contains('out');
+  const dock = docks(key);
+  // In the pane, picking another item from the page replaces what's shown rather than stacking on it.
+  if (open && dock && sheet.dataset.dock && document.activeElement?.closest('#main')) { sheetStack = []; push = false; }
   if (open && push && sheetKey && sheetKey !== key) sheetStack.push(sheetKey);
   if (!open) { sheetStack = []; lastFocus = document.activeElement; }
   sheetKey = key;
@@ -210,7 +217,10 @@ function openSheet(key, { push = true } = {}) {
   dress(sheet, key);
   liftTitle(sheet); $('.sheet-title', sheet).id = 'sheet-title';
   closePop();
-  $('#app').inert = false; $('#main').inert = true; $('#bar').inert = true;
+  sheet.dataset.dock = dock ? '1' : ''; sheet.setAttribute('aria-modal', String(!dock));
+  $('#app').classList.toggle('has-pane', dock);
+  $('#app').inert = false; $('#main').inert = !dock; $('#bar').inert = !dock;
+  if (dock) markPicked();
   const af = $('[autofocus]', sheet) || $('input:not([type=hidden]), select, textarea', sheet) || $('.sheet-head .circle:last-child', sheet);
   setTimeout(() => af?.focus(), 60);
 }
@@ -226,12 +236,21 @@ function sheetBack() { const prev = sheetStack.pop(); if (!prev) return closeShe
 function closeSheet() {
   sheetKey = null; sheetStack = []; live.draftPhoto = undefined;
   for (const id of ['#main', '#bar']) { const el = $(id); if (el) el.inert = false; }
+  $('#app').classList.remove('has-pane'); markPicked();
   const host = $('#sheets'), sh = $('.sheet', host);
   if (!sh) return;
   sh.classList.add('out'); $('.backdrop', host)?.classList.add('out');
   setTimeout(() => { if (sh.classList.contains('out')) host.innerHTML = ''; }, 260);
   if (lastFocus?.isConnected) lastFocus.focus({ preventScroll: true });
 }
+
+// The row whose details are in the pane stays highlighted on the page.
+function markPicked() {
+  for (const el of $$('#main [aria-current="true"]')) el.removeAttribute('aria-current');
+  const k = $('#app').classList.contains('has-pane') && sheetKey;
+  if (k) $$('#main [data-act="sheet"]').find((b) => b.dataset.arg === k)?.setAttribute('aria-current', 'true');
+}
+wide.addEventListener('change', () => { if (sheetKey) closeSheet(); });
 
 // ---------- Settings window ----------
 let prefTab = 'phone';

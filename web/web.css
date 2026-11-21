@@ -22,11 +22,12 @@ a.link:hover, button.link:hover { color: var(--ink); text-decoration: underline;
 .wpage.fade-in { animation: fadeIn .3s ease both; }
 .toasts { position: fixed; bottom: calc(env(safe-area-inset-bottom) + 92px); }
 @media (min-width: 760px) {
-  .main { padding: 104px 40px 64px; }
+  :root { --bar-h: 64px; }
+  .main { padding: calc(var(--bar-h) + 36px) 40px 64px; }
   .toasts { bottom: 28px; }
 }
 
-/* ---------- Floating toolbar: top centre on a computer, a bottom bar on a narrow window ---------- */
+/* ---------- Toolbar: tabs across the top on a computer, a floating bottom bar on a narrow window ---------- */
 .bar { position: fixed; z-index: 40; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 999px;
   background: color-mix(in srgb, var(--card) 82%, transparent); -webkit-backdrop-filter: blur(20px) saturate(1.5); backdrop-filter: blur(20px) saturate(1.5);
   box-shadow: inset 0 0 0 var(--hair) var(--line), 0 1px 2px rgba(0,0,0,.06), 0 18px 40px -18px rgba(0,0,0,.35); animation: barIn .45s var(--spring) both; }
@@ -56,18 +57,43 @@ a.link:hover, button.link:hover { color: var(--ink); text-decoration: underline;
 .tb-gear { width: 46px; justify-content: center; }
 .tb-gear svg { width: 21px; height: 21px; }
 @media (max-width: 759px) { .tb-sync { display: none; } .tb-i { padding: 0 6px; } }
+/* On a computer: a full-width header with the pages as tabs, and bike, sync and Settings on the right. */
 @media (min-width: 760px) {
-  .bar { top: 16px; bottom: auto; left: 50%; right: auto; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); animation-name: barInTop; }
-  @keyframes barInTop { from { opacity: 0; transform: translate(-50%, -10px); } }
-  .tb-brand { display: flex; }
-  .tb-nav { flex: none; }
-  .tb-i { flex: none; padding: 0 16px; }
+  .bar { top: 0; left: 0; right: 0; bottom: auto; height: var(--bar-h); padding: 0 24px 0 20px; gap: 20px; border-radius: 0; animation-name: barInTop;
+    background: color-mix(in srgb, var(--bg) 84%, transparent); box-shadow: inset 0 calc(-1 * var(--hair)) 0 var(--line); }
+  @keyframes barInTop { from { opacity: 0; transform: translateY(-8px); } }
+  .tb-brand { display: flex; padding: 0 8px; }
+  .tb-nav { flex: none; align-self: stretch; gap: 4px; padding: 0; border-radius: 0; background: none; }
+  .tb-i { flex: none; height: 100%; padding: 0 14px; border-radius: 0; font-size: 14.5px; }
+  .tb-i svg { display: none; }
+  .tb-i::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: 0; height: 2.5px; border-radius: 3px 3px 0 0; background: var(--accent); transform: scaleX(0); transition: transform .25s var(--spring); }
+  .tb-i:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+  .tb-i.on, .tb-i.on:hover { background: none; box-shadow: none; }
+  .tb-i.on::after { transform: none; }
   .tb-l { display: inline; }
-  .tb-i .pip { top: 9px; right: 9px; }
-  .tb-end { padding-left: 6px; margin-left: 2px; box-shadow: inset var(--hair) 0 0 var(--line); }
+  .tb-i .pip { top: calc(50% - 12px); right: 3px; box-shadow: 0 0 0 2px var(--bg); }
+  .tb-end { margin-left: auto; gap: 6px; }
+  .tb-bike, .tb-sync, .tb-gear { box-shadow: inset 0 0 0 var(--hair) var(--line); }
+  .tb-bike { height: 42px; padding: 0 12px 0 4px; }
+  .tb-bike .art.thumb { width: 44px; height: 34px; }
+  .tb-sync { height: 38px; }
+  .tb-gear { width: 42px; height: 42px; }
   .tb-st { display: inline; }
 }
 @media (min-width: 1040px) { .tb-bt, .tb-chev { display: inline; } }
+
+/* ---------- One grid for everything: header, page titles, section titles and card content line up ---------- */
+@media (min-width: 760px) {
+  /* The header's ends sit on the same edges as the page below it. */
+  .bar { --edge: calc(40px + max(0px, (100% - 95px - 1180px) / 2)); padding-left: var(--edge); padding-right: calc(var(--edge) + 15px); }
+  .tb-brand { padding: 0 12px 0 0; }
+  .bar { transition: padding .32s var(--spring); }
+  .wapp.has-pane .bar { --edge: calc(40px + max(0px, (100% - var(--pane-w, 440px) - 95px - 1180px) / 2)); padding-right: 20px; }
+  /* Section titles line up with the text inside the cards under them (cards are padded 20px). */
+  .wapp .section-h, .wapp .sec-note { margin-left: 20px !important; margin-right: 20px !important; }
+  /* A title that lives inside its card. */
+  .card.in-h > .section-h { margin: 18px 0 4px !important; }
+}
 
 /* ---------- Popovers ---------- */
 .pop { position: fixed; z-index: 60; width: 300px; max-height: min(70vh, 520px); overflow-y: auto; padding: 8px; border-radius: 20px; background: var(--sheet); box-shadow: inset 0 0 0 var(--hair) var(--line), 0 24px 60px -20px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.06); animation: popIn .2s var(--spring) both; transform-origin: top center; }
@@ -156,6 +182,21 @@ html[data-theme="obsidian"] .rider > img:first-child, html[data-theme="amoled"] 
 }
 @keyframes dlgIn { from { opacity: 0; transform: translate(-50%, calc(-50% + 14px)) scale(.98); } }
 @keyframes dlgOut { to { opacity: 0; transform: translate(-50%, calc(-50% + 8px)) scale(.98); } }
+
+/* ---------- Detail pane: on a wide screen a ride, job or fuel entry opens beside the page, not over it ---------- */
+@media (min-width: 1100px) {
+  .main { transition: margin-right .32s var(--spring); }
+  .wapp.has-pane .main { margin-right: var(--pane-w, 440px); }
+  #sheets:has(.sheet[data-dock="1"]) .backdrop { display: none; }
+  #sheets .sheet[data-dock="1"] { left: auto; right: 0; top: var(--bar-h); bottom: 0; width: var(--pane-w, 440px); height: auto; max-height: none; transform: none; border-radius: 0;
+    box-shadow: inset var(--hair) 0 0 var(--line), -24px 0 48px -36px rgba(0,0,0,.35); animation: paneIn .32s var(--spring) both; }
+  #sheets .sheet[data-dock="1"].out { animation: paneOut .2s ease both; }
+  #sheets .sheet[data-dock="1"] .sheet-head, #sheets .sheet[data-dock="1"] .dlg-foot { border-radius: 0; }
+  #sheets .sheet[data-dock="1"] .sheet-body { flex: 1; }
+  #main [aria-current="true"] { background-color: color-mix(in srgb, var(--accent, var(--ink)) 10%, var(--card)); box-shadow: inset 3px 0 0 var(--accent, var(--ink)); }
+}
+@keyframes paneIn { from { transform: translateX(28px); opacity: 0; } }
+@keyframes paneOut { to { transform: translateX(28px); opacity: 0; } }
 
 /* ---------- Settings window: sections on the left, one pane on the right ---------- */
 .prefs { display: flex; flex-direction: column; gap: 16px; }

@@ -1,0 +1,52 @@
+/* Layout mockups for Krishna to choose from. Loaded only by tests/layouts.mjs, never by the app. */
+html[data-layout] .bar { animation: none; transform: none; }
+
+html[data-layout] .tb-l, html[data-layout] .tb-st, html[data-layout] .tb-bt, html[data-layout] .tb-chev { display: inline; }
+
+/* ---------- A. Top tabs: a full-width header, tabs with an underline ---------- */
+html[data-layout="tabs"] .bar { top: 0; left: 0; right: 0; bottom: auto; width: auto; max-width: none; height: 64px; padding: 0 28px; gap: 24px; border-radius: 0;
+  background: color-mix(in srgb, var(--bg) 86%, transparent); box-shadow: inset 0 calc(-1 * var(--hair)) 0 var(--line); }
+html[data-layout="tabs"] .tb-nav { background: none; padding: 0; gap: 4px; height: 100%; align-self: stretch; }
+html[data-layout="tabs"] .tb-i { height: 100%; border-radius: 0; padding: 0 14px; background: none; box-shadow: none; }
+html[data-layout="tabs"] .tb-i svg { display: none; }
+html[data-layout="tabs"] .tb-i.on { color: var(--ink); background: none; box-shadow: inset 0 -2.5px 0 var(--accent, var(--ink)); }
+html[data-layout="tabs"] .tb-i .pip { top: 20px; right: 4px; }
+html[data-layout="tabs"] .tb-end { margin-left: auto; box-shadow: none; gap: 6px; }
+html[data-layout="tabs"] .tb-sync { height: 38px; box-shadow: inset 0 0 0 var(--hair) var(--line); }
+html[data-layout="tabs"] .tb-bike { height: 42px; box-shadow: inset 0 0 0 var(--hair) var(--line); padding-right: 12px; }
+html[data-layout="tabs"] .tb-bike .art.thumb { width: 42px; height: 32px; }
+html[data-layout="tabs"] .tb-gear { width: 42px; height: 42px; }
+html[data-layout="tabs"] .main { padding-top: 104px; }
+
+/* ---------- B. Sidebar: a quiet column on the left, bike and sync at its foot ---------- */
+html[data-layout="side"] .bar { top: 0; left: 0; bottom: 0; right: auto; width: 248px; max-width: none; flex-direction: column; align-items: stretch; gap: 6px; padding: 22px 14px 16px; border-radius: 0;
+  background: var(--card); box-shadow: inset calc(-1 * var(--hair)) 0 0 var(--line); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-layout="side"] .tb-brand { padding: 0 10px 18px; height: auto; }
+html[data-layout="side"] .tb-nav { flex-direction: column; background: none; padding: 0; gap: 2px; flex: none; }
+html[data-layout="side"] .tb-i { justify-content: flex-start; gap: 12px; height: 42px; padding: 0 12px; border-radius: 12px; font-size: 14.5px; }
+html[data-layout="side"] .tb-i.on { background: color-mix(in srgb, var(--accent, var(--ink)) 12%, transparent); box-shadow: none; color: var(--ink); }
+html[data-layout="side"] .tb-i .pip { top: 17px; right: 14px; }
+html[data-layout="side"] .tb-end { margin-top: auto; flex-direction: column; align-items: stretch; gap: 4px; padding: 12px 0 0; margin-left: 0; box-shadow: inset 0 var(--hair) 0 var(--line); }
+html[data-layout="side"] .tb-bike { height: 58px; border-radius: 14px; padding: 0 10px 0 6px; background: color-mix(in srgb, var(--ink) 4%, transparent); }
+html[data-layout="side"] .tb-bike .tb-bt { flex: 1; text-align: left; }
+html[data-layout="side"] .tb-sync, html[data-layout="side"] .tb-gear { height: 40px; width: auto; border-radius: 12px; padding: 0 12px; justify-content: flex-start; gap: 12px; font-size: 13.5px; }
+html[data-layout="side"] .tb-gear::after { content: "Settings"; font-size: 14px; font-weight: 500; }
+html[data-layout="side"] .tb-gear svg { width: 20px; height: 20px; }
+html[data-layout="side"] .main { margin-left: 248px; padding-top: 40px; }
+html[data-layout="side"] .toasts { left: 248px; }
+
+/* ---------- C. Split view: a slim icon rail, the page in the middle, details open in a pane on the right ---------- */
+html[data-layout="split"] .bar { top: 0; left: 0; bottom: 0; right: auto; width: 84px; max-width: none; flex-direction: column; align-items: center; gap: 6px; padding: 18px 0 14px; border-radius: 0;
+  background: var(--card); box-shadow: inset calc(-1 * var(--hair)) 0 0 var(--line); -webkit-backdrop-filter: none; backdrop-filter: none; }
+html[data-layout="split"] .tb-brand { padding: 0 0 14px; height: auto; }
+html[data-layout="split"] .tb-brand .wl-loop { font-size: 15px; }
+html[data-layout="split"] .tb-nav { flex-direction: column; background: none; padding: 0; gap: 6px; }
+html[data-layout="split"] .tb-i { flex-direction: column; gap: 4px; width: 68px; height: 58px; padding: 0; border-radius: 16px; font-size: 11.5px; }
+html[data-layout="split"] .tb-i.on { background: color-mix(in srgb, var(--accent, var(--ink)) 13%, transparent); box-shadow: none; }
+html[data-layout="split"] .tb-i .pip { top: 8px; right: 16px; }
+html[data-layout="split"] .tb-end { margin-top: auto; flex-direction: column; gap: 6px; margin-left: 0; padding: 0; box-shadow: none; }
+html[data-layout="split"] .tb-bt, html[data-layout="split"] .tb-chev, html[data-layout="split"] .tb-st { display: none; }
+html[data-layout="split"] .tb-bike { padding: 0; height: auto; }
+html[data-layout="split"] .tb-bike .art.thumb { width: 54px; height: 42px; border-radius: 14px; }
+html[data-layout="split"] .tb-sync { width: 46px; justify-content: center; padding: 0; }
+html[data-layout="split"] .main { margin-left: 84px; padding-top: 36px; transition: margin-right .3s var(--spring); }
