@@ -94,18 +94,17 @@ await page.keyboard.press('Escape');
 check(true, 'web caught up after the phone synced');
 
 // Dark theme, a sheet, and the phone-width layout while linked.
-// Settings is a window over the page, opened from the toolbar (old #settings links open it too).
-await page.click('.tb-gear'); await page.waitForSelector('#sheets .sheet[data-kind="prefs"]'); await page.waitForTimeout(400);
+// Settings is its own tab and page.
+await page.click('.tb-i[href="#settings"]'); await page.waitForSelector('.wpage[data-page="settings"] .prefs'); await page.waitForTimeout(400);
+check(!(await page.$('#sheets .sheet')), 'Settings is a page, not a popup');
 if (shots) await page.screenshot({ path: `${shots}/settings.png` });
 await page.click('.pf-i[data-arg="look"]'); await page.waitForSelector('.pf-pane[data-pane="look"]'); await page.waitForTimeout(300);
 if (shots) await page.screenshot({ path: `${shots}/settings-look.png` });
 await page.click('[data-act="theme"][data-arg="obsidian"]');
 check(await page.evaluate(() => document.documentElement.dataset.theme) === 'obsidian', 'theme switches to Dark');
-check(await page.isVisible('.pf-pane[data-pane="look"]'), 'Settings stays open on the Look pane');
-await page.keyboard.press('Escape');
-await page.goto('http://localhost:8766/#settings'); await page.waitForSelector('#sheets .sheet[data-kind="prefs"]');
-check(true, 'old #settings link opens the Settings window');
-await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+check(await page.isVisible('.pf-pane[data-pane="look"]'), 'Settings stays on the Look section');
+await page.goto('http://localhost:8766/#overview'); await page.waitForSelector('.wpage[data-page="overview"]'); await page.waitForTimeout(300);
+if (shots) await page.screenshot({ path: `${shots}/overview-dark.png` });
 await page.click('.tb-bike'); await page.waitForSelector('#pop .pop[data-kind="bike"]'); await page.waitForTimeout(250);
 if (shots) await page.screenshot({ path: `${shots}/pop-bike-dark.png` });
 await page.keyboard.press('Escape');

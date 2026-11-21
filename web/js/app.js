@@ -31,7 +31,8 @@ function look() {
     supporter: !!(ps.supporter || ps.supporterPlus),
   };
 }
-const ctx = () => ({ s, link: L.link, live, look: look() });
+let prefTab = 'phone';
+const ctx = () => ({ s, link: L.link, live, look: look(), prefTab });
 
 const mqDark = matchMedia('(prefers-color-scheme: dark)');
 // Same rule as the phone (ui/theme/Theme.kt resolveTheme): Auto is Paper for supporters, Light and Dark for everyone else.
@@ -124,7 +125,6 @@ function render() {
 function go(to) { if (location.hash.slice(1) === to) navigate(to); else location.hash = to; }
 function navigate(to) {
   // Old links to the Settings page open the Settings window instead.
-  if (to === 'settings') { history.replaceState(null, '', '#' + page); render(); if (s) openPrefs(); return; }
   page = PAGE_KEYS.includes(to) ? to : 'overview'; closeSheet(); closePop(); render(); $('#main')?.focus({ preventScroll: true });
 }
 addEventListener('hashchange', () => navigate(location.hash.slice(1)));
@@ -253,8 +253,7 @@ function markPicked() {
 wide.addEventListener('change', () => { if (sheetKey) closeSheet(); });
 
 // ---------- Settings window ----------
-let prefTab = 'phone';
-function openPrefs(tab) { if (tab) prefTab = tab; openSheet('prefs:' + prefTab); }
+
 
 // ---------- Popovers (bike switcher, sync status), anchored to their toolbar button ----------
 let popKey = null, popAnchor = null;
@@ -316,8 +315,8 @@ const A = {
   close: () => closeSheet(),
   pop: (k, el) => openPop(k, el),
   'close-pop': () => closePop(true),
-  prefs: (tab) => { closePop(); openPrefs(tab); },
-  'prefs-tab': (tab) => { prefTab = tab; sheetKey = 'prefs:' + tab; refreshSheet(); $(`#sheets .pf-i[data-arg="${tab}"]`)?.focus(); },
+  prefs: (tab) => { closePop(); if (tab) prefTab = tab; if (page === 'settings') render(); else go('settings'); },
+  'prefs-tab': (tab) => { prefTab = tab; render(); $(`#main .pf-i[data-arg="${tab}"]`)?.focus(); },
   'sheet-back': () => sheetBack(),
   'new-code': () => newCode(),
   'sync-now': async () => { await L.pull(true); toast(L.link.online ? 'Up to date.' : 'Offline. Showing saved data.'); },

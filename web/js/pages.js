@@ -9,6 +9,7 @@ export const PAGES = [
   ['rides', 'Rides', 'trips'],
   ['service', 'Service', 'wrench'],
   ['fuel', 'Fuel', 'fuel'],
+  ['settings', 'Settings', 'settings'],
 ];
 
 // ---------- Shell: one floating toolbar (top on a computer, bottom on a phone-sized window) ----------
@@ -24,7 +25,6 @@ export function toolbar(c, page) {
   <div class="tb-end">
     <button class="tb-bike" data-act="pop" data-arg="bike" aria-haspopup="dialog" aria-label="Bike: ${esc(S.vehicleTitle(s))}">${V.vehicleArt(s, v, 'thumb')}<span class="tb-bt">${esc(clip(S.vehicleTitle(s), 16))}</span>${icon('updown', 'tb-chev')}</button>
     <button class="tb-sync" data-act="pop" data-arg="sync" aria-haspopup="dialog" aria-label="${sy.t}. ${sy.d}" title="${sy.t}"><span class="dot ${sy.tone}"></span><span class="tb-st">${sy.short}</span></button>
-    <button class="tb-gear" data-act="prefs" aria-label="Settings" title="Settings">${icon('settings')}</button>
   </div>`;
 }
 // Where the data came from and how fresh it is, always in view so nobody mistakes old numbers for new.
@@ -73,48 +73,32 @@ export function overview(c) {
   const v = V.verdictOf(s, list);
   const fs = S.fuelStats(s);
   const urgent = list.filter((x) => x.st.status !== 'ok');
-  const show = (urgent.length ? urgent : list).slice(0, 4);
-  const mo = S.periodStats(s.trips, Date.now() - 30 * 86400000);
+  const show = (urgent.length ? urgent : list).slice(0, 5);
   const wk = S.periodStats(s.trips, S.weekStart());
   const cur = S.country(s).cur;
   const spent30 = fs.last30.cost + s.records.filter((r) => r.date > Date.now() - 30 * 86400000).reduce((a, r) => a + (+r.cost || 0), 0);
   let line = v.line;
   if (fs.onReserve) line = `On reserve, about ${num(fs.range)} km left.` + (v.over || v.soon ? ' ' + line : '');
-  return `${head(new Date().toLocaleDateString('en-IN', { weekday: 'long' }), new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) + (s.sample ? ' · <span class="demo-pill">Demo data<i></i></span>' : ''))}
-  <div class="wgrid">
-    <div class="col-7">
-      <button class="hero ${fs.onReserve && !v.over ? 'soon' : v.cls} flush" data-act="go" data-arg="service">
-        <div class="eyebrow">Verdict</div><div class="verdict">${v.word}</div><p>${line}</p>
-        ${list.length ? V.heroBar(v.bar) + V.caption(v) : '<div class="eyebrow caption">No reminders yet</div>'}
-      </button>
+  const stat = (lab, val, unit, sub, to) => `<a class="ov-stat" href="#${to}"><span class="eyebrow">${lab}</span><span class="ov-n">${val}${unit ? `<span class="unit">${unit}</span>` : ''}</span><span class="ov-sub">${sub}</span></a>`;
+  const trips = [...s.trips].sort((a, b) => b.start - a.start).slice(0, 4);
+  return `${head(new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }), s.sample ? '<span class="demo-pill">Demo data<i></i></span>' : '')}
+  <section class="ov-band">
+    <a class="ov-verdict ${fs.onReserve && !v.over ? 'soon' : v.cls}" href="#service">
+      <span class="eyebrow">Verdict</span><span class="verdict">${v.word}</span><p>${line}</p>
+      ${list.length ? V.heroBar(v.bar) + V.caption(v) : '<span class="eyebrow caption">No reminders yet</span>'}
+    </a>
+    <div class="ov-stats">
+      ${stat('Odometer', V.big(Math.floor(s.odo)), 'km', `Trip A ${V.tripv(s.tripA.km)} km`, 'service')}
+      ${stat('Range', fs.range != null ? '≈' + num(fs.range) : '—', 'km', fs.avg != null ? `${num(fs.avg, 1)} km/L lately` : 'Log a full tank', 'fuel')}
+      ${stat('This week', num(wk.km, wk.km < 100 ? 1 : 0), 'km', plural(wk.rides, 'ride', 'rides'), 'rides')}
+      ${stat('Spent, 30 days', cur + num(spent30), '', 'Fuel and service', 'fuel')}
     </div>
-    <div class="col-5">
-      <div class="card readings flush">
-        <div class="odo"><span class="eyebrow">Odometer</span><span><span class="big">${V.big(Math.floor(s.odo))}</span><span class="unit">km</span></span></div>
-        <div class="grid3">
-          <div><span class="eyebrow">Trip A</span><span class="big">${V.tripv(s.tripA.km)}<span class="unit">km</span></span></div>
-          <div><span class="eyebrow">Trip B</span><span class="big">${V.tripv(s.tripB.km)}<span class="unit">km</span></span></div>
-          <button data-act="go" data-arg="fuel"><span class="eyebrow">Range</span><span class="big">${fs.range != null ? '≈' + num(fs.range) : '—'}<span class="unit">km</span></span></button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="section">${sh(urgent.length ? 'Do these first' : 'Coming up', '<a class="link" href="#service">See all</a>')}
-    ${show.length ? `<div class="wcards">${show.map(({ it, st }) => V.upCard(it, st)).join('')}</div>` : '<div class="card empty">No service reminders yet. Add them on the Service page.</div>'}</div>
-  <div class="wgrid">
-    <div class="col-7"><div class="section">${sh('Riding', '<a class="link" href="#rides">All rides</a>')}
-      <div class="card pad rides-hero">${V.rideCharts(s)}</div>
-      <div class="card stat2 mt12">${statBlock('This week', wk)}${statBlock('Last 30 days', mo)}</div></div></div>
-    <div class="col-5"><div class="section">${sh('Running costs', '<a class="link" href="#fuel">Fuel</a>')}
-      <div class="card" style="padding:2px 20px">
-        <div class="kv"><span>Mileage, last 3 tanks</span><b>${fs.avg != null ? num(fs.avg, 1) + ' km/L' : '—'}</b></div>
-        <div class="kv"><span>Fuel cost per km</span><b>${fs.costPerKm != null ? cur + num(fs.costPerKm, 2) : '—'}</b></div>
-        <div class="kv"><span>Spent, last 30 days</span><b>${cur}${num(spent30)}</b></div>
-        <div class="kv"><span>Spent on service</span><b>${cur}${num(s.records.reduce((a, r) => a + (+r.cost || 0), 0))}</b></div>
-      </div></div>
-      <div class="section">${sh('Latest rides', '')}
-      ${s.trips.length ? `<div class="card" style="padding:4px">${[...s.trips].sort((a, b) => b.start - a.start).slice(0, 3).map(rideRow).join('')}</div>` : '<div class="card empty">Rides you record on the phone show up here.</div>'}</div>
-    </div>
+  </section>
+  <div class="wgrid ov-cols">
+    <section class="col-7">${sh(urgent.length ? 'Needs you' : 'Coming up', '<a class="link" href="#service">All jobs</a>')}
+      ${show.length ? `<div class="rows">${show.map(({ it, st }) => V.serviceRow(it, st)).join('')}</div>` : '<div class="card empty">No service reminders yet. Add them on the Service page.</div>'}</section>
+    <section class="col-5">${sh('Latest rides', '<a class="link" href="#rides">All rides</a>')}
+      ${trips.length ? `<div class="card ov-rides">${trips.map(rideRow).join('')}</div>` : '<div class="card empty">Rides you record on the phone show up here.</div>'}</section>
   </div>`;
 }
 function statBlock(lab, p) {
@@ -131,7 +115,7 @@ export function rides(c) {
   const tot = s.trips.reduce((a, t) => a + (t.km || 0), 0);
   const trips = [...s.trips].sort((a, b) => b.start - a.start);
   const at = V.rideChartAt(s);
-  return `${head('Rides', `${plural(s.trips.length, 'ride', 'rides')} on ${esc(clip(S.vehicleTitle(s), 24))}`)}
+  return `${head('Rides', `${plural(s.trips.length, 'ride', 'rides')}, recorded on the phone`)}
   <div class="wgrid">
     <div class="col-7"><div class="card pad rides-hero flush">
       <div class="flex between"><div class="ms-t">All rides</div><div class="seg rc-tabs" role="tablist">${V.RC_NAMES.map((n, i) => `<button role="tab" class="${i === at ? 'on' : ''}" aria-selected="${i === at}" data-act="ride-chart" data-arg="${i}">${n.replace('Km ', '')}</button>`).join('')}</div></div>
@@ -160,7 +144,7 @@ export function service(c) {
   const v = V.verdictOf(s, list);
   const cur = S.country(s).cur;
   const spent = s.records.reduce((a, r) => a + (+r.cost || 0), 0);
-  return `${head('Service', `Jobs and visits for ${esc(clip(S.vehicleTitle(s), 24))}`, `${btn('Log visit', 'sheet', 'rec:new', 'line', 'plus')}${btn('Add reminder', 'sheet', 'svc-edit:new', 'ink', 'plus')}`)}
+  return `${head('Service', 'Reminders, workshop visits and notes', `${btn('Log visit', 'sheet', 'rec:new', 'line', 'plus')}${btn('Add reminder', 'sheet', 'svc-edit:new', 'ink', 'plus')}`)}
   <div class="wgrid">
     <div class="col-7">
       <div class="hero ${v.cls} flush"><div class="eyebrow">Verdict</div><div class="verdict">${v.word}</div><p>${v.line}</p>${list.length ? (v.over || v.soon ? V.heroBar(v.bar) + V.caption(v) : `<div class="eyebrow caption">All ${v.ok} jobs on track</div>`) : '<div class="eyebrow caption">No reminders yet</div>'}</div>
@@ -190,9 +174,8 @@ export function fuel(c) {
   const entries = [...s.fuel].sort((a, b) => b.odo - a.odo || b.ts - a.ts);
   const kmplById = Object.fromEntries(fs.tanks.map((t) => [t.id, t.kmpl]));
   const tankL = num(fs.tank, fs.tank % 1 ? 1 : 0);
-  const svc = s.records.reduce((a, r) => a + (+r.cost || 0), 0);
   const three = fs.tanks.length >= 3 ? 'three' : String(fs.tanks.length);
-  return `${head('Fuel', `Fill-ups for ${esc(clip(S.vehicleTitle(s), 24))}`, btn('Log fuel', 'sheet', 'fuel:new', 'ink', 'fuel'))}
+  return `${head('Fuel', 'Range, mileage and what you spend', btn('Log fuel', 'sheet', 'fuel:new', 'ink', 'fuel'))}
   <div class="wgrid">
     <div class="col-7">
       <div class="hero ${!hasRange ? 'off' : fs.onReserve ? 'bad' : ''} flush">
@@ -217,8 +200,6 @@ export function fuel(c) {
           <div class="kv"><span>Cost per km</span><b>${fs.costPerKm != null ? cur + num(fs.costPerKm, 2) : '—'}</b></div>
           <div class="kv"><span>Last 30 days</span><b>${plural(fs.last30.count, 'fill', 'fills')} · ${num(fs.last30.litres, 1)} L · ${cur}${num(fs.last30.cost)}</b></div>
           <div class="kv"><span>All fuel</span><b>${cur}${num(fs.totalSpent)}</b></div>
-          <div class="kv"><span>Service &amp; repairs</span><b>${cur}${num(svc)}</b></div>
-          <div class="kv"><span>Total to run</span><b>${cur}${num(fs.totalSpent + svc)}</b></div>
           <button class="kv" data-act="sheet" data-arg="fuelprice"><span>Price per litre</span><b class="flex gap8">${cur}${num(S.fuelPriceOf(s), 2)}${icon('edit', 'faint')}</b></button>
       </div>
       <div class="section">${sh('Fill-ups', `<span class="eyebrow">${entries.length}</span>`)}
@@ -227,7 +208,8 @@ export function fuel(c) {
   </div>`;
 }
 
-// ---------- Settings: a preferences window, one pane at a time ----------
+// ---------- Settings: its own page, sections on the left ----------
+export function settings(c) { return `${head('Settings', 'Your linked phone, garage and how Waylink looks')}${prefs(c, c.prefTab)}`; }
 export const PREF_TABS = [['phone', 'Linked phone', 'phone'], ['garage', 'Garage', 'garage'], ['look', 'Look', 'palette'], ['about', 'About', 'info']];
 export function prefs(c, tab) {
   const t = PREF_TABS.some(([k]) => k === tab) ? tab : 'phone';
