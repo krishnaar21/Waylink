@@ -437,7 +437,7 @@ class ScenarioTest {
         compose.setContent {
             WaylinkTheme("auto", "rust") {
                 Box(Modifier.fillMaxSize().background(W.c.bg)) {
-                    shown?.let { (k, spec) -> androidx.compose.runtime.key(k) { Sheet(true, {}, spec.title, spec.sub) { spec.content(this) } } }
+                    shown?.let { (k, spec) -> androidx.compose.runtime.key(k) { Sheet(true, {}, spec.title, null) { spec.content(this) } } }
                 }
             }
         }

@@ -54,7 +54,7 @@ class SheetShotTest {
             WaylinkTheme("auto", sample.settings.accent) {
                 Box(Modifier.fillMaxSize().background(W.c.bg).grain()) {
                     SettingsScreen(sample, live, noop(), 80.dp)
-                    Sheet(true, {}, spec.title, spec.sub) { spec.content(this) }
+                    Sheet(true, {}, spec.title, null) { spec.content(this) }
                 }
             }
         }
@@ -62,6 +62,10 @@ class SheetShotTest {
 
     @Test fun cluster() = shot("cluster-turn") { vm, nav -> app.waylink.ui.route.navSheet("cluster:turn", sample, live, vm, nav, noop<ExtraHost>()) }
     @Test fun quick() = shot("quick") { vm, nav -> extraSheet("quick", sample, live, vm, nav, noop<ExtraHost>()) }
+    @Test fun parking() = shot("parking") { vm, nav -> extraSheet("parking", sample, live, vm, nav, noop<ExtraHost>()) }
+    @Test fun recStart() = shot("rec-start") { vm, nav -> extraSheet("rec-start", sample, live, vm, nav, noop<ExtraHost>()) }
+    @Test fun perms() = shot("perms") { vm, nav -> app.waylink.ui.route.navSheet("perms", sample, live, vm, nav, noop<ExtraHost>()) }
+    @Test fun navAccess() = shot("navaccess") { vm, nav -> app.waylink.ui.route.navSheet("navaccess", sample, live, vm, nav, noop<ExtraHost>()) }
     @Test fun odo() = shot("odo") { vm, nav -> logbookSheet("odo", sample, vm, nav) }
     @Test fun service() = shot("svc") { vm, nav -> logbookSheet("svc:" + sample.vehicle.service.first().id, sample, vm, nav) }
     @Test fun fuel() = shot("fuel") { vm, nav -> fuelSheet("fuel:new", sample, vm, nav) }
