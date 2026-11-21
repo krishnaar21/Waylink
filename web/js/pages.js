@@ -146,7 +146,7 @@ export function rides(c) {
         <div class="kv"><span>Time riding</span><b>${all.sec ? dur(all.sec) : '—'}</b></div>
         <div class="kv"><span>Average ride</span><b>${s.trips.length ? num(tot / s.trips.length, 1) + ' km' : '—'}</b></div>
       </div>
-      <p class="hint" style="padding:0 4px">Rides are recorded on the phone. Here you can rename them, export a GPX file or delete them.</p>
+      <p class="hint" style="padding:0 20px">Rides are recorded on the phone. Here you can rename them, export a GPX file or delete them.</p>
     </div>
   </div>
   <div class="section">${sh('Every ride', '<span class="eyebrow">Newest first</span>')}
@@ -171,7 +171,7 @@ export function service(c) {
       <button class="card pad flex between flush" style="width:100%" data-act="sheet" data-arg="odo"><span class="eyebrow">Odometer now</span><span class="flex gap8"><span><span class="big" style="font-size:30px">${num(Math.floor(s.odo))}</span><span class="unit">km</span></span>${icon('edit', 'faint')}</span></button>
       <div class="section">${sh('Workshop visits', '<button class="link" data-act="sheet" data-arg="rec:new">Add visit</button>', 'visits')}
         ${s.records.length ? `<div class="list">${[...s.records].sort((a, b) => b.date - a.date).map((r) => `<button class="rec-row" data-act="sheet" data-arg="rec:${r.id}"><span class="rec-ic">${icon('wrench')}</span><span class="rec-t">${esc(r.title)}</span><span class="rec-c">${r.cost ? cur + short(r.cost) : ''}</span><span class="rec-d">${dShort(r.date)} · ${short(r.odo)} km${r.workshop ? ' · ' + esc(clip(r.workshop, 22)) : ''}</span></button>`).join('')}</div>
-        <div class="flex between mt12 small muted" style="padding:0 4px"><span>Spent on service</span><b style="font-weight:500;color:var(--ink)">${cur}${num(spent)}</b></div>` : '<div class="card empty">Log each visit. A full history helps at resale.</div>'}</div>
+        <div class="flex between mt12 small muted" style="padding:0 20px"><span>Spent on service</span><b style="font-weight:500;color:var(--ink)">${cur}${num(spent)}</b></div>` : '<div class="card empty">Log each visit. A full history helps at resale.</div>'}</div>
       <div class="section">${sh('For the mechanic', `<span class="eyebrow">${s.checklist.filter((x) => !x.done).length} open</span>`, 'mechanic')}
         <div class="list">
           ${s.checklist.map((x) => `<div class="li noicon"><button class="check ${x.done ? 'on' : ''}" data-act="check" data-arg="${x.id}" aria-label="${x.done ? 'Mark not done' : 'Mark done'}" aria-pressed="${x.done}">${x.done ? icon('check') : ''}</button><span class="tx"><div class="t" style="${x.done ? 'text-decoration:line-through;color:var(--ink-3)' : ''}">${esc(x.text)}</div></span><button class="icon-btn" data-act="check-del" data-arg="${x.id}" aria-label="Remove">${icon('x')}</button></div>`).join('')}
@@ -210,18 +210,17 @@ export function fuel(c) {
           <div><span class="eyebrow">Lifetime</span><span class="big">${num(fs.lifetime, 1)}</span><span class="unit" style="margin:0">${plural(fs.tanks.length, 'tank', 'tanks')}</span></div>
         </div>
         ${fs.tanks.length >= 2 ? `<div class="card chart mt12" id="mileage-chart">${V.mileageChart(fs)}<div class="tip"></div></div>` : ''}
-        <p class="hint" style="padding:0 4px;margin-top:12px">Mileage counts only between full tanks. Top-ups roll into the next full one.</p></div>
+        <p class="hint" style="padding:0 20px;margin-top:12px">Mileage counts only between full tanks. Top-ups roll into the next full one.</p></div>
     </div>
     <div class="col-5">
-      <div class="section flush-s">${sh('Cost', '', 'cost')}
-        <div class="card" style="padding:2px 20px">
+      <div class="card in-h flush" style="padding:2px 20px">${sh('Cost', '', 'cost')}
           <div class="kv"><span>Cost per km</span><b>${fs.costPerKm != null ? cur + num(fs.costPerKm, 2) : '—'}</b></div>
           <div class="kv"><span>Last 30 days</span><b>${plural(fs.last30.count, 'fill', 'fills')} · ${num(fs.last30.litres, 1)} L · ${cur}${num(fs.last30.cost)}</b></div>
           <div class="kv"><span>All fuel</span><b>${cur}${num(fs.totalSpent)}</b></div>
           <div class="kv"><span>Service &amp; repairs</span><b>${cur}${num(svc)}</b></div>
           <div class="kv"><span>Total to run</span><b>${cur}${num(fs.totalSpent + svc)}</b></div>
           <button class="kv" data-act="sheet" data-arg="fuelprice"><span>Price per litre</span><b class="flex gap8">${cur}${num(S.fuelPriceOf(s), 2)}${icon('edit', 'faint')}</b></button>
-        </div></div>
+      </div>
       <div class="section">${sh('Fill-ups', `<span class="eyebrow">${entries.length}</span>`)}
         ${entries.length ? `<div class="rows">${entries.map((e) => `<button class="row" data-act="sheet" data-arg="fuel:${e.id}"><div class="row-top"><div><div class="row-title">${dMed(e.ts)}</div><div class="row-sub">${e.full ? 'Full' : 'Top-up'} · ${num(e.odo)} km · ${cur}${num(e.cost)}</div></div><div class="row-val">${kmplById[e.id] ? `<span class="big">${num(kmplById[e.id], 1)}</span><span class="unit">km/L</span>` : `<span class="big">${num(e.litres, 1)}</span><span class="unit">L</span>`}</div></div></button>`).join('')}</div>` : '<div class="card empty"><div class="serif">No fill-ups yet</div>Log one here or at the pump on your phone.</div>'}</div>
     </div>
