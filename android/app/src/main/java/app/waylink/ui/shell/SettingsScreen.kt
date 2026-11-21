@@ -218,10 +218,10 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
         SectionHead("On the bike")
         ListCard {
             ListRow("What the bike shows", "Sample display and street names", icon = "bike", onClick = { act.sheet("cluster:all") })
-            // Reading another maps app's turns is Android-only; an iPhone build leaves the row out. It's set up on Route.
+            // Reading another maps app's turns is Android-only; an iPhone build leaves the row out. Opens the same picker as Route.
             if (app.waylink.core.Platform.caps.readNavApps) {
                 Hairline(66.dp)
-                ListRow("Live turns", "Set up on the Route tab", icon = "nav", end = app.waylink.core.NavSource.of(st.navSource).name, onClick = { act.tab("route") })
+                ListRow("Live turns from", "Google Maps, Waze, OsmAnd or Organic Maps", icon = "nav", end = app.waylink.core.NavSource.of(st.navSource).name, onClick = { act.sheet("nav-source") })
             }
         }
 
