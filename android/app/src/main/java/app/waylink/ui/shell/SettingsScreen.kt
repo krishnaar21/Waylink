@@ -116,7 +116,7 @@ fun connText(s: AppState, live: Live) = when {
 /** The Settings tab, a port of settings() in web-v0/js/views.js. */
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, onFocused: () -> Unit = {}) {
+fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, onFocused: () -> Unit = {}, computers: Int = 0) {
     val c = W.c
     val f = remember(s.country.locale) { Fmt(s.country.locale) }
     val v = s.vehicle
@@ -254,6 +254,8 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             ListRow("Country", "Currency and SOS", icon = "globe", end = s.country.name, onClick = { act.sheet("country") })
             Hairline(66.dp)
             ListRow("Backup & restore", "Save, move or bring back your data", icon = "down", onClick = { act.sheet("backup") })
+            Hairline(66.dp)
+            ListRow("Linked computers", "See your garage on a bigger screen", icon = "grid", end = if (computers == 0) "None" else "$computers", onClick = { act.sheet("computers") })
             Hairline(66.dp)
             ListRow(if (s.sample) "Erase sample data" else "Erase everything", icon = "trash", danger = true, onClick = { act.sheet("erase") })
             Hairline(66.dp)
