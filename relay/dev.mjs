@@ -3,7 +3,7 @@
 import http from 'node:http';
 import { route, cors } from './src/core.js';
 
-const ORIGINS = ['http://localhost:8766', 'http://127.0.0.1:8766'];
+const ORIGINS = ['https://krishnaar21.github.io', 'http://localhost:8766', 'http://127.0.0.1:8766'];
 const boxes = new Map();
 const storeFor = (name) => {
   if (!boxes.has(name)) boxes.set(name, new Map());

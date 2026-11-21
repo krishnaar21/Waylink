@@ -4,7 +4,7 @@
 name: Relay
 on:
   push:
-    paths: ['relay/**', '.github/workflows/relay.yml']
+    paths: ['relay/**', 'web/js/wlcrypto.js', 'web/tests/phone.mjs', '.github/workflows/relay.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -32,3 +32,6 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx --yes wrangler@4.20.0 deploy
+      - name: Check the live relay end to end
+        if: env.skip != '1'
+        run: node relay/smoke.mjs https://waylink-relay.krishnaar-work.workers.dev

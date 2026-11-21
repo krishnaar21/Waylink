@@ -5,7 +5,7 @@ import { applyOp } from './ops.js';
 
 // Where the relay lives. A page served from localhost talks to the local dev relay.
 export const RELAY = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
-  ? `http://${location.hostname}:8787` : 'https://waylink-relay.krishnaar21.workers.dev';
+  ? `http://${location.hostname}:8787` : 'https://waylink-relay.krishnaar-work.workers.dev';
 
 // ---------- Saved link (IndexedDB: the AES key is stored as a non-extractable CryptoKey) ----------
 const DB = 'waylink-web', ST = 'kv';
