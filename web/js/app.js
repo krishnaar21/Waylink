@@ -106,7 +106,7 @@ function render() {
     app.dataset.mode = 'gate';
     if (st === 'linked' && !s) { setHTML($('#main'), `<div class="gate"><div class="gt-wait">${V.loader('Waiting for your phone to send your data')}<p class="small muted">Keep Waylink open on ${V.esc(L.link.info?.device || 'your phone')} for a moment.</p><button class="btn line sm mt16" data-act="sheet" data-arg="unlink">Start over</button></div></div>`); shown = 'wait'; }
     else { setHTML($('#main'), P.gate(ctx(), qrSvg)); shown = 'gate'; }
-    setHTML($('#side'), ''); setHTML($('#tabbar'), '');
+    setHTML($('#bar'), ''); closePop();
     document.title = 'Link Waylink';
     return;
   }
@@ -115,14 +115,18 @@ function render() {
   const main = $('#main');
   if (shown === page) { const tpl = document.createElement('template'); tpl.innerHTML = html; morphChildren(main, tpl.content); }
   else { main.innerHTML = html; main.scrollTop = 0; main.firstElementChild?.classList.add('fade-in'); shown = page; }
-  setHTML($('#side'), P.sidebar(ctx(), page));
-  setHTML($('#tabbar'), P.tabbar(ctx(), page));
+  setHTML($('#bar'), P.toolbar(ctx(), page));
+  if (popKey) refreshPop();
   document.title = `${P.PAGES.find(([k]) => k === page)[1]} · Waylink`;
   if (page === 'fuel') wireChart();
   if (sheetKey) refreshSheet();
 }
 function go(to) { if (location.hash.slice(1) === to) navigate(to); else location.hash = to; }
-function navigate(to) { page = PAGE_KEYS.includes(to) ? to : 'overview'; closeSheet(); render(); $('#main')?.focus({ preventScroll: true }); }
+function navigate(to) {
+  // Old links to the Settings page open the Settings window instead.
+  if (to === 'settings') { history.replaceState(null, '', '#' + page); render(); if (s) openPrefs(); return; }
+  page = PAGE_KEYS.includes(to) ? to : 'overview'; closeSheet(); closePop(); render(); $('#main')?.focus({ preventScroll: true });
+}
 addEventListener('hashchange', () => navigate(location.hash.slice(1)));
 
 // ---------- QR code ----------
@@ -142,9 +146,10 @@ async function newCode() {
 // ---------- Sheets (a centred dialog on desktop, a bottom sheet on phones) ----------
 const sheetHead = () => `${sheetStack.length ? `<button class="circle" data-act="sheet-back" aria-label="Back">${V.icon('back')}</button>` : ''}<div class="sheet-title"></div><button class="circle" data-act="close" aria-label="Close">${V.icon('x')}</button>`;
 // Only the sheets that make sense here; anything else (pairing, ride mode, SOS…) is never opened.
-const SHEETS = ['svc', 'svc-edit', 'rec', 'fuel', 'fuelprice', 'odo', 'trip-detail', 'trip-rename', 'garage', 'vehicle', 'specs', 'pick', 'pick-progress', 'help'];
+const SHEETS = ['prefs', 'svc', 'svc-edit', 'rec', 'fuel', 'fuelprice', 'odo', 'trip-detail', 'trip-rename', 'garage', 'vehicle', 'specs', 'pick', 'pick-progress', 'help'];
 function sheetHTML(key) {
   if (!s && key !== 'unlink') return null;
+  if (key.startsWith('prefs')) return P.prefs(ctx(), key.split(':')[1]);
   const own = P.webSheet(ctx(), key); if (own != null) return own;
   if (!SHEETS.includes(key.split(':')[0])) return null;
   let h = V.sheetHTML({ s, link: { state: 'idle', log: [] }, live }, key);
@@ -155,6 +160,28 @@ function sheetHTML(key) {
   if (key === 'fuelprice') h = h.replace(/<button class="btn line block mt12" type="button" data-act="fuel-locate"[\s\S]*?<\/button>/, '');
   if (key.startsWith('pick:')) h = h.replace(/Sets currency, fuel price and emergency numbers\./, 'Sets the currency and fuel price.');
   return h;
+}
+// Desktop dialogs: a form's Save and Delete move into a footer row (Delete left, Cancel and Save right),
+// and each dialog gets a size that suits it (Settings is a wide two-pane window, confirmations are narrow).
+function footer(root) {
+  for (const f of $$('form[data-form]', root)) {
+    if ($('.dlg-foot', f)) continue;
+    const save = $(':scope > .btn[type=submit]', f); if (!save) continue;
+    const del = $(':scope > .btn.danger', f);
+    const foot = Object.assign(document.createElement('div'), { className: 'dlg-foot' });
+    if (del) { del.classList.remove('block', 'mt8'); foot.appendChild(del); }
+    const cancel = Object.assign(document.createElement('button'), { type: 'button', className: 'btn line', textContent: 'Cancel' });
+    cancel.dataset.act = 'close';
+    save.classList.remove('block', 'mt24', 'mt16');
+    foot.append(Object.assign(document.createElement('span'), { className: 'grow' }), cancel, save);
+    f.appendChild(foot);
+  }
+}
+function dress(sheet, key) {
+  const k = key.split(':')[0];
+  if (k === 'prefs') { sheet.removeAttribute('aria-labelledby'); sheet.setAttribute('aria-label', 'Settings'); } else if (!sheet.hasAttribute('aria-labelledby')) { sheet.removeAttribute('aria-label'); sheet.setAttribute('aria-labelledby', 'sheet-title'); }
+  sheet.dataset.kind = k === 'prefs' ? 'prefs' : ['unlink', 'how'].includes(k) ? 'narrow' : $('form[data-form]', sheet) ? 'form' : 'plain';
+  footer($('.sheet-body', sheet));
 }
 function liftTitle(sheet) {
   const h = $('.sheet-body h2:not(.sr-only)', sheet), t = $('.sheet-title', sheet);
@@ -176,11 +203,14 @@ function openSheet(key, { push = true } = {}) {
     $('.sheet-head', sheet).innerHTML = sheetHead();
     const body = $('.sheet-body', sheet); body.innerHTML = html; body.scrollTop = 0;
   } else {
-    host.innerHTML = `<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-head">${sheetHead()}</div><div class="sheet-body">${html}</div></div>`;
+    host.innerHTML = `<div class="backdrop" data-act="close"></div><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title"><div class="sheet-head">${sheetHead()}</div><div class="sheet-body"></div></div>`;
     sheet = $('.sheet', host);
+    $('.sheet-body', sheet).innerHTML = html;
   }
+  dress(sheet, key);
   liftTitle(sheet); $('.sheet-title', sheet).id = 'sheet-title';
-  $('#app').inert = false; $('#main').inert = true; $('#side').inert = true; $('#tabbar').inert = true;
+  closePop();
+  $('#app').inert = false; $('#main').inert = true; $('#bar').inert = true;
   const af = $('[autofocus]', sheet) || $('input:not([type=hidden]), select, textarea', sheet) || $('.sheet-head .circle:last-child', sheet);
   setTimeout(() => af?.focus(), 60);
 }
@@ -190,18 +220,56 @@ function refreshSheet() {
   if (html == null) return closeSheet();
   const body = $('#sheets .sheet-body'); if (!body) return;
   if (body.contains(document.activeElement) && document.activeElement.matches('input, textarea, select')) return; // never pull a form out from under the keyboard
-  const tmp = document.createElement('div'); tmp.innerHTML = html; morphChildren(body, tmp); liftTitle($('#sheets .sheet'));
+  const tmp = document.createElement('div'); tmp.innerHTML = html; footer(tmp); morphChildren(body, tmp); liftTitle($('#sheets .sheet'));
 }
 function sheetBack() { const prev = sheetStack.pop(); if (!prev) return closeSheet(); openSheet(prev, { push: false }); }
 function closeSheet() {
   sheetKey = null; sheetStack = []; live.draftPhoto = undefined;
-  for (const id of ['#main', '#side', '#tabbar']) { const el = $(id); if (el) el.inert = false; }
+  for (const id of ['#main', '#bar']) { const el = $(id); if (el) el.inert = false; }
   const host = $('#sheets'), sh = $('.sheet', host);
   if (!sh) return;
   sh.classList.add('out'); $('.backdrop', host)?.classList.add('out');
   setTimeout(() => { if (sh.classList.contains('out')) host.innerHTML = ''; }, 260);
   if (lastFocus?.isConnected) lastFocus.focus({ preventScroll: true });
 }
+
+// ---------- Settings window ----------
+let prefTab = 'phone';
+function openPrefs(tab) { if (tab) prefTab = tab; openSheet('prefs:' + prefTab); }
+
+// ---------- Popovers (bike switcher, sync status), anchored to their toolbar button ----------
+let popKey = null, popAnchor = null;
+function openPop(key, anchor) {
+  if (popKey === key) return closePop();
+  const html = P.popover(ctx(), key); if (!html) return;
+  popKey = key; popAnchor = anchor;
+  $('#pop').innerHTML = `<div class="pop" role="dialog" aria-label="${key === 'bike' ? 'Your bikes' : 'Sync'}" data-kind="${key}">${html}</div>`;
+  anchor.setAttribute('aria-expanded', 'true');
+  placePop();
+  setTimeout(() => $('#pop .pop button')?.focus({ preventScroll: true }), 30);
+}
+function refreshPop() {
+  const html = P.popover(ctx(), popKey), box = $('#pop .pop'); if (!html || !box) return closePop();
+  const tmp = document.createElement('div'); tmp.innerHTML = html; morphChildren(box, tmp);
+  popAnchor = $(`#bar [data-act="pop"][data-arg="${popKey}"]`) || popAnchor; popAnchor?.setAttribute('aria-expanded', 'true'); placePop();
+}
+function placePop() {
+  const box = $('#pop .pop'); if (!box || !popAnchor?.isConnected) return;
+  const r = popAnchor.getBoundingClientRect(), w = box.offsetWidth, h = box.offsetHeight;
+  const below = r.bottom + 10 + h < innerHeight;
+  box.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left + r.width / 2 - w / 2)) + 'px';
+  box.style.top = (below ? r.bottom + 10 : Math.max(12, r.top - h - 10)) + 'px';
+  box.dataset.side = below ? 'below' : 'above';
+}
+function closePop(refocus) {
+  if (!popKey) return;
+  const a = popAnchor; popKey = null; popAnchor = null;
+  const box = $('#pop .pop'); if (box) { box.classList.add('out'); setTimeout(() => { if (!popKey) $('#pop').innerHTML = ''; }, 160); }
+  a?.setAttribute('aria-expanded', 'false');
+  if (refocus && a?.isConnected) a.focus({ preventScroll: true });
+}
+document.addEventListener('pointerdown', (e) => { if (popKey && !e.target.closest('#pop, [data-act="pop"]')) closePop(); });
+addEventListener('resize', () => placePop());
 
 // ---------- Toasts ----------
 function toast(msg, ms = 2800) {
@@ -227,6 +295,10 @@ const A = {
   go: (a) => go(a),
   sheet: (a) => openSheet(a),
   close: () => closeSheet(),
+  pop: (k, el) => openPop(k, el),
+  'close-pop': () => closePop(true),
+  prefs: (tab) => { closePop(); openPrefs(tab); },
+  'prefs-tab': (tab) => { prefTab = tab; sheetKey = 'prefs:' + tab; refreshSheet(); $(`#sheets .pf-i[data-arg="${tab}"]`)?.focus(); },
   'sheet-back': () => sheetBack(),
   'new-code': () => newCode(),
   'sync-now': async () => { await L.pull(true); toast(L.link.online ? 'Up to date.' : 'Offline. Showing saved data.'); },
@@ -247,7 +319,7 @@ const A = {
     lookLocal.rideChart = Math.min(V.RC_NAMES.length - 1, Math.max(0, +k || 0)); saveLook(); rebuild(); render();
     const rc = $('[data-rc]'); if (rc) rc.scrollTo({ left: lookLocal.rideChart * rc.clientWidth, behavior: 'smooth' });
   },
-  'switch-vehicle': (id) => { lookLocal.active = id; saveLook(); rebuild(); closeSheet(); render(); toast(`Showing ${S.vehicleTitle(s)}.`); },
+  'switch-vehicle': (id) => { lookLocal.active = id; saveLook(); rebuild(); closeSheet(); closePop(true); render(); toast(`Showing ${S.vehicleTitle(s)}.`); },
   // Service
   'svc-done': (id) => { const it = plain(item('service', id)); if (!it) return; S.markServiceDone(s, it); closeSheet(); change({ op: 'upsert', vid: vid(), coll: 'service', item: it }, `${it.name} · done at ${V.num(s.odo)} km`); },
   'svc-earlier': (arg) => {
@@ -367,6 +439,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('submit', (e) => { const f = e.target.closest('form[data-form]'); if (!f) return; e.preventDefault(); FORMS[f.dataset.form]?.(f); });
 document.addEventListener('input', (e) => { const el = e.target.closest('[data-input]'); if (el) INPUTS[el.dataset.input]?.(el); });
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && popKey && !sheetKey) { e.preventDefault(); closePop(true); return; }
   if (e.key === 'Escape' && sheetKey) { e.preventDefault(); if (sheetStack.length) sheetBack(); else closeSheet(); }
   // Keep Tab inside an open sheet.
   if (e.key === 'Tab' && sheetKey) {

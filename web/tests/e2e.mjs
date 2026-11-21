@@ -46,10 +46,16 @@ await page.waitForSelector('.wait, .gt-wait, .wpage', { timeout: 10000 });
 await phone.push(plain);
 await page.waitForSelector('.wpage[data-page="overview"]', { timeout: 15000 }).catch(async (e) => { console.log('ERRORS', errors); await page.screenshot({ path: '/tmp/claude-0/wshots/fail.png' }); console.log(await page.evaluate(() => document.querySelector('#main').innerText.slice(0,300))); throw e; });
 check(true, 'linked and showing the overview');
-const txt = await page.textContent('.side');
-check(txt.includes('Pixel 8'), 'sidebar names the phone');
+// Sync now lives in the toolbar's sync popover.
+const syncNow = async (pg) => { if (!(await pg.$('#pop .pop[data-kind="sync"]'))) await pg.click('.tb-sync'); await pg.click('#pop [data-act="sync-now"]'); };
+const syncLabel = () => page.evaluate(() => document.querySelector('.tb-sync')?.getAttribute('aria-label') || '');
+await page.click('.tb-sync'); await page.waitForSelector('#pop .pop[data-kind="sync"]');
+check((await page.textContent('#pop .pop')).includes('Pixel 8'), 'toolbar sync popover names the phone');
+if (shots) await page.screenshot({ path: `${shots}/pop-sync.png` });
+await page.keyboard.press('Escape');
+check(!(await page.$('#pop .pop:not(.out)')), 'Escape closes the popover');
 
-for (const k of ['overview', 'rides', 'service', 'fuel', 'settings']) {
+for (const k of ['overview', 'rides', 'service', 'fuel']) {
   await page.goto('http://localhost:8766/#' + k); await page.waitForSelector(`.wpage[data-page="${k}"]`);
   await page.waitForTimeout(400);
   if (shots) await page.screenshot({ path: `${shots}/${k}.png`, fullPage: false });
@@ -59,28 +65,42 @@ for (const k of ['overview', 'rides', 'service', 'fuel', 'settings']) {
 await page.goto('http://localhost:8766/#fuel'); await page.waitForSelector('.wpage[data-page="fuel"]');
 const before = plain.vehicles.find((v) => v.id === plain.active).fuel.length;
 await page.click('.wh-act [data-arg="fuel:new"]');
-await page.waitForSelector('form[data-form="fuel"]');
+await page.waitForSelector('form[data-form="fuel"]'); await page.waitForTimeout(450);
 if (shots) await page.screenshot({ path: `${shots}/sheet-fuel.png` });
 await page.fill('form[data-form="fuel"] [name=odo]', String(Math.round(plain.vehicles[0].odo + 150)));
 await page.fill('form[data-form="fuel"] [name=litres]', '5.2');
+check(await page.isVisible('form[data-form="fuel"] .dlg-foot button[type=submit]'), 'form buttons sit in the dialog footer');
 await page.click('form[data-form="fuel"] button[type=submit]');
-await page.waitForFunction(() => document.querySelector('.sync-line')?.textContent.includes('waiting'), null, { timeout: 5000 });
+await page.waitForFunction(() => (document.querySelector('.tb-sync')?.getAttribute('aria-label') || '').includes('waiting'), null, { timeout: 5000 });
 check(true, 'web shows the change as waiting for the phone');
 const n = await phone.applyOps(plain);
 check(n >= 1, `phone applied ${n} op(s)`);
 check(plain.vehicles.find((v) => v.id === plain.active).fuel.length === before + 1, 'fill-up is in the phone data');
-await page.evaluate(() => document.querySelector('[data-act="sync-now"]').click());
-await page.waitForFunction(() => document.querySelector('.sync-line')?.textContent.includes('Synced'), null, { timeout: 8000 }).catch(async (e) => { console.log('LINE', await page.textContent('.sync-line'), errors); throw e; });
+await syncNow(page);
+await page.waitForFunction(() => (document.querySelector('.tb-sync')?.getAttribute('aria-label') || '').includes('Synced'), null, { timeout: 8000 }).catch(async (e) => { console.log('LINE', await syncLabel(), errors); throw e; });
+await page.keyboard.press('Escape');
 check(true, 'web caught up after the phone synced');
 
 // Dark theme, a sheet, and the phone-width layout while linked.
-await page.goto('http://localhost:8766/#settings'); await page.waitForSelector('.wpage[data-page="settings"]');
+// Settings is a window over the page, opened from the toolbar (old #settings links open it too).
+await page.click('.tb-gear'); await page.waitForSelector('#sheets .sheet[data-kind="prefs"]'); await page.waitForTimeout(400);
+if (shots) await page.screenshot({ path: `${shots}/settings.png` });
+await page.click('.pf-i[data-arg="look"]'); await page.waitForSelector('.pf-pane[data-pane="look"]'); await page.waitForTimeout(300);
+if (shots) await page.screenshot({ path: `${shots}/settings-look.png` });
 await page.click('[data-act="theme"][data-arg="obsidian"]');
 check(await page.evaluate(() => document.documentElement.dataset.theme) === 'obsidian', 'theme switches to Dark');
+check(await page.isVisible('.pf-pane[data-pane="look"]'), 'Settings stays open on the Look pane');
+await page.keyboard.press('Escape');
+await page.goto('http://localhost:8766/#settings'); await page.waitForSelector('#sheets .sheet[data-kind="prefs"]');
+check(true, 'old #settings link opens the Settings window');
+await page.keyboard.press('Escape'); await page.waitForTimeout(300);
+await page.click('.tb-bike'); await page.waitForSelector('#pop .pop[data-kind="bike"]'); await page.waitForTimeout(250);
+if (shots) await page.screenshot({ path: `${shots}/pop-bike-dark.png` });
+await page.keyboard.press('Escape');
 await page.goto('http://localhost:8766/#overview'); await page.waitForTimeout(400);
 if (shots) await page.screenshot({ path: `${shots}/overview-dark.png` });
 await page.goto('http://localhost:8766/#service'); await page.waitForSelector('.wpage[data-page="service"]');
-await page.click('#svc-rows .row'); await page.waitForSelector('#sheets .sheet'); await page.waitForTimeout(400);
+await page.click('#svc-rows .row'); await page.waitForSelector('#sheets .sheet'); await page.waitForTimeout(500);
 if (shots) await page.screenshot({ path: `${shots}/sheet-svc-dark.png` });
 await page.keyboard.press('Escape');
 await page.evaluate(() => localStorage.removeItem('waylink-web-look'));
@@ -96,7 +116,7 @@ if (shots) await m.screenshot({ path: `${shots}/gate-phone.png`, fullPage: true 
 
 // Phone unlinks: the web drops the data and shows a new code.
 await phone.unlink();
-await page.evaluate(() => document.querySelector('[data-act="sync-now"]').click());
+await syncNow(page);
 await page.waitForSelector('.gt-qr', { timeout: 8000 });
 check(true, 'unlinked from the phone: back to the QR code');
 const leftover = await page.evaluate(() => new Promise((ok) => { const r = indexedDB.open('waylink-web'); r.onsuccess = () => { const t = r.result.transaction('kv').objectStore('kv').getAll(); t.onsuccess = () => ok(t.result.length); }; }));
