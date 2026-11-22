@@ -334,10 +334,11 @@ class ScenarioTest {
     @Test fun alertsAndCalls() {
         val vm = vm()
         vm.onboardSample(); vm.simOn()
+        // Tests only show on the bike: they never add to the missed-call or chat counts.
         vm.relay("missed", "Mom")
-        assertTrue(vm.state.value.alerts.missed.any { it.name == "Mom" })
+        assertTrue(vm.state.value.alerts.missed.none { it.name == "Mom" })
         vm.relay("wa", "Ravi")
-        assertTrue(vm.state.value.alerts.wa.any { it.name == "Ravi" })
+        assertTrue(vm.state.value.alerts.wa.none { it.name == "Ravi" })
         vm.relay("ring", "Boss")
         assertTrue(vm.live.value.call?.ringing == true)
         vm.press("tap")
@@ -346,11 +347,8 @@ class ScenarioTest {
         assertNull("a long press ends it", vm.live.value.call)
         vm.relay("ring", "Unknown")
         idle(26_000)
-        assertNull("unanswered, it turns into a missed call", vm.live.value.call)
-        assertTrue(vm.state.value.alerts.missed.any { it.name == "Unknown" })
-        vm.toggleAlert("calls")
-        vm.relay("missed", "Nobody")
-        assertTrue("calls switched off are not logged", vm.state.value.alerts.missed.none { it.name == "Nobody" })
+        assertNull("unanswered, the test call stops", vm.live.value.call)
+        assertTrue("and isn't counted as missed", vm.state.value.alerts.missed.none { it.name == "Unknown" })
         vm.clearMissed(); vm.clearWa()
         assertTrue(vm.state.value.alerts.missed.isEmpty() && vm.state.value.alerts.wa.isEmpty())
     }

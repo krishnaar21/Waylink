@@ -94,11 +94,11 @@ interface AlertsActions {
 
 /** The Alerts tab, a port of alerts() in web-v0/js/views.js: Status (what needs you) and Notifications. */
 @Composable
-fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
+fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp, startTab: String = "needs") {
     val c = W.c
     val f = remember(s.country.locale) { Fmt(s.country.locale) }
     val needs = remember(s) { inbox(s, f).filter { it.icon != "missed" && it.icon != "chat" } }
-    var tab by rememberSaveable { mutableStateOf("needs") }
+    var tab by rememberSaveable { mutableStateOf(startTab) }
     val n = s.alerts.missed.size + s.alerts.wa.size
     // A swipe slides the new tab in from its side (.lt-body.in-l / in-r, .28 s).
     var from by remember { mutableStateOf(0) }
@@ -142,26 +142,16 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
                 }
             }
         } else {
-            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                CountCard("missed", "Missed calls", s.alerts.missed.size, f, Modifier.weight(1f), "clear:clear-missed", act, Intent(Intent.ACTION_DIAL), "Open the Phone app", "phone")
-                CountCard("chat", "WhatsApp", s.alerts.wa.size, f, Modifier.weight(1f), "clear:clear-wa", act, Intent(Intent.ACTION_VIEW, Uri.parse("whatsapp://send")), "Open WhatsApp", "chat")
+            // Two compact rows: how many are waiting, open the app, clear.
+            ListCard {
+                CountRow("missed", "Missed calls", s.alerts.missed.size, f, "clear:clear-missed", act, "Open the Phone app", "phone") { Intent(Intent.ACTION_DIAL) }
+                Hairline(start = 66.dp)
+                CountRow("chat", "WhatsApp", s.alerts.wa.size, f, "clear:clear-wa", act, "Open WhatsApp", "chat") { ctx ->
+                    listOf("com.whatsapp", "com.whatsapp.w4b").firstNotNullOfOrNull { ctx.packageManager.getLaunchIntentForPackage(it) }
+                }
             }
             Spacer(Modifier.height(20.dp))
             Feed(s)
-
-            SectionGap()
-            Row(
-                Modifier.fillMaxWidth().border(1.5.dp, c.inkA(0.16f), RoundedCornerShape(20.dp)).padding(horizontal = 18.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Ic("lock", size = 17.dp, tint = c.ink3)
-                Spacer(Modifier.width(12.dp))
-                Txt(buildAnnotatedString {
-                    append("Only ")
-                    withStyle(SpanStyle(color = c.ink, fontWeight = FontWeight.SemiBold)) { append("names and counts") }
-                    append(" reach your bike. Message text never leaves this phone.")
-                }, T.row.copy(fontSize = 14.5.sp, lineHeight = 23.sp), c.ink2)
-            }
 
             if (!s.vehicle.display) {
                 SectionGap()
@@ -205,15 +195,14 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
             val canPress = live.simulated && live.link == LinkState.CONNECTED
             ListCard {
                 val btn = s.model.connect?.button ?: "M button"
-                ListRow("Where to find it", "$btn, left switch", "pin", onClick = { act.sheet("handlebar") })
-                Hairline(start = 66.dp)
-                ListRow("Short press", "Answers a ringing call", "hand", trailing = { if (canPress) Chip("Press", { act.press("tap") }) })
-                Hairline(start = 66.dp)
-                ListRow("Hold 3 seconds", "Declines or ends the call", "hand", trailing = { if (canPress) Chip("Press", { act.press("long") }) })
+                // Press and hold are explained in the sheet; the simulated bike gets its two test chips here.
+                ListRow(btn, "On the left switch. Answers and declines calls", "hand", onClick = { act.sheet("handlebar") }, trailing = if (canPress) ({
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { Chip("Press", { act.press("tap") }); Chip("Hold", { act.press("long") }) }
+                }) else null)
             }
 
             SectionGap()
-            SectionHead("Send to the bike", help = { act.help("send") }) {
+            SectionHead("Test the display", help = { act.help("send") }) {
                 Txt(if (live.link == LinkState.CONNECTED) "Linked" else "Not linked", T.eyebrow.copy(fontSize = 14.sp), c.ink3)
             }
             var name by rememberSaveable { mutableStateOf("Rohan") }
@@ -223,11 +212,10 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
                 Input(name, { name = it }, placeholder = "Rohan", label = "Name", maxLength = 32)
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Btn("Ring", { act.relay("ring", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, icon = "phone", small = true)
-                    Btn("Missed", { act.relay("missed", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, icon = "missed", small = true)
-                    Btn("Chat", { act.relay("wa", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, icon = "chat", small = true)
+                    Btn("Ring", { act.relay("ring", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, small = true)
+                    Btn("Missed", { act.relay("missed", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, small = true)
+                    Btn("Chat", { act.relay("wa", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, small = true)
                 }
-                Txt("Real calls and chats are sent on their own. Use these to test the bike’s display.", T.row.copy(fontSize = 13.5.sp, lineHeight = 21.sp), c.ink3, Modifier.padding(top = 12.dp))
             }
             }
         }
@@ -273,34 +261,20 @@ private fun NeedRow(x: InboxItem, onClick: () -> Unit) {
 }
 
 @Composable
-private fun CountCard(icon: String, label: String, n: Int, f: Fmt, modifier: Modifier, clearKey: String, act: AlertsActions, open: Intent, openLabel: String, openIcon: String) {
+private fun CountRow(icon: String, label: String, n: Int, f: Fmt, clearKey: String, act: AlertsActions, openLabel: String, openIcon: String, open: (android.content.Context) -> Intent?) {
     val c = W.c
     val ctx = LocalContext.current
-    Column(modifier.fillMaxHeight().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp)) {
+    ListRow(label, if (n > 0) "${f.short(n.toDouble())} on your bike" else "None waiting", icon, chevron = false, trailing = {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Ic(icon, size = 14.dp, tint = c.ink3)
-            Spacer(Modifier.width(8.dp))
-            Txt(label, T.eyebrow, c.ink3, maxLines = 1)
-        }
-        Spacer(Modifier.height(12.dp))
-        Txt(f.short(n.toDouble()), T.big(56f), c.ink)
-        Spacer(Modifier.height(8.dp))
-        Txt(if (n > 0) "On your bike" else "None waiting", T.row, c.ink2, maxLines = 1)
-        Spacer(Modifier.weight(1f))
-        Spacer(Modifier.height(16.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (n > 0) Txt("Clear", T.buttonSm, c.ink2,
+                Modifier.clip(RoundedCornerShape(12.dp)).pressable(label = "Clear $label") { act.sheet(clearKey) }.padding(horizontal = 10.dp, vertical = 8.dp))
             Box(
                 Modifier.size(40.dp).clip(CircleShape).background(c.raised).border(1.dp, c.line, CircleShape)
-                    .pressable(label = openLabel) { try { ctx.startActivity(open) } catch (e: Exception) { /* No app for it. */ } },
+                    .pressable(label = openLabel) { open(ctx)?.let { runCatching { ctx.startActivity(it) } } },
                 contentAlignment = Alignment.Center,
             ) { Ic(openIcon, size = 16.dp, tint = c.ink) }
-            Spacer(Modifier.weight(1f))
-            Txt(
-                "Clear", T.buttonSm, if (n > 0) c.ink2 else c.ink4,
-                Modifier.clip(RoundedCornerShape(12.dp)).pressable(enabled = n > 0, label = "Clear $label") { act.sheet(clearKey) }.padding(horizontal = 10.dp, vertical = 8.dp),
-            )
         }
-    }
+    })
 }
 
 private val NT = mapOf(

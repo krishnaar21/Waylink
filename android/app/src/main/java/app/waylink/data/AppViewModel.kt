@@ -504,33 +504,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         return a.copy(log = (listOf(LogEvent(kind, name, System.currentTimeMillis())) + a.log).take(50), sent = a.sent + if (connected) 1 else 0)
     }
 
-    /** Sends a call or chat to the bike by hand, as a browser can't see the phone's own. */
+    /**
+     * Shows a sample call, missed call or chat on the bike, to see how the display looks. Real ones arrive on their
+     * own from the phone's notifications, so a test never touches the missed-call or chat counts or the history.
+     */
     fun relay(kind: String, nameIn: String) {
-        val name = nameIn.trim().take(32)
-        if (name.isEmpty()) { toast("Add a name first."); return }
-        val a = _state.value.settings.alerts
-        val linked = _live.value.link == LinkState.CONNECTED
-        val now = System.currentTimeMillis()
+        val name = nameIn.trim().take(32).ifEmpty { "Rohan" }
+        if (_live.value.link != LinkState.CONNECTED) { toast("Link your bike first, then try again."); return }
         when (kind) {
-            "ring" -> {
-                if (!a.calls) { toast("Phone calls are switched off above."); return }
-                commit { it.copy(alerts = logAlert(it.alerts, "call", name)) }
-                ring(name)
-                buzz(30, 60, 30)
-                sound.play(Sound.Fx.HORN)
-            }
-            "missed" -> {
-                if (!a.calls) { toast("Phone calls are switched off above."); return }
-                commit { it.copy(alerts = logAlert(it.alerts, "missed", name).let { x -> x.copy(missed = x.missed + NamedEvent(name, now)) }) }
-                if (linked) pushFrame("Missed call", app.waylink.core.Protocol.missedCall(name))
-                toast(if (linked) "Missed call from $name sent." else "Saved. Link the bike to send it.")
-            }
-            "wa" -> {
-                if (!a.waMsgs) { toast("WhatsApp messages are switched off above."); return }
-                commit { it.copy(alerts = logAlert(it.alerts, "wa", name).let { x -> x.copy(wa = x.wa + NamedEvent(name, now)) }) }
-                if (linked) pushFrame("WhatsApp", app.waylink.core.Protocol.whatsAppAlert(name))
-                toast(if (linked) "$name on the cluster for 6 s." else "Saved. Link the bike to send it.")
-            }
+            "ring" -> { ring(name, test = true); buzz(30, 60, 30); toast("Test call from $name. It stops on its own in 25 s.") }
+            "missed" -> { pushFrame("Missed call (test)", app.waylink.core.Protocol.missedCall(name)); toast("Test missed call sent.") }
+            "wa" -> { pushFrame("WhatsApp (test)", app.waylink.core.Protocol.whatsAppAlert(name)); toast("$name on the display for 6 s.") }
         }
     }
 
@@ -584,7 +568,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     private var ringJob: Job? = null
 
     /** Shows an incoming call; unanswered after 25 s it becomes a missed call. */
-    private fun ring(name: String) {
+    private fun ring(name: String, test: Boolean = false) {
         _live.update { it.copy(call = Call(name, true, System.currentTimeMillis())) }
         ringJob?.cancel()
         ringJob = viewModelScope.launch {
@@ -592,7 +576,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             val c = _live.value.call
             if (c != null && c.ringing) {
                 _live.update { it.copy(call = null) }
-                commit { it.copy(alerts = logAlert(it.alerts, "missed", c.name).let { x -> x.copy(missed = x.missed + NamedEvent(c.name, System.currentTimeMillis())) }) }
+                if (!test) commit { it.copy(alerts = logAlert(it.alerts, "missed", c.name).let { x -> x.copy(missed = x.missed + NamedEvent(c.name, System.currentTimeMillis())) }) }
             }
         }
     }

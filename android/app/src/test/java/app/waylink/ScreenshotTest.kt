@@ -69,6 +69,7 @@ class ScreenshotTest {
     @Test fun trips() = shot("trips", tab = Tab.RIDES) { RidesScreen(sample, live, noop(), 80.dp) }
     @Test fun route() = shot("route", tab = Tab.ROUTE) { RouteScreen(sample, live, noop(), {}, 80.dp) }
     @Test fun alerts() = shot("alerts", tab = Tab.ALERTS) { AlertsScreen(sample, live, noop(), 80.dp) }
+    @Test fun alertsRecent() = shot("alerts-recent", tab = Tab.ALERTS) { AlertsScreen(sample, live, noop(), 80.dp, startTab = "recent") }
     @Test fun settings() = shot("settings", tab = Tab.SETTINGS) { SettingsScreen(sample, live, noop(), 80.dp) }
     @Test fun settingsDark() = shot("settings-dark", "sketchdark", Tab.SETTINGS) { SettingsScreen(sample, live, noop(), 80.dp) }
     // A phone-sized box: the shared 1900 dp canvas would push the slide text and buttons off the bottom.
