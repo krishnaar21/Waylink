@@ -440,10 +440,11 @@ private fun LinkHero() {
     val ink = c.ink
 
     Box(Modifier.size(width = 220.dp, height = 208.dp)) {
-        // ride-in: from 190 dp left, tilted back, overshooting 6 dp at 82 %
+        // ride-in: from 190 dp left, slowing to a stop. Only ever forward: an overshoot that settled back
+        // read as the bike rolling backwards. The nose dips a touch as it brakes, then levels.
         val p = ride.value
-        val x = if (p < 0.82f) -190f + 196f * (p / 0.82f) else 6f - 6f * ((p - 0.82f) / 0.18f)
-        val rot = if (p < 0.82f) -1.5f + 2.1f * (p / 0.82f) else 0.6f - 0.6f * ((p - 0.82f) / 0.18f)
+        val x = -190f * (1f - p)
+        val rot = if (p < 0.8f) -1.2f * (1f - p / 0.8f) else 0.5f * kotlin.math.sin(((p - 0.8f) / 0.2f) * kotlin.math.PI.toFloat())
         val fade = (p / 0.2f).coerceIn(0f, 1f)
         // .lk-glow: the shadow under the bike
         Box(
