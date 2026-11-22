@@ -46,7 +46,7 @@ data class Connect(
     val calls: Boolean,
     val sms: Boolean,
     val music: Boolean = false,
-    val button: String = "M button",
+    val button: String = "Mode (M) button",
     val source: String,
 )
 

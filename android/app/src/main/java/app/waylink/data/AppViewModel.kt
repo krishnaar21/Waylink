@@ -607,16 +607,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             commit { it.copy(alerts = logAlert(it.alerts, "button", if (kind == "tap") "Tap · Answer" else "Long press · ${if (call.ringing) "Decline" else "End call"}", count = false)) }
             return
         }
+        // No call: on most Pulsars M only changes the display's own screens. Only a display Bajaj says controls
+        // music (the NS400Z) gets media keys, and only with that switch on; otherwise nothing reaches the phone.
+        val music = _state.value.model.connect?.music == true && _state.value.settings.handlebarMedia
+        if (!music) { toast("No call right now. Mode (M) only changes the display’s screens."); return }
         val label = if (kind == "tap") "Play / pause" else "Next track"
         commit { it.copy(alerts = logAlert(it.alerts, "button", "${if (kind == "tap") "Tap" else "Long press"} · $label", count = false)) }
-        // The phone's music follows the handlebar, when the rider has that on.
-        if (_state.value.settings.handlebarMedia) {
-            val ctx = getApplication<Application>()
-            val playing = PhoneStatus.musicActive(ctx)
-            PhoneStatus.media(ctx, next = kind != "tap")
-            buzz(10)
-            toast(if (kind == "tap") (if (playing) "Paused" else "Playing") else "Next track")
-        } else toast("Handlebar · $label")
+        val ctx = getApplication<Application>()
+        val playing = PhoneStatus.musicActive(ctx)
+        PhoneStatus.media(ctx, next = kind != "tap")
+        buzz(10)
+        toast(if (kind == "tap") (if (playing) "Paused" else "Playing") else "Next track")
     }
 
     fun fmt() = Fmt(_state.value.country.locale)

@@ -113,7 +113,7 @@ fun HandlebarSample(modifier: Modifier = Modifier) {
             drawCircle(accent, d(2.5f), end)
         }
         Column(Modifier.padding(start = 204.dp, end = 12.dp).offset(y = 40.dp)) {
-            Txt("M button", T.rowSub.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 16.sp), c.ink)
+            Txt("Mode (M) button", T.rowSub.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 16.sp), c.ink)
             Txt("Marked M or with a phone. Answers and declines calls", T.rowSub.copy(fontSize = 11.sp, lineHeight = 14.sp), c.ink3)
         }
         Txt("Left switch, simplified. Layout varies by model.", T.rowSub.copy(fontSize = 10.sp, lineHeight = 13.sp), c.ink3,
@@ -149,7 +149,7 @@ fun HandlebarBody() {
     Row {
         Ic("check", size = 16.dp, tint = c.sageInk)
         Spacer(Modifier.width(10.dp))
-        Txt("Built in on 2024-on Bluetooth Pulsars: the button on the left switch, usually marked M. Nothing to buy or fit.",
+        Txt("Built in on 2024-on Bluetooth Pulsars: the Mode (M) button on the left switch. Nothing to buy or fit.",
             T.row.copy(lineHeight = 20.sp), c.ink2)
     }
     Spacer(Modifier.height(10.dp))

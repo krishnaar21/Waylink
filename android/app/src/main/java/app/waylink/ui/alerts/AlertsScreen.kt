@@ -192,13 +192,8 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp, startT
 
             SectionGap()
             SectionHead("Handlebar button", help = { act.sheet("handlebar") })
-            val canPress = live.simulated && live.link == LinkState.CONNECTED
             ListCard {
-                val btn = s.model.connect?.button ?: "M button"
-                // Press and hold are explained in the sheet; the simulated bike gets its two test chips here.
-                ListRow(btn, "On the left switch. Answers and declines calls", "hand", onClick = { act.sheet("handlebar") }, trailing = if (canPress) ({
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { Chip("Press", { act.press("tap") }); Chip("Hold", { act.press("long") }) }
-                }) else null)
+                ListRow(s.model.connect?.button ?: "Mode (M) button", "Answers and declines calls", "hand", onClick = { act.sheet("handlebar") })
             }
 
             SectionGap()
