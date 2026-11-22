@@ -172,6 +172,13 @@ fun TodayScreen(s: AppState, live: Live, act: TodayActions, bottomPadding: Dp) {
             Hero(verdict, line, fs.onReserve, act::logbook)
         }
 
+        // Low fuel nudge: range under 50 km or on reserve, with pumps nearby or straight navigation to the nearest.
+        val range = fs.range
+        if (s.settings.fuelNudge && range != null && (fs.onReserve || range < 50)) {
+            Spacer(Modifier.height(12.dp))
+            FuelNudge(range, f, { act.open("nearby:fuel") }, { act.open("fuel-go") })
+        }
+
         // Do these first / Coming up (.section after the hero: 22; after the bike card alone: 34)
         Spacer(Modifier.height(if (good) 34.dp else 22.dp))
         SectionHead(if (urgent.isNotEmpty()) "Do these first" else "Coming up") { LinkText("See all", act::logbook) }
@@ -312,6 +319,26 @@ private fun ConnRow(s: AppState, live: Live, good: Boolean, okCount: Int, act: T
             busy -> Btn(if (st == LinkState.CONNECTING) "Cancel" else "Stop", act::cancelLink, kind = BtnKind.LINE, small = true, compact = true)
             known -> Btn("Connect", act::reconnect, kind = BtnKind.INK, icon = "bt", small = true, compact = true)
             else -> Btn("Pair", act::pairNew, kind = BtnKind.INK, icon = "bt", small = true, compact = true)
+        }
+    }
+}
+
+@Composable
+private fun FuelNudge(range: Double, f: Fmt, browse: () -> Unit, go: () -> Unit) {
+    val c = W.c
+    Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(c.tintAmber).padding(horizontal = 18.dp, vertical = 16.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Ic("fuel", size = 18.dp, tint = c.ink)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Txt("Fuel up soon", T.row.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), c.ink)
+                Txt("About ${f.num(range, 0)} km left in the tank", T.rowSub, c.ink2)
+            }
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Btn("Pumps nearby", browse, Modifier.weight(1f), kind = BtnKind.LINE, small = true)
+            Btn("Take me to one", go, Modifier.weight(1f), small = true)
         }
     }
 }

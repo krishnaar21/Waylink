@@ -74,12 +74,15 @@ object Protocol {
     private fun batBars4(p: Int) = if (p >= 75) 3 else if (p >= 50) 2 else if (p >= 25) 1 else 0
 
     /** 89-byte General Status (V2), sent after link-up and every 5 s. */
-    fun generalV2(batteryPercent: Int, callState: Int = 0, callerName: String? = null, missedCallCount: Int = 0, volumeLevel: Int = 8, signalBars: Int = 4, phoneModel: String = "Android"): ByteArray {
+    fun generalV2(batteryPercent: Int, callState: Int = 0, callerName: String? = null, missedCallCount: Int = 0, volumeLevel: Int = 8, signalBars: Int = 4, phoneModel: String = "Android",
+                  callAcceptAck: Int = 0, callRejectAck: Int = 0): ByteArray {
         heartbeat = (heartbeat + 1) and 0xff
         val b = ByteArray(GENERAL)
         b[0] = ((volumeLevel.coerceIn(0, 15) and 0x0f) or 0xc0).toByte()
         b[1] = (((batBars4(batteryPercent) and 3) shl 4) or (callState and 0x0f)).toByte()
         b[2] = (signalBars.coerceIn(0, 7) and 7).toByte()
+        // Echo the cluster's handlebar counters, so it knows its Answer / Decline press was handled.
+        b[4] = (callAcceptAck and 0xff).toByte(); b[5] = (callRejectAck and 0xff).toByte()
         b[13] = missedCallCount.coerceIn(0, 255).toByte()
         val hasCaller = callState == Call.INCOMING || callState == Call.ACTIVE
         if (hasCaller && !callerName.isNullOrBlank()) {
@@ -96,10 +99,41 @@ object Protocol {
         return b
     }
 
+    /**
+     * 55-byte legacy status, sent next to V2 while a call is on, for clusters with older firmware (web
+     * buildGeneralPacketLegacy). Its two ack bytes carry the accept and reject counters.
+     */
+    fun generalLegacy(batteryPercent: Int, callState: Int, callerName: String?, missedCallCount: Int, volumeLevel: Int = 8, callAcceptAck: Int = 0, callRejectAck: Int = 0): ByteArray {
+        heartbeat = (heartbeat + 1) and 0xff
+        val b = ByteArray(LEGACY)
+        b[0] = ((volumeLevel.coerceIn(0, 15) and 0x0f) or 0xc0).toByte()
+        val p = batteryPercent
+        val bars = if (p >= 80) 4 else if (p >= 60) 3 else if (p >= 40) 2 else if (p >= 20) 1 else 0
+        b[1] = (((bars and 7) shl 3) or (callState and 0x0f)).toByte()
+        b[2] = 4
+        b[3] = if (callState == Call.ACTIVE) 1 else 0
+        b[4] = if (callState == Call.ACTIVE) 0 else 1
+        b[5] = (callAcceptAck and 0xff).toByte(); b[6] = (callRejectAck and 0xff).toByte()
+        b[13] = missedCallCount.coerceIn(0, 255).toByte()
+        val hasCaller = callState == Call.INCOMING || callState == Call.ACTIVE
+        if (hasCaller && !callerName.isNullOrBlank()) {
+            b[18] = 1
+            var clean = sanitizeAscii(callerName, 30)
+            if (clean.isNotEmpty() && clean.length <= 6) clean += "   "
+            val bytes = ascii(clean); val len = minOf(bytes.size, 30)
+            bytes.copyInto(b, 21, 0, len); b[20] = len.toByte()
+        }
+        b[53] = heartbeat.toByte()
+        return b
+    }
+
     private fun putEpoch(b: ByteArray, at: Int, nowMs: Long) {
         val s = nowMs / 1000
         b[at] = (s ushr 24).toByte(); b[at + 1] = (s ushr 16).toByte(); b[at + 2] = (s ushr 8).toByte(); b[at + 3] = s.toByte()
     }
+
+    /** 44-byte text-message alert (alert type 1, the cluster's message icon): the sender's name only, never the text. */
+    fun smsAlert(sender: String, nowMs: Long = System.currentTimeMillis()): ByteArray = whatsAppAlert(sender, nowMs).also { it[0] = 1 }
 
     /** 44-byte WhatsApp alert: the sender's name only, never the message. */
     fun whatsAppAlert(sender: String, nowMs: Long = System.currentTimeMillis()): ByteArray {

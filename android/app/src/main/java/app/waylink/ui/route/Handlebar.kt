@@ -141,15 +141,17 @@ private fun DrawScope.arrow(o: Offset, s: Float, left: Boolean) {
 
 /** Where the M button is, what it does outside a call, and what a press and a hold do, as the owner's manual has it. */
 @Composable
-fun HandlebarBody() {
+fun HandlebarBody(model: app.waylink.core.BikeModel = app.waylink.core.Catalog.MODELS[0]) {
     val c = W.c
+    val cx = model.connect
     Spacer(Modifier.height(8.dp))
     HandlebarSample()
     Spacer(Modifier.height(16.dp))
     Row {
         Ic("check", size = 16.dp, tint = c.sageInk)
         Spacer(Modifier.width(10.dp))
-        Txt("Built in on 2024-on Bluetooth Pulsars: the Mode (M) button on the left switch. Nothing to buy or fit.",
+        Txt(if (cx != null) "Built in on the ${model.name} from ${cx.since}: the ${cx.button} on the left switch. Nothing to buy or fit."
+            else "Bajaj doesn’t list a Bluetooth display for the ${model.name}, so it may not have this button. On Bluetooth Pulsars it’s the Mode (M) button on the left switch.",
             T.row.copy(lineHeight = 20.sp), c.ink2)
     }
     Spacer(Modifier.height(10.dp))

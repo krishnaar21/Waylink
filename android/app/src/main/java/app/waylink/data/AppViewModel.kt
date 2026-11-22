@@ -39,6 +39,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -92,6 +94,9 @@ data class Live(
     val ask: String? = null,
     /** A Settings section to scroll to and flash (web goto-riding), or null. */
     val focus: String? = null,
+    /** Crash detection fired at this time: the SOS countdown is up. [crashTest] when it's only a try-out. */
+    val crash: Long? = null,
+    val crashTest: Boolean = false,
 )
 
 data class Call(val name: String, val ringing: Boolean, val since: Long)
@@ -158,6 +163,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         // Live turns from Google Maps & co. (Android notification access).
         viewModelScope.launch { NavFeed.turns.collect(::onLiveTurn) }
         viewModelScope.launch { PhoneFeed.events.collect(::onPhoneEvent) }
+        // Crash detection listens only while it's on and a ride is under way (recording, or the bike linked).
+        viewModelScope.launch {
+            kotlinx.coroutines.flow.combine(_state.map { it.settings.crashDetect }, _live.map { it.rec != null || it.link == LinkState.CONNECTED }) { on, riding -> on && riding }
+                .distinctUntilChanged().collect { if (it) crashWatch.start() else crashWatch.stop() }
+        }
+        // A call starting, being answered or ending reaches the bike at once, not at the next 5 s heartbeat.
+        viewModelScope.launch { _live.map { it.call?.ringing }.distinctUntilChanged().collect { beat = 0L } }
         refreshWeather(); sound.play(Sound.Fx.ENGINE_START)
         // Phone reminders: the daily look, and one now (after the saved state is on disk).
         viewModelScope.launch(Dispatchers.IO) { delay(3000); Reminders.schedule(getApplication()); Reminders.check(getApplication()) }
@@ -445,6 +457,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         if (rec != null) rec = rec.copy(top = maxOf(rec.top, speed))
         _live.update { it.copy(speed = speed, rec = rec, gpsErr = false) }
         checkSpeed(speed)
+        crashWatch.speed(kmh ?: 0.0)
     }
 
     private fun r6(x: Double) = Math.round(x * 1e6) / 1e6
@@ -543,11 +556,92 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
                 if (linked) pushFrame("Missed call", app.waylink.core.Protocol.missedCall(e.name))
             }
             PhoneEvent.Kind.WA -> {
+                autoReply(e)
                 if (!a.waMsgs) return
                 commit { it.copy(alerts = logAlert(it.alerts, "wa", e.name).let { x -> x.copy(wa = x.wa + NamedEvent(e.name, now)) }) }
                 if (linked) pushFrame("WhatsApp", app.waylink.core.Protocol.whatsAppAlert(e.name))
             }
+            PhoneEvent.Kind.SMS -> {
+                autoReply(e)
+                if (!a.sms) return
+                commit { it.copy(alerts = logAlert(it.alerts, "sms", e.name)) }
+                if (linked) pushFrame("SMS", app.waylink.core.Protocol.smsAlert(e.name))
+            }
         }
+    }
+
+    /** Who got an auto-reply and when, so each sender gets one per half hour, not one per message. */
+    private val replied = mutableMapOf<String, Long>()
+
+    /** Is the rider riding, for auto-reply: a ride recording or the bike linked ("riding"), or only linked ("linked"). */
+    fun riding(): Boolean {
+        val l = _live.value
+        val linked = l.link == LinkState.CONNECTED
+        return if (_state.value.settings.autoReplyWhen == "linked") linked else linked || l.rec != null || l.nav != null
+    }
+
+    private fun autoReply(e: PhoneEvent) {
+        val st = _state.value.settings
+        if (!st.autoReply || !riding() || st.autoReplyText.isBlank()) return
+        val now = System.currentTimeMillis()
+        val who = e.name.lowercase()
+        if ((replied[who] ?: 0L) > now - 30 * 60_000L) return
+        if (!PhoneFeed.reply(getApplication(), e.key, st.autoReplyText.trim().take(300))) return
+        replied[who] = now
+        commit { it.copy(alerts = logAlert(it.alerts, "reply", e.name, count = false)) }
+    }
+
+    fun setAutoReply(text: String? = null, whenKey: String? = null) = commit { s ->
+        s.copy(settings = s.settings.copy(
+            autoReplyText = text?.trim()?.take(300)?.ifEmpty { null } ?: s.settings.autoReplyText,
+            autoReplyWhen = whenKey ?: s.settings.autoReplyWhen,
+        ))
+    }
+
+    // ---------- Crash detection ----------
+    private val crashWatch by lazy { CrashWatch(getApplication()) { viewModelScope.launch { crashDetected(test = false) } } }
+    private var crashJob: Job? = null
+    private var alarm: android.media.Ringtone? = null
+
+    /** A crash (or the try-out): a loud alarm and buzzing, and help is called when the countdown runs out. */
+    fun crashDetected(test: Boolean) {
+        if (_live.value.crash != null) return
+        _live.update { it.copy(crash = System.currentTimeMillis(), crashTest = test, rideMode = false) }
+        val ctx = getApplication<Application>()
+        alarm = runCatching {
+            android.media.RingtoneManager.getRingtone(ctx, android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM))?.apply {
+                audioAttributes = android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_ALARM)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build()
+                if (!test) play()
+            }
+        }.getOrNull()
+        crashJob?.cancel()
+        crashJob = viewModelScope.launch {
+            repeat(app.waylink.core.CrashLogic.COUNTDOWN_S) { buzz(400, 200, 400); delay(1000) }
+            alarm?.stop()
+            if (test) { _live.update { it.copy(crash = null) }; toast("That’s what a crash looks like. Help would be called now.") } else callForHelp()
+        }
+    }
+
+    /** "I'm OK": stops the alarm and the countdown. */
+    fun crashOk() {
+        crashJob?.cancel(); alarm?.stop(); alarm = null
+        val test = _live.value.crashTest
+        _live.update { it.copy(crash = null) }
+        if (!test) toast("Glad you’re OK. Ride safe.")
+    }
+
+    /** Calls the emergency contact (straight away when Waylink may place calls), and opens SOS. */
+    fun callForHelp() {
+        crashJob?.cancel(); alarm?.stop(); alarm = null
+        val ctx = getApplication<Application>()
+        val p = _state.value.profile
+        val n = p.icePhone.ifBlank { _state.value.country.sos }.replace(" ", "")
+        val can = p.icePhone.isNotBlank() && androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.CALL_PHONE) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        val i = android.content.Intent(if (can) android.content.Intent.ACTION_CALL else android.content.Intent.ACTION_DIAL, android.net.Uri.parse("tel:" + android.net.Uri.encode(n)))
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { ctx.startActivity(i) }
+        _live.update { it.copy(crash = null, ask = "sos") }
     }
 
     fun clearMissed() { commit { it.copy(alerts = it.alerts.copy(missed = emptyList())) }; toast("Missed calls cleared.") }
@@ -558,6 +652,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         s.copy(settings = s.settings.copy(alerts = when (key) {
             "calls" -> a.copy(calls = !a.calls)
             "waCalls" -> a.copy(waCalls = !a.waCalls)
+            "sms" -> a.copy(sms = !a.sms)
             else -> a.copy(waMsgs = !a.waMsgs)
         }))
     }
@@ -693,15 +788,21 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     // The frames the cluster would get, built by the real protocol code, so "Show Bluetooth messages" has something to show.
     private var streamJob: Job? = null
+    /** When the last status frame went out; zeroed to send one at once (a call started, was answered or ended). */
+    private var beat = 0L
     private fun pushFrame(label: String, bytes: ByteArray) {
         // A real cluster gets the bytes too; the simulated one only shows them.
-        if (!_live.value.simulated) link.write(when (label) { "Turn" -> "tbt"; "Missed call" -> "missedCall"; "WhatsApp" -> "alerts"; else -> "general" }, bytes)
+        val ch = when {
+            label.startsWith("Turn") -> "tbt"; label.startsWith("Missed call") -> "missedCall"
+            label.startsWith("WhatsApp") || label.startsWith("SMS") -> "alerts"; else -> "general"
+        }
+        if (!_live.value.simulated) link.write(ch, bytes)
         _live.update { it.copy(frames = (it.frames + "$label · ${app.waylink.core.Protocol.hex(bytes)}").takeLast(6), lastFrame = label to bytes, frameCount = it.frameCount + 1) }
     }
     private fun startStream() {
         streamJob?.cancel()
         streamJob = viewModelScope.launch {
-            var beat = 0L
+            beat = 0L
             while (_live.value.link == LinkState.CONNECTED) {
                 val l = _live.value
                 val now = System.currentTimeMillis()
@@ -710,9 +811,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
                     val call = l.call
                     // The phone's real battery, signal and volume, every heartbeat.
                     val ph = PhoneStatus.read(getApplication())
-                    pushFrame("Status", app.waylink.core.Protocol.generalV2(ph.battery ?: l.battery ?: 80,
-                        if (call == null) 0 else if (call.ringing) app.waylink.core.Protocol.Call.INCOMING else app.waylink.core.Protocol.Call.ACTIVE,
-                        call?.name, _state.value.alerts.missed.size, volumeLevel = ph.volume, signalBars = ph.bars ?: 4, phoneModel = ph.model))
+                    val cs = if (call == null) 0 else if (call.ringing) app.waylink.core.Protocol.Call.INCOMING else app.waylink.core.Protocol.Call.ACTIVE
+                    val bat = ph.battery ?: l.battery ?: 80
+                    pushFrame("Status", app.waylink.core.Protocol.generalV2(bat, cs, call?.name, _state.value.alerts.missed.size,
+                        volumeLevel = ph.volume, signalBars = ph.bars ?: 4, phoneModel = ph.model, callAcceptAck = link.acceptAck, callRejectAck = link.rejectAck))
+                    // Older cluster firmware (on some models and years) reads calls from the legacy frame instead.
+                    if (call != null) pushFrame("Status (legacy)", app.waylink.core.Protocol.generalLegacy(bat, cs, call.name, _state.value.alerts.missed.size,
+                        ph.volume, link.acceptAck, link.rejectAck))
                     _live.update { it.copy(battery = ph.battery ?: it.battery) }
                 }
                 l.nav?.let { n ->
@@ -896,6 +1001,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         }
     }, { done(null, it) })
 
+    /**
+     * Low fuel: finds the nearest petrol pump and starts voice navigation to it in the rider's maps app (two-wheeler
+     * mode in Google Maps), whose turns then reach the bike as usual.
+     */
+    fun goNearestPump() {
+        toast("Finding the nearest pump…")
+        findNearby(Nearby.Kind.FUEL) { list, why ->
+            val p = list?.minByOrNull { it.meters }
+            if (p == null) { toast(why ?: "No pumps found nearby. Try Pumps nearby."); return@findNearby }
+            val src = app.waylink.core.NavSource.of(_state.value.settings.navSource).let { if (it.readsNotifications) it else app.waylink.core.NavSource.of("gmaps") }
+            if (!NavApps.go(getApplication(), src, p.name, p.lat, p.lng)) toast("No app can open maps.")
+        }
+    }
+
     /** Pins where the phone is now, for the place sheet. */
     fun placeHere(done: (lat: Double, lng: Double, label: String) -> Unit) = locateOnce({ lat, lon, place, _ -> done(lat, lon, place) }, ::toast)
 
@@ -1048,6 +1167,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
             "wakeLock" -> st.copy(wakeLock = !st.wakeLock)
             "streetNames" -> st.copy(streetNames = !st.streetNames)
             "handlebarMedia" -> st.copy(handlebarMedia = !st.handlebarMedia)
+            "autoReply" -> st.copy(autoReply = !st.autoReply)
+            "fuelNudge" -> st.copy(fuelNudge = !st.fuelNudge)
+            "crashDetect" -> st.copy(crashDetect = !st.crashDetect)
             "reminders" -> st.copy(reminders = !st.reminders)
             "sounds" -> st.copy(sounds = !st.sounds)
             "devFrames" -> st.copy(devFrames = !st.devFrames)

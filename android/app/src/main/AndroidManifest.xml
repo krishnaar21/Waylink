@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Short taps of vibration on toggles and events, like the web app's navigator.vibrate. -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Crash detection: calls the emergency contact when the rider doesn't answer the countdown. Asked only when it's switched on. -->
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
     <!-- Bluetooth to the bike's cluster: "nearby devices" on Android 12+, the older pair on 11 and below. -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" tools:targetApi="s" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
