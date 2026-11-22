@@ -32,6 +32,22 @@ data class BikeModel(
     val chain: String,
     val plug: String,
     val liquid: Boolean,
+    /** What the bike's Bluetooth display does, from Bajaj's own pages and the owner's manual; null when no source confirms one. */
+    val connect: Connect? = null,
+)
+
+/**
+ * A Bluetooth display's features, as Bajaj states them. [since] is the first model year with it; older bikes of
+ * the same name have a plain display. [button] is what the manual calls the switch that answers calls.
+ */
+data class Connect(
+    val since: Int,
+    val turns: Boolean,
+    val calls: Boolean,
+    val sms: Boolean,
+    val music: Boolean = false,
+    val button: String = "Call button",
+    val source: String,
 )
 
 object Catalog {
@@ -52,15 +68,15 @@ object Catalog {
     )
 
     val MODELS = listOf(
-        BikeModel("ns200", "Pulsar NS200", "NS Series", "199.5cc triple spark, liquid-cooled · 24.5 PS / 18.7 Nm", 12.0, 2.4, listOf(28, 28, 32, 36), listOf("100/80-17", "130/70-17"), "10W-50 semi/fully synthetic · 1200 ml", "Ready-mix glycol · 1000 ml", "25–35 mm slack", "Champion RG4HC + RG6HCC ×2", true),
-        BikeModel("rs200", "Pulsar RS200", "NS Series", "199.5cc triple spark, liquid-cooled · 24.5 PS / 18.7 Nm", 13.0, 2.5, listOf(28, 28, 32, 36), listOf("100/80-17", "130/70-17"), "10W-50 semi/fully synthetic · 1200 ml", "Ready-mix glycol · 1000 ml", "25–35 mm slack", "Champion RG4HC + RG6HCC ×2", true),
-        BikeModel("ns400z", "Pulsar NS400Z", "NS Series", "373.3cc DOHC, liquid-cooled · 40 PS / 35 Nm", 12.0, 2.0, listOf(29, 29, 33, 37), listOf("110/70-17", "140/70-17"), "10W-50 fully synthetic · 1700 ml", "Glycol · 1200 ml", "20–30 mm slack", "Bosch VR5NEU", true),
-        BikeModel("ns160", "Pulsar NS160", "NS Series", "160.3cc twin spark, oil-cooled · 17.2 PS / 14.6 Nm", 12.0, 2.4, listOf(28, 28, 32, 36), listOf("100/80-17", "130/70-17"), "10W-40 / 20W-50 · 1150 ml", "Oil cooler", "25–35 mm slack", "Champion PRG6C", false),
+        BikeModel("ns200", "Pulsar NS200", "NS Series", "199.5cc triple spark, liquid-cooled · 24.5 PS / 18.7 Nm", 12.0, 2.4, listOf(28, 28, 32, 36), listOf("100/80-17", "130/70-17"), "10W-50 semi/fully synthetic · 1200 ml", "Ready-mix glycol · 1000 ml", "25–35 mm slack", "Champion RG4HC + RG6HCC ×2", true, Connect(2024, turns = true, calls = true, sms = true, source = "Bajaj 2024 NS launch and NS200 owner’s manual")),
+        BikeModel("rs200", "Pulsar RS200", "NS Series", "199.5cc triple spark, liquid-cooled · 24.5 PS / 18.7 Nm", 13.0, 2.5, listOf(28, 28, 32, 36), listOf("100/80-17", "130/70-17"), "10W-50 semi/fully synthetic · 1200 ml", "Ready-mix glycol · 1000 ml", "25–35 mm slack", "Champion RG4HC + RG6HCC ×2", true, Connect(2025, turns = true, calls = true, sms = true, source = "Bajaj 2025 RS200 launch")),
+        BikeModel("ns400z", "Pulsar NS400Z", "NS Series", "373.3cc DOHC, liquid-cooled · 40 PS / 35 Nm", 12.0, 2.0, listOf(29, 29, 33, 37), listOf("110/70-17", "140/70-17"), "10W-50 fully synthetic · 1700 ml", "Glycol · 1200 ml", "20–30 mm slack", "Bosch VR5NEU", true, Connect(2024, turns = true, calls = true, sms = true, music = true, button = "4-way switch", source = "Bajaj NS400Z launch")),
+        BikeModel("ns160", "Pulsar NS160", "NS Series", "160.3cc twin spark, oil-cooled · 17.2 PS / 14.6 Nm", 12.0, 2.4, listOf(28, 28, 32, 36), listOf("100/80-17", "130/70-17"), "10W-40 / 20W-50 · 1150 ml", "Oil cooler", "25–35 mm slack", "Champion PRG6C", false, Connect(2024, turns = true, calls = true, sms = true, source = "Bajaj 2024 NS launch and press release")),
         BikeModel("ns125", "Pulsar NS125", "NS Series", "124.45cc DTS-i · 12 PS / 11 Nm", 12.0, 2.0, listOf(25, 25, 28, 32), listOf("80/100-17", "100/90-17"), "20W-50 4T · 1000 ml", "Air-cooled", "25–35 mm slack", "Champion RG4HC", false),
-        BikeModel("n250", "Pulsar N250 / F250", "N Series", "249.07cc twin spark, oil-cooled · 24.5 PS / 21.5 Nm", 14.0, 2.5, listOf(28, 28, 32, 36), listOf("110/70-17", "140/70-17"), "10W-50 semi-synthetic · 1300 ml", "Oil cooler", "25–35 mm slack", "Champion PRG6C", false),
-        BikeModel("n160", "Pulsar N160 / N150", "N Series", "164.82cc DTS-i, oil-cooled · 16 PS / 14.65 Nm", 14.0, 2.5, listOf(25, 25, 28, 32), listOf("100/80-17", "130/70-17"), "10W-40 semi-synthetic · 1200 ml", "Oil cooler", "25–35 mm slack", "Champion RG4HC", false),
-        BikeModel("pulsar150", "Pulsar 150 / 125", "Classic Series", "149.5cc twin spark DTS-i · 14 PS / 13.25 Nm", 11.5, 2.0, listOf(25, 25, 28, 32), listOf("80/100-17", "100/90-17"), "20W-50 4T · 1000 ml", "Air-cooled", "25–35 mm slack", "Champion RG4HC", false),
-        BikeModel("pulsar220f", "Pulsar 220F", "Classic Series", "220cc DTS-i, oil-cooled · 20.4 PS / 18.5 Nm", 15.0, 3.2, listOf(28, 28, 32, 36), listOf("90/90-17", "120/80-17"), "20W-50 semi-synthetic · 1150 ml", "Oil cooler", "25–35 mm slack", "Champion RG4HC", false),
+        BikeModel("n250", "Pulsar N250 / F250", "N Series", "249.07cc twin spark, oil-cooled · 24.5 PS / 21.5 Nm", 14.0, 2.5, listOf(28, 28, 32, 36), listOf("110/70-17", "140/70-17"), "10W-50 semi-synthetic · 1300 ml", "Oil cooler", "25–35 mm slack", "Champion PRG6C", false, Connect(2024, turns = true, calls = true, sms = true, source = "BikeDekho, 2024 N250 features")),
+        BikeModel("n160", "Pulsar N160 / N150", "N Series", "164.82cc DTS-i, oil-cooled · 16 PS / 14.65 Nm", 14.0, 2.5, listOf(25, 25, 28, 32), listOf("100/80-17", "130/70-17"), "10W-40 semi-synthetic · 1200 ml", "Oil cooler", "25–35 mm slack", "Champion RG4HC", false, Connect(2024, turns = false, calls = true, sms = true, source = "Bajaj 2024 N-series release")),
+        BikeModel("pulsar150", "Pulsar 150 / 125", "Classic Series", "149.5cc twin spark DTS-i · 14 PS / 13.25 Nm", 11.5, 2.0, listOf(25, 25, 28, 32), listOf("80/100-17", "100/90-17"), "20W-50 4T · 1000 ml", "Air-cooled", "25–35 mm slack", "Champion RG4HC", false, Connect(2024, turns = false, calls = true, sms = true, source = "BikeAdvice, 2024 Pulsar 150")),
+        BikeModel("pulsar220f", "Pulsar 220F", "Classic Series", "220cc DTS-i, oil-cooled · 20.4 PS / 18.5 Nm", 15.0, 3.2, listOf(28, 28, 32, 36), listOf("90/90-17", "120/80-17"), "20W-50 semi-synthetic · 1150 ml", "Oil cooler", "25–35 mm slack", "Champion RG4HC", false, Connect(2024, turns = false, calls = true, sms = true, source = "AckoDrive, 2024 Pulsar 220F")),
         BikeModel("dominar400", "Dominar 400", "Dominar Series", "373.3cc DOHC, liquid-cooled · 40 PS / 35 Nm", 13.0, 2.5, listOf(29, 29, 33, 36), listOf("110/70-17", "150/60-17"), "10W-50 fully synthetic · 1700 ml", "Glycol · 1200 ml", "20–30 mm slack", "Bosch VR5NEU", true),
         BikeModel("dominar250", "Dominar 250", "Dominar Series", "248.77cc DOHC, liquid-cooled · 27 PS / 23.5 Nm", 13.0, 2.5, listOf(29, 29, 33, 36), listOf("100/80-17", "130/70-17"), "10W-50 semi-synthetic · 1500 ml", "Glycol · 1100 ml", "20–30 mm slack", "Champion RG4HC", true),
     )

@@ -63,7 +63,7 @@ class NavListener : NotificationListenerService() {
 
 /** A call or chat seen in another app's notification. Only the person's name is kept, never the message. */
 data class PhoneEvent(val kind: Kind, val name: String, val key: String) {
-    enum class Kind { CALL, WA_CALL, CALL_GONE, MISSED, WA }
+    enum class Kind { CALL, WA_CALL, CALL_ANSWERED, CALL_GONE, MISSED, WA }
 }
 
 /**
@@ -81,6 +81,9 @@ object PhoneFeed {
         "com.oneplus.dialer", "com.coloros.phonemanager", "com.vivo.incallui",
     )
     private val CALL_KEYS = mutableSetOf<String>()
+    /** The newest card per call, so the handlebar can press its Answer or Decline button. */
+    private val CALLS = mutableMapOf<String, Notification>()
+    private val ANSWERED = mutableSetOf<String>()
     private val seen = object : LinkedHashMap<String, Boolean>(64, 0.75f, true) {
         override fun removeEldestEntry(e: MutableMap.MutableEntry<String, Boolean>?) = size > 200
     }
@@ -98,7 +101,12 @@ object PhoneFeed {
         when {
             // Ringing (or on a call): one event per card, however often the app updates it.
             n.category == Notification.CATEGORY_CALL && (wa || dialer || (n.flags and Notification.FLAG_ONGOING_EVENT) != 0) -> {
-                if (!CALL_KEYS.add(sbn.key)) return
+                synchronized(CALLS) { CALLS[sbn.key] = n }
+                // Answered on the phone (or by us): the card turns into an ongoing call with a timer.
+                if (!CALL_KEYS.add(sbn.key)) {
+                    if (ongoing(n) && ANSWERED.add(sbn.key)) events.tryEmit(PhoneEvent(PhoneEvent.Kind.CALL_ANSWERED, "", sbn.key))
+                    return
+                }
                 val name = clean(title).ifEmpty { clean(text) }.ifEmpty { "Unknown caller" }
                 events.tryEmit(PhoneEvent(if (wa) PhoneEvent.Kind.WA_CALL else PhoneEvent.Kind.CALL, name, sbn.key))
             }
@@ -116,7 +124,34 @@ object PhoneFeed {
     }
 
     fun removed(sbn: StatusBarNotification) {
+        synchronized(CALLS) { CALLS.remove(sbn.key) }; ANSWERED.remove(sbn.key)
         if (CALL_KEYS.remove(sbn.key)) events.tryEmit(PhoneEvent(PhoneEvent.Kind.CALL_GONE, "", sbn.key))
+    }
+
+    /** An incoming card has Decline and Answer; an ongoing one has a timer and Hang up. */
+    private fun ongoing(n: Notification): Boolean {
+        if (Build.VERSION.SDK_INT >= 31) {
+            val type = n.extras.getInt(Notification.EXTRA_CALL_TYPE, 0)
+            if (type != 0) return type == 2 // CallStyle.CALL_TYPE_ONGOING
+        }
+        return n.extras.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER, false)
+    }
+
+    /**
+     * Presses the call card's own Answer, or Decline / Hang up, the same as tapping it in the shade. Works for the
+     * phone app and WhatsApp alike, with no extra permission. False when the card has no such button.
+     */
+    fun act(key: String, answer: Boolean): Boolean {
+        val n = synchronized(CALLS) { CALLS[key] } ?: return false
+        val acts = n.actions?.toList().orEmpty()
+        if (acts.isEmpty()) return false
+        val ans = Regex("answer|accept|pick up|उत्तर|स्वीकार", RegexOption.IGNORE_CASE)
+        val end = Regex("decline|reject|hang ?up|\\bend\\b|dismiss|अस्वीकार|काटें", RegexOption.IGNORE_CASE)
+        val pick = acts.firstOrNull { (if (answer) ans else end).containsMatchIn(it.title?.toString().orEmpty()) }
+            // Untitled or another language: an incoming CallStyle card lists Decline first and Answer last.
+            ?: if (ongoing(n)) (if (answer) null else acts.first()) else if (acts.size >= 2) (if (answer) acts.last() else acts.first()) else null
+        pick ?: return false
+        return runCatching { pick.actionIntent?.send(); pick.actionIntent != null }.getOrDefault(false)
     }
 
     /** Apps re-post the same card for small changes; count it once per post time. */

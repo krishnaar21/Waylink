@@ -73,6 +73,7 @@ class SheetShotTest {
     @Test fun trip() = shot("trip") { vm, nav -> rideSheet("trip-detail:" + sample.vehicle.trips.first().id, sample, live, vm, nav) }
     @Test fun specs() = shot("specs") { vm, nav -> settingsSheet("specs", sample, live, vm, nav) }
     @Test fun support() = shot("support") { vm, nav -> settingsSheet("support", sample, live, vm, nav) }
+    @Test fun vehicle() = shot("vehicle") { vm, nav -> settingsSheet("vehicle:" + sample.vehicle.id, sample, live, vm, nav) }
     @Test fun paperLocked() = shot("paper-locked") { vm, nav -> settingsSheet("paper", sample, live, vm, nav) }
     @Test fun thanks() = shot("thanks") { vm, nav -> settingsSheet("thanks:backer_220", sample, live, vm, nav) }
     @Test fun thanksPatron() = shot("thanks-patron") { vm, nav -> settingsSheet("thanks:patron_520", sample, live, vm, nav) }

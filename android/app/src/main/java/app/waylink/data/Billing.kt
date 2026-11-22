@@ -27,7 +27,7 @@ object Support {
             "Keeps Waylink free, and the Paper themes are yours.",
             listOf("The Paper themes"), adFree = false, early = false),
         Tier("backer_220", 220, "love", "Backer",
-            "Everything in Friend, and no ads.",
+            "Everything in Friend, plus a calm, ad-free app.",
             listOf("Everything in Friend", "No ads"), adFree = true, early = false),
         Tier("patron_520", 520, "sparkles", "Patron",
             "Everything in Backer, plus new features first and priority help.",
