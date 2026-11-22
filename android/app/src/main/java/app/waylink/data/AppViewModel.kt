@@ -550,6 +550,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
                 _live.update { it.copy(call = Call(e.name, true, now)) }
                 commit { it.copy(alerts = logAlert(it.alerts, "call", e.name)) }
             }
+            PhoneEvent.Kind.CALL_ANSWERED -> if (realCall == e.key) _live.update { l -> l.copy(call = l.call?.copy(ringing = false, since = now)) }
             PhoneEvent.Kind.CALL_GONE -> if (realCall == e.key) { realCall = null; _live.update { it.copy(call = null) } }
             PhoneEvent.Kind.MISSED -> {
                 if (!a.calls) return
@@ -596,13 +597,24 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         }
     }
 
-    fun answerCall() { ringJob?.cancel(); _live.update { l -> l.copy(call = l.call?.copy(ringing = false, since = System.currentTimeMillis())) } }
-    fun declineCall() { ringJob?.cancel(); _live.update { it.copy(call = null) } }
-    fun endCall() { ringJob?.cancel(); _live.update { it.copy(call = null) }; toast("Call ended.") }
+    fun answerCall() { ringJob?.cancel(); if (!realAct(answer = true)) return; _live.update { l -> l.copy(call = l.call?.copy(ringing = false, since = System.currentTimeMillis())) } }
+    fun declineCall() { ringJob?.cancel(); if (!realAct(answer = false)) return; _live.update { it.copy(call = null) } }
+    fun endCall() { ringJob?.cancel(); if (!realAct(answer = false)) return; _live.update { it.copy(call = null) }; toast("Call ended.") }
 
     fun openRideMode(open: Boolean) { if (open) buzz(12); _live.update { it.copy(rideMode = open) } }
 
-    /** A handlebar press from the simulated bike. */
+    /**
+     * For a real call, presses Answer or Decline on the phone's own call card. False (and a hint) when the card
+     * has no such button, so the screen keeps showing the call instead of pretending it was handled.
+     */
+    private fun realAct(answer: Boolean): Boolean {
+        val key = realCall ?: return true
+        if (PhoneFeed.act(key, answer)) return true
+        toast(if (answer) "Couldn’t answer from here. Answer on the phone." else "Couldn’t decline from here. Use the phone.")
+        return false
+    }
+
+    /** A handlebar press: the Mode button on the bike (while a call shows), or the simulated bike. */
     fun press(kind: String) {
         // With a call showing, a tap answers and a long press declines or ends it.
         val call = _live.value.call

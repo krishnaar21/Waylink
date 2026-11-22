@@ -310,7 +310,7 @@ private fun VehicleBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNa
     var colour by rememberSaveable(key) { mutableStateOf(v?.colour ?: Catalog.COLOURS[s.vehicles.size % Catalog.COLOURS.size].first) }
     var picking by remember { mutableStateOf(false) }
     var photo by rememberSaveable(key) { mutableStateOf(v?.photo) }
-    var display by rememberSaveable(key) { mutableStateOf(v?.display ?: true) }
+    var display by rememberSaveable(key) { mutableStateOf(v?.display ?: (Catalog.model(v?.model ?: "ns200").connect != null)) }
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) vm.importVehiclePhoto(uri) { photo = it } }
     Spacer(Modifier.height(16.dp))
     // The bike in the picture wears the picked colour as soon as a swatch is tapped.
@@ -321,7 +321,7 @@ private fun VehicleBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNa
             Catalog.MODELS.map { it.series }.distinct().forEach { series ->
                 Txt(series, T.eyebrow, c.ink3, Modifier.padding(start = 16.dp, top = 12.dp, bottom = 2.dp))
                 Catalog.MODELS.filter { it.series == series }.forEach { m ->
-                    ListRow(modelName(s, m), chevron = false, onClick = { model = m.id; picking = false }, trailing = { Check(m.id == model) })
+                    ListRow(modelName(s, m), chevron = false, onClick = { if (m.id != model) display = m.connect != null; model = m.id; picking = false }, trailing = { Check(m.id == model) })
                 }
             }
         }
@@ -361,11 +361,19 @@ private fun VehicleBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNa
         }
     }
     // Older bikes have a plain display with no Bluetooth; then Waylink hides what it can't send to the bike.
+    // The default follows what Bajaj says about this model; the rider can still change it.
+    val cx = Catalog.model(model).connect
     Spacer(Modifier.height(8.dp))
     app.waylink.ui.components.ListCard(flat = true) {
-        app.waylink.ui.components.ListRow("Bluetooth display", if (display) "Turns, calls and the handlebar button work" else "Waylink hides what needs the bike’s display",
+        app.waylink.ui.components.ListRow("Bluetooth display", if (cx != null) "${cx.since} models onward" else "Not confirmed for this bike",
             icon = "bt", chevron = false, compact = true, trailing = { app.waylink.ui.components.Switch(display, "Bluetooth display", { display = !display }) })
     }
+    Txt(when {
+        !display -> "Calls, chats and turns stay on the phone."
+        cx == null -> "Bajaj doesn’t list a Bluetooth display for this model. Keep this on only if yours has one."
+        else -> listOfNotNull("Turns".takeIf { cx.turns }, "calls".takeIf { cx.calls }, "SMS alerts".takeIf { cx.sms }, "music".takeIf { cx.music })
+            .joinToString(", ").replaceFirstChar { it.uppercase() } + " on the display. Source: ${cx.source}."
+    }, T.rowSub.copy(fontSize = 12.sp, lineHeight = 16.sp), c.ink3, Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp))
     Spacer(Modifier.height(24.dp))
     Btn(if (id == null) "Add to garage" else "Save", {
         val err = vm.saveVehicle(id, model, nick, plate, parseNum(odo), colour, photo, display)

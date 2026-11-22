@@ -243,8 +243,9 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
                     if (!st.reminders && !app.waylink.data.Reminders.allowed(ctx)) act.sheet("perms")
                 })
             })
-            Hairline(66.dp)
-            ListRow("Music from the handlebar", "Tap plays or pauses, hold skips", icon = "volume", trailing = { Switch(st.handlebarMedia, "Music from the handlebar", { act.toggle("handlebarMedia") }) })
+            // Only displays that Bajaj says control music (the NS400Z) send presses outside a call.
+            if (s.model.connect?.music == true) Hairline(66.dp)
+            if (s.model.connect?.music == true) ListRow("Music from the handlebar", "Tap plays or pauses, hold skips", icon = "volume", trailing = { Switch(st.handlebarMedia, "Music from the handlebar", { act.toggle("handlebarMedia") }) })
         }
 
         SectionGap()

@@ -204,11 +204,12 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
             SectionHead("Handlebar button", help = { act.sheet("handlebar") })
             val canPress = live.simulated && live.link == LinkState.CONNECTED
             ListCard {
-                ListRow("Where to find it", "Built in on the left switch cube", "pin", onClick = { act.sheet("handlebar") })
+                val btn = s.model.connect?.button ?: "Call button"
+                ListRow("Where to find it", "$btn, left switch", "pin", onClick = { act.sheet("handlebar") })
                 Hairline(start = 66.dp)
-                ListRow("Tap", "Answer, or play and pause", "hand", trailing = { if (canPress) Chip("Press", { act.press("tap") }) })
+                ListRow("Short press", "Answers a ringing call", "hand", trailing = { if (canPress) Chip("Press", { act.press("tap") }) })
                 Hairline(start = 66.dp)
-                ListRow("Long press", "Decline, or next track", "hand", trailing = { if (canPress) Chip("Press", { act.press("long") }) })
+                ListRow("Hold 3 seconds", "Declines or ends the call", "hand", trailing = { if (canPress) Chip("Press", { act.press("long") }) })
             }
 
             SectionGap()
