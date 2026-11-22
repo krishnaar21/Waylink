@@ -31,7 +31,7 @@ class NavListener : NotificationListenerService() {
 
     override fun onListenerDisconnected() { NavFeed.connected.value = false }
 
-    override fun onNotificationPosted(sbn: StatusBarNotification) { read(sbn); runCatching { PhoneFeed.read(sbn) } }
+    override fun onNotificationPosted(sbn: StatusBarNotification) { read(sbn); runCatching { PhoneFeed.read(sbn, applicationContext) } }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
         runCatching { PhoneFeed.removed(sbn) }
@@ -63,7 +63,7 @@ class NavListener : NotificationListenerService() {
 
 /** A call or chat seen in another app's notification. Only the person's name is kept, never the message. */
 data class PhoneEvent(val kind: Kind, val name: String, val key: String) {
-    enum class Kind { CALL, WA_CALL, CALL_ANSWERED, CALL_GONE, MISSED, WA }
+    enum class Kind { CALL, WA_CALL, CALL_ANSWERED, CALL_GONE, MISSED, WA, SMS }
 }
 
 /**
@@ -80,6 +80,15 @@ object PhoneFeed {
         "com.samsung.android.dialer", "com.samsung.android.incallui", "com.android.contacts", "com.miui.voip",
         "com.oneplus.dialer", "com.coloros.phonemanager", "com.vivo.incallui",
     )
+    /** Common SMS apps; the phone's default SMS app counts too. */
+    private val SMS_APPS = setOf(
+        "com.google.android.apps.messaging", "com.samsung.android.messaging", "com.android.mms", "com.android.messaging",
+        "com.oneplus.mms", "com.coloros.mms", "com.vivo.message", "com.miui.mms",
+    )
+    /** The newest chat card per sender key with a Reply box, for auto-reply. One-to-one chats only. */
+    private val REPLY = object : LinkedHashMap<String, Notification.Action>(32, 0.75f, true) {
+        override fun removeEldestEntry(e: MutableMap.MutableEntry<String, Notification.Action>?) = size > 40
+    }
     private val CALL_KEYS = mutableSetOf<String>()
     /** The newest card per call, so the handlebar can press its Answer or Decline button. */
     private val CALLS = mutableMapOf<String, Notification>()
@@ -88,7 +97,7 @@ object PhoneFeed {
         override fun removeEldestEntry(e: MutableMap.MutableEntry<String, Boolean>?) = size > 200
     }
 
-    fun read(sbn: StatusBarNotification) {
+    fun read(sbn: StatusBarNotification, ctx: Context? = null) {
         val pkg = sbn.packageName
         val wa = pkg in WA
         val n = sbn.notification ?: return
@@ -118,7 +127,15 @@ object PhoneFeed {
             }
             wa && (n.category == Notification.CATEGORY_MESSAGE || ex.containsKey(Notification.EXTRA_MESSAGES)) -> {
                 if (title.isEmpty() || title.equals("WhatsApp", true) || !fresh(sbn)) return
+                keepReply(sbn.key, n)
                 events.tryEmit(PhoneEvent(PhoneEvent.Kind.WA, clean(title), sbn.key))
+            }
+            // A text message: from a known SMS app or the phone's default one.
+            (pkg in SMS_APPS || (ctx != null && pkg == runCatching { android.provider.Telephony.Sms.getDefaultSmsPackage(ctx) }.getOrNull())) &&
+                (n.category == Notification.CATEGORY_MESSAGE || ex.containsKey(Notification.EXTRA_MESSAGES)) -> {
+                if (title.isEmpty() || !fresh(sbn)) return
+                keepReply(sbn.key, n)
+                events.tryEmit(PhoneEvent(PhoneEvent.Kind.SMS, clean(title), sbn.key))
             }
         }
     }
@@ -126,6 +143,33 @@ object PhoneFeed {
     fun removed(sbn: StatusBarNotification) {
         synchronized(CALLS) { CALLS.remove(sbn.key) }; ANSWERED.remove(sbn.key)
         if (CALL_KEYS.remove(sbn.key)) events.tryEmit(PhoneEvent(PhoneEvent.Kind.CALL_GONE, "", sbn.key))
+    }
+
+    private fun keepReply(key: String, n: Notification) {
+        // Groups never get an auto-reply.
+        if (n.extras.getBoolean(Notification.EXTRA_IS_GROUP_CONVERSATION, false)) { synchronized(REPLY) { REPLY.remove(key) }; return }
+        val a = n.actions?.firstOrNull { act -> act.remoteInputs?.any { it.allowFreeFormInput } == true } ?: return
+        synchronized(REPLY) { REPLY[key] = a }
+    }
+
+    /** Can this chat card be answered from here (a one-to-one chat with a Reply box)? */
+    fun canReply(key: String) = synchronized(REPLY) { REPLY.containsKey(key) }
+
+    /**
+     * Types [text] into the chat card's own Reply box and sends it, as a reply from the notification shade would.
+     * No SMS permission is needed: the messaging app sends it.
+     */
+    fun reply(ctx: Context, key: String, text: String): Boolean {
+        val a = synchronized(REPLY) { REPLY[key] } ?: return false
+        val inputs = a.remoteInputs ?: return false
+        val pi = a.actionIntent ?: return false
+        return runCatching {
+            val fill = Intent()
+            val res = android.os.Bundle().apply { inputs.forEach { putCharSequence(it.resultKey, text) } }
+            android.app.RemoteInput.addResultsToIntent(inputs, fill, res)
+            pi.send(ctx, 0, fill)
+            true
+        }.getOrDefault(false)
     }
 
     /** An incoming card has Decline and Answer; an ongoing one has a timer and Hang up. */

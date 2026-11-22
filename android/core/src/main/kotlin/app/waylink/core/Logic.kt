@@ -350,3 +350,29 @@ val SERVICE_ICONS = listOf(
     "wrench", "chain", "drop", "brake", "gauge", "tire", "wind", "battery", "bolt", "fuel",
     "thermo", "flask", "drops", "spec", "layers", "shield", "doc", "bike", "signal", "sparkles",
 )
+
+
+/**
+ * Service spend for a chart: by year, or by month when every visit falls within the last 18 months. Oldest
+ * first, with empty buckets kept so gaps show. [perKm] is the spend over the distance between the first and
+ * last paid visit, when that's at least 500 km.
+ */
+data class Spend(val buckets: List<Pair<String, Double>>, val monthly: Boolean, val total: Double, val perKm: Double?)
+
+fun serviceSpend(records: List<ServiceRecord>, zone: java.time.ZoneId = java.time.ZoneId.systemDefault()): Spend? {
+    val paid = records.filter { it.cost > 0 }.sortedBy { it.date }
+    if (paid.size < 2) return null
+    val dates = paid.map { java.time.Instant.ofEpochMilli(it.date).atZone(zone).toLocalDate() }
+    val first = dates.first(); val last = dates.last()
+    val monthly = java.time.temporal.ChronoUnit.MONTHS.between(first.withDayOfMonth(1), last.withDayOfMonth(1)) < 18
+    val buckets = if (monthly) {
+        val start = first.withDayOfMonth(1); val end = last.withDayOfMonth(1)
+        generateSequence(start) { it.plusMonths(1) }.takeWhile { !it.isAfter(end) }.map { m ->
+            val sum = paid.indices.filter { dates[it].year == m.year && dates[it].monthValue == m.monthValue }.sumOf { paid[it].cost }
+            m.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault()) to sum
+        }.toList().takeLast(12)
+    } else (first.year..last.year).map { y -> y.toString() to paid.indices.filter { dates[it].year == y }.sumOf { paid[it].cost } }.takeLast(6)
+    val span = paid.maxOf { it.odo } - paid.minOf { it.odo }
+    val total = paid.sumOf { it.cost }
+    return Spend(buckets, monthly, total, if (span >= 500) total / span else null)
+}

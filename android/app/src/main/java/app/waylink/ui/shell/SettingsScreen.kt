@@ -211,6 +211,12 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
             ListRow("Keep the screen on", "While in ride mode", icon = "sparkles", trailing = { Switch(st.wakeLock, "Keep the screen on", { act.toggle("wakeLock") }) })
             Hairline(66.dp)
             ListRow("Speed alert", "Buzz when you pass a speed", icon = "alert", end = if (st.speedAlert > 0) "${st.speedAlert} km/h" else "Off", onClick = { act.sheet("speed") })
+            Hairline(66.dp)
+            ListRow("Auto-reply", "Texts back while you ride", icon = "chat", end = if (st.autoReply) "On" else "Off", onClick = { act.sheet("autoreply") })
+            Hairline(66.dp)
+            ListRow("Crash detection", "A hard fall starts SOS", icon = "siren", end = if (st.crashDetect) "On" else "Off", onClick = { act.sheet("crash") })
+            Hairline(66.dp)
+            ListRow("Low fuel nudge", "Pumps nearby when range is low", icon = "fuel", trailing = { Switch(st.fuelNudge, "Low fuel nudge", { act.toggle("fuelNudge") }) })
         }
         }
 

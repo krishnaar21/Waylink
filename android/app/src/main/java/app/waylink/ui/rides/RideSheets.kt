@@ -1,5 +1,7 @@
 package app.waylink.ui.rides
 
+import androidx.compose.ui.graphics.toArgb
+
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -138,6 +140,9 @@ private fun TripBody(s: AppState, t: Trip, vm: AppViewModel, nav: SheetNav) {
     }
     Spacer(Modifier.height(8.dp))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        val accent = W.c.accent
+        Btn("Share", { if (!app.waylink.data.RideCard.share(ctx, t, app.waylink.core.vehicleTitle(s), f, accent.toArgb())) vm.toast("Couldn’t make the picture.") },
+            Modifier.weight(1f), kind = BtnKind.INK, icon = "image", small = true)
         Btn("GPX", { save.launch("waylink-ride-${t.n}.gpx") }, Modifier.weight(1f), kind = BtnKind.LINE, icon = "down", small = true)
         Btn("Rename", { nav.open("trip-rename:${t.id}") }, Modifier.weight(1f), kind = BtnKind.LINE, icon = "edit", small = true)
         Btn("", { vm.deleteTrip(t.id); nav.close() }, Modifier.width(48.dp), kind = BtnKind.DANGER, icon = "trash", small = true)

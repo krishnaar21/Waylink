@@ -310,7 +310,7 @@ class ScenarioTest {
         assertTrue(app.waylink.ui.components.DummyAds.top(st0.copy(settings = st0.settings.copy(adFree = false, hideAds = false))))
         assertTrue(!app.waylink.ui.components.DummyAds.top(st0.copy(settings = st0.settings.copy(adFree = true))))
 
-        // Handlebar music: on by default, a press goes to the phone's player; off, it's only logged.
+        // Handlebar music: only NS400Z displays control music; elsewhere a press with no call does nothing on the phone.
         assertTrue(vm.state.value.settings.handlebarMedia)
         vm.press("tap"); vm.press("long")
         vm.toggleSetting("handlebarMedia"); assertTrue(!vm.state.value.settings.handlebarMedia)

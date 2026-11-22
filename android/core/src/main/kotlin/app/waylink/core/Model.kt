@@ -115,10 +115,25 @@ data class Settings(
     val navSource: String = "gmaps",
     /** Speed alert limit in km/h; 0 is off. */
     val speedAlert: Int = 0,
+    /** Auto-reply to WhatsApp chats and texts: off by default; [autoReplyWhen] is "riding" or "linked". */
+    val autoReply: Boolean = false,
+    val autoReplyText: String = AUTO_REPLIES[0],
+    val autoReplyWhen: String = "riding",
+    /** A nudge when range runs low, with fuel stations nearby. */
+    val fuelNudge: Boolean = true,
+    /** Crash detection: a hard fall while riding starts the SOS countdown. */
+    val crashDetect: Boolean = false,
+)
+
+/** Ready-made auto-replies; the rider can write their own. */
+val AUTO_REPLIES = listOf(
+    "Riding right now. I’ll get back to you soon.",
+    "On the bike. Will call you when I stop.",
+    "Can’t talk, I’m riding. Text if it’s urgent.",
 )
 
 @Serializable
-data class AlertSettings(val calls: Boolean = true, val waCalls: Boolean = true, val waMsgs: Boolean = true)
+data class AlertSettings(val calls: Boolean = true, val waCalls: Boolean = true, val waMsgs: Boolean = true, val sms: Boolean = true)
 
 @Serializable
 data class Alerts(

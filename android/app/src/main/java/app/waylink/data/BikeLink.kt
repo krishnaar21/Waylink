@@ -254,8 +254,9 @@ class BikeLink(
     private var pollJob: Job? = null
     private var last: ByteArray? = null
     private var booted = false
-    private var acceptAck = 0
-    private var rejectAck = 0
+    /** The cluster's Answer / Decline counters, echoed back in every status frame. */
+    var acceptAck = 0; private set
+    var rejectAck = 0; private set
 
     private suspend fun startButtons(g: BluetoothGatt) {
         val ch = chars["buttons"] ?: return

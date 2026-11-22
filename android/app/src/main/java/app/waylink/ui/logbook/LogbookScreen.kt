@@ -1,6 +1,10 @@
 package app.waylink.ui.logbook
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -134,6 +138,7 @@ fun LogbookScreen(s: AppState, act: LogbookActions, bottom: Dp) {
                 }
                 if (ads && v.records.size <= 3) { Hairline(start = 0.dp); app.waylink.ui.components.AdRow(2, start = 16.dp) }
             }
+            app.waylink.core.serviceSpend(v.records)?.let { sp -> SpendChart(sp, cur, f) }
             Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, top = 12.dp)) {
                 Txt("Spent on service", T.row, c.ink3, Modifier.weight(1f))
                 Txt(cur + f.num(v.records.sumOf { it.cost }), T.row.copy(fontWeight = FontWeight.Medium), c.ink)
@@ -194,3 +199,36 @@ private fun CheckCircleFaint() =
     Box(Modifier.size(24.dp).border(1.5.dp, W.c.ink4.copy(alpha = 0.6f), CircleShape))
 
 private fun clip(t: String, n: Int) = if (t.length > n) t.take(n - 1).trimEnd() + "…" else t
+
+
+/** Service spend as bars (by month or year), with the total and cost per km. */
+@Composable
+private fun SpendChart(sp: app.waylink.core.Spend, cur: String, f: app.waylink.core.Fmt) {
+    val c = W.c
+    val max = sp.buckets.maxOf { it.second }.coerceAtLeast(1.0)
+    val accent = c.accent; val track = c.inkA(0.06f)
+    Column(Modifier.padding(top = 12.dp).fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp)).background(c.card).padding(16.dp)) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Column(Modifier.weight(1f)) {
+                Txt(if (sp.monthly) "Spend by month" else "Spend by year", T.eyebrow, c.ink3)
+                Txt(cur + f.num(sp.total), T.big(28f), c.ink)
+            }
+            sp.perKm?.let { Txt("$cur${f.num(it, 2)} per km", T.rowSub, c.ink3) }
+        }
+        Spacer(Modifier.height(14.dp))
+        Row(Modifier.fillMaxWidth().height(110.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
+            sp.buckets.forEach { (_, v) ->
+                androidx.compose.foundation.Canvas(Modifier.weight(1f).fillMaxHeight().semantics { contentDescription = cur + f.num(v) }) {
+                    val r = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx())
+                    drawRoundRect(track, cornerRadius = r)
+                    val h = (size.height * (v / max)).toFloat()
+                    if (v > 0) drawRoundRect(accent, topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - h), size = androidx.compose.ui.geometry.Size(size.width, h), cornerRadius = r)
+                }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            sp.buckets.forEach { (k, _) -> Txt(k, T.rowSub.copy(fontSize = 10.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center), c.ink3, Modifier.weight(1f), maxLines = 1) }
+        }
+    }
+}

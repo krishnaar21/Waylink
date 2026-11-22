@@ -18,6 +18,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) openFrom(intent)
         setContent {
             // Status and navigation bar icons follow the app's theme, not just the phone's.
             val s by vm.state.collectAsStateWithLifecycle()
@@ -35,5 +36,16 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(adFree) { if (!adFree) app.waylink.ui.components.startAds(this@MainActivity) else app.waylink.ui.components.AdMob.clear() }
             AppRoot(vm)
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        openFrom(intent)
+    }
+
+    /** The widget's buttons: open a sheet (Park here, SOS) once the app is up. */
+    private fun openFrom(i: android.content.Intent?) {
+        val key = i?.getStringExtra(app.waylink.data.BikeWidget.EXTRA_OPEN) ?: return
+        if (key in setOf("parking:new", "sos")) vm.askFor(key)
     }
 }

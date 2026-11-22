@@ -205,6 +205,7 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
             key == "ride" -> vm.openRideMode(true)
             key == "weather" -> { if (vm.live.value.weather !is app.waylink.data.Weather.State.Ready) vm.refreshWeather(); openSheet("weather") }
             key == "search" -> searching = true
+            key == "fuel-go" -> needLocation { vm.goNearestPump() }
             key.startsWith("layout:") -> vm.setTileLayout(key.drop(7))
             else -> openSheet(key)
         }
@@ -444,6 +445,8 @@ private fun Main(s: AppState, live: Live, vm: AppViewModel) {
         androidx.compose.animation.AnimatedVisibility(live.call != null, enter = fadeIn(tween(200)), exit = fadeOut(tween(200))) {
             CallOverlay(live, vm::answerCall, vm::declineCall, vm::endCall)
         }
+        // The crash countdown sits over everything, calls included.
+        live.crash?.let { since -> CrashOverlay(s, since, live.crashTest, vm::crashOk, vm::callForHelp) }
     }
 }
 

@@ -113,7 +113,7 @@ fun HandlebarSample(modifier: Modifier = Modifier) {
             drawCircle(accent, d(2.5f), end)
         }
         Column(Modifier.padding(start = 204.dp, end = 12.dp).offset(y = 40.dp)) {
-            Txt("M button", T.rowSub.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 16.sp), c.ink)
+            Txt("Mode (M) button", T.rowSub.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 16.sp), c.ink)
             Txt("Marked M or with a phone. Answers and declines calls", T.rowSub.copy(fontSize = 11.sp, lineHeight = 14.sp), c.ink3)
         }
         Txt("Left switch, simplified. Layout varies by model.", T.rowSub.copy(fontSize = 10.sp, lineHeight = 13.sp), c.ink3,
@@ -141,15 +141,17 @@ private fun DrawScope.arrow(o: Offset, s: Float, left: Boolean) {
 
 /** Where the M button is, what it does outside a call, and what a press and a hold do, as the owner's manual has it. */
 @Composable
-fun HandlebarBody() {
+fun HandlebarBody(model: app.waylink.core.BikeModel = app.waylink.core.Catalog.MODELS[0]) {
     val c = W.c
+    val cx = model.connect
     Spacer(Modifier.height(8.dp))
     HandlebarSample()
     Spacer(Modifier.height(16.dp))
     Row {
         Ic("check", size = 16.dp, tint = c.sageInk)
         Spacer(Modifier.width(10.dp))
-        Txt("Built in on 2024-on Bluetooth Pulsars: the button on the left switch, usually marked M. Nothing to buy or fit.",
+        Txt(if (cx != null) "Built in on the ${model.name} from ${cx.since}: the ${cx.button} on the left switch. Nothing to buy or fit."
+            else "Bajaj doesn’t list a Bluetooth display for the ${model.name}, so it may not have this button. On Bluetooth Pulsars it’s the Mode (M) button on the left switch.",
             T.row.copy(lineHeight = 20.sp), c.ink2)
     }
     Spacer(Modifier.height(10.dp))

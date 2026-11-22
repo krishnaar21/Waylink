@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Waylink</string>
+    <string name="widget_desc">Range, the next service, and Park here and SOS in one tap.</string>
 </resources>

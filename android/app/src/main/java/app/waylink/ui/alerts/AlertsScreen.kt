@@ -172,7 +172,7 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp, startT
                         Ic("bell", size = 18.dp, tint = c.ink2)
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Txt("Calls and WhatsApp need notification access", T.row.copy(fontWeight = FontWeight.SemiBold), c.ink)
+                            Txt("Calls, chats and texts need notification access", T.row.copy(fontWeight = FontWeight.SemiBold), c.ink)
                             Txt("Waylink reads only the caller or sender name. Tap to allow.", T.rowSub, c.ink2)
                         }
                         Ic("chev", size = 15.dp, tint = c.ink3)
@@ -187,18 +187,13 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp, startT
                 Hairline(start = 66.dp)
                 ListRow("WhatsApp messages", "Sender name and count", "chat", trailing = { Switch(a.waMsgs, "WhatsApp messages", { act.toggle("waMsgs") }) })
                 Hairline(start = 66.dp)
-                Box(Modifier.alpha(0.5f)) { ListRow("SMS", "Coming soon", "mail", trailing = { Switch(false, "SMS", {}, enabled = false) }) }
+                ListRow("Text messages", "Sender name, never the text", "mail", trailing = { Switch(a.sms, "Text messages", { act.toggle("sms") }) })
             }
 
             SectionGap()
             SectionHead("Handlebar button", help = { act.sheet("handlebar") })
-            val canPress = live.simulated && live.link == LinkState.CONNECTED
             ListCard {
-                val btn = s.model.connect?.button ?: "M button"
-                // Press and hold are explained in the sheet; the simulated bike gets its two test chips here.
-                ListRow(btn, "On the left switch. Answers and declines calls", "hand", onClick = { act.sheet("handlebar") }, trailing = if (canPress) ({
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { Chip("Press", { act.press("tap") }); Chip("Hold", { act.press("long") }) }
-                }) else null)
+                ListRow(s.model.connect?.button ?: "Mode (M) button", "Answers and declines calls", "hand", onClick = { act.sheet("handlebar") })
             }
 
             SectionGap()
@@ -282,6 +277,8 @@ private val NT = mapOf(
     "missed" to Triple("missed", "Missed call", "Count sent to your bike"),
     "call" to Triple("phone", "Incoming call", "Name shown on your bike"),
     "button" to Triple("hand", "Handlebar button", "Pressed on the bike"),
+    "sms" to Triple("mail", "Text message", "Shown on your bike"),
+    "reply" to Triple("chat", "Auto-reply sent", "You were riding"),
 )
 
 /** What reached the bike, newest first, grouped by day. */

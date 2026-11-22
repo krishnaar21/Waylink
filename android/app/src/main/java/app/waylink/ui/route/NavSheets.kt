@@ -140,9 +140,11 @@ fun navSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetN
             SheetSpec(if (p == null) "New place" else p.name, "Saved places") { PlaceBody(s, p, vm, nav, host) }
         }
         "speed" -> SheetSpec("Speed alert", "Riding") { SpeedBody(s, vm) }
+        "autoreply" -> SheetSpec("Auto-reply", "Riding") { AutoReplyBody(s, vm, nav) }
+        "crash" -> SheetSpec("Crash detection", "Riding") { CrashBody(s, vm, nav, host) }
         "perms" -> SheetSpec("Permissions", null) { PermsBody(s, nav) }
         "navaccess" -> SheetSpec("Notification access", null) { NavAccessBody(s) }
-        "handlebar" -> SheetSpec("Handlebar button", null) { HandlebarBody() }
+        "handlebar" -> SheetSpec("Handlebar button", null) { HandlebarBody(s.model) }
         "route-howto" -> SheetSpec("How this works", "Route") {
             val src = NavSource.of(s.settings.navSource).let { if (it.readsNotifications) it else NavSource.of("gmaps") }
             Spacer(Modifier.height(12.dp))
