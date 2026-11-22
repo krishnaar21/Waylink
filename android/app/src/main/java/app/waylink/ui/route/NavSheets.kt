@@ -100,7 +100,7 @@ object Perms {
         if (Platform.caps.bluetooth) add(Perm("nearby", "Nearby devices", "Finds your bike over Bluetooth so turns and calls reach its display", "bt", BikeLink.hasPermissions(ctx), true))
         if (Platform.caps.readNavApps) {
             val src = NavSource.of(s.settings.navSource)
-            add(Perm("navaccess", "Notification access", if (src.readsNotifications) "Reads only ${src.name}’s turn card, so the next turn shows on your bike" else "Only needed for live turns from a maps app", "nav", NavFeed.allowed(ctx), src.readsNotifications))
+            add(Perm("navaccess", "Notification access", if (src.readsNotifications) "Turn cards from ${src.name}, and caller names for your bike" else "Caller and WhatsApp names for your bike", "nav", NavFeed.allowed(ctx), src.readsNotifications || s.settings.alerts.let { it.calls || it.waCalls || it.waMsgs }))
         }
         if (android.os.Build.VERSION.SDK_INT >= 33) add(Perm("notify", "Notifications", "Reminds you when service, papers or fuel are due", "bell", app.waylink.data.Reminders.allowed(ctx), s.settings.reminders))
         val pm = ctx.getSystemService(Context.POWER_SERVICE) as? PowerManager
@@ -141,7 +141,8 @@ fun navSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetN
         }
         "speed" -> SheetSpec("Speed alert", "Riding") { SpeedBody(s, vm) }
         "perms" -> SheetSpec("Permissions", null) { PermsBody(s, nav) }
-        "navaccess" -> SheetSpec("Reading turn cards", null) { NavAccessBody(s) }
+        "navaccess" -> SheetSpec("Notification access", null) { NavAccessBody(s) }
+        "handlebar" -> SheetSpec("Handlebar button", null) { HandlebarBody() }
         "route-howto" -> SheetSpec("How this works", "Route") {
             val src = NavSource.of(s.settings.navSource).let { if (it.readsNotifications) it else NavSource.of("gmaps") }
             Spacer(Modifier.height(12.dp))
@@ -393,7 +394,7 @@ private fun NavAccessBody(s: AppState) {
     val src = NavSource.of(s.settings.navSource).let { if (it.readsNotifications) it else NavSource.of("gmaps") }
     val restricted = remember { Perms.restricted(ctx) }
     Spacer(Modifier.height(8.dp))
-    Txt("Waylink reads only ${src.name}’s turn card (the arrow, the distance and the street) and sends it to your bike. Nothing else is read, and nothing is stored or sent anywhere.",
+    Txt("Waylink reads only ${src.name}’s turn card (the arrow, the distance and the street) and the name on a call or WhatsApp card, and sends them to your bike. Message text is never read, and nothing is stored or sent anywhere else.",
         T.sheetLead.copy(fontSize = 15.sp, lineHeight = 22.sp), c.ink2)
     Spacer(Modifier.height(10.dp))
     Txt("Android warns about every app that reads notifications. That warning is generic and isn’t about Waylink.", T.row.copy(lineHeight = 20.sp), c.ink3)

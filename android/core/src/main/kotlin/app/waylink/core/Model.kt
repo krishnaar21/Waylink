@@ -154,6 +154,8 @@ data class Vehicle(
     val trips: List<Trip> = emptyList(),
     val rideNo: Int = 0,
     val parking: Parking? = null,
+    /** Has the Bluetooth display (Bajaj Ride Connect, on newer models). Off hides turns, calls and the button for the bike. */
+    val display: Boolean = true,
     /** The paired Bluetooth cluster. Never exported in backups. */
     val bike: PairedBike = PairedBike(),
 )

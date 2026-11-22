@@ -163,9 +163,33 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
                 }, T.row.copy(fontSize = 14.5.sp, lineHeight = 23.sp), c.ink2)
             }
 
+            if (!s.vehicle.display) {
+                SectionGap()
+                Txt("${app.waylink.core.vehicleTitle(s)} has no Bluetooth display, so calls, chats and the handlebar button stay on the phone. Turn it on in Garage if your bike has one.",
+                    T.row.copy(fontSize = 14.5.sp, lineHeight = 22.sp), c.ink3, Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp))
+            } else {
             SectionGap()
             SectionHead("Show on the bike", help = { act.help("showbike") })
             val a = s.settings.alerts
+            // Calls and WhatsApp are read from the phone's notifications, the same access live turns use.
+            if (app.waylink.core.Platform.caps.readNavApps) {
+                val ctx = LocalContext.current
+                val tick = app.waylink.ui.route.rememberResumeTick()
+                val allowed = androidx.compose.runtime.remember(tick) { app.waylink.data.NavFeed.allowed(ctx) }
+                if (!allowed) {
+                    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.tintAmber).pressable(label = "Allow notification access") { act.sheet("navaccess") }
+                        .padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Ic("bell", size = 18.dp, tint = c.ink2)
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Txt("Calls and WhatsApp need notification access", T.row.copy(fontWeight = FontWeight.SemiBold), c.ink)
+                            Txt("Waylink reads only the caller or sender name. Tap to allow.", T.rowSub, c.ink2)
+                        }
+                        Ic("chev", size = 15.dp, tint = c.ink3)
+                    }
+                    Spacer(Modifier.height(12.dp))
+                }
+            }
             ListCard {
                 ListRow("Phone calls", "Caller name and missed calls", "phone", trailing = { Switch(a.calls, "Phone calls", { act.toggle("calls") }) })
                 Hairline(start = 66.dp)
@@ -177,9 +201,11 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
             }
 
             SectionGap()
-            SectionHead("Handlebar button", help = { act.help("handlebar") })
+            SectionHead("Handlebar button", help = { act.sheet("handlebar") })
             val canPress = live.simulated && live.link == LinkState.CONNECTED
             ListCard {
+                ListRow("Where to find it", "Built in on the left switch cube", "pin", onClick = { act.sheet("handlebar") })
+                Hairline(start = 66.dp)
                 ListRow("Tap", "Answer, or play and pause", "hand", trailing = { if (canPress) Chip("Press", { act.press("tap") }) })
                 Hairline(start = 66.dp)
                 ListRow("Long press", "Decline, or next track", "hand", trailing = { if (canPress) Chip("Press", { act.press("long") }) })
@@ -200,7 +226,8 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
                     Btn("Missed", { act.relay("missed", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, icon = "missed", small = true)
                     Btn("Chat", { act.relay("wa", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, icon = "chat", small = true)
                 }
-                Txt("Until the bike link reads your phone’s own calls and chats, send them here by hand to test.", T.row.copy(fontSize = 13.5.sp, lineHeight = 21.sp), c.ink3, Modifier.padding(top = 12.dp))
+                Txt("Real calls and chats are sent on their own. Use these to test the bike’s display.", T.row.copy(fontSize = 13.5.sp, lineHeight = 21.sp), c.ink3, Modifier.padding(top = 12.dp))
+            }
             }
         }
         }

@@ -24,13 +24,13 @@ object Support {
     data class Tier(val id: String, val price: Int, val icon: String, val name: String, val pitch: String, val perks: List<String>, val adFree: Boolean, val early: Boolean)
     val TIERS = listOf(
         Tier("friend_120", 120, "palette", "Friend",
-            "A small thank-you that keeps Waylink free. As a Friend, the warm Paper and Paper dark looks are yours.",
+            "Keeps Waylink free, and the Paper themes are yours.",
             listOf("The Paper themes"), adFree = false, early = false),
         Tier("backer_220", 220, "love", "Backer",
-            "Back Waylink and ride without ads. Everything in Friend, plus a clean, ad-free app.",
+            "Everything in Friend, and no ads.",
             listOf("Everything in Friend", "No ads"), adFree = true, early = false),
         Tier("patron_520", 520, "sparkles", "Patron",
-            "For riders who want to shape what comes next. Everything in Backer, plus new features first and help when you need it.",
+            "Everything in Backer, plus new features first and priority help.",
             listOf("Everything in Backer", "Early access to new features", "Future premium features", "Priority support"), adFree = true, early = true),
     )
     /** Preselected on the Support sheet. */

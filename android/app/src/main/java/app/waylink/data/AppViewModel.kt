@@ -157,6 +157,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         runCatching { billing.start() }
         // Live turns from Google Maps & co. (Android notification access).
         viewModelScope.launch { NavFeed.turns.collect(::onLiveTurn) }
+        viewModelScope.launch { PhoneFeed.events.collect(::onPhoneEvent) }
         refreshWeather(); sound.play(Sound.Fx.ENGINE_START)
         // Phone reminders: the daily look, and one now (after the saved state is on disk).
         viewModelScope.launch(Dispatchers.IO) { delay(3000); Reminders.schedule(getApplication()); Reminders.check(getApplication()) }
@@ -529,6 +530,37 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
                 commit { it.copy(alerts = logAlert(it.alerts, "wa", name).let { x -> x.copy(wa = x.wa + NamedEvent(name, now)) }) }
                 if (linked) pushFrame("WhatsApp", app.waylink.core.Protocol.whatsAppAlert(name))
                 toast(if (linked) "$name on the cluster for 6 s." else "Saved. Link the bike to send it.")
+            }
+        }
+    }
+
+    /** The key of the phone's own call card while it rings or the call is on, so its removal ends the call here. */
+    private var realCall: String? = null
+
+    /** A real call or chat read from the phone's notifications (needs notification access), passed on per the switches. */
+    private fun onPhoneEvent(e: PhoneEvent) {
+        val a = _state.value.settings.alerts
+        val linked = _live.value.link == LinkState.CONNECTED
+        val now = System.currentTimeMillis()
+        when (e.kind) {
+            PhoneEvent.Kind.CALL, PhoneEvent.Kind.WA_CALL -> {
+                if (if (e.kind == PhoneEvent.Kind.CALL) !a.calls else !a.waCalls) return
+                realCall = e.key
+                ringJob?.cancel()
+                _live.update { it.copy(call = Call(e.name, true, now)) }
+                commit { it.copy(alerts = logAlert(it.alerts, "call", e.name)) }
+            }
+            PhoneEvent.Kind.CALL_GONE -> if (realCall == e.key) { realCall = null; _live.update { it.copy(call = null) } }
+            PhoneEvent.Kind.MISSED -> {
+                if (!a.calls) return
+                if (realCall != null) { realCall = null; _live.update { it.copy(call = null) } }
+                commit { it.copy(alerts = logAlert(it.alerts, "missed", e.name).let { x -> x.copy(missed = x.missed + NamedEvent(e.name, now)) }) }
+                if (linked) pushFrame("Missed call", app.waylink.core.Protocol.missedCall(e.name))
+            }
+            PhoneEvent.Kind.WA -> {
+                if (!a.waMsgs) return
+                commit { it.copy(alerts = logAlert(it.alerts, "wa", e.name).let { x -> x.copy(wa = x.wa + NamedEvent(e.name, now)) }) }
+                if (linked) pushFrame("WhatsApp", app.waylink.core.Protocol.whatsAppAlert(e.name))
             }
         }
     }
@@ -1191,19 +1223,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
 
     // ---------- Vehicles ----------
     /** Adds a vehicle ([id] null) or edits one. Returns an error to show, or null. */
-    fun saveVehicle(id: String?, model: String, nickname: String, plate: String, odo: Double?, colour: String, photo: String? = id?.let { x -> _state.value.vehicles.firstOrNull { it.id == x }?.photo }): String? {
+    fun saveVehicle(id: String?, model: String, nickname: String, plate: String, odo: Double?, colour: String, photo: String? = id?.let { x -> _state.value.vehicles.firstOrNull { it.id == x }?.photo }, display: Boolean = true): String? {
         if (odo == null || odo < 0 || odo >= 10_000_000) return "Add the odometer reading." // web: any reading ≥ 0; the cap only stops typos
         val m = Catalog.model(model).id
         val col = Catalog.COLOURS.firstOrNull { it.first == colour }?.first ?: Catalog.COLOURS[0].first
         val nick = nickname.trim().take(20)
         val pl = plate.trim().uppercase().take(13)
         if (id == null) {
-            val v = newVehicle(model = m, nickname = nick, plate = pl, odo = odo, colour = col).copy(photo = photo)
+            val v = newVehicle(model = m, nickname = nick, plate = pl, odo = odo, colour = col).copy(photo = photo, display = display)
             commit { it.copy(vehicles = it.vehicles + v, active = v.id) }
             toast("Added to your garage.")
         } else {
             val old = _state.value.vehicles.firstOrNull { it.id == id }?.photo
-            commit { s -> s.updateVehicle(id) { it.copy(model = m, nickname = nick, plate = pl, odo = Math.round(odo * 10) / 10.0, colour = col, photo = photo) } }
+            commit { s -> s.updateVehicle(id) { it.copy(model = m, nickname = nick, plate = pl, odo = Math.round(odo * 10) / 10.0, colour = col, photo = photo, display = display) } }
             val dir = getApplication<Application>().filesDir.absolutePath
             if (old != null && old != photo && old.startsWith(dir)) runCatching { File(old).delete() }
             toast("Saved.")

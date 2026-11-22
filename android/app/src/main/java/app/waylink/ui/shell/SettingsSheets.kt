@@ -310,6 +310,7 @@ private fun VehicleBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNa
     var colour by rememberSaveable(key) { mutableStateOf(v?.colour ?: Catalog.COLOURS[s.vehicles.size % Catalog.COLOURS.size].first) }
     var picking by remember { mutableStateOf(false) }
     var photo by rememberSaveable(key) { mutableStateOf(v?.photo) }
+    var display by rememberSaveable(key) { mutableStateOf(v?.display ?: true) }
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> if (uri != null) vm.importVehiclePhoto(uri) { photo = it } }
     Spacer(Modifier.height(16.dp))
     // The bike in the picture wears the picked colour as soon as a swatch is tapped.
@@ -359,9 +360,15 @@ private fun VehicleBody(s: AppState, id: String?, vm: AppViewModel, nav: SheetNa
             if (photo != null) Btn("Remove", { photo = null }, kind = BtnKind.GHOST, small = true)
         }
     }
+    // Older bikes have a plain display with no Bluetooth; then Waylink hides what it can't send to the bike.
+    Spacer(Modifier.height(8.dp))
+    app.waylink.ui.components.ListCard(flat = true) {
+        app.waylink.ui.components.ListRow("Bluetooth display", if (display) "Turns, calls and the handlebar button work" else "Waylink hides what needs the bike’s display",
+            icon = "bt", chevron = false, compact = true, trailing = { app.waylink.ui.components.Switch(display, "Bluetooth display", { display = !display }) })
+    }
     Spacer(Modifier.height(24.dp))
     Btn(if (id == null) "Add to garage" else "Save", {
-        val err = vm.saveVehicle(id, model, nick, plate, parseNum(odo), colour, photo)
+        val err = vm.saveVehicle(id, model, nick, plate, parseNum(odo), colour, photo, display)
         if (err != null) vm.toast(err) else nav.close()
     }, Modifier.fillMaxWidth())
     if (id != null && s.vehicles.size > 1) {
@@ -559,7 +566,7 @@ private fun SupportBody(vm: AppViewModel, nav: SheetNav, pick: Int? = null) {
     Spacer(Modifier.height(15.dp))
     // The lead follows the picked plan, so it only ever describes one.
     androidx.compose.animation.Crossfade(tier, label = "pitch") { t ->
-        Txt("${t.pitch} Prices include GST. Paid through Google Play, so Waylink never sees your card or UPI.", T.sheetLead.copy(fontSize = 14.sp, lineHeight = 21.sp), c.ink2)
+        Txt("${t.pitch} GST included, paid via Google Play.", T.sheetLead.copy(fontSize = 14.sp, lineHeight = 21.sp), c.ink2)
     }
     Spacer(Modifier.height(20.dp))
     // Web .give: card paper with a hairline ring, neutral icon square, the amount in the display face, a segmented amount picker.
