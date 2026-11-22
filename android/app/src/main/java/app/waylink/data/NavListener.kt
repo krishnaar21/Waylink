@@ -31,9 +31,10 @@ class NavListener : NotificationListenerService() {
 
     override fun onListenerDisconnected() { NavFeed.connected.value = false }
 
-    override fun onNotificationPosted(sbn: StatusBarNotification) = read(sbn)
+    override fun onNotificationPosted(sbn: StatusBarNotification) { read(sbn); runCatching { PhoneFeed.read(sbn) } }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
+        runCatching { PhoneFeed.removed(sbn) }
         val src = NavSource.forPackage(sbn.packageName) ?: return
         if (NavFeed.turn.value?.first == src.key && isGuidance(sbn.notification, sbn.packageName)) NavFeed.turn.value = null
     }
@@ -58,6 +59,71 @@ class NavListener : NotificationListenerService() {
     /** The turn-by-turn card: marked as navigation, or at least ongoing (older versions of the other apps). Google Maps always marks it. */
     private fun isGuidance(n: Notification?, pkg: String): Boolean =
         n != null && (n.category == Notification.CATEGORY_NAVIGATION || (pkg != "com.google.android.apps.maps" && (n.flags and Notification.FLAG_ONGOING_EVENT) != 0))
+}
+
+/** A call or chat seen in another app's notification. Only the person's name is kept, never the message. */
+data class PhoneEvent(val kind: Kind, val name: String, val key: String) {
+    enum class Kind { CALL, WA_CALL, CALL_GONE, MISSED, WA }
+}
+
+/**
+ * Calls and WhatsApp from the same notification access as live turns: the phone app's incoming-call card, its
+ * missed-call card, and WhatsApp's call and message cards. This needs no phone, call-log, contacts or SMS
+ * permission. Message text is never read; the title (the person or group) is all that's used.
+ */
+object PhoneFeed {
+    val events = kotlinx.coroutines.flow.MutableSharedFlow<PhoneEvent>(extraBufferCapacity = 32)
+    private val WA = setOf("com.whatsapp", "com.whatsapp.w4b")
+    /** Phone apps on common Android phones (Google, Samsung, stock, Xiaomi, OnePlus, Oppo, Vivo). */
+    private val DIALERS = setOf(
+        "com.google.android.dialer", "com.android.dialer", "com.android.incallui", "com.android.server.telecom",
+        "com.samsung.android.dialer", "com.samsung.android.incallui", "com.android.contacts", "com.miui.voip",
+        "com.oneplus.dialer", "com.coloros.phonemanager", "com.vivo.incallui",
+    )
+    private val CALL_KEYS = mutableSetOf<String>()
+    private val seen = object : LinkedHashMap<String, Boolean>(64, 0.75f, true) {
+        override fun removeEldestEntry(e: MutableMap.MutableEntry<String, Boolean>?) = size > 200
+    }
+
+    fun read(sbn: StatusBarNotification) {
+        val pkg = sbn.packageName
+        val wa = pkg in WA
+        val n = sbn.notification ?: return
+        if ((n.flags and Notification.FLAG_GROUP_SUMMARY) != 0) return
+        val ex = n.extras ?: return
+        val title = ex.getCharSequence(Notification.EXTRA_TITLE)?.toString()?.trim().orEmpty()
+        val text = ex.getCharSequence(Notification.EXTRA_TEXT)?.toString()?.trim().orEmpty()
+        val missedCat = Build.VERSION.SDK_INT >= 31 && n.category == Notification.CATEGORY_MISSED_CALL
+        val dialer = pkg in DIALERS
+        when {
+            // Ringing (or on a call): one event per card, however often the app updates it.
+            n.category == Notification.CATEGORY_CALL && (wa || dialer || (n.flags and Notification.FLAG_ONGOING_EVENT) != 0) -> {
+                if (!CALL_KEYS.add(sbn.key)) return
+                val name = clean(title).ifEmpty { clean(text) }.ifEmpty { "Unknown caller" }
+                events.tryEmit(PhoneEvent(if (wa) PhoneEvent.Kind.WA_CALL else PhoneEvent.Kind.CALL, name, sbn.key))
+            }
+            missedCat || (dialer && (title.contains("missed", true) || text.contains("missed call", true))) -> {
+                if (!fresh(sbn)) return
+                // "Missed call" / "Rohan" or "Rohan" / "Missed call": the name is whichever line isn't the label.
+                val name = if (title.contains("missed", true)) text else title
+                events.tryEmit(PhoneEvent(PhoneEvent.Kind.MISSED, clean(name).ifEmpty { "Unknown caller" }, sbn.key))
+            }
+            wa && (n.category == Notification.CATEGORY_MESSAGE || ex.containsKey(Notification.EXTRA_MESSAGES)) -> {
+                if (title.isEmpty() || title.equals("WhatsApp", true) || !fresh(sbn)) return
+                events.tryEmit(PhoneEvent(PhoneEvent.Kind.WA, clean(title), sbn.key))
+            }
+        }
+    }
+
+    fun removed(sbn: StatusBarNotification) {
+        if (CALL_KEYS.remove(sbn.key)) events.tryEmit(PhoneEvent(PhoneEvent.Kind.CALL_GONE, "", sbn.key))
+    }
+
+    /** Apps re-post the same card for small changes; count it once per post time. */
+    private fun fresh(sbn: StatusBarNotification): Boolean = synchronized(seen) { seen.put("${sbn.key}@${sbn.notification.`when`}", true) == null }
+
+    /** "Rohan (3 messages)" or "Family: Rohan" stays a short name the cluster can show. */
+    private fun clean(t: String) = t.replace(Regex("""\s*\(\d+ (new )?messages?\)$"""), "").replace('\u202A', ' ').replace('\u202C', ' ').trim().take(32)
 }
 
 /** The latest turn per source, and whether Android has the listener running. */

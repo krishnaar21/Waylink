@@ -214,6 +214,8 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
         }
         }
 
+        // Only for a bike with the Bluetooth display; older bikes skip the section.
+        if (s.vehicle.display) {
         SectionGap()
         SectionHead("On the bike")
         ListCard {
@@ -223,6 +225,7 @@ fun SettingsScreen(s: AppState, live: Live, act: SettingsActions, bottom: Dp, on
                 Hairline(66.dp)
                 ListRow("Live turns from", "Google Maps, Waze, OsmAnd or Organic Maps", icon = "nav", end = app.waylink.core.NavSource.of(st.navSource).name, onClick = { act.sheet("nav-source") })
             }
+        }
         }
 
         SectionGap()

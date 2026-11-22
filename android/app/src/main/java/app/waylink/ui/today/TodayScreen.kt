@@ -255,8 +255,11 @@ private fun BikeCard(s: AppState, live: Live, f: Fmt, good: Boolean, okCount: In
                 Ic("updown", size = 16.dp, tint = c.ink2)
             }
         }
-        Hairline()
-        ConnRow(s, live, good, okCount, act)
+        // No Bluetooth display on this bike: nothing to link, so the link row goes.
+        if (v.display) {
+            Hairline()
+            ConnRow(s, live, good, okCount, act)
+        }
     }
 }
 
