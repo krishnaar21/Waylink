@@ -38,7 +38,7 @@ data class BikeModel(
 
 /**
  * A Bluetooth display's features, as Bajaj states them. [since] is the first model year with it; older bikes of
- * the same name have a plain display. [button] is what the manual calls the switch that answers calls.
+ * the same name have a plain display. [button] is the switch that answers calls, as riders see it marked.
  */
 data class Connect(
     val since: Int,
@@ -46,7 +46,7 @@ data class Connect(
     val calls: Boolean,
     val sms: Boolean,
     val music: Boolean = false,
-    val button: String = "Call button",
+    val button: String = "M button",
     val source: String,
 )
 

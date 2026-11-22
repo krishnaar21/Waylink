@@ -48,8 +48,8 @@ import app.waylink.ui.theme.T
 import app.waylink.ui.theme.W
 
 /**
- * The left switch of a 2024-on Pulsar as the rider sees it: dip switch, Mode, the Call button, indicator, horn and
- * the pass trigger at the front. The Call button pulses, since it's the one that answers. Simplified, not to scale.
+ * A generic left switch of a Bluetooth Pulsar as the rider sees it: dip switch, the M button, indicator, horn and
+ * the pass trigger at the front. The M button pulses, since it's the one that answers. Simplified, not to scale.
  */
 @Composable
 fun HandlebarSample(modifier: Modifier = Modifier) {
@@ -63,7 +63,7 @@ fun HandlebarSample(modifier: Modifier = Modifier) {
     val tm = rememberTextMeasurer()
     val tag = TextStyle(fontSize = 7.5.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp, color = Color(0xFFB8BEC5))
     Box(modifier.fillMaxWidth().height(206.dp).clip(RoundedCornerShape(20.dp)).background(c.inkA(0.04f))
-        .semantics { contentDescription = "Drawing of the left handlebar switch with the Call button highlighted, and the Mode button above the indicator" }) {
+        .semantics { contentDescription = "Drawing of the left handlebar switch with the M button highlighted" }) {
         Canvas(Modifier.fillMaxWidth().height(206.dp)) {
             fun d(v: Float) = v.dp.toPx()
             fun rr(col: Color, x: Float, y: Float, w: Float, h: Float, r: Float, stroke: Float = 0f) =
@@ -89,15 +89,16 @@ fun HandlebarSample(modifier: Modifier = Modifier) {
             drawLine(Color(0xFF9AA1A8), Offset(d(118f), d(35f)), Offset(d(128f), d(35f)), d(1.5f), StrokeCap.Round)
             drawLine(Color(0xFF9AA1A8), Offset(d(118f), d(40f)), Offset(d(128f), d(40f)), d(1.5f), StrokeCap.Round)
             drawLine(Color(0xFF9AA1A8), Offset(d(118f), d(45f)), Offset(d(128f), d(45f)), d(1.5f), StrokeCap.Round)
-            // Mode: a small grey button that changes the display's own screens.
-            rr(Color(0xFF454A50), 72f, 64f, 40f, 20f, 7f)
-            val mt = tm.measure("MODE", tag)
-            drawText(mt, topLeft = Offset(d(92f) - mt.size.width / 2f, d(74f) - mt.size.height / 2f))
-            // The Call button, in the accent, with a ring that grows and fades.
-            val call = Offset(d(138f), d(74f)); val r = d(13f)
-            drawCircle(accent.copy(alpha = 0.35f * (1f - pulse)), r + d(12f) * pulse, call)
+            // The M button, in the accent, with a ring that grows and fades. Most Bluetooth Pulsars mark it M;
+            // some show a phone. A small phone badge says it handles calls.
+            val call = Offset(d(110f), d(78f)); val r = d(17f)
+            drawCircle(accent.copy(alpha = 0.35f * (1f - pulse)), r + d(14f) * pulse, call)
             drawCircle(accent, r, call)
-            handset(call, d(7f), Color.White)
+            val mt = tm.measure("M", tag.copy(fontSize = 15.sp, color = Color.White, letterSpacing = 0.sp))
+            drawText(mt, topLeft = Offset(call.x - mt.size.width / 2f, call.y - mt.size.height / 2f))
+            val badge = Offset(call.x + r * 0.78f, call.y - r * 0.78f)
+            drawCircle(Color(0xFF1E2124), d(8f), badge); drawCircle(Color.White, d(6.5f), badge)
+            handset(badge, d(3.6f), accent)
             // Indicator slider with its arrows.
             rr(Color(0xFF34383D), 72f, 104f, 80f, 22f, 11f)
             rr(Color(0xFF555B62), 101f, 106f, 22f, 18f, 9f)
@@ -106,20 +107,17 @@ fun HandlebarSample(modifier: Modifier = Modifier) {
             rr(Color(0xFF3F444A), 76f, 140f, 72f, 30f, 12f)
             val ht = tm.measure("HORN", tag)
             drawText(ht, topLeft = Offset(d(112f) - ht.size.width / 2f, d(155f) - ht.size.height / 2f))
-            // Leaders out to the labels, with a halo so they read over the switch.
-            val callEnd = Offset(d(196f), d(46f)); val modeEnd = Offset(d(196f), d(142f))
-            drawLine(bg, Offset(call.x + r, call.y), callEnd, d(4f)); drawLine(accent, Offset(call.x + r, call.y), callEnd, d(1.5f))
-            drawLine(bg, Offset(d(112f), d(80f)), modeEnd, d(4f)); drawLine(ink3, Offset(d(112f), d(80f)), modeEnd, d(1.2f))
-            drawCircle(accent, d(2.5f), callEnd); drawCircle(ink3, d(2.5f), modeEnd)
+            // A leader out to the label, with a halo so it reads over the switch.
+            val end = Offset(d(196f), d(58f))
+            drawLine(bg, Offset(call.x + r, call.y), end, d(4f)); drawLine(accent, Offset(call.x + r, call.y), end, d(1.5f))
+            drawCircle(accent, d(2.5f), end)
         }
-        Column(Modifier.padding(start = 204.dp, end = 12.dp).offset(y = 32.dp)) {
-            Txt("Call button", T.rowSub.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 16.sp), c.ink)
-            Txt("Answers and declines calls", T.rowSub.copy(fontSize = 11.sp, lineHeight = 14.sp), c.ink3)
+        Column(Modifier.padding(start = 204.dp, end = 12.dp).offset(y = 40.dp)) {
+            Txt("M button", T.rowSub.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 16.sp), c.ink)
+            Txt("Marked M or with a phone. Answers and declines calls", T.rowSub.copy(fontSize = 11.sp, lineHeight = 14.sp), c.ink3)
         }
-        Column(Modifier.padding(start = 204.dp, end = 12.dp).offset(y = 128.dp)) {
-            Txt("Mode", T.rowSub.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 16.sp), c.ink)
-            Txt("Changes the display’s screens", T.rowSub.copy(fontSize = 11.sp, lineHeight = 14.sp), c.ink3)
-        }
+        Txt("Left switch, simplified. Layout varies by model.", T.rowSub.copy(fontSize = 10.sp, lineHeight = 13.sp), c.ink3,
+            Modifier.padding(start = 204.dp, end = 12.dp).offset(y = 150.dp))
     }
 }
 
@@ -141,7 +139,7 @@ private fun DrawScope.arrow(o: Offset, s: Float, left: Boolean) {
     drawPath(p, Color(0xFF9AA1A8))
 }
 
-/** Where the Call button is, what Mode does, and what a press and a hold do, as the owner's manual has it. */
+/** Where the M button is, what it does outside a call, and what a press and a hold do, as the owner's manual has it. */
 @Composable
 fun HandlebarBody() {
     val c = W.c
@@ -151,14 +149,14 @@ fun HandlebarBody() {
     Row {
         Ic("check", size = 16.dp, tint = c.sageInk)
         Spacer(Modifier.width(10.dp))
-        Txt("Built in on 2024-on Bluetooth Pulsars. The Call button (phone icon) on the left switch answers and declines. Nothing to buy or fit.",
+        Txt("Built in on 2024-on Bluetooth Pulsars: the button on the left switch, usually marked M. Nothing to buy or fit.",
             T.row.copy(lineHeight = 20.sp), c.ink2)
     }
     Spacer(Modifier.height(10.dp))
     Row {
         Ic("info", size = 16.dp, tint = c.ink3)
         Spacer(Modifier.width(10.dp))
-        Txt("Mode only flips the display between ODO, trips and range. It doesn’t reach the phone, and the Call button only works while a call rings or is on.",
+        Txt("With no call, M just flips the display between ODO and trips, and the phone never hears it. It talks to Waylink only while a call rings or is on.",
             T.row.copy(lineHeight = 20.sp), c.ink3)
     }
     Spacer(Modifier.height(18.dp))

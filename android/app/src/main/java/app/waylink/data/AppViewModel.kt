@@ -614,7 +614,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         return false
     }
 
-    /** A handlebar press: the Mode button on the bike (while a call shows), or the simulated bike. */
+    /** A handlebar press: the M button on the bike (while a call shows), or the simulated bike. */
     fun press(kind: String) {
         // With a call showing, a tap answers and a long press declines or ends it.
         val call = _live.value.call
