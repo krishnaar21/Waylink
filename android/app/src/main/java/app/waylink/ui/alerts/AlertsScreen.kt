@@ -94,11 +94,11 @@ interface AlertsActions {
 
 /** The Alerts tab, a port of alerts() in web-v0/js/views.js: Status (what needs you) and Notifications. */
 @Composable
-fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp) {
+fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp, startTab: String = "needs") {
     val c = W.c
     val f = remember(s.country.locale) { Fmt(s.country.locale) }
     val needs = remember(s) { inbox(s, f).filter { it.icon != "missed" && it.icon != "chat" } }
-    var tab by rememberSaveable { mutableStateOf("needs") }
+    var tab by rememberSaveable { mutableStateOf(startTab) }
     val n = s.alerts.missed.size + s.alerts.wa.size
     // A swipe slides the new tab in from its side (.lt-body.in-l / in-r, .28 s).
     var from by remember { mutableStateOf(0) }
