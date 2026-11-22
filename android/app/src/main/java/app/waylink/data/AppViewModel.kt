@@ -166,7 +166,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         // Crash detection listens only while it's on and a ride is under way (recording, or the bike linked).
         viewModelScope.launch {
             kotlinx.coroutines.flow.combine(_state.map { it.settings.crashDetect }, _live.map { it.rec != null || it.link == LinkState.CONNECTED }) { on, riding -> on && riding }
-                .distinctUntilChanged().collect { if (it) crashWatch.start() else crashWatch.stop() }
+                .distinctUntilChanged().collect { if (it) crashWatch().start() else cw?.stop() }
         }
         // A call starting, being answered or ending reaches the bike at once, not at the next 5 s heartbeat.
         viewModelScope.launch { _live.map { it.call?.ringing }.distinctUntilChanged().collect { beat = 0L } }
@@ -460,7 +460,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
         if (rec != null) rec = rec.copy(top = maxOf(rec.top, speed))
         _live.update { it.copy(speed = speed, rec = rec, gpsErr = false) }
         checkSpeed(speed)
-        crashWatch.speed(kmh ?: 0.0)
+        cw?.speed(kmh ?: 0.0)
     }
 
     private fun r6(x: Double) = Math.round(x * 1e6) / 1e6
@@ -602,7 +602,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     }
 
     // ---------- Crash detection ----------
-    private val crashWatch by lazy { CrashWatch(getApplication()) { viewModelScope.launch { crashDetected(test = false) } } }
+    // Made on first use: init (above) runs before this class's later fields are set up, so no lazy delegate here.
+    private var cw: CrashWatch? = null
+    private fun crashWatch(): CrashWatch = cw ?: CrashWatch(getApplication()) { viewModelScope.launch { crashDetected(test = false) } }.also { cw = it }
     private var crashJob: Job? = null
     private var alarm: android.media.Ringtone? = null
 
