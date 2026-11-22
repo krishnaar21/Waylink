@@ -66,6 +66,7 @@ class SheetShotTest {
     @Test fun recStart() = shot("rec-start") { vm, nav -> extraSheet("rec-start", sample, live, vm, nav, noop<ExtraHost>()) }
     @Test fun perms() = shot("perms") { vm, nav -> app.waylink.ui.route.navSheet("perms", sample, live, vm, nav, noop<ExtraHost>()) }
     @Test fun navAccess() = shot("navaccess") { vm, nav -> app.waylink.ui.route.navSheet("navaccess", sample, live, vm, nav, noop<ExtraHost>()) }
+    @Test fun handlebar() = shot("handlebar") { vm, nav -> app.waylink.ui.route.navSheet("handlebar", sample, live, vm, nav, noop<ExtraHost>()) }
     @Test fun odo() = shot("odo") { vm, nav -> logbookSheet("odo", sample, vm, nav) }
     @Test fun service() = shot("svc") { vm, nav -> logbookSheet("svc:" + sample.vehicle.service.first().id, sample, vm, nav) }
     @Test fun fuel() = shot("fuel") { vm, nav -> fuelSheet("fuel:new", sample, vm, nav) }
