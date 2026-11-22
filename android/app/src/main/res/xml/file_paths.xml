@@ -2,4 +2,5 @@
 <paths>
     <files-path name="glove" path="glove/" />
     <files-path name="parking" path="parking/" />
+    <cache-path name="share" path="share/" />
 </paths>

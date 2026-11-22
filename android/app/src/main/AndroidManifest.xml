@@ -62,7 +62,15 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize" />
+        <!-- Home screen widget: range, next job, Park here and SOS. -->
+        <receiver android:name=".data.BikeWidget" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_bike_info" />
+        </receiver>
         <!-- The app icon picker (Settings > Icons): one launcher entry per style, only the chosen one enabled. -->
         <activity-alias
             android:name=".Launcher"

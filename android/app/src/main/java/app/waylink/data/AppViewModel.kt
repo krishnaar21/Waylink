@@ -198,6 +198,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
                 try { out.write(text.toByteArray(Charsets.UTF_8)); file.finishWrite(out) } catch (e: Exception) { file.failWrite(out) }
             }
             schedulePush()
+            runCatching { BikeWidget.refresh(getApplication()) }
         }
     }
 
@@ -262,6 +263,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app), app.waylink.ui.rou
     }
 
     fun clearAsk() = _live.update { it.copy(ask = null) }
+    /** Opens a sheet as soon as the main screens are up (the home screen widget's buttons). */
+    fun askFor(key: String) = _live.update { it.copy(ask = key) }
 
     /** The ride mode hint "Auto-open · Settings › Riding": leave ride mode and show that section. */
     fun gotoRiding() = _live.update { it.copy(rideMode = false, focus = "riding") }
