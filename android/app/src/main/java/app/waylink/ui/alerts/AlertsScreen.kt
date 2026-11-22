@@ -212,9 +212,9 @@ fun AlertsScreen(s: AppState, live: Live, act: AlertsActions, bottom: Dp, startT
                 Input(name, { name = it }, placeholder = "Rohan", label = "Name", maxLength = 32)
                 Spacer(Modifier.height(12.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Btn("Ring", { act.relay("ring", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, icon = "phone", small = true)
-                    Btn("Missed", { act.relay("missed", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, icon = "missed", small = true)
-                    Btn("Chat", { act.relay("wa", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, icon = "chat", small = true)
+                    Btn("Ring", { act.relay("ring", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, small = true)
+                    Btn("Missed", { act.relay("missed", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, small = true)
+                    Btn("Chat", { act.relay("wa", name) }, Modifier.weight(1f), kind = BtnKind.GHOST, small = true)
                 }
             }
             }
