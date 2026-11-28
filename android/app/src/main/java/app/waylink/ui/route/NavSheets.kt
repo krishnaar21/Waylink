@@ -551,10 +551,7 @@ fun LiveTurnsCard(s: AppState, openSheet: (String) -> Unit) {
             Spacer(Modifier.width(4.dp))
             Chip("Change", { openSheet("nav-source") })
         }
-        if (ok == false) {
-            Spacer(Modifier.height(14.dp))
-            Btn("Allow notification access", { openSheet("navaccess") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "bell", small = true)
-        }
+        // The Allow button sits in the Where to? card above, so it isn't repeated here.
     }
 }
 
