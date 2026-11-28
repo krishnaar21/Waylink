@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -144,6 +145,7 @@ fun navSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetN
         "crash" -> SheetSpec("Crash detection", "Riding") { CrashBody(s, vm, nav, host) }
         "perms" -> SheetSpec("Permissions", null) { PermsBody(s, nav) }
         "navaccess" -> SheetSpec("Notification access", null) { NavAccessBody(s) }
+        "navlog" -> SheetSpec("Check live turns", "Live turns") { NavLogBody(s, vm, nav) }
         "handlebar" -> SheetSpec("Handlebar button", null) { HandlebarBody(s.model) }
         "route-howto" -> SheetSpec("How this works", "Route") {
             val src = NavSource.of(s.settings.navSource).let { if (it.readsNotifications) it else NavSource.of("gmaps") }
@@ -189,8 +191,11 @@ private fun SourceBody(s: AppState, vm: AppViewModel, nav: SheetNav) {
     }
     if (cur.readsNotifications) {
         Spacer(Modifier.height(18.dp))
-        if (allowed) StatusLine(true, "Notification access is on. Start navigating in ${cur.name}.")
-        else {
+        if (allowed) {
+            StatusLine(true, "Notification access is on. Start navigating in ${cur.name}.")
+            Spacer(Modifier.height(14.dp))
+            Btn("Check live turns", { nav.open("navlog") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "nav", small = true)
+        } else {
             StatusLine(false, "Waylink needs notification access to read ${cur.name}.")
             Spacer(Modifier.height(14.dp))
             Btn("Allow notification access", { nav.open("navaccess") }, Modifier.fillMaxWidth(), icon = "bell")
@@ -198,8 +203,61 @@ private fun SourceBody(s: AppState, vm: AppViewModel, nav: SheetNav) {
     }
 }
 
+/**
+ * Every turn card that reached Waylink this session, newest first, and what was read from each. Shows at a glance
+ * whether the maps app's updates arrive (a new row every few seconds while moving) and whether they read right.
+ */
 @Composable
-private fun StatusLine(ok: Boolean, text: String) {
+private fun NavLogBody(s: AppState, vm: AppViewModel, nav: SheetNav) {
+    val c = W.c
+    val ctx = LocalContext.current
+    val tick = rememberResumeTick()
+    val src = NavSource.of(s.settings.navSource)
+    val allowed = remember(tick) { NavFeed.allowed(ctx) }
+    val connected by NavFeed.connected.collectAsState()
+    val log by NavFeed.log.collectAsState()
+    val count by NavFeed.received.collectAsState()
+    Spacer(Modifier.height(8.dp))
+    Txt("While ${src.name} navigates, a new card should arrive every few seconds. Nothing here is saved.", T.sheetLead.copy(fontSize = 14.sp, lineHeight = 21.sp), c.ink2)
+    Spacer(Modifier.height(16.dp))
+    when {
+        !allowed -> {
+            StatusLine(false, "Notification access is off, so nothing can arrive.")
+            Spacer(Modifier.height(14.dp))
+            Btn("Allow notification access", { nav.open("navaccess") }, Modifier.fillMaxWidth(), icon = "bell")
+        }
+        !connected -> StatusLine(false, "Access is on, but Android hasn’t started the reader yet. Turn access off and on again if this stays.")
+        count == 0 -> StatusLine(false, "Ready. Nothing from ${src.name} yet: start navigation there.")
+        else -> StatusLine(true, "$count ${if (count == 1) "card" else "cards"} received this session.")
+    }
+    if (log.isNotEmpty()) {
+        Spacer(Modifier.height(18.dp))
+        ListCard(flat = true) {
+            log.forEachIndexed { i, e ->
+                if (i > 0) Hairline()
+                Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Txt(java.text.DateFormat.getTimeInstance(java.text.DateFormat.MEDIUM).format(java.util.Date(e.at)), T.plate.copy(fontSize = 11.5.sp), c.ink3, Modifier.weight(1f))
+                        Txt(e.app, T.rowSub.copy(fontSize = 12.sp), c.ink3)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Txt(e.read ?: "Not a turn, skipped", T.row.copy(fontSize = 14.sp, fontWeight = FontWeight.Medium), if (e.read == null) c.ink3 else c.ink, maxLines = 2)
+                    Txt(e.fields.joinToString("  ·  "), T.rowSub.copy(fontSize = 12.sp, lineHeight = 17.sp), c.ink3, maxLines = 4)
+                }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        Btn("Copy for support", {
+            val text = log.joinToString("\n") { e -> "${java.text.DateFormat.getTimeInstance(java.text.DateFormat.MEDIUM).format(java.util.Date(e.at))} ${e.app}: ${e.fields.joinToString(" | ")} => ${e.read ?: "skipped"}" }
+            val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
+            cm?.setPrimaryClip(android.content.ClipData.newPlainText("Waylink live turns", text))
+            vm.toast("Copied.")
+        }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "copy", small = true)
+    }
+}
+
+@Composable
+internal fun StatusLine(ok: Boolean, text: String) {
     val c = W.c
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(8.dp).clip(CircleShape).background(if (ok) c.sage else c.amber))
@@ -223,15 +281,19 @@ private fun PlaceBody(s: AppState, p: Place?, vm: AppViewModel, nav: SheetNav, h
     var busy by remember { mutableStateOf(false) }
     var hits by remember { mutableStateOf<List<app.waylink.data.PlaceSearch.Hit>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
+    // The last search found nothing (or couldn't reach anything): say so instead of showing a blank.
+    var empty by remember { mutableStateOf<String?>(null) }
     androidx.compose.runtime.LaunchedEffect(busy) { if (busy) { kotlinx.coroutines.delay(20_000); busy = false } }
     // Suggestions while typing: a short pause first, so a search goes out per word, not per letter.
     androidx.compose.runtime.LaunchedEffect(address) {
         val q = address.trim()
-        if (q.length < 3 || q == spotFor) { hits = emptyList(); searching = false; return@LaunchedEffect }
+        if (q.length < 3 || q == spotFor) { hits = emptyList(); searching = false; empty = null; return@LaunchedEffect }
         kotlinx.coroutines.delay(450)
         searching = true
         val near = s.profile.weatherAt
-        hits = app.waylink.data.PlaceSearch.search(ctx, q, near?.lat ?: s.vehicle.parking?.lat, near?.lon ?: s.vehicle.parking?.lng)
+        val r = app.waylink.data.PlaceSearch.search(ctx, q, near?.lat ?: s.vehicle.parking?.lat, near?.lon ?: s.vehicle.parking?.lng)
+        hits = r.hits
+        empty = when { r.hits.isNotEmpty() -> null; r.failed -> "Can’t search right now. Check your connection."; else -> "No matches. Try a nearby landmark or area." }
         searching = false
     }
 
@@ -265,6 +327,8 @@ private fun PlaceBody(s: AppState, p: Place?, vm: AppViewModel, nav: SheetNav, h
         }
     } else if (searching) {
         Txt("Searching…", T.rowSub, c.ink3, Modifier.padding(top = 8.dp, start = 4.dp))
+    } else if (empty != null && address.trim() != spotFor) {
+        Txt(empty!!, T.rowSub, c.ink3, Modifier.padding(top = 8.dp, start = 4.dp))
     }
     Spacer(Modifier.height(12.dp))
     val pinned = lat != null && lng != null

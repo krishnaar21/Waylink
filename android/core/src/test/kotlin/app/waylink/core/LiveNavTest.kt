@@ -87,6 +87,25 @@ class LiveNavTest {
         assertEquals("DESTINATION_REACHED", NavParse.parse("You have arrived", null, prev = t)?.maneuver)
     }
 
+    @Test fun distancesWithNoBreakSpacesAndMarks() {
+        // Maps writes "350 m" with a no-break space, and wraps streets in direction marks.
+        val t = assertNotNull(NavParse.parse("350\u00A0m", "Turn right onto \u2068MG Road\u2069", "14\u202Fmin · 5.2\u00A0km · 6:42\u202Fpm"))
+        assertEquals(350.0, t.stepMeters); assertEquals("MG Road", t.street); assertEquals(5200.0, t.totalMeters); assertEquals(18 to 42, t.etaClock)
+        assertEquals(1200.0, NavParse.parse("1,200 m", "Turn left")!!.stepMeters)
+        assertEquals(1200.0, NavParse.parse("1,2 km", "Turn left")!!.stepMeters)
+    }
+
+    @Test fun distanceCountsDownWhenTheCardHasNone() {
+        // Each new card from Maps must move the distance, even when only the route progress changed.
+        val a = assertNotNull(NavParse.parse("Head southwest on Main Rd", null, progress = 0, progressMax = 23708))
+        val b = assertNotNull(NavParse.parse("Head southwest on Main Rd", null, progress = 400, progressMax = 23708, prev = a))
+        assertEquals(23308.0, b.stepMeters); assertEquals(23308.0, b.totalMeters)
+        val c = assertNotNull(NavParse.parse("Turn left onto Hosur Road", null, progress = 900, progressMax = 23708, short = "300 m", prev = b))
+        assertEquals("TURN_LEFT", c.maneuver); assertEquals(300.0, c.stepMeters)
+        val d = assertNotNull(NavParse.parse("Turn left onto Hosur Road", null, progress = 1000, progressMax = 23708, prev = c))
+        assertEquals(200.0, d.stepMeters)
+    }
+
     @Test fun remindersSayEachThingOnce() {
         val now = 1_700_000_000_000L
         val base = Sample.seed(freshState(), now)
