@@ -85,20 +85,29 @@ object NavParse {
         title: String?, text: String?, sub: String? = null, big: String? = null,
         short: String? = null, progress: Int? = null, progressMax: Int? = null, prev: LiveTurn? = null,
     ): LiveTurn? {
-        val fields = listOfNotNull(title, text, big, sub).map { it.trim() }.filter { it.isNotEmpty() }
+        @Suppress("NAME_SHADOWING") val title = norm(title)
+        @Suppress("NAME_SHADOWING") val text = norm(text)
+        @Suppress("NAME_SHADOWING") val sub = norm(sub)
+        @Suppress("NAME_SHADOWING") val big = norm(big)
+        @Suppress("NAME_SHADOWING") val short = norm(short)
+        val fields = listOfNotNull(title, text, big, sub).filter { it.isNotEmpty() }
         if (fields.isEmpty()) return null
         val all = fields.joinToString(" · ")
         if (REROUTE.containsMatchIn(all)) return prev?.copy(say = "Rerouting…")
-        val dists = fields.flatMap { f -> DIST.findAll(f).map { meters(it.groupValues[1].replace(',', '.').toDouble(), it.groupValues[2]) }.toList() }
+        val dists = fields.flatMap(::distsIn)
         val worded = fields.firstOrNull { WORDS.containsMatchIn(it) }
         // Nothing that reads as a turn: a "Navigation is running" card, or another of the app's notifications.
         if (worded == null && dists.isEmpty()) return null
         val say = worded ?: fields.filter { DIST.replace(it, "").trim().length > 3 }.maxByOrNull { it.length } ?: fields.first()
         val left = progressMax?.let { m -> progress?.let { p -> if (m > 0) (m - p).coerceAtLeast(0).toDouble() else null } }
-        val shortM = short?.let { DIST.find(it) }?.let { meters(it.groupValues[1].replace(',', '.').toDouble(), it.groupValues[2]) }
+        val shortM = short?.let(::distsIn)?.firstOrNull()
         // Distances in the title/text come first; the sub-text's are what's left of the route.
-        val headD = listOfNotNull(title, text, big).flatMap { f -> DIST.findAll(f).map { meters(it.groupValues[1].replace(',', '.').toDouble(), it.groupValues[2]) }.toList() }
-        val step = shortM ?: headD.firstOrNull() ?: prev?.stepMeters ?: left ?: dists.firstOrNull() ?: return null
+        val headD = listOfNotNull(title, text, big).flatMap(::distsIn)
+        // No distance on this card: count down from the last one by how far the route progressed since. Keeping the
+        // last value as it was froze the distance on the first card.
+        val sameStep = prev != null && (worded == null || cleanSay(worded) == prev.say)
+        val counted = if (sameStep && prev != null && left != null && prev.totalMeters != null) (prev.stepMeters - (prev.totalMeters - left)).coerceAtLeast(0.0) else null
+        val step = shortM ?: headD.firstOrNull() ?: counted ?: prev?.stepMeters ?: left ?: dists.firstOrNull() ?: return null
         val total = left ?: dists.filter { it > step }.maxOrNull() ?: prev?.totalMeters
         val (man0, exit0) = maneuverOf(say)
         val directed = worded != null
@@ -114,6 +123,21 @@ object NavParse {
         val mins = (sub ?: all).let { MINS.find(it) }?.let { (it.groupValues[1].toIntOrNull() ?: 0) * 60 + it.groupValues[2].toInt() } ?: prev?.etaMin
         return LiveTurn(man, step, street, if (directed) clean else (prev?.say ?: clean), exit, total, mins, eta)
     }
+
+    /**
+     * Maps formats "200 m" with a no-break or narrow no-break space in many locales, and wraps street names in
+     * invisible direction marks. Plain spaces and no marks, so the patterns below match what the rider sees.
+     */
+    fun norm(t: String?): String? = t?.replace(Regex("[\u00A0\u2007\u2009\u202F\u205F\u3000]"), " ")
+        ?.replace(Regex("[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]"), "")
+        ?.replace(Regex("\\s+"), " ")?.trim()
+
+    /** Every distance in [f], in metres. "1,2 km" is 1.2 km; "1,200 m" is 1200 m. */
+    private fun distsIn(f: String): List<Double> = DIST.findAll(f).map { m ->
+        val raw = m.groupValues[1]
+        val n = if (Regex("""^\d{1,3},\d{3}$""").matches(raw)) raw.replace(",", "") else raw.replace(',', '.')
+        meters(n.toDouble(), m.groupValues[2])
+    }.toList()
 
     private val REROUTE = Regex("""\b(rerouting|recalculating)""", RegexOption.IGNORE_CASE)
 
@@ -174,4 +198,33 @@ object SpeedAlert {
     fun over(speed: Int, limit: Int) = limit > 0 && speed >= limit + 2
     /** Back under, with room, before it can sound again. */
     fun under(speed: Int, limit: Int) = speed <= limit - 3
+}
+
+/**
+ * A spot read from what a rider pastes: plain coordinates ("12.9716, 77.5946"), a geo: link, or a Google Maps
+ * (or OpenStreetMap, Apple Maps, Waze) link that carries them. A place's own pin (!3d…!4d…) wins over the map's
+ * centre (@…). Short links (maps.app.goo.gl) carry no coordinates: [isShortLink] says to resolve them first.
+ */
+object GeoLink {
+    private const val N = """(-?\d{1,3}(?:\.\d+)?)"""
+    private val PLAIN = Regex("""^\s*$N\s*[, ]\s*$N\s*$""")
+    private val PIN = Regex("""!3d$N!4d$N""")
+    private val PARAM = Regex("""[?&](?:q|query|ll|destination|daddr|center|sll)=(?:loc:)?$N(?:,|%2C|\+|%20)+$N""", RegexOption.IGNORE_CASE)
+    private val GEO = Regex("""^geo:$N,$N""", RegexOption.IGNORE_CASE)
+    private val AT = Regex("""@$N,$N""")
+    private val OSM = Regex("""[#&?]map=\d+/$N/$N""")
+    private val SHORT = Regex("""^https?://(maps\.app\.goo\.gl|goo\.gl/maps|g\.co/kgs)/""", RegexOption.IGNORE_CASE)
+
+    fun parse(text: String?): Pair<Double, Double>? {
+        val t = text?.trim().orEmpty()
+        if (t.isEmpty() || t.length > 2000) return null
+        val m = PLAIN.find(t) ?: PIN.find(t) ?: PARAM.find(t) ?: GEO.find(t) ?: OSM.find(t) ?: AT.find(t) ?: return null
+        val la = m.groupValues[1].toDoubleOrNull() ?: return null
+        val ln = m.groupValues[2].toDoubleOrNull() ?: return null
+        if (la !in -90.0..90.0 || ln !in -180.0..180.0 || (la == 0.0 && ln == 0.0)) return null
+        return la to ln
+    }
+
+    fun isLink(text: String?): Boolean = text?.trim()?.let { it.startsWith("http", true) || it.startsWith("geo:", true) } == true
+    fun isShortLink(text: String?): Boolean = text?.trim()?.let { SHORT.containsMatchIn(it) } == true
 }

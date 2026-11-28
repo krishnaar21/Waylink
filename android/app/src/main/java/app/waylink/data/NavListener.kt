@@ -29,7 +29,11 @@ class NavListener : NotificationListenerService() {
         runCatching { activeNotifications?.forEach(::read) }
     }
 
-    override fun onListenerDisconnected() { NavFeed.connected.value = false }
+    override fun onListenerDisconnected() {
+        NavFeed.connected.value = false
+        // Android can unbind the listener (an app update, a battery saver); ask for it back so turns keep coming.
+        runCatching { requestRebind(ComponentName(this, NavListener::class.java)) }
+    }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) { read(sbn); runCatching { PhoneFeed.read(sbn, applicationContext) } }
 
@@ -48,11 +52,16 @@ class NavListener : NotificationListenerService() {
         fun int(k: String) = if (ex.containsKey(k)) ex.getInt(k) else null
         // The last turn from this app fills in what a card leaves out (a street-only title, "Rerouting…").
         val prev = NavFeed.turn.value?.takeIf { it.first == src.key }?.second
+        val title = cs(Notification.EXTRA_TITLE); val text = cs(Notification.EXTRA_TEXT); val sub = cs(Notification.EXTRA_SUB_TEXT)
+        val big = cs(Notification.EXTRA_BIG_TEXT); val short = cs("android.shortCriticalText")
+        val p = int(Notification.EXTRA_PROGRESS); val pm = int(Notification.EXTRA_PROGRESS_MAX)
         val turn = NavParse.parse(
-            cs(Notification.EXTRA_TITLE), cs(Notification.EXTRA_TEXT), cs(Notification.EXTRA_SUB_TEXT), cs(Notification.EXTRA_BIG_TEXT),
+            title, text, sub, big,
             // Read by key: the short critical text is new in Android 16, progress is metres of the route.
-            short = cs("android.shortCriticalText"), progress = int(Notification.EXTRA_PROGRESS), progressMax = int(Notification.EXTRA_PROGRESS_MAX), prev = prev,
-        ) ?: return
+            short = short, progress = p, progressMax = pm, prev = prev,
+        )
+        NavFeed.note(src.name, listOfNotNull(title, text, big?.takeIf { it != text }, sub, short?.let { "short: $it" }, pm?.let { "progress: $p / $it" }), turn)
+        turn ?: return
         NavFeed.turn.value = src.key to turn
     }
 
@@ -209,6 +218,23 @@ object PhoneFeed {
 object NavFeed {
     val turn = MutableStateFlow<Pair<String, LiveTurn>?>(null)
     val connected = MutableStateFlow(false)
+
+    /** One turn card as it arrived, and what Waylink read from it. In memory only, for "Check live turns". */
+    data class Seen(val at: Long, val app: String, val fields: List<String>, val read: String?)
+
+    /** The newest cards, newest first: shows whether the maps app's updates reach Waylink and how each was read. */
+    val log = MutableStateFlow<List<Seen>>(emptyList())
+    /** Cards received since the listener started, and when the last one came. */
+    val received = MutableStateFlow(0)
+    val lastAt = MutableStateFlow(0L)
+
+    fun note(app: String, fields: List<String>, t: LiveTurn?) {
+        val now = System.currentTimeMillis()
+        val read = t?.let { "${it.maneuver.lowercase().replace('_', ' ')} · ${it.stepMeters.toInt()} m" + (it.totalMeters?.let { m -> " · ${m.toInt()} m left" } ?: "") + (if (it.street.isNotEmpty()) " · ${it.street}" else "") }
+        log.value = (listOf(Seen(now, app, fields.map { it.take(120) }, read)) + log.value).take(20)
+        received.value += 1
+        lastAt.value = now
+    }
     val turns: StateFlow<Pair<String, LiveTurn>?> get() = turn.asStateFlow()
 
     /** Has the rider allowed Waylink to read notifications? */
@@ -239,19 +265,48 @@ object NavApps {
         return tries.any { i -> runCatching { ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess }
     }
 
-    /** Where to: [lat]/[lng] when known, else [query]. Two-wheeler mode in Google Maps. Returns false if nothing could open it. */
-    fun go(ctx: Context, src: NavSource, query: String, lat: Double? = null, lng: Double? = null): Boolean {
-        val where = if (lat != null && lng != null) "$lat,$lng" else query
+    /**
+     * Where to. With [lat]/[lng] (a picked suggestion or a saved spot) navigation starts straight away, in two-wheeler
+     * mode in Google Maps. With only typed words it opens the maps app's search for them instead, so the rider picks
+     * the right place and taps Start there: handing words to "navigate" made Maps guess one, often the wrong one.
+     * [near] ranks results around the rider. Returns false if nothing could open it.
+     */
+    fun go(ctx: Context, src: NavSource, query: String, lat: Double? = null, lng: Double? = null, near: Pair<Double, Double>? = null): Boolean {
+        if (lat == null || lng == null) return find(ctx, src, query, near)
+        val where = "$lat,$lng"
         val pkg = src.packages.firstOrNull { p -> runCatching { ctx.packageManager.getPackageInfo(p, 0) }.isSuccess }
         val tries = buildList {
             when (src.key) {
-                "gmaps" -> add(Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=" + Uri.encode(where) + "&mode=l")).setPackage(pkg))
-                "waze" -> add(Intent(Intent.ACTION_VIEW, Uri.parse(if (lat != null && lng != null) "https://waze.com/ul?ll=$lat,$lng&navigate=yes" else "https://waze.com/ul?q=" + Uri.encode(query) + "&navigate=yes")).setPackage(pkg))
-                else -> if (pkg != null) add(Intent(Intent.ACTION_VIEW, Uri.parse(if (lat != null && lng != null) "geo:$lat,$lng?q=$lat,$lng" else "geo:0,0?q=" + Uri.encode(query))).setPackage(pkg))
+                "gmaps" -> add(Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=$where&mode=l")).setPackage(pkg))
+                "waze" -> add(Intent(Intent.ACTION_VIEW, Uri.parse("https://waze.com/ul?ll=$where&navigate=yes")).setPackage(pkg))
+                else -> if (pkg != null) add(Intent(Intent.ACTION_VIEW, Uri.parse("geo:$where?q=$where")).setPackage(pkg))
             }
             // Google's cross-platform directions link opens Maps, or a browser.
-            add(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/dir/?api=1&destination=" + Uri.encode(where) + "&travelmode=two-wheeler&dir_action=navigate")))
+            add(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$where&travelmode=two-wheeler&dir_action=navigate")))
         }
         return tries.any { i -> runCatching { ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess }
+    }
+
+    /** The maps app's own search for [query], around [near] when known: the rider picks a result and starts there. */
+    fun find(ctx: Context, src: NavSource, query: String, near: Pair<Double, Double>? = null): Boolean {
+        val q = query.trim().take(120)
+        if (q.isEmpty()) return false
+        val pkg = src.packages.firstOrNull { p -> runCatching { ctx.packageManager.getPackageInfo(p, 0) }.isSuccess }
+        val at = near?.let { (la, ln) -> "%.4f,%.4f".format(java.util.Locale.US, la, ln) } ?: "0,0"
+        val tries = buildList {
+            when (src.key) {
+                "waze" -> add(Intent(Intent.ACTION_VIEW, Uri.parse("https://waze.com/ul?q=" + Uri.encode(q))).setPackage(pkg))
+                else -> if (pkg != null) add(Intent(Intent.ACTION_VIEW, Uri.parse("geo:$at?q=" + Uri.encode(q))).setPackage(pkg))
+            }
+            add(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/maps/search/?api=1&query=" + Uri.encode(q))))
+        }
+        return tries.any { i -> runCatching { ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess }
+    }
+
+    /** Just opens the maps app, to start navigation there. */
+    fun open(ctx: Context, src: NavSource): Boolean {
+        val pkg = src.packages.firstOrNull { p -> runCatching { ctx.packageManager.getPackageInfo(p, 0) }.isSuccess } ?: return false
+        val i = ctx.packageManager.getLaunchIntentForPackage(pkg) ?: return false
+        return runCatching { ctx.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.isSuccess
     }
 }

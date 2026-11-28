@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -104,7 +105,7 @@ interface RouteActions {
 @Composable
 fun RouteScreen(s: AppState, live: Live, vm: RouteActions, openSheet: (String) -> Unit, bottom: Dp) {
     val n = live.nav
-    if (n != null) EnRoute(s, live, n, vm, bottom) else Planner(s, live, vm, openSheet, bottom)
+    if (n != null) EnRoute(s, live, n, vm, openSheet, bottom) else Planner(s, live, vm, openSheet, bottom)
 }
 
 @Composable
@@ -113,12 +114,43 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
     val ctx = LocalContext.current
     val f = remember(s.country.locale) { Fmt(s.country.locale) }
     var dest by rememberSaveable { mutableStateOf("") }
+    // A picked suggestion: navigation goes straight to it. Typing again lets go of it.
+    var pickLat by rememberSaveable { mutableStateOf<Double?>(null) }
+    var pickLng by rememberSaveable { mutableStateOf<Double?>(null) }
+    var pickFor by rememberSaveable { mutableStateOf<String?>(null) }
+    var hits by remember { mutableStateOf<List<app.waylink.data.PlaceSearch.Hit>>(emptyList()) }
+    var searching by remember { mutableStateOf(false) }
+    var empty by remember { mutableStateOf<String?>(null) }
     // The chosen maps app, or Google Maps when Waylink only rehearses (or on a phone that can't read other apps).
     val src = app.waylink.core.NavSource.of(s.settings.navSource).let { if (it.readsNotifications) it else app.waylink.core.NavSource.of("gmaps") }
+    val near = s.profile.weatherAt?.let { it.lat to it.lon } ?: s.vehicle.parking?.let { it.lat to it.lng }
+    val picked = pickLat != null && pickLng != null && pickFor == dest.trim()
+    // Suggestions while typing, after a short pause, the same search as saved places use.
+    androidx.compose.runtime.LaunchedEffect(dest) {
+        val q = dest.trim()
+        if (q.length < 3 || q == pickFor) { hits = emptyList(); searching = false; empty = null; return@LaunchedEffect }
+        kotlinx.coroutines.delay(450)
+        searching = true
+        // A pasted Maps link or coordinates goes straight to that spot.
+        if (app.waylink.core.GeoLink.isLink(q) || app.waylink.core.GeoLink.parse(q) != null) {
+            hits = emptyList()
+            val spot = app.waylink.data.PlaceSearch.spotFrom(q)
+            if (spot != null) {
+                val label = "%.5f, %.5f".format(java.util.Locale.ROOT, spot.first, spot.second)
+                pickLat = spot.first; pickLng = spot.second; pickFor = label; dest = label; empty = null
+            } else empty = "That link has no location in it. In Maps, tap Share on the place and paste that link."
+            searching = false
+            return@LaunchedEffect
+        }
+        val r = app.waylink.data.PlaceSearch.search(ctx, q, near?.first, near?.second)
+        hits = r.hits
+        empty = when { r.hits.isNotEmpty() -> null; r.failed -> "Can’t search right now. ${src.name} can still search it."; else -> "No matches here. ${src.name} can search it." }
+        searching = false
+    }
     val openMaps = {
         val d = dest.trim()
         if (d.isEmpty()) vm.toast("Where to?")
-        else if (!app.waylink.data.NavApps.go(ctx, src, d)) vm.toast("No app can open maps.")
+        else if (!app.waylink.data.NavApps.go(ctx, src, d, if (picked) pickLat else null, if (picked) pickLng else null, near)) vm.toast("No app can open maps.")
     }
     Page(bottom) {
         PageHead("Route", "Turns on your bike")
@@ -126,14 +158,48 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
         Spacer(Modifier.height(6.dp))
         SectionHead("Where to?")
         // .sec-note: tucked 6 dp up under the heading, inset like it, 12 above the card
-        Txt("Plan the ride in ${src.name}. Its turns show on your bike.", T.row.copy(lineHeight = 20.3.sp), c.ink3, Modifier.offset(y = (-6).dp).padding(horizontal = 14.dp))
+        Txt("Navigate in ${src.name}. Waylink reads each turn from it and sends it to your bike.", T.row.copy(lineHeight = 20.3.sp), c.ink3, Modifier.offset(y = (-6).dp).padding(horizontal = 14.dp))
         Spacer(Modifier.height(6.dp))
         Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp)) {
             Txt("Destination", T.eyebrow, c.ink3)
             Spacer(Modifier.height(8.dp))
-            Input(dest, { dest = it }, placeholder = "Nandi Hills", label = "Destination", caps = KeyboardCapitalization.Words, maxLength = 120, imeAction = ImeAction.Go, onDone = openMaps)
+            Input(dest, { x ->
+                dest = x
+                if (pickFor != null && x.trim() != pickFor) { pickLat = null; pickLng = null; pickFor = null }
+            }, placeholder = "Search, or paste a Maps link", label = "Destination", caps = KeyboardCapitalization.Words, maxLength = 600, imeAction = ImeAction.Go, onDone = openMaps)
+            // Saved places that match come first, then search results.
+            val q = dest.trim()
+            val mine = if (q.length >= 2 && !picked) s.places.filter { it.name.contains(q, true) || it.address.contains(q, true) }.take(3) else emptyList()
+            if (mine.isNotEmpty() || hits.isNotEmpty()) {
+                Spacer(Modifier.height(10.dp))
+                ListCard(flat = true) {
+                    mine.forEachIndexed { i, p ->
+                        if (i > 0) Hairline(66.dp)
+                        ListRow(p.name, p.address.ifBlank { null }, icon = if (p.kind == "home") "home" else "pin", chevron = false, compact = true, onClick = {
+                            dest = p.address.ifBlank { p.name }; hits = emptyList()
+                            if (p.lat != null && p.lng != null) { pickLat = p.lat; pickLng = p.lng; pickFor = dest.trim() }
+                        })
+                    }
+                    hits.forEachIndexed { i, h ->
+                        if (i > 0 || mine.isNotEmpty()) Hairline(66.dp)
+                        ListRow(h.title, h.detail.ifEmpty { null }, icon = "pin", chevron = false, compact = true, onClick = {
+                            dest = h.label; pickLat = h.lat; pickLng = h.lng; pickFor = h.label; hits = emptyList()
+                        })
+                    }
+                }
+            } else if (searching) {
+                Txt("Searching…", T.rowSub, c.ink3, Modifier.padding(top = 10.dp, start = 4.dp))
+            } else if (empty != null && !picked && q.length >= 3) {
+                Txt(empty!!, T.rowSub, c.ink3, Modifier.padding(top = 10.dp, start = 4.dp))
+            }
             Spacer(Modifier.height(12.dp))
-            Btn("Open in ${src.name}", openMaps, Modifier.fillMaxWidth(), icon = "map")
+            // A picked place navigates straight there; typed words open the maps app's search so the rider picks the right one.
+            if (picked || q.isEmpty()) Btn("Navigate in ${src.name}", openMaps, Modifier.fillMaxWidth(), icon = "nav")
+            else Btn("Search in ${src.name}", openMaps, Modifier.fillMaxWidth(), icon = "map")
+            Spacer(Modifier.height(16.dp))
+            Hairline()
+            Spacer(Modifier.height(14.dp))
+            FollowsMaps(src, openSheet)
         }
 
         SectionGap()
@@ -226,7 +292,7 @@ private fun FrameCard(live: Live) {
 }
 
 @Composable
-private fun EnRoute(s: AppState, live: Live, n: Nav, vm: RouteActions, bottom: Dp) {
+private fun EnRoute(s: AppState, live: Live, n: Nav, vm: RouteActions, openSheet: (String) -> Unit, bottom: Dp) {
     val c = W.c
     val f = remember(s.country.locale) { Fmt(s.country.locale) }
     val man = Maneuvers.of(n.maneuver)
@@ -277,7 +343,7 @@ private fun EnRoute(s: AppState, live: Live, n: Nav, vm: RouteActions, bottom: D
                 Chip("Next turn", vm::nextTurn, icon = "chev")
             }
         } else if (n.mode == "maps") {
-            Hint("Turns come from $srcName as it guides. Change the route there.")
+            MapsFreshness(srcName, openSheet)
         } else {
             Column(Modifier.fillMaxWidth().card(20.dp).padding(18.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -316,6 +382,32 @@ private fun EnRoute(s: AppState, live: Live, n: Nav, vm: RouteActions, bottom: D
             }
         }
         if (s.settings.devFrames) FrameCard(live)
+    }
+}
+
+/** While following a maps app: when its last turn card came, so a rider can tell at a glance that turns are flowing. */
+@Composable
+private fun MapsFreshness(srcName: String, openSheet: (String) -> Unit) {
+    val c = W.c
+    val last by app.waylink.data.NavFeed.lastAt.collectAsState()
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    androidx.compose.runtime.LaunchedEffect(Unit) { while (true) { now = System.currentTimeMillis(); kotlinx.coroutines.delay(1000) } }
+    val ago = ((now - last) / 1000).coerceAtLeast(0)
+    // Maps updates its card every few seconds while moving; a minute of nothing is worth a look.
+    val stale = last > 0 && ago >= 60
+    val agoText = when { last == 0L -> "waiting"; ago < 5 -> "just now"; ago < 60 -> "$ago s ago"; else -> "${ago / 60} min ago" }
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(if (stale) c.tintAmber else c.raised)
+            .pressable(label = "Check live turns") { openSheet("navlog") }.padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(8.dp).clip(CircleShape).background(if (stale) c.amber else c.sage))
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Txt(if (stale) "No new turn from $srcName for ${ago / 60} min" else "Following $srcName · updated $agoText", T.row.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Medium), c.ink, maxLines = 1)
+            Txt(if (stale) "Is it still navigating? Tap to see what arrived." else "Change the route in $srcName. Tap to see each update.", T.rowSub, c.ink3, maxLines = 1)
+        }
+        Ic("chev", size = 15.dp, tint = c.ink3)
     }
 }
 
@@ -460,12 +552,41 @@ fun routeSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: Shee
 }
 
 /** The three steps behind "How this works" on the Route tab. */
+/**
+ * Says plainly that starting navigation in the maps app is all it takes: Waylink picks the turns up by itself. Shows
+ * whether it can (notification access), with the fix one tap away, and a way to open the maps app directly.
+ */
+@Composable
+private fun FollowsMaps(src: app.waylink.core.NavSource, openSheet: (String) -> Unit) {
+    val c = W.c
+    val ctx = LocalContext.current
+    if (!app.waylink.core.Platform.caps.readNavApps) return
+    val tick = rememberResumeTick()
+    val allowed = remember(tick) { app.waylink.data.NavFeed.allowed(ctx) }
+    Row(verticalAlignment = Alignment.Top) {
+        Box(Modifier.padding(top = 6.dp).size(8.dp).clip(CircleShape).background(if (allowed) c.sage else c.amber))
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Txt(if (allowed) "Already in ${src.name}? Just start navigation." else "Waylink can’t read ${src.name} yet", T.rowTitle.copy(fontSize = 14.sp), c.ink)
+            Spacer(Modifier.height(2.dp))
+            Txt(
+                if (allowed) "Waylink picks up the turns by itself, here or from ${src.name}. Keep riding with ${src.name} open."
+                else "Allow notification access so the turns from ${src.name} reach your bike.",
+                T.row.copy(fontSize = 13.sp, lineHeight = 19.sp), c.ink3,
+            )
+        }
+    }
+    Spacer(Modifier.height(12.dp))
+    if (allowed) Btn("Open ${src.name}", { if (!app.waylink.data.NavApps.open(ctx, src)) openSheet("nav-source") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "map", small = true)
+    else Btn("Allow notification access", { openSheet("navaccess") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "bell", small = true)
+}
+
 @Composable
 fun HowToSteps(srcName: String) {
     val c = W.c
     Column(Modifier.fillMaxWidth().card(20.dp).padding(horizontal = 20.dp, vertical = 18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         listOf(
-            "Plan the ride in $srcName." to " It draws the map and gives voice directions on your phone.",
+            "Start navigation in $srcName," to " from Waylink or in $srcName itself. Waylink reads each turn and sends the arrow and distance to your bike. You don’t need to come back here.",
             "Rehearse a route" to " to see how turns look on your bike’s display before you ride.",
             "Test one turn" to " to check a single arrow and distance on the display.",
         ).forEachIndexed { i, (b, rest) ->
