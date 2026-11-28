@@ -51,6 +51,28 @@ object PlaceSearch {
         }
     }
 
+    /**
+     * The spot in a pasted link or coordinates. A short Maps link (maps.app.goo.gl) is followed to the full one,
+     * which carries the coordinates; only that link goes out. Null when nothing in it says where.
+     */
+    suspend fun spotFrom(text: String): Pair<Double, Double>? = withContext(Dispatchers.IO) {
+        app.waylink.core.GeoLink.parse(text)?.let { return@withContext it }
+        if (!app.waylink.core.GeoLink.isShortLink(text)) return@withContext null
+        var url = text.trim()
+        repeat(5) {
+            val c = runCatching { URL(url).openConnection() as HttpURLConnection }.getOrNull() ?: return@withContext null
+            try {
+                c.instanceFollowRedirects = false; c.connectTimeout = 6000; c.readTimeout = 6000; c.requestMethod = "GET"
+                c.setRequestProperty("User-Agent", "Waylink-Android")
+                val next = runCatching { if (c.responseCode in 300..399) c.getHeaderField("Location") else null }.getOrNull() ?: return@withContext null
+                url = URL(URL(url), next).toString()
+                if (!url.startsWith("https://")) return@withContext null
+                app.waylink.core.GeoLink.parse(runCatching { java.net.URLDecoder.decode(url, "UTF-8") }.getOrDefault(url))?.let { return@withContext it }
+            } finally { c.disconnect() }
+        }
+        null
+    }
+
     /** The phone's last known position, when location is allowed. Only used to rank nearby places first. */
     @android.annotation.SuppressLint("MissingPermission")
     fun lastFix(ctx: Context): Pair<Double, Double>? = runCatching {

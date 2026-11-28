@@ -106,6 +106,21 @@ class LiveNavTest {
         assertEquals(200.0, d.stepMeters)
     }
 
+    @Test fun spotsFromPastedLinks() {
+        assertEquals(12.9716 to 77.5946, GeoLink.parse("12.9716, 77.5946"))
+        assertEquals(12.9716 to 77.5946, GeoLink.parse("12.9716 77.5946"))
+        assertEquals(13.3702 to 77.6835, GeoLink.parse("https://www.google.com/maps/place/Nandi+Hills/@13.36,77.68,15z/data=!4m6!3m5!1s0x0:0x0!8m2!3d13.3702!4d77.6835"))
+        assertEquals(13.36 to 77.68, GeoLink.parse("https://www.google.com/maps/@13.36,77.68,15z"))
+        assertEquals(12.5 to 77.25, GeoLink.parse("https://maps.google.com/?q=12.5,77.25"))
+        assertEquals(12.5 to 77.25, GeoLink.parse("https://www.google.com/maps/search/?api=1&query=12.5%2C77.25"))
+        assertEquals(12.5 to 77.25, GeoLink.parse("geo:12.5,77.25?q=Cafe"))
+        assertEquals(12.5 to 77.25, GeoLink.parse("https://www.openstreetmap.org/#map=17/12.5/77.25"))
+        assertNull(GeoLink.parse("Nandi Hills"))
+        assertNull(GeoLink.parse("NH 44"))
+        assertNull(GeoLink.parse("120, 300"))
+        assertEquals(true, GeoLink.isShortLink("https://maps.app.goo.gl/AbC123"))
+    }
+
     @Test fun remindersSayEachThingOnce() {
         val now = 1_700_000_000_000L
         val base = Sample.seed(freshState(), now)

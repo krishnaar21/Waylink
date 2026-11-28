@@ -140,6 +140,10 @@ fun navSheet(key: String, s: AppState, live: Live, vm: AppViewModel, nav: SheetN
             if (arg != "new" && p == null) return null
             SheetSpec(if (p == null) "New place" else p.name, "Saved places") { PlaceBody(s, p, vm, nav, host) }
         }
+        "place-open" -> {
+            val p = s.places.firstOrNull { it.id == arg } ?: return null
+            SheetSpec(p.name, "Saved places") { PlaceOpenBody(s, p, vm, nav) }
+        }
         "speed" -> SheetSpec("Speed alert", "Riding") { SpeedBody(s, vm) }
         "autoreply" -> SheetSpec("Auto-reply", "Riding") { AutoReplyBody(s, vm, nav) }
         "crash" -> SheetSpec("Crash detection", "Riding") { CrashBody(s, vm, nav, host) }
@@ -290,6 +294,18 @@ private fun PlaceBody(s: AppState, p: Place?, vm: AppViewModel, nav: SheetNav, h
         if (q.length < 3 || q == spotFor) { hits = emptyList(); searching = false; empty = null; return@LaunchedEffect }
         kotlinx.coroutines.delay(450)
         searching = true
+        // A pasted Maps link or coordinates: that exact spot, no search.
+        if (app.waylink.core.GeoLink.isLink(q) || app.waylink.core.GeoLink.parse(q) != null) {
+            hits = emptyList()
+            val spot = app.waylink.data.PlaceSearch.spotFrom(q)
+            if (spot != null) {
+                lat = spot.first; lng = spot.second
+                if (app.waylink.core.GeoLink.isLink(q)) address = "%.5f, %.5f".format(java.util.Locale.ROOT, spot.first, spot.second)
+                spotFor = address.trim(); empty = null
+            } else empty = "That link has no location in it. Open the place in Maps, tap Share, and paste that link."
+            searching = false
+            return@LaunchedEffect
+        }
         val near = s.profile.weatherAt
         val r = app.waylink.data.PlaceSearch.search(ctx, q, near?.lat ?: s.vehicle.parking?.lat, near?.lon ?: s.vehicle.parking?.lng)
         hits = r.hits
@@ -312,7 +328,7 @@ private fun PlaceBody(s: AppState, p: Place?, vm: AppViewModel, nav: SheetNav, h
         Input(address, { x ->
             address = x
             if (spotFor != null && x.trim() != spotFor) { lat = null; lng = null; spotFor = null }
-        }, placeholder = "Search a place or address", label = "Address", caps = KeyboardCapitalization.Words, maxLength = 120)
+        }, placeholder = "Search, or paste a Maps link", label = "Address", caps = KeyboardCapitalization.Words, maxLength = 600)
     }
     if (hits.isNotEmpty()) {
         Spacer(Modifier.height(8.dp))
@@ -354,7 +370,7 @@ private fun PlaceBody(s: AppState, p: Place?, vm: AppViewModel, nav: SheetNav, h
             }
         }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "pin")
     }
-    Hint(if (pinned) "Navigation goes straight to this spot." else "Pick a suggestion, or use where you are now, so navigation goes straight there. A typed address is searched in your maps app.")
+    Hint(if (pinned) "Navigation goes straight to this spot." else "Pick a suggestion, paste a Google Maps link or coordinates (12.97, 77.59), or use where you are now, so navigation goes straight there. A typed address is searched in your maps app.")
     Spacer(Modifier.height(24.dp))
     Btn("Save", {
         val err = vm.savePlace(p?.id, name, kind, address, lat, lng)
@@ -542,31 +558,51 @@ fun LiveTurnsCard(s: AppState, openSheet: (String) -> Unit) {
     }
 }
 
-/** Saved places on the Route tab: tap to navigate there in the chosen app, the pencil to edit. */
+/** Saved places on the Route tab: tap one to navigate there or edit it. */
 @Composable
 fun PlacesCard(s: AppState, toast: (String) -> Unit, openSheet: (String) -> Unit) {
-    val c = W.c
-    val ctx = LocalContext.current
-    val src = NavSource.of(s.settings.navSource)
     val order = mapOf("home" to 0, "work" to 1)
     val places = s.places.sortedWith(compareBy<Place>({ order[it.kind] ?: 2 }, { -it.added }))
     ListCard {
         places.forEachIndexed { i, p ->
             if (i > 0) Hairline(66.dp)
-            val icon = when (p.kind) { "home" -> "home"; "work" -> "flag"; else -> "pin" }
-            ListRow(
-                p.name, p.address.ifBlank { "Pinned spot" }, icon = icon, chevron = false,
-                onClick = { if (!NavApps.go(ctx, src, p.address.ifBlank { p.name }, p.lat, p.lng)) toast("No app can open maps.") },
-                trailing = {
-                    Box(Modifier.size(36.dp).clip(CircleShape).pressable(label = "Edit ${p.name}", scale = 0.9f) { openSheet("place:${p.id}") }, contentAlignment = Alignment.Center) {
-                        Ic("edit", size = 18.dp, tint = c.ink3)
-                    }
-                },
-            )
+            ListRow(p.name, placeLine(p), icon = placeIcon(p), onClick = { openSheet("place-open:${p.id}") })
         }
         if (places.isNotEmpty()) Hairline(66.dp)
-        ListRow(if (places.isEmpty()) "Add a place" else "Add another", if (places.isEmpty()) "Home, work, the chai stop" else null, icon = "plus", onClick = { openSheet("place:new") })
+        ListRow(if (places.isEmpty()) "Add a place" else "Add another", if (places.isEmpty()) "Home, work, the chai stop, or a pasted Maps link" else null, icon = "plus", onClick = { openSheet("place:new") })
     }
+}
+
+private fun placeIcon(p: Place) = when (p.kind) { "home" -> "home"; "work" -> "flag"; else -> "pin" }
+
+/** The address, or the coordinates when that's all there is. */
+private fun placeLine(p: Place): String = p.address.ifBlank {
+    if (p.lat != null && p.lng != null) "%.5f, %.5f".format(java.util.Locale.ROOT, p.lat, p.lng) else "Pinned spot"
+}
+
+/** A saved place, tapped: navigate there (the main action), or edit it. */
+@Composable
+private fun PlaceOpenBody(s: AppState, p: Place, vm: AppViewModel, nav: SheetNav) {
+    val c = W.c
+    val ctx = LocalContext.current
+    val src = NavSource.of(s.settings.navSource).let { if (it.readsNotifications) it else NavSource.of("gmaps") }
+    val exact = p.lat != null && p.lng != null
+    Spacer(Modifier.height(8.dp))
+    Row(Modifier.fillMaxWidth().card(16.dp).padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        IconTile(placeIcon(p), size = 38.dp)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Txt(placeLine(p), T.rowTitle.copy(fontSize = 14.sp), c.ink, maxLines = 2)
+            Txt(if (exact) "Exact spot · goes straight there" else "Address · ${src.name} searches it", T.rowSub, c.ink3, maxLines = 1)
+        }
+    }
+    Spacer(Modifier.height(18.dp))
+    Btn(if (exact) "Navigate in ${src.name}" else "Search in ${src.name}", {
+        if (NavApps.go(ctx, src, p.address.ifBlank { p.name }, p.lat, p.lng)) nav.close() else vm.toast("No app can open maps.")
+    }, Modifier.fillMaxWidth(), kind = BtnKind.ACCENT, icon = if (exact) "nav" else "map")
+    Spacer(Modifier.height(8.dp))
+    Btn("Edit place", { nav.open("place:${p.id}") }, Modifier.fillMaxWidth(), kind = BtnKind.LINE, icon = "edit")
+    if (Platform.caps.readNavApps) Hint("Waylink follows ${src.name}’s turns and sends them to your bike.")
 }
 
 @Composable

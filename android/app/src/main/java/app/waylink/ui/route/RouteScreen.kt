@@ -131,6 +131,17 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
         if (q.length < 3 || q == pickFor) { hits = emptyList(); searching = false; empty = null; return@LaunchedEffect }
         kotlinx.coroutines.delay(450)
         searching = true
+        // A pasted Maps link or coordinates goes straight to that spot.
+        if (app.waylink.core.GeoLink.isLink(q) || app.waylink.core.GeoLink.parse(q) != null) {
+            hits = emptyList()
+            val spot = app.waylink.data.PlaceSearch.spotFrom(q)
+            if (spot != null) {
+                val label = "%.5f, %.5f".format(java.util.Locale.ROOT, spot.first, spot.second)
+                pickLat = spot.first; pickLng = spot.second; pickFor = label; dest = label; empty = null
+            } else empty = "That link has no location in it. In Maps, tap Share on the place and paste that link."
+            searching = false
+            return@LaunchedEffect
+        }
         val r = app.waylink.data.PlaceSearch.search(ctx, q, near?.first, near?.second)
         hits = r.hits
         empty = when { r.hits.isNotEmpty() -> null; r.failed -> "Can’t search right now. ${src.name} can still search it."; else -> "No matches here. ${src.name} can search it." }
@@ -155,7 +166,7 @@ private fun Planner(s: AppState, live: Live, vm: RouteActions, openSheet: (Strin
             Input(dest, { x ->
                 dest = x
                 if (pickFor != null && x.trim() != pickFor) { pickLat = null; pickLng = null; pickFor = null }
-            }, placeholder = "Search a place or address", label = "Destination", caps = KeyboardCapitalization.Words, maxLength = 120, imeAction = ImeAction.Go, onDone = openMaps)
+            }, placeholder = "Search, or paste a Maps link", label = "Destination", caps = KeyboardCapitalization.Words, maxLength = 600, imeAction = ImeAction.Go, onDone = openMaps)
             // Saved places that match come first, then search results.
             val q = dest.trim()
             val mine = if (q.length >= 2 && !picked) s.places.filter { it.name.contains(q, true) || it.address.contains(q, true) }.take(3) else emptyList()

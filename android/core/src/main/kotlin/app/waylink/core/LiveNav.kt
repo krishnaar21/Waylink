@@ -199,3 +199,32 @@ object SpeedAlert {
     /** Back under, with room, before it can sound again. */
     fun under(speed: Int, limit: Int) = speed <= limit - 3
 }
+
+/**
+ * A spot read from what a rider pastes: plain coordinates ("12.9716, 77.5946"), a geo: link, or a Google Maps
+ * (or OpenStreetMap, Apple Maps, Waze) link that carries them. A place's own pin (!3d…!4d…) wins over the map's
+ * centre (@…). Short links (maps.app.goo.gl) carry no coordinates: [isShortLink] says to resolve them first.
+ */
+object GeoLink {
+    private const val N = """(-?\d{1,3}(?:\.\d+)?)"""
+    private val PLAIN = Regex("""^\s*$N\s*[, ]\s*$N\s*$""")
+    private val PIN = Regex("""!3d$N!4d$N""")
+    private val PARAM = Regex("""[?&](?:q|query|ll|destination|daddr|center|sll)=(?:loc:)?$N(?:,|%2C|\+|%20)+$N""", RegexOption.IGNORE_CASE)
+    private val GEO = Regex("""^geo:$N,$N""", RegexOption.IGNORE_CASE)
+    private val AT = Regex("""@$N,$N""")
+    private val OSM = Regex("""[#&?]map=\d+/$N/$N""")
+    private val SHORT = Regex("""^https?://(maps\.app\.goo\.gl|goo\.gl/maps|g\.co/kgs)/""", RegexOption.IGNORE_CASE)
+
+    fun parse(text: String?): Pair<Double, Double>? {
+        val t = text?.trim().orEmpty()
+        if (t.isEmpty() || t.length > 2000) return null
+        val m = PLAIN.find(t) ?: PIN.find(t) ?: PARAM.find(t) ?: GEO.find(t) ?: OSM.find(t) ?: AT.find(t) ?: return null
+        val la = m.groupValues[1].toDoubleOrNull() ?: return null
+        val ln = m.groupValues[2].toDoubleOrNull() ?: return null
+        if (la !in -90.0..90.0 || ln !in -180.0..180.0 || (la == 0.0 && ln == 0.0)) return null
+        return la to ln
+    }
+
+    fun isLink(text: String?): Boolean = text?.trim()?.let { it.startsWith("http", true) || it.startsWith("geo:", true) } == true
+    fun isShortLink(text: String?): Boolean = text?.trim()?.let { SHORT.containsMatchIn(it) } == true
+}
